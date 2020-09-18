@@ -1,0 +1,68 @@
+<div class="datePicker">
+	{{#if date}}
+		<table>
+			<tr>
+				<td>
+					<div class="form-group">
+						<label>{{t 'year'}}</label>
+						<select name="year" data-datepart="year" class="form-control">
+							{{#each years}}
+								<option value="{{ year }}" {{#if selected}}selected{{/if}}>{{ year }}</option>
+							{{/each}}
+						</select>
+					</div>
+				</td>
+				<td>
+					<div class="form-group">
+						<label>{{t 'month'}}</label>
+						<select name="month" data-datepart="month" class="form-control">
+							{{#each months}}
+								<option value="{{ month }}" {{#if selected}}selected{{/if}}>{{ month }}</option>
+							{{/each}}
+						</select>
+					</div>
+				</td>
+				<td>
+					<div class="form-group">
+						<label>{{t 'day'}}</label>
+						<select name="day" data-datepart="day" class="form-control">
+							{{#each days}}
+								<option value="{{ day }}" {{#if selected}}selected{{/if}}>{{ day }}</option>
+							{{/each}}
+						</select>
+					</div>
+				</td>
+			</tr>
+		</table>
+	{{/if}}
+	{{#if time}}
+		<table>
+			<tr>
+				<td>
+					<div class="form-group">
+						<label>{{t 'hours'}}</label>
+						<select name="hours" data-datepart="hours" class="form-control">
+							{{#each hours}}
+								<option value="{{ hours }}" {{#if selected}}selected{{/if}}>{{ hours }}</option>
+							{{/each}}
+							<span class="bar"></span>
+						</select>
+					</div>
+				</td>
+				<td>
+					<div class="form-group">
+						<label>{{t 'minutes'}}</label>
+						<select name="minutes" data-datepart="minutes" class="form-control">
+							{{#each minutes}}
+								<option value="{{ minutes }}" {{#if selected}}selected{{/if}}>{{ minutes }}</option>
+							{{/each}}
+						</select>
+					</div>
+				</td>
+			</tr>
+		</table>
+	{{/if}}
+</div>
+<div class="dialogbox-bottom">
+	<button type="button" action="datePicker.close" class="btn flat tap closeperm">{{t 'CANCEL'}}</button> <button type="button" action="datePicker.accept" class="btn flat tap">{{t 'SET DATE'}}</button>
+</div>

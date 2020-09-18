@@ -1,0 +1,35 @@
+{% extends 'app_kit/base.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block content %}
+<br>
+<div class="container">
+
+	<div class="row">
+		<div class="col-12">
+			<h2>{% trans 'Your apps' %}</h2>
+		</div>
+	</div>
+	<div id="app-list" class="row">
+		{% if meta_apps %}
+			{% for meta_app in meta_apps %}
+
+				{% include 'app_kit/ajax/app_card.html' %}
+			{% endfor %}
+
+		{% else %}
+			<div class="col-12">
+				{% blocktrans %}You have no apps yet.{% endblocktrans %}
+			</div>
+		{% endif %}
+	</div>
+
+	<div class="row justify-content-center mt-2">
+		<div class="col-12">
+			<a data-url="{% url 'create_app' %}" href="#" class="btn btn-outline-primary xhr" role="button" ajax-target="ModalContent">{% blocktrans %}Create new app{% endblocktrans %}</a>
+		</div>
+	</div>
+
+</div>
+{% endblock %}

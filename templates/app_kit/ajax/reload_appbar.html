@@ -1,0 +1,7 @@
+{% load localcosmos_tags %}
+<script>
+	$.get("{% url 'manage_metaapp' meta_app.id meta_app|ctype_id meta_app.id %}", function(html){
+		$("#appbar-container").html(html);
+		ajaxify('appbar-container');
+	});
+</script>

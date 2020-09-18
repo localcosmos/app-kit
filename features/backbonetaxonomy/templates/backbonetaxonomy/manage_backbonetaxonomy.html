@@ -1,0 +1,125 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n localcosmos_tags  %}
+
+{% block generic_content_specific %}
+
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">
+				{% trans 'Taxa included in this app' %}
+				<small><span class="badge badge-info">{% trans 'Total:' %} {{ meta_app.taxon_count }}<span></small>
+			</h4>
+
+			<form class="form-inline">
+				{% if generic_content.include_full_tree and alltaxa %}
+				{% else %}
+					<div class="form-group">
+						<label for="taxonsourceselect">{% trans 'Show:' %}</label>&nbsp;
+	
+						<select id="taxonsourceselect" class="form-control form-control-sm">
+							<option value="all" selected>{% trans 'All' %}</option>
+							{% for source in meta_app.sorted_taxa %}
+								<option value="{{ source.content|ctype_id }}-{{ source.content.id }}">{{ source.content.name }}</option>
+							{% endfor %}
+							<option value="{{ generic_content|ctype_id }}-{{ generic_content.id }}">{% trans 'manually added taxa' %}</option>
+						</select>
+					</div>
+					&nbsp;
+				{% endif %}
+				<div class="form-group">
+					{{ searchbackboneform }}
+				</div>
+			</form>
+
+			<div id="taxa" class="card-body endless_page_template">
+				{% include 'backbonetaxonomy/taxonlist.html' %}
+			</div>
+
+		</div>
+	</div>
+
+	<!--
+	<hr>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Taxonomic system' %}</h4>
+			<div>
+				{% with backbone=generic_content form=fulltreeform %}
+					{% include 'backbonetaxonomy/manage_fulltree_form.html' %}
+				{% endwith %}
+			</div>
+		</div>
+	</div>-->
+
+	{% if not generic_content.include_full_tree and alltaxa %}
+		{% with backbone=generic_content %}
+		<hr>
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">{% trans 'Add single taxon' %}</h4>
+				
+					<div>
+						{% include 'backbonetaxonomy/add_taxon_form.html' %}
+					</div>
+			</div>
+		</div>
+		<hr>
+		<div class="card">
+			<div class="card-body">
+				<h4 class="card-title">{% trans 'Add multiple taxa' %}</h4>
+				<div>
+					{% include 'backbonetaxonomy/manage_backbone_taxa_form.html' %}
+				</div>
+			</div>
+		</div>
+		{% endwith %}
+
+		<hr>
+
+		<h3>{% trans 'Custom taxa' %}</h3>
+		{% trans 'If you want to add custom taxa or non-life taxa such as stones, you can create custom taxa. Custom taxa can appear in multiple apps. You only need to to create them once and then add them to the apps you want.' %}
+		<p>
+			<a href="{% url 'manage_custom_taxontree' meta_app.id meta_app.primary_language %}" class="btn btn-primary">{% trans 'Manage custom taxonomic tree' %}</a>
+		</p>
+	{% endif %}
+
+{% endblock %}
+
+{% block extra_script %}
+
+	<script>
+
+		$('#taxa').endlessPaginate({
+		    onClick: function(context) {
+		        $("#taxonloader").show();
+				$("#taxonlist").hide();
+		    }
+		});
+
+		var baseURL = "{% url 'manage_backbonetaxonomy' meta_app.id content_type.id generic_content.id %}";
+
+		$("#taxonsourceselect").on("change", function(event){
+
+			$("#taxonloader").show();
+			$("#taxonlist").hide();
+
+			var selected = $(this);
+			var value = selected.val();
+
+			if (value == "all"){
+				var url = baseURL;
+			}
+			else {
+				var value_parts = value.split("-");
+				var url = baseURL + "?contenttypeid=" + value_parts[0] + "&objectid=" + value_parts[1];
+			}
+		
+			$.get(url, function(html){
+				$("#taxa").html(html);
+				ajaxify("taxa");
+			});
+		
+		});
+	</script>
+
+{% endblock %}

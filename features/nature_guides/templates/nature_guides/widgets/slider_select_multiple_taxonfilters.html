@@ -1,0 +1,7 @@
+{% extends 'nature_guides/widgets/horizontal_choices.html' %}
+{% load static %}
+
+{% block size %}medium{% endblock %}
+{% block image %}{% if option.is_custom %}{% static 'app_kit/buttons/taxonfilters/Customfilter.svg' %}{% else %}{% if option.image %}{{ option.image }}{% else %}{% static 'noimage.png' %}{% endif %}{% endif %}{% endblock %}
+
+{% block in_label %}{% if option.is_custom %}<div class="custom"><div>{{ option.label|slice:":3" }}</div></div>{% endif %}{% endblock %}

@@ -1,0 +1,33 @@
+{% load i18n %}
+{% if deleted %}
+	<script>
+		{% if generic_field_role == "regular" %}
+			{% if generic_field_id %}
+				$("#li-{{ generic_field_id }}").remove();
+			{% endif %}
+			$("#Modal").modal("hide");
+		{% else %}
+			window.location.reload();
+		{% endif %}
+	</script>
+{% else %}
+	<form method="POST" action="{% url 'delete_generic_field' meta_app.id generic_field_id %}" class="xhr">{% csrf_token %}
+		<div class="modal-header">
+			<h5 class="modal-title">{% trans 'Delete field' %}</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<p>
+				{% trans 'Do you really want to delete this field?' %}
+			</p>
+		</div>
+		<div class="modal-footer">
+			{% include 'localcosmos_server/modals/footers/delete.html' %}
+		</div>
+	</form>
+	<script>
+		$("#Modal").modal("show");
+	</script>
+{% endif %}

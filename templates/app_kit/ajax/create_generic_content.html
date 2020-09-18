@@ -1,0 +1,95 @@
+{% extends 'localcosmos_server/modals/modal_base.html' %}
+{% load i18n localcosmos_tags app_tags %}
+
+
+{% block modal_content %}
+	{% block header %}
+		<div class="modal-header">
+			<h5 class="modal-title">
+				{% with name=content_type_id|ctype_name %}
+					{% blocktrans %}Add {{ name }}{% endblocktrans %}
+				{% endwith %}
+			</h5>
+		    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		    	<span aria-hidden="true">&times;</span>
+		    </button>
+		</div>
+	{% endblock %}
+
+	{% with name=content_type_id|ctype_name %}
+		<div class="alert alert-secondary">{% get_generic_content_help_text content_type.model_class %}</div>
+	{% endwith %}
+
+	<div id="add-existing-container"></div>
+	<form method="POST" action="{% if meta_app %}{% url 'create_generic_appcontent' meta_app.id content_type_id %}{% else %}{% url 'create_app' %}{% endif %}" class="xhr" ajax-target="ModalContent">
+		<div class="modal-body">
+			
+			{% with name=content_type_id|ctype_name %}
+				{% if disallow_single_content %}
+					<div class="alert alert-warning">
+						{% blocktrans %}Your app may only have one {{ name }} feature.{% endblocktrans %}
+					</div>
+				{% else %}
+
+					{% if created_content %}
+						<h4>{% blocktrans %}Your {{ name }} has been created and is ready for management.{% endblocktrans %}</h4>
+						<div class="text-center my-4">
+							<a href="{% url created_content.manage_url meta_app.id content_type_id created_content.id %}" class="btn btn-outline-primary">{% blocktrans %}Manage {{ name }}{% endblocktrans %}</a>
+						</div>
+					{% else %}
+						<h5>{% blocktrans %}Create a new {{ name }}{% endblocktrans %}</h5>
+						<p>
+							{% render_bootstrap_form form %}
+						</p>
+					{% endif %}
+				{% endif %}
+			{% endwith %}
+			
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+			{% if created_content %}
+			{% else %}
+				
+				{% if disallow_single_content %}
+				{% else %}
+					<button type="submit" class="btn btn-outline-primary">{% trans 'Create' %}</button>
+				{% endif %}
+			{% endif %}
+		</div>
+	</form>
+{% endblock %}
+
+{% block script %}
+	{% if created_content %}
+		{% if is_app_creation %}
+			<script>
+				$.get("{% url 'get_app_card' meta_app.id %}", function(html){
+					$("#app-list").append(html);
+					ajaxify($(html).attr("id"));
+				});
+			</script>
+		{% else %}
+			<script>
+				$.get("{% url 'generic_content_card' meta_app.id link.id %}", function(html){
+					$("#app-components").append(html);
+					ajaxify($(html).attr("id"));
+				});
+			</script>
+		{% endif %}
+	{% else %}
+		{% if disallow_single_content %}
+		{% else %}
+			{% if is_app_creation %}
+			{% else %}
+				<script>
+					$.get("{% url 'add_existing_generic_content' meta_app.id content_type_id %}", function(html){
+						$("#add-existing-container").html(html);
+						ajaxify("add-existing-container");
+					});
+				</script>
+			{% endif %}
+		{% endif %}
+	{% endif %}
+{% endblock %}
+

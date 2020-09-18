@@ -1,0 +1,124 @@
+<!-- identification-matrix may not be inside page. the transition/transform of the page relates position:fixed to page container instead of viewport-->
+<div class="nature-guide">
+	
+	{{#if node.matrix_filters}}
+		<div id="identification-matrix" class="matrix-hidden p-2">
+			<div>
+				<form id="matrix-filters-form">
+					<div class="d-none d-md-block mb-3">
+						<button type="button" class="btn btn-light tap" action="reset_matrix_filters"><i class="restart-button">&nbsp;</i> {{t 'restart'}}</button>
+					</div>
+
+					{{#each node.matrix_filters}}
+						<div id="{{uuid}}" class="matrix-filter mt-2" current-selection="">
+							<div class="matrix-filter-name"><strong>{{t name }}</strong></div>
+							{{#ifequal filter_type 'DescriptiveTextAndImagesFilter'}}
+								<div class="horizontal-slide large">
+									<div>
+										{{#each space}}
+											<div>
+												<input id="{{../uuid}}-{{encoded_space}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<label for="{{../uuid}}-{{encoded_space}}" class="text-center">
+													<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
+													<div class="slide-element-text">{{tp encoded_space}}</div>
+												</label>
+											</div>
+										{{/each}}
+									</div>
+								</div>
+							{{/ifequal}}
+							{{#ifequal filter_type 'ColorFilter'}}
+								<div class="horizontal-slide">
+									<div>
+										{{#each space}}
+											<div>
+												<input id="{{../uuid}}-{{@index}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<label for="{{../uuid}}-{{@index}}" class="text-center">
+													<div class="square responsiveback border-black" style="background-color:{{rgba}};"></div>
+												</label>
+											</div>
+										{{/each}}
+									</div>
+								</div>
+							{{/ifequal}}
+							{{#ifequal filter_type 'RangeFilter'}}
+								<div class="range-container mb-4">
+
+									<div class="range-output mb-2">
+										<span id="output-{{uuid}}">off</span> <span id="{{uuid}}_unit" style="display:none;">{{#if definition.unit}}{{definition.unit}}{{/if}}</span>
+									</div>
+
+									<div class="clearable-range-unit">
+										{{#if definition.unit}}{{definition.unit}}{{/if}}
+									</div>
+									<div class="clearable-range-slider">
+										<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}_verbose" min="{{space.[0]}}" max="{{space.[1]}}" />
+										<input id="{{uuid}}_range_value" type="hidden" name="{{uuid}}" />
+									</div>
+									<div class="clearable-range-clear">
+										<button data-uuid="{{uuid}}" type="button" class="btn btn-outline-secondary btn-sm clearrangebtn">{{t 'clear'}}</button>
+									</div>
+
+								</div>
+							{{/ifequal}}
+							{{#ifequal filter_type 'NumberFilter'}}
+								<div class="horizontal-slide">
+									<div>
+										{{#each space}}
+											<div>
+												<input id="{{../uuid}}-{{this}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{ this }}" data-value="{{this}}" />
+												<label for="{{../uuid}}-{{this}}" class="text-center">
+													<div class="square responsiveback numbercontainer">
+														<span>{{this}}</span>
+													</div>
+												</label>
+											</div>
+										{{/each}}
+									</div>
+								</div>
+							{{/ifequal}}
+							{{#ifequal filter_type 'TaxonFilter'}}
+								<div class="horizontal-slide medium">
+									<div>
+										{{#each space}}
+											<div>
+												<input id="{{../uuid}}-{{latname}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded}}" data-value="{{encoded}}" />
+												<label for="{{../uuid}}-{{latname}}" class="text-center">
+													<div class="square responsiveback contain taxonfilter" {{#if is_custom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
+														<div>{{#if is_custom}}{{short_name}}{{/if}}</div>
+													</div>
+													<div><small><i>{{latname}}</i></small></div>
+												</label>
+											</div>
+										{{/each}}
+									</div>
+								</div>
+							{{/ifequal}}
+						</div>
+					{{/each}}
+				</form>
+			</div>
+		</div>
+	{{/if}}
+
+	<div id="nodes" class="page row no-gutters justify-content-center">
+		<div class="text-loader">...{{tp 'Loading'}}...</div>
+	</div>
+	
+</div>
+{{#if node.matrix_filters}}
+	<div class="footer d-md-none">
+		<div class="tap text-center" action="ToggleMatrixFilters.toggle">
+			<div class="footer-icon"><img src="img/identify-icon.svg" /></div>
+			<div>{{tp 'identify'}}</div>
+		</div>
+		<div class="tap text-center" action="ToggleMatrixFilters.close">
+			<div class="children-count text-danger">{{ node.children_count }}</div>
+			<div>{{tp 'results'}}</div>
+		</div>
+		<div class="tap text-center" action="reset_matrix_filters">
+			<div class="footer-icon"><img src="img/restart.svg" /></div>
+			<div>{{tp 'restart'}}</div>
+		</div>
+	</div>
+{{/if}}

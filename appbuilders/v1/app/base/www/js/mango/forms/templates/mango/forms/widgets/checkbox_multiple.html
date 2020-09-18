@@ -1,0 +1,1 @@
+<div>{{#each widget.choices}}<div><input id="{{ ../widget.attrs.id }}-{{@index}}" type="checkbox" name="{{ ../widget.name }}" value="{{ this.[0] }}" {{#ifIn this.[0] ../widget.value }}checked{{/ifIn}} /><label for="{{ ../widget.attrs.id }}-{{@index}}">{{tp this.[1] }}</label></div>{{/each}}</div>

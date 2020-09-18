@@ -1,0 +1,32 @@
+{% spaceless %}
+{% load i18n static localcosmos_tags app_tags %}
+<div id="{{ node.name_uuid }}" data-object-id="{{ node.id }}" class="col-6 col-md-4 col-lg-3 pull-left">
+	<table class="identificationkeynode">
+		<tr>
+			<td>
+				<strong>{{ node.meta_node.name }}</strong>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<a {% if node.meta_node.node_type == "result" %}data-url="{% url 'mockbutton' %}?message={% trans 'Tapping on an entry in your app will result a taxon profile or observation form being opened - according to your settings.' %}" class="xhr" ajax-target="ModalContent"{% else %}href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id node.id %}"{% endif %}><div id="content_image_{{ node.meta_node|ctype_id }}_{{ node.meta_node.id }}" class="squareimage" style="background-image:url('{{ node.meta_node.image_url }}');"></div></a>
+			</td>
+		</tr>
+		<tr>
+			<td>{% if node.decision_rule %}{{ node.decision_rule }}{% endif %}</td>
+		</tr>
+	</table>
+
+	<div class="btn-group dropup">
+		<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuForNode-{{ node.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+			{% trans 'Modify' %}
+		<span class="caret"></span>
+		</button>
+		<div class="dropdown-menu" aria-labelledby="dropdownMenuForNode-{{ node.id }}">
+			{% include 'nature_guides/ajax/node_management_menu.html' %}
+		</div>
+	</div>
+
+	<br><br>
+</div>
+{% endspaceless %}

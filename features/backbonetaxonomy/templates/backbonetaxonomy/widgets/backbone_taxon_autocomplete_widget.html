@@ -1,0 +1,51 @@
+{% extends 'taxonomy/widgets/taxon_autocomplete_widget_base.html' %}
+{% load i18n %}
+
+
+{% block widgets %}
+	<div class="indicate-taxon">
+		{% with widget=selected_indicator_widget %}
+		<div class="row">
+			<div class="col-12 col-md-6">
+					<input type="{{ widget.type }}" class="form-control" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %} />
+			</div>
+		</div>
+		{% endwith %}
+
+		{% block search_widgets %}
+			{% spaceless %}
+				{% for widget in search_widgets %}
+					{% include widget.template_name %}
+				{% endfor %}
+			{% endspaceless %}
+		{% endblock %}
+	</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+
+	(function(){
+
+		var url_parts = window.location.href.split('/');
+		var meta_app_id = url_parts[url_parts.length - 4];
+
+		var url = '/app-kit/search-backbonetaxonomy/' + meta_app_id + '/';
+		
+		$("#{{ widget.attrs.id }}_3").taxonautocomplete({"url": url, "hold_input" : true });
+
+		{% if widget.attrs.value %}
+			$.get("{% url 'get_taxon' widget.attrs.value language %}", function(taxon){
+				
+				if (taxon.vernacular){
+					var name = "" + taxon.vernacular + "(" + taxon.taxon_latname + ")";
+				}
+				else {
+					var name = taxon.taxon_latname;
+				}
+				$("#{{ widget.attrs.id }}_verbose").val(name);
+			});
+		{% endif %}
+	})()
+</script>
+{% endblock %}

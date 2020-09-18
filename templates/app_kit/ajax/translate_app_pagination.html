@@ -1,0 +1,21 @@
+<ul class="pagination">
+	{% if form.page == 1 %}
+	{% else %}
+		<li class="page-item">
+			<a class="page-link" href="{% url 'translate_app' meta_app.id %}?page={{ form.page|add:-1 }}" aria-label="Previous">
+				<span aria-hidden="true">&laquo;</span>
+			</a>
+		</li>
+	{% endif %}
+	{% for page in form.pages %}
+		<li class="page-item {% if page == form.page %}active{% endif %}"><a class="page-link" href="{% url 'translate_app' meta_app.id %}?page={{ page }}">{{ page }}</a></li>
+	{% endfor %}
+	{% if form.page == form.total_pages %}
+	{% else %}
+		<li class="page-item">
+			<a class="page-link" href="{% url 'translate_app' meta_app.id %}?page={{ form.page|add:1 }}" aria-label="Next">
+				<span aria-hidden="true">&raquo;</span>
+			</a>
+		</li>
+	{% endif %}
+</ul>

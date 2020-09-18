@@ -1,0 +1,84 @@
+<div id="app-container">
+	<div id="appbar-container" class="shadow1"></div>
+
+	<div id="content"></div>
+
+	<div id="footer" class="d-none d-md-flex p-2">
+		{{#if funding_partners}}
+			<div>
+				<div class="footer-header">
+					{{tp 'Funding Partners'}}
+				</div>
+				<div id="footer-sponsors" class="funding-partners mt-2">
+					{{#each funding_partners}}
+						<div><img src="{{ this }}" class="funding-partner" /></div>
+					{{/each}}
+				</div>
+			</div>
+		{{else}}
+			{{#if sponsors}}
+				<div id="footer-sponsors-container">
+					<div class="footer-header">
+						{{tp 'Sponsors'}}
+					</div>
+					<div id="footer-sponsors" class="funding-partners mt-2"></div>
+				</div>
+			{{/if}}
+		{{/if}}
+	</div>
+</div>
+
+<div id="Sidemenu" class="swiperight" action="Sidemenu.close"></div>
+
+<div id="ModalDialog" class="modal-container p-3 closed inback">
+	<div class="modal-back tap closeperm" action="modalDialog.close"></div>
+
+	<div class="col-12 col-md-8 col-lg-6 col-xl-5 p-3 dialogbox">
+		<div>
+			<div class="dialogbox-title"></div>
+			<div class="dialogbox-content pt-2"></div>
+		</div>
+	</div>
+</div>
+
+<div id="ModalProgress" class="modal-container p-3 closed inback">
+	<div class="modal-back"></div>
+
+	<div class="col-12 col-md-8 col-lg-6 col-xl-5 p-3 dialogbox">
+		<div>
+			<div class="dialogbox-title"></div>
+			<div class="pt-2">
+				<div class="dialogbox-content small"></div>
+				<div class="text-center p-2">
+					<span class="progressbar-percent">0</span>&percnt;
+				</div>
+				<div class="progressbar-outer">
+					<div class="progressbar-inner"></div>
+				</div>
+				<div class="progressbar-text py-2"></div>
+			</div>
+			<div class="dialogbox-bottom">
+				<button type="button" action="modalProgress.close" class="btn flat tap closeperm">{{t 'CANCEL'}}</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="ImageViewer" class="closed inback">
+	<div>
+		<div id="ImageViewerButtons" class="p-3">
+			<div id="ImageViewerYesNo" class="yesno yesno-top text-center p-3">
+				<div class="pb-3">
+					{{tp 'Delete this image ?'}}
+				</div>
+				<div>
+					<button type="button" class="btn btn-sm btn-danger tap" action="ImageViewer.delete">{{tp 'yes'}}</button> &nbsp; &nbsp;
+					<button type="button" class="btn btn-sm btn-light tap" action="ImageViewer.close_confirm">{{tp 'no'}}</button>
+				</div>
+			</div>
+			<img id="ImageViewerDeleteBtn" src="img/delete.svg" class="app-button ml-5 tap preventDefault" action="ImageViewer.confirm_delete"/>
+			<img src="img/close.svg" class="app-button ml-5 tap preventDefault" action="ImageViewer.close" />
+		</div>
+		<div id="ImageViewerContainer" class="carousel slide"></div>
+	</div>
+</div>

@@ -1,0 +1,88 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static app_tags buttonmatrix_tags localcosmos_tags %}
+
+{% block generic_content_specific %}
+
+	<h2>{% trans 'Build your matrix' %}</h2>
+	<div id="managematrix">
+		<div class="row">
+			<div id="buttonmatrix-container" class="col-12 col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+				<input id="id_number" type="hidden" name="number" />
+				<table class="buttonmatrix-options">
+					<tr class="buttonmatrix-options-row">
+						<td></td>
+						<td id="exposedField" class="text-center">
+							{% if exposed_field_link %}
+								{% render_exposed_field exposed_field_link primary_language %}
+							{% endif %}
+						</td>
+						<td class="text-left">
+							{% if exposed_field_link %}
+								<button id="lock_exposed_field" type="button" class="btn btn-secondary" data-remember="off">{% trans 'Lock' %}</button>
+								<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large" data-toggle="popover" data-placement="left" title="{% trans 'Lock button' %}" data-content="{% trans 'You can prevent the app from resetting the value entered in the displayed field by toggling the lock button.' %}" />
+							{% endif %}
+						</td>
+					</tr>
+				</table>
+
+				<table id="buttonmatrix" class="buttonmatrix matrixtable">
+		
+					{% for row in generic_content.rows|ranged %}
+			
+						<tr>
+							{% for column in generic_content.columns|ranged %}
+								
+								{% render_buttonmatrix_button app generic_content row column %}
+
+							{% endfor %}
+						</tr>
+			
+					{% endfor%}
+
+				</table>
+	
+			</div>
+		</div>
+
+		<script type="text/javascript" src="{% static 'app_kit/ButtonMatrix.js' %}"></script>
+		<script>
+			var options = {
+				"demo" : true
+				{% if exposed_field_link %}
+				,"exposed_field" : {{ exposed_field_json|safe }}
+				{% endif %}
+			};
+
+			var matrix = ButtonMatrix.create(options);
+		</script>
+	</div>
+
+{% endblock %}
+{% block extra_script %}
+
+	<script type="text/javascript">
+		(function(){
+			var field_select = $("#id_generic_form");
+
+			field_select.on("change", function(event){
+
+				var value = field_select.val();
+
+				if (value != null && value.length){
+					var url = "{% url 'get_exposed_field_options_base' meta_app.id generic_content.id %}" + value + "/";
+				}
+				else {
+					var url = "{% url 'get_exposed_field_options_base' meta_app.id generic_content.id %}"; 
+				}
+
+				$.get(url, function(html){
+					$("#id_generic_form_exposed_field").html(html);
+				});
+			});
+
+			$('[data-toggle="popover"]').popover();
+
+		})();
+	</script>
+
+{% endblock %}

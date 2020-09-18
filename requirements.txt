@@ -1,0 +1,13 @@
+wheel
+django==3.1.*
+django-tenants==3.2.1
+django-cleanup==5.0.0
+django-ipware==3.0.1
+django-filter==2.3.0
+uwsgi
+lxml
+localcosmos_server
+localcosmos_appkit_utils
+localcosmos_cordova_builder
+xlrd==1.2.0
+openpyxl==3.0.3

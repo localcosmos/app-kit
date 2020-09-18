@@ -1,0 +1,42 @@
+{% load i18n localcosmos_tags %}
+{% if taxon_images or node_images or taxon_profile_images %}
+	<div class="row">
+		{% for image in taxon_images %}
+			<div class="col-6 col-md-4 col-lg-2">
+				<img src="{{ image.image_url }}" class="img-fluid" />
+			</div>
+		{% endfor %}
+		{% for image in node_images %}
+			<div class="col-6 col-md-4 col-lg-2">
+				<img src="{{ image.image_url }}" class="img-fluid" />
+			</div>
+		{% endfor %}
+		{% for image in taxon_profile_images %}
+			<div id="content_image_container_{{ image.id }}" class="col-6 col-md-4 col-lg-2">
+				<div>
+					<img id="content_image_{{ image.id }}" src="{{ image.image_url }}" class="img-fluid" />
+				</div>
+				{% if image.text %}
+					<div>
+						{{ image.text }}
+					</div>
+				{% endif %}
+				<div>
+					<div class="btn-group dropup">
+						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenu-{{ image.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+							{% trans 'Modify' %}
+						<span class="caret"></span>
+						</button>
+						<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ image.id }}">
+							<a data-url="{% url 'manage_taxon_profile_image' meta_app.id image.id %}?taxon_source={{ taxon.taxon_source }}&taxon_latname={{ taxon.taxon_latname }}&taxon_author={{ taxon.taxon_author }}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+
+							<a data-url="{% url 'delete_taxon_profile_image' image.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+{% else %}
+	{% trans 'No images found.' %}
+{% endif %}

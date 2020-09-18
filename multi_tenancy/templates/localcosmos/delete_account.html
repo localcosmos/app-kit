@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block content %}
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<div class="slogan text-left">
+					{% trans 'Delete account' %}
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12 mb-3">
+				<strong>{% trans 'Account' %}: {{request.user}}</strong>
+			</div>
+			<div class="col-12">
+				<div class="alert alert-danger">
+					{% trans 'Deleting your account will remove all references to you as a person from our databases and files. This cannot be undone.' %}
+				</div>
+			</div>
+			<div class="col-12">
+				<form method="POST" action="{% url 'delete_account' %}">{% csrf_token %}
+					{% render_bootstrap_form form %}
+					<div class="row my-3">
+						<div class="col-12">
+							<button type="submit" class="btn btn-outline-danger">{% trans 'Delete account' %}</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+{% endblock %}

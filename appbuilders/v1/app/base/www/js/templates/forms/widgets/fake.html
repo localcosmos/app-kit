@@ -1,0 +1,1 @@
+<input type="text" {{#each widget.attrs}}{{#ifequal @key "class"}}{{else}}{{@key}}="{{this}}"{{/ifequal}}{{/each}} class=" managedInput form-control {{#if widget.attrs.action}}tap{{/if}}" data-mode="{{ widget.mode }}" {{#if widget.value}}value="{{ widget.value }}"{{/if}} name="{{ widget.name }}" readonly />

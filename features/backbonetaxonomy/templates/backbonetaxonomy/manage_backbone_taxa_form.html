@@ -1,0 +1,54 @@
+{% load i18n localcosmos_tags %}
+
+<form method="POST" action="{% url 'add_backbone_taxa' meta_app.id backbone.id %}" class="xhr">{% csrf_token %}
+
+	{% render_bootstrap_form taxaform %}
+
+		
+	<div class="medium-6 columns">
+		{% if added %}
+			<p>
+				<div class="alert alert-success">{% trans 'The following have been added:' %} {{ added|join:"," }}</div>
+			</p>
+		{% endif %}
+		{% if existed %}
+			<p>
+				<div class="alert alert-info">{% trans 'These taxa already exist:' %} {{ existed|join:"," }}</div>
+			</p>
+		{% endif %}
+		{% if not_found %}
+			<p>
+				<div class="alert alert-danger">{% trans 'Not found:' %} {{ not_found|join:"," }}</div>
+			</p>
+		{% endif %}
+		{% if unambiguous %}
+			<p>
+				<div class="alert alert-warning">
+					{% trans 'These names yielded more than one result:' %}
+					{% for entry in unambiguous %}
+						<div>{{ entry.name}} : {{ entry.results|join:"," }}</div>
+					{% endfor %}
+					<b>{% trans 'Please use "add single taxon" to select which one to add' %}</b>
+				</div>
+			</p>
+		{% endif %}
+		{% if too_short %}
+			<p>
+				<div class="alert alert-info">{% trans 'These names are too short:' %} {{ too_short|join:"," }}</div>
+			</p>
+		{% endif %}
+	</div>
+
+	<div>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Submit' %}</button>
+	</div>
+</form>
+{% if success is True %}
+<script>
+	var url = "{% url 'manage_backbonetaxonomy' meta_app.id content_type.id backbone.id %}";
+	$.get(url, function(html){
+		$("#taxa").html(html);
+		ajaxify("taxa");
+	});
+</script>
+{% endif %}

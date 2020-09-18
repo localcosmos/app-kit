@@ -1,0 +1,23 @@
+{
+	"name" : "Altruistic Albatros",
+	"default_app_theme" : "Flat",
+	"required_features" : [
+		"app_kit.features.backbonetaxonomy",
+		"app_kit.features.taxon_profiles"
+	],
+	"addable_features" : [
+		"app_kit.features.generic_forms",
+		"app_kit.features.nature_guides",
+		"app_kit.features.maps",
+		"app_kit.features.glossary"
+	],
+	"single_content_features" : [
+		"app_kit.features.backbonetaxonomy",
+		"app_kit.features.taxon_profiles",
+		"app_kit.features.glossary",
+		"app_kit.features.maps"
+	],
+	"delete_on_app_delete" : [
+		"app_kit.features.backbonetaxonomy"
+	]
+}

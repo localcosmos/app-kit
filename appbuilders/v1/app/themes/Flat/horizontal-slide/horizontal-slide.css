@@ -1,0 +1,116 @@
+.horizontal-slide {
+	margin: 0;
+	padding: 0;
+	display: block;
+	width: 100%;
+	position: relative;
+}
+
+.horizontal-slide > div {
+	width: 100%;
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+	.horizontal-slide > div {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+}
+
+
+.horizontal-slide > div > div {
+	flex: 0 0 auto;
+	width: 5rem;
+	word-wrap: break-word;
+	position: relative;
+	white-space: normal;
+}
+
+.horizontal-slide.large > div > div {
+	width: 7rem;
+}
+
+.horizontal-slide.medium > div > div {
+	width: 6rem;
+}
+
+.horizontal-slide .slide-element-text {
+	font-weight: normal;
+	font-size: 0.9rem;
+	min-height: 2rem;
+}
+
+
+.horizontal-slide > div::-webkit-scrollbar {
+	width: 0px !important;
+	height: 0px !important;
+}
+
+.horizontal-slide > div::-webkit-scrollbar-thumb {
+	background: none;
+}
+
+.horizontal-slide input[type='checkbox'], .horizontal-slide input[type='radio'] {
+	display: none;
+}
+
+.horizontal-slide input[type='checkbox'] + label, .horizontal-slide input[type='radio'] + label {
+	display: block;
+	padding: 0.3rem;
+}
+
+.horizontal-slide input[type='checkbox']:checked + label, .horizontal-slide input[type='radio']:checked + label {
+	background-color: rgb(92,184,92);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.horizontal-slide label {
+	cursor: pointer;
+	white-space: normal;
+}
+
+
+.responsiveback {
+	background-size: cover;
+	background-position: center center;
+	background-repeat: no-repeat;
+}
+
+.responsiveback.contain {
+	background-size: contain;
+}
+
+
+.square {
+	width: 100%;
+}
+
+.square:after {
+	content: "";
+	display: block;
+	padding-bottom: 100%;
+}
+
+.square.numbercontainer {
+	position: relative;
+	background-color: rgba(224,224,224,0.8);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.square.numbercontainer > span {
+	position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+	color: rgb(100,100,100);
+	font-size: 2rem;
+}
+
+.border-black {
+	border: 1px solid black;
+}

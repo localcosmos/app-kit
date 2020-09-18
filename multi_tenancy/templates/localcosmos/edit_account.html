@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block content %}
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<div class="slogan text-left">
+					{% trans 'Edit your account' %}
+				</div>
+			</div>
+		</div>
+		<form method="POST" action="{% url 'edit_account' %}">{% csrf_token %}
+			<div class="row">
+				<div class="col-12">
+					{% render_bootstrap_form form %}
+				</div>
+				{% if success %}
+					<div class="col-12 my-3">
+						<div class="alert alert-success">
+							{% trans 'Successfuly saved your account.' %}
+						</div>
+					</div>
+				{% endif %}
+				<div class="col-12">
+					<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+				</div>
+			</div>
+		</form>
+	</div>
+{% endblock %}

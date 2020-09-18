@@ -1,0 +1,91 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags %}
+{% block content %}
+<form method="POST" action="{% url 'translate_app' meta_app.id %}?page={{ form.page }}">{% csrf_token %}
+
+	<div class="container">
+
+		<div class="row">
+			<div class="col-12">
+
+				<br>
+				<h3>{% trans 'Translations' %}</h3>
+			</div>
+		</div>
+
+		<hr>
+
+		<div class="row">
+			<div class="col-12">
+				{% include 'app_kit/ajax/translate_app_pagination.html' %}
+			</div>
+		</div>
+
+		<hr>
+
+		<div class="row">
+			<div class="col-12">
+
+				{% if saved %}
+					<div class="alert alert-success">
+						{% trans 'Your translations have been saved.' %}
+					</div>
+				{% endif %}
+					
+				{% for field in form %}
+						
+					{% if field.field.is_first %}
+						<div class="card">
+  							<div class="card-body">
+								<div class="form-row">
+									<div class="col-2 col-md-1 text-right">
+										{{ meta_app.primary_language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ meta_app.primary_language }}.gif" />
+									</div>
+									<div class="col-10 col-md-11 text-left">
+										<strong>{{ field.label }}</strong>
+									</div>
+								</div>
+								<br>
+					{% endif %}
+					<div class="form-row">
+						<div class="col-2 col-md-1 col-form-label text-right">
+							{{ field.field.language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" />
+						</div>
+						<div class="col-10 col-md-11 text-left">
+							{{ field }}
+						</div>
+					</div>
+					<br>
+					{% if field.field.is_last %}
+							</div>
+						</div>
+						<br>
+					{% endif %}
+
+				{% endfor %}
+
+			</div>
+		</div>
+
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				{% include 'app_kit/ajax/translate_app_pagination.html' %}
+			</div>
+		</div>
+
+	</div>
+
+	<div class="fixed-bottom">
+		<div class="container">
+
+			<div class="card bg-light">
+				<div class="card-body text-center">
+					<button type="submit" class="btn btn-outline-primary">{% trans 'Save translations' %}</button>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</form>
+{% endblock %}

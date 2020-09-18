@@ -1,0 +1,19 @@
+<div id="{{ widget.attrs.id }}">
+	<div id="{{ widget.attrs.id }}_images" class="row">
+
+		{{#if widget.value}}
+			{{#each widget.value}}
+				<div id="{{ ../widget.attrs.id }}-{{@index}}" class="col mb-3 tap text-left" action="ImageViewer.toggle" data-filename="{{ filename }}" data-model="DatasetImages" {{#if id}}data-object-id="{{ id }}"{{/if}} {{#if model_route}} data-model-route="{{ model_route }}"{{/if}} data-container-id="{{ ../widget.attrs.id }}" data-thumb-container-id="{{ ../widget.attrs.id }}_images">
+					<img src="{{ small }}" width="auto" height="100" />
+				</div>
+			{{/each}}
+		{{/if}}
+	</div>
+	<div>
+		<label class="picturewidget">
+			<img src="img/add.svg" class="add-button app-button" />
+			<input type="file" name="{{ widget.name }}" class="multi-pictures-input" accept="image/*" data-container-id="{{ widget.attrs.id }}" multiple />
+		</label>
+	</div>
+</div>
+

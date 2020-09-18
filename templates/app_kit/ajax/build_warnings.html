@@ -1,0 +1,8 @@
+{% for warning in error_report.warnings %}
+	{% if warning.generic_content_verbose == warning.instance_verbose %}
+		[{{ warning.generic_content_verbose }}]
+	{% else %}
+		[{{ warning.generic_content_verbose }} - {{ warning.instance_verbose }}]
+	{% endif %}
+	{% for message in warning.messages %}{{ message }}{% endfor %}<br>
+{% endfor %}

@@ -1,0 +1,16 @@
+<div class="page">
+	<div class="container p-0">
+		<div class="translucent white p-3">
+			<h3>{{tp 'Legal notice'}}</h3>
+			<h4>{{tp 'Operator and contact person'}}</h4>
+			{{ legal_notice.entity_name }}<br>
+			{{ legal_notice.street }}<br>
+			{{ legal_notice.zip_code }} {{ legal_notice.city }}<br>
+			{{ legal_notice.country }}<br>
+			{{ legal_notice.email }}
+			{{#if legal_notice.phone}}
+				<br> {{ legal_notice.phone }}
+			{{/if}}
+		</div>
+	</div>
+</div>

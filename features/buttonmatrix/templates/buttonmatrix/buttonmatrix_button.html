@@ -1,0 +1,27 @@
+{% load i18n localcosmos_tags %}
+
+<td id="button-{{ row }}-{{ column }}">
+	{% if button %}
+		<div class="hitarea hastaxon" aria-hidden="true" tabindex="0" role="button" data-toggle="popover" data-placement="top" data-trigger="focus" title="{% trans 'Matrix button' %}" data-content="{% trans 'Tapping a matrix button in your app instantly records an observation.' %}">
+			<div id="buttonlabel-{{ button.id }}" class="buttonlabel">
+				{{ button }}
+			</div>
+		</div>
+	{% endif %}
+	<div class="modify">
+		<div class="btn-group dropup">
+			<div class="dropdown">
+				<button class="btn btn-xs btn-secondary dropdown-toggle" type="button" id="dropdownMenu-{{ row }}-{{ column }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+					{% trans 'Modify' %}
+				<span class="caret"></span>
+				</button>
+				<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ row }}-{{ column }}">
+					<a data-url="{% url 'manage_buttonmatrix_button' meta_app.id button_matrix.id row column %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+					{% if button %}
+						<a data-url="{% url 'delete_buttonmatrix_element' 'button' button.id  %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+</td>

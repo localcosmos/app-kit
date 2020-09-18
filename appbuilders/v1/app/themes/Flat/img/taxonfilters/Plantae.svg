@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="100%"
+   height="100%"
+   viewBox="0 0 99.999997 99.999997"
+   id="svg6857"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="Plantae.svg">
+  <defs
+     id="defs6859" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="-72.08808"
+     inkscape:cy="8.4007441"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata6862">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-272.85715,-319.50507)">
+    <circle
+       style="opacity:1;fill:#52c056;fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path4136-0-3-6"
+       cx="322.85715"
+       cy="369.50507"
+       r="50" />
+    <path
+       style="display:inline;fill:#ffffff;fill-opacity:1;stroke:none"
+       d="m 326.67917,403.71404 c 0.31463,-5.13975 0.65147,-9.58859 2.75027,-16.51256 -0.0271,-0.0113 2.85174,-4.31774 3.10397,-5.00634 0.38412,-1.04876 -1.06641,-9.28382 -2.95159,-16.49862 -0.0545,-0.20848 2.95285,-2.27597 4.40422,-11.24797 -2.00483,6.66922 -5.03276,8.70902 -5.09725,8.47213 -0.88859,-3.26382 -1.90982,-5.87875 -2.65185,-7.32959 -2.59208,-5.06799 -7.35752,-11.30389 -12.16045,-15.10874 1.99585,1.62189 6.2917,7.62843 9.70376,16.05071 -1.05669,-0.94617 -2.81368,-1.64725 -6.88976,-2.30894 4.06525,1.29428 6.09748,3.29287 7.48533,4.51653 1.37797,3.62724 2.5783,7.5546 3.37787,11.56327 -0.52942,-0.33805 -8.1848,-3.02068 -10.28338,-2.36728 3.08892,0.84268 10.94868,4.69783 11.13775,4.80938 2.41698,7.86328 3.51914,14.21701 1.50776,14.84987 -0.27564,0.0867 -1.191,-0.61611 -1.20386,-0.62199 -16.59088,-7.58279 -17.02862,-35.69786 -19.99841,-49.88098 6.91453,-2.82034 15.63875,5.91071 20.25131,9.31247 9.92212,7.31766 13.0024,23.50858 2.57885,41.17248 -1.72017,4.9553 -0.95296,10.73972 -0.91259,16.28185 0.22839,1.32927 -4.84963,5.87165 -4.15195,-0.14568 z"
+       id="path4622-7"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccsscsscccccccsscsccc"
+       inkscape:export-filename="/home/tom/anymals_workspace/inkscape/TAXONFILTER/plants.png"
+       inkscape:export-xdpi="32.556522"
+       inkscape:export-ydpi="32.556522" />
+  </g>
+</svg>

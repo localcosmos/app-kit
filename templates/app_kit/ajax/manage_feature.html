@@ -1,0 +1,50 @@
+{% load i18n localcosmos_tags %}
+{% if success %}
+	<script>
+		$.get("{% url 'get_app_feature_list' meta_app.id %}", function(html){
+			$("#appfeatures").html(html);
+			ajaxify("appfeatures");
+		});
+		$("#Modal").modal("hide");
+	</script>
+{% else %}
+	<form id="addAppFeatureForm" method="POST" action="{% if feature %}{% url 'manage_app_feature' meta_app.id feature_content_type.id feature.id %}{% else %}{% url 'manage_app_feature' meta_app.id feature_content_type.id %}{% endif %}">{% csrf_token %}
+	<div class="modal-header">
+		<h5 class="modal-title">{{ feature_content_type }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        	<span aria-hidden="true">&times;</span>
+        </button>
+	</div>
+	<div class="modal-body">
+		<p>
+			{% if feature and action == "add" %}
+				<div class="alert alert-danger">{% blocktrans %}The {{ feature_content_type }} already exists in this app.{% endblocktrans %}</div>
+			{% else %}
+				{% render_bootstrap_form form %}
+			{% endif %}
+		</p>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		{% if feature and action == "add" %}{% else %}<button type="submit" class="btn btn-outline-primary">{% if action == 'add' %}{% trans 'Add' %}{% else %}{% trans 'Save' %}{% endif %}</button>{% endif %}
+	</div>
+	</form>
+	<script>
+		$("#Modal").modal("show");
+
+		var form = $("#addAppFeatureForm");
+		form.on("submit", function(ev){
+			ev.preventDefault();
+
+			var data = form.serialize(),
+				url = form.attr("action");
+
+			$.post(url, data, function(html){
+				// re-render the whole feature container and ajaxify it
+				$("#ModalContent").html(html);
+				ajaxify("ModalContent");
+			});
+		});
+		
+	</script>
+{% endif %}

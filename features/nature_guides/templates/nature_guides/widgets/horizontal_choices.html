@@ -1,0 +1,71 @@
+{% load i18n static %}
+<div class="horizontal-slide {% block size %}large{% endblock %}">
+
+	<div id="{{ widget.attrs.id }}">
+		{% for group, options, index in widget.optgroups %}
+			
+			{% for option in options %}
+				<div>
+					<div>
+						{% block input %}
+							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if select_multiple %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} />
+						{% endblock %}
+						{% block label %}
+							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+								<div class="square responsiveback" style="background-image:url('{% block image %}{% if option.image %}{{ option.image.image_url }}{% else %}{% static 'noimage.png' %}{% endif %}{% endblock %}')">{% block in_label %}{% endblock %}</div>
+								<span>{{ option.label }}</span>
+							</label>
+							
+						{% endblock %}
+
+						{% if option.modify %}
+							<div class="btn-group dropup">
+								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Modify' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu">
+									<a data-url="{% url 'manage_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+									<a data-url="{% url 'delete_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+								</div>
+							</div>
+						{% endif %}
+
+					</div> 
+				</div>
+			{% endfor %}
+
+		{% endfor %}
+
+	</div>
+</div>
+<script>
+	horizontal_slider('{{ widget.attrs.id }}');
+	{% if allow_multiple_values %}
+	{% else %}
+		(function(){
+			var container = document.getElementById('{{ widget.attrs.id }}');
+			var radios = container.getElementsByTagName('input');
+
+			var current_selection = null;
+
+			var change_event = new CustomEvent("change", {
+			  detail: {}
+			});
+
+			for (var r=0; r< radios.length; r++){
+				var radio = radios[r];
+
+				radio.addEventListener('click', function(event){
+					if (current_selection == event.target.value){
+						event.target.checked = false;
+						current_selection = null;
+						event.target.dispatchEvent(change_event);
+					}
+					else {
+						current_selection = event.target.value;
+					}
+				});
+			}
+		})()
+	{% endif %}
+</script>

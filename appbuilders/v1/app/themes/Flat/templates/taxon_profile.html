@@ -1,0 +1,148 @@
+<div class="page solid">
+	<div class="container">
+		<div class="row">
+			<div class="col-12 mt-3">
+				<div class="text-center text-md-left">
+					{{#if vernacular}}
+						<h2>{{ vernacular }}</h2>
+						<i>{{ taxon_profile.taxon_latname }}</i>
+					{{else}}
+						{{#if taxon_profile.node_names}}
+							<h2>{{tp taxon_profile.node_names.[0] }}</h2>
+							<i>{{ taxon_profile.taxon_latname }}</i>
+						{{else}}
+							<h2><i>{{ taxon_profile.taxon_latname }}</i></h2>
+						{{/if}}
+					{{/if}}
+				</div>
+			</div>
+		</div>
+
+		<div id="taxon-profile-images" class="row mt-3">
+			
+
+			{{#if taxon_profile.images.taxon_profile_images}}
+				{{#each taxon_profile.images.taxon_profile_images}}
+					{{#if small_url}}
+						<div class="col-4 col-md-3 col-lg-2 col-xl-1 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{small_url}}" class="img-fluid" />
+						</div>
+					{{/if}}
+				{{/each}}
+			{{/if}}
+			{{#if taxon_profile.images.node_images}}
+				{{#each taxon_profile.images.node_images}}
+					{{#if small_url}}
+						<div class="col-4 col-md-3 col-lg-2 col-xl-1 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{small_url}}" class="img-fluid" />
+						</div>
+					{{/if}}
+				{{/each}}
+			{{/if}}
+			{{#if taxon_profile.images.taxon_images}}
+				{{#each taxon_profile.images.taxon_images}}
+					{{#if small_url}}
+						<div class="col-4 col-md-3 col-lg-2 col-xl-1 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{small_url}}" class="img-fluid" />
+						</div>
+					{{/if}}
+				{{/each}}
+			{{/if}}
+
+		</div>
+
+		<div class="row my-5">
+			<div class="col-12">
+
+				<div class="row action-buttons justify-content-center justify-content-md-start text-center text-md-left">
+					{{#if options.enable_observation_button}}
+						<div class="col-auto text-center">
+							<a link="{{url 'new_observation' options.enable_observation_button.uuid }}" kwargs='{"taxon_source":"{{taxon_profile.taxon_source}}","name_uuid":"{{taxon_profile.name_uuid}}","taxon_latname":"{{taxon_profile.taxon_latname}}","taxon_author":"{{taxon_profile.taxon_author}}","taxon_nuid":"{{taxon_profile.taxon_nuid}}"}' class="tap"><img src="{{themeFolder}}img/observation.svg" /></a><br>
+							<small class="text-secondary">{{tp 'Observation'}}</small>
+						</div>
+					{{/if}}
+					{{#if options.enable_wikipedia_button}}
+						<div class="col-auto text-center">
+							<a href="{{ wikipedia_url }}" target="_blank"><img src="{{themeFolder}}img/wikipedia_button.svg" /></a><br>
+							<small class="text-secondary">Wikipedia</small>
+						</div>
+					{{/if}}
+					{{#if options.enable_gbif_occurrence_map_button }}
+						<div class="col-auto text-center">
+							{{#if taxon_profile.gbif_nubKey}}
+								<a link="{{url 'occurrence_map' taxon_profile.gbif_nubKey }}" class="tap"><img src="{{themeFolder}}img/occurrence.svg" /></a><br>
+								<small class="text-secondary">{{tp 'Occurrence'}}</small>
+							{{else}}
+								<br>
+								<div>{{t 'No occurrence map available'}}</div>
+							{{/if}}
+						</div>
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{{#if taxon_profile.traits}}
+		<div class="container-fluid translucent dark py-3">
+			<div class="container">
+				<div class="row mt-3">
+					<div class="col-12">
+						<h4>{{tp 'Traits'}}</h4>
+					</div>
+					<div class="col-12">
+						<div class="row">
+							{{#each taxon_profile.traits}}
+								{{#if values}}
+									<div class="col-6 col-md-4 col-lg-2 text-center mb-5">
+										<div class="taxon-profile-trait-text"><strong>{{t matrix_filter.name}}</strong></div>
+										{{#if matrix_filter.is_multispace}}
+											{{#each values}}
+												{{#ifequal ../matrix_filter.filter_type 'ColorFilter'}}
+													<div style="background-color:{{rgba}}" class="taxon-profile-trait-color">&nbsp;</div>
+												{{/ifequal}}
+												{{#ifequal ../matrix_filter.filter_type 'DescriptiveTextAndImagesFilter'}}
+													<div class="text-center">
+														<img src="{{ image_url }}" class="taxon-profile-trait-image" />
+													</div>
+													<div class="text-center taxon-profile-trait-text">
+														{{tp encoded_space}}
+													</div>
+												{{/ifequal}}
+											{{/each}}
+										{{else}}
+											{{#ifequal matrix_filter.filter_type 'RangeFilter'}}
+												<div>
+													{{values.[0]}}{{matrix_filter.definition.unit}} - {{values.[1]}}{{matrix_filter.definition.unit}}
+												</div>
+											{{/ifequal}}
+											{{#ifequal matrix_filter.filter_type 'NumberFilter'}}
+												<div>
+													{{#each values}}{{this}}, {{/each}}
+												</div>
+											{{/ifequal}}
+										{{/if}}
+									</div>
+								{{/if}}
+							{{/each }}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{{/if}}
+
+	<div class="container">
+		{{#each taxon_profile.texts }}
+			{{#if text}}
+				<div class="row">
+					<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
+						<h4>{{t taxon_text_type }}</h4>
+						{{t text_key }}
+					</div>
+				</div>
+			{{/if}}
+		{{/each}}
+	</div>
+
+</div>

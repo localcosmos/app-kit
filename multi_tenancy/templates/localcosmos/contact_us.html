@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block content %}
+	<div class="container">
+		<div class="row mt-2">
+			<div class="col-12">
+				<div class="slogan text-center">
+					{% trans 'Contact us' %}
+				</div>
+			</div>
+		</div>
+		<div class="row justify-content-center my-2">
+			<div class="col-12 col-md-8 col-lg-6">
+				{% if success %}
+					<div class="alert alert-success">
+						{% trans 'Your message has been sent and we will reply to you as soon as possible. Thank you for your interest in Local Cosmos.' %}
+					</div>
+				{% else %}
+					<form method="POST" action="{% url 'contact_us' %}">{% csrf_token %}
+						{% render_bootstrap_form form %}
+						<div class="my-3">
+							<button type="submit" class="btn btn-outline-primary">{% trans 'Send' %}</button>
+						</div>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+		
+	</div>
+{% endblock %}

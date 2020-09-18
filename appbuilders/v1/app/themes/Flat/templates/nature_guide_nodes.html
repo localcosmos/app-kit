@@ -1,0 +1,13 @@
+{{#each node.children }}
+	<div id="{{uuid}}" class="col-6 col-sm-4 col-md-5 col-lg-4 col-xl-3 keynode">
+		<div class="choiceBox tap nohighlight" link="{{#ifequal node_type 'result'}}{{url ../result_action.action taxon.taxon_source taxon.name_uuid taxon.taxon_nuid taxon.taxon_latname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
+			<div class="title">{{tp name }}</div>
+			<div class="image"><img src="{{ image_url }}" /></div>
+			<div class="description">
+				{{#if decision_rule}}
+					{{tp decision_rule }}
+				{{/if}}
+			</div>
+		</div>
+	</div>
+{{/each}}

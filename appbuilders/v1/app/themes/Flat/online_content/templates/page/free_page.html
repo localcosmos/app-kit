@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load online_content_tags %}
+
+{% block content %}
+	{% cms_get_microcontent 'freepage_content' 'layoutable-full' as page_content %}
+	<div class="container translucent white">
+		<div class="row">
+			<div class="col-12 p-3">
+				{{ page_content|safe }}
+			</div>
+		</div>
+	</div>
+{% endblock %}

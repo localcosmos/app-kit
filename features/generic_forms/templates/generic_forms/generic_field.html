@@ -1,0 +1,16 @@
+{% load localcosmos_tags genericforms i18n %}
+{% if not generic_field.label %}
+	<strong>{% trans 'Unlabeled' %}</strong>
+{% endif %}
+
+{% render_bootstrap_field django_field %}
+
+{% if generic_field.taxonomic_restrictions.all %}
+	<div class="mt-2">
+		<small> {% trans 'Taxonomic restrictions:' %}
+			{% for restriction in generic_field.taxonomic_restrictions.all %}
+				{{ restriction.taxon_latname }} {% if restriction.restriction_type != 'exists' %}({{ restriction.restriction_type }}){% endif %},
+			{% endfor %}
+		</small>
+	</div>	
+{% endif %}

@@ -1,0 +1,38 @@
+{% load i18n localcosmos_tags app_tags %}
+{% if success is True %}
+	<div class="modal-body">
+		{% trans 'Successfully added the following to your app:' %}
+		<ul>
+			{% for added_content in added_contents %}
+				<li>{{ added_content }}</li>
+			{% endfor %}
+		</ul>
+	</div>
+
+	<script>
+		{% for link in added_links %}
+			$.get("{% url 'generic_content_card' meta_app.id link.id %}", function(html){
+				$("#app-components").append(html);
+				ajaxify($(html).attr("id"));
+			});
+		{% endfor %}
+	</script>
+	
+{% else %}
+	{% if form.has_choices %}
+		<div class="modal-body">
+			<form method="POST" action="{% url 'add_existing_generic_content' meta_app.id content_type.id %}" class="xhr" ajax-target="add-existing-container">{% csrf_token %}
+				<h5>
+					{% with name=content_model|verbose_name %}
+						{% blocktrans %}Add existing {{ name }}{% endblocktrans %}
+					{% endwith %}
+				</h5>
+				{% render_bootstrap_form form %}
+				<div class="text-right">
+					<button type="submit" class="btn btn-sm btn-outline-primary">{% trans 'Add' %}</button>
+				</div>
+			</form>
+		</div>
+		<hr>
+	{% endif %}
+{% endif %}

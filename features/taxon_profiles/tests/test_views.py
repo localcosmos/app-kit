@@ -1,0 +1,851 @@
+from django.test import TestCase, RequestFactory
+from django_tenants.test.cases import TenantTestCase
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
+
+from django.http import QueryDict
+
+from app_kit.tests.common import test_settings
+
+from app_kit.models import MetaAppGenericContent, ContentImage
+
+from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
+                                  WithAdminOnly, ViewTestMixin, WithImageStore, WithMedia)
+
+
+from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTaxonProfile, ManageTaxonTextType,
+                                                   DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits,
+                                                   ManageTaxonProfileImage, DeleteTaxonProfileImage)
+
+
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
+from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm
+
+
+from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MetaNode
+from app_kit.features.nature_guides.tests.common import WithMatrixFilters
+
+
+from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
+
+from taxonomy.models import TaxonomyModelRouter
+from taxonomy.lazy import LazyTaxon
+
+
+
+class WithTaxonProfiles:
+
+    def setUp(self):
+        super().setUp()
+        self.content_type = ContentType.objects.get_for_model(TaxonProfiles)
+
+        self.generic_content_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
+                                                                      content_type=self.content_type)
+
+        self.generic_content = self.generic_content_link.generic_content
+
+
+    def create_text_type(self, text_type_name):
+
+        text_type = TaxonTextType(
+            taxon_profiles = self.generic_content,
+            text_type=text_type_name,
+        )
+
+        text_type.save()
+
+        return text_type
+
+
+class WithTaxonProfile:
+
+    def setUp(self):
+        super().setUp()
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=self.generic_content,
+            taxon=lazy_taxon,
+        )
+
+        self.taxon_profile.save()
+
+
+class WithNatureGuideNode:
+
+    # create a nature guide with taxon to populate context['taxa']
+    def setUp(self):
+        super().setUp()
+        nature_guide = NatureGuide.objects.create('Test Nature Guide', 'en')
+        link = MetaAppGenericContent(
+            meta_app = self.meta_app,
+            content_type = ContentType.objects.get_for_model(NatureGuide),
+            object_id = nature_guide.id,
+        )
+        link.save()
+
+        self.start_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide,
+                                                            meta_node__node_type='root')
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        # add a child with taxon
+        self.meta_node = MetaNode(
+            name='Test meta node',
+            nature_guide=nature_guide,
+            node_type='result',
+            taxon=self.lazy_taxon,
+        )
+
+        self.meta_node.save()
+
+        self.node = NatureGuidesTaxonTree(
+            nature_guide=nature_guide,
+            meta_node=self.meta_node,
+        )
+
+        self.node.save(self.start_node)
+
+        taxa = nature_guide.taxa()
+        self.assertEqual(taxa.count(), 1)
+
+
+class TestManageTaxonProfiles(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithAdminOnly, WithUser,
+                              WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_taxonprofiles'
+    view_class = ManageTaxonProfiles
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.generic_content.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.generic_content = self.generic_content
+        view.generic_content_type = self.content_type
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertIn('taxa', context)
+        self.assertEqual(context['taxa'][0], self.lazy_taxon)
+        self.assertEqual(context['searchbackboneform'].__class__, AddSingleTaxonForm)
+
+
+class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser, WithLoggedInUser,
+                             WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_taxon_profile'
+    view_class = ManageTaxonProfile
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+    
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'taxon_source' : self.lazy_taxon.taxon_source,
+        }
+        return url_kwargs
+
+
+    def get_request(self, ajax=False):
+
+        request = super().get_request(ajax=ajax)
+        request.GET = {
+            'taxon_latname' : self.lazy_taxon.taxon_latname,
+            'taxon_author' : self.lazy_taxon.taxon_author,
+        }
+        return request
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+
+        return view
+
+    @test_settings
+    def test_dispatch(self):
+
+        url = self.get_url()
+        url = '{0}?taxon_latname={1}&taxon_author={2}'.format(url, self.lazy_taxon.taxon_latname,
+                                                              self.lazy_taxon.taxon_author)
+        
+        url_kwargs = {}
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 403)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+
+    @test_settings
+    def test_set_taxon(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon, self.lazy_taxon)
+
+        profile = TaxonProfile.objects.get(taxon_latname=self.lazy_taxon.taxon_latname)
+        self.assertEqual(view.taxon_profile, profile)
+
+    @test_settings
+    def test_set_form(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        form = view.get_form()
+        self.assertEqual(form.__class__, ManageTaxonTextsForm)
+
+    @test_settings
+    def test_get_meta_node_names(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        meta_node_names = view.get_meta_node_names()
+        self.assertEqual(list(meta_node_names), [self.meta_node.name])
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        taxon_profile = TaxonProfile.objects.get(taxon_latname=self.lazy_taxon.taxon_latname)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxon'], self.lazy_taxon)
+        self.assertEqual(context['taxon_profile'], taxon_profile)
+        self.assertEqual(list(context['node_names']), [self.meta_node.name])
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['generic_content'], self.generic_content)
+        self.assertIn('text_types', context)
+        
+
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        text_type = self.create_text_type('Test text type')
+
+        text_content = 'Test text content'
+
+        post_data = {
+            'input_language' : self.generic_content.primary_language,
+        }
+        post_data[text_type.text_type] = text_content
+
+        form = ManageTaxonTextsForm(self.generic_content, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['saved'], True)
+
+        taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
+        self.assertEqual(taxon_text.text, text_content)
+        
+
+
+class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                    WithAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_taxon_profile'
+    view_class = ManageTaxonProfile
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+
+        return view
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'taxon_source' : 'taxonomy.sources.col',
+            'name_uuid' : str(self.taxon_profile.name_uuid),
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_taxon(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        self.assertEqual(view.taxon, self.lazy_taxon)
+        self.assertEqual(view.taxon_profile, self.taxon_profile)
+
+
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+
+        text_type = self.create_text_type('Test text type')
+
+        text_content = 'Test text content'
+
+        post_data = {
+            'input_language' : self.generic_content.primary_language,
+        }
+        post_data[text_type.text_type] = text_content
+
+        form = ManageTaxonTextsForm(self.generic_content, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context_data['saved'], True)
+
+        taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
+        self.assertEqual(taxon_text.text, text_content)
+
+        # test update
+        text_content_2 = 'Update text content'
+        post_data[text_type.text_type] = text_content_2
+
+        form_2 = ManageTaxonTextsForm(self.generic_content, data=post_data)
+        form_2.is_valid()
+        self.assertEqual(form_2.errors, {})
+
+        view_2 = self.get_view()
+        view_2.set_taxon(view_2.request, **view_2.kwargs)
+        response = view_2.form_valid(form_2)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context_data['saved'], True)
+
+        taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
+        self.assertEqual(taxon_text.text, text_content_2)
+
+
+class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_taxon_text_type'
+    view_class = ManageTaxonTextType
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : str(self.lazy_taxon.name_uuid),
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_taxon_text_type(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+        self.assertEqual(view.taxon, self.lazy_taxon)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon_text_type, None)
+
+
+    @test_settings
+    def test_get_initial(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['taxon_profiles'], self.generic_content)
+
+    @test_settings
+    def test_get_form(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        form = view.get_form()
+        self.assertEqual(form.__class__, ManageTaxonTextTypeForm)
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxon_text_type'], None)
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['taxon'], self.lazy_taxon)
+        
+
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        text_type_name = 'Test text type'
+
+        post_data = {
+            'input_language' : self.generic_content.primary_language,
+            'text_type' : text_type_name,
+            'taxon_profiles' : self.generic_content.id,
+        }
+
+        form = ManageTaxonTextTypeForm(instance=None, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        query = TaxonTextType.objects.filter(text_type=text_type_name)
+        self.assertFalse(query.exists())
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(response.context_data['success'], True)
+        self.assertEqual(response.context_data['created'], True)
+        self.assertEqual(response.context_data['form'].__class__, ManageTaxonTextTypeForm)
+        self.assertTrue(query.exists())
+
+
+
+class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_taxon_text_type'
+    view_class = ManageTaxonTextType
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        text_type_name = 'Test text type'
+
+        self.taxon_text_type = self.create_text_type(text_type_name)
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_text_type_id' : self.taxon_text_type.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : str(self.lazy_taxon.name_uuid),
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_taxon_text_type(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+        self.assertEqual(view.taxon, self.lazy_taxon)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon_text_type, self.taxon_text_type)
+
+    @test_settings
+    def test_get_form(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        form = view.get_form()
+        self.assertEqual(form.__class__, ManageTaxonTextTypeForm)
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxon_text_type'], self.taxon_text_type)
+
+
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_taxon_text_type(**view.kwargs)
+
+        new_name = 'Updated text type name'
+
+        post_data = {
+            'id' : self.taxon_text_type.id,
+            'input_language' : self.generic_content.primary_language,
+            'text_type' : new_name,
+            'taxon_profiles' : self.generic_content.id,
+        }
+
+
+        form = ManageTaxonTextTypeForm(instance=self.taxon_text_type, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(response.context_data['success'], True)
+        self.assertEqual(response.context_data['created'], False)
+        self.assertEqual(response.context_data['form'].__class__, ManageTaxonTextTypeForm)
+
+        self.taxon_text_type.refresh_from_db()
+        self.assertEqual(self.taxon_text_type.text_type, new_name)
+
+
+
+class TestDeleteTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_taxon_text_type'
+    view_class = DeleteTaxonTextType
+
+
+    def setUp(self):
+        super().setUp()
+        text_type_name = 'Test text type'
+
+        self.taxon_text_type = self.create_text_type(text_type_name)
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'pk' : self.taxon_text_type.id,
+        }
+        return url_kwargs
+
+
+class TestCollectTaxonImages(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithImageStore, WithMedia, WithAjaxAdminOnly,
+                WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'collect_taxon_images'
+    view_class = CollectTaxonImages
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+
+    def create_content_images(self):
+
+        # taxon image
+        self.taxon_image_store = self.create_image_store_with_taxon(lazy_taxon=self.lazy_taxon)
+
+        # add image to nature guide meta node
+        self.meta_node_image = self.create_content_image(self.meta_node, self.user)
+
+        # add image to nature guide node
+        self.node_image = self.create_content_image(self.node, self.user)
+
+        # add image to taxon profile
+        self.taxon_profile_image = self.create_content_image(self.taxon_profile, self.user)
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : self.generic_content.id,
+            'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : str(self.lazy_taxon.name_uuid),
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+
+    @test_settings
+    def test_dispatch(self):
+
+        self.create_content_images()
+
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 403)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+
+    @test_settings
+    def test_set_taxon(self):
+        
+        self.create_content_images()
+        
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        self.assertEqual(view.taxon_profile, self.taxon_profile)
+        self.assertEqual(view.taxon, self.lazy_taxon)
+        
+
+    @test_settings
+    def test_get_taxon_profile_images(self):
+
+        self.create_content_images()
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        taxon_profile_images = view.get_taxon_profile_images()
+        self.assertEqual(len(taxon_profile_images), 1)
+        self.assertEqual(taxon_profile_images[0], self.taxon_profile_image)
+
+
+    @test_settings
+    def test_get_taxon_images(self):
+
+        self.create_content_images()
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        taxon_images = list(view.get_taxon_images())
+        self.assertEqual(len(taxon_images), 3)
+
+        self.assertIn(self.taxon_profile_image, taxon_images)
+        self.assertIn(self.meta_node_image, taxon_images)
+        self.assertIn(self.node_image, taxon_images)
+        
+
+    @test_settings
+    def test_get_nature_guide_images(self):
+
+        self.create_content_images()
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        nature_guide_images = view.get_nature_guide_images()
+        self.assertEqual(len(nature_guide_images), 2)
+        self.assertEqual(nature_guide_images[0], self.meta_node_image)
+        self.assertEqual(nature_guide_images[1], self.node_image)
+        
+
+    @test_settings
+    def test_get_context_data(self):
+
+        self.create_content_images()
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxon'], self.lazy_taxon)
+
+        self.assertEqual(len(context['taxon_profile_images']), 1)
+        self.assertEqual(len(context['node_images']), 2)
+        self.assertEqual(len(context['taxon_images']), 0)
+
+
+
+class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithMatrixFilters,
+                WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'collect_taxon_traits'
+    view_class = CollectTaxonTraits
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        self.parent_node = self.start_node
+        self.create_all_matrix_filters(self.parent_node)
+
+        self.fill_matrix_filters_nodes(self.parent_node, [self.node])
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : str(self.lazy_taxon.name_uuid),
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_taxon(self):
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        self.assertEqual(view.taxon, self.lazy_taxon)
+
+
+    @test_settings
+    def test_get_taxon_traits(self):
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+        
+        traits = view.get_taxon_traits()
+
+        self.assertEqual(len(traits), 4)
+
+        trait_types = traits.values_list('matrix_filter__filter_type', flat=True)
+        expected_types = set(['ColorFilter', 'DescriptiveTextAndImagesFilter', 'NumberFilter', 'RangeFilter'])
+        self.assertEqual(set(trait_types), expected_types)
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertIn('taxon_traits', context)
+
+
+
+class TestManageTaxonProfileImage(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithImageStore, WithMedia, WithAjaxAdminOnly,
+                WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'manage_taxon_profile_image'
+    view_class = ManageTaxonProfileImage
+
+    def get_url_kwargs(self):
+
+        taxon_profile_ctype = ContentType.objects.get_for_model(TaxonProfile)
+        
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_type_id' : taxon_profile_ctype.id,
+            'object_id' : self.taxon_profile.id,
+        }
+        return url_kwargs
+
+
+
+class TestManageTaxonProfileImageWithType(TestManageTaxonProfileImage):
+
+    def get_url_kwargs(self):
+
+        taxon_profile_ctype = ContentType.objects.get_for_model(TaxonProfile)
+        
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_type_id' : taxon_profile_ctype.id,
+            'object_id' : self.taxon_profile.id,
+            'image_type' : 'test type',
+        }
+        return url_kwargs
+    
+
+
+class TestManageExistingTaxonProfileImage(TestManageTaxonProfileImage):
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.content_image = self.create_content_image(self.taxon_profile, self.user)
+        
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_image_id' : self.content_image.id,
+        }
+        return url_kwargs
+
+
+class TestDeleteTaxonProfileImage(TestManageTaxonProfileImage):
+
+    url_name = 'delete_taxon_profile_image'
+    view_class = DeleteTaxonProfileImage
+
+    def setUp(self):
+        super().setUp()
+
+        self.content_image = self.create_content_image(self.taxon_profile, self.user)
+        
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'pk' : self.content_image.id,
+        }
+        return url_kwargs

@@ -1,0 +1,35 @@
+{% load i18n localcosmos_tags static %}
+<script src="{% static 'localcosmos_server/js/ajax_file_input.js' %}"></script>
+<form id="appdesignform" method="POST" action="{% url 'manage_app_design' meta_app.id %}">{% csrf_token %}
+	{% for field in form %}
+		{% if field.field.is_legal_notice_first %}
+			<div class="mt-5 mb-3">
+				<h4>{% trans 'Legal notice for your app' %}</h4>
+				<small>{% trans 'Providing a legal notice is a requirement.' %}</small>
+			</div>
+		{% endif %}
+		{% if field.field.is_legal_notice_field %}
+			<div id="field-{{ field.id_for_label }}-container" class="form-group {% if field.errors %}has-error{% endif %} {{ field.field.widget|widget_class }}">
+				{{ field.label_tag }}
+				{{ field }}
+				{% if field.help_text %}
+					<small class="form-text text-muted">{{ field.help_text|safe }}</small>
+				{% endif %}
+			</div>
+		{% else %}
+			{% render_bootstrap_field field %}
+		{% endif %}
+	{% endfor %}
+	<p class="text-left">
+		<button type="submit" class="btn btn-outline-primary">{% trans 'save design and texts' %}</button>
+	</p>
+</form>
+<script>
+	document.getElementById("id_theme").addEventListener("change", function(event){
+		var url = "{% url 'manage_app_design' meta_app.id %}" + event.target.value + "/";
+		$.get(url, function(html){
+			$("#appdesignform").parent().html(html);
+			ajaxify("appdesignform");
+		});
+	});
+</script>

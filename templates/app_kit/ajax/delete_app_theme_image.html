@@ -1,0 +1,12 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block success_js %}
+	<script>
+		$("#Modal").modal("hide");
+		var url = "{% url 'get_app_theme_image_formfield' meta_app.id image_type %}";
+		$.get(url, function(html){
+			$("#field-id_{{ image_type }}-container").replaceWith(html);
+			ajaxify('field-id_{{ image_type }}-container');
+		});
+	</script>
+{% endblock %}

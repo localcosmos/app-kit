@@ -1,0 +1,8 @@
+{% load i18n %}
+<div>
+	<b>{% trans 'Images' %}</b>
+</div>
+{% if content_object %}
+{% else %}
+	<div>{% trans 'You can add images after saving.' %}</div>
+{% endif %}

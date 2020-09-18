@@ -1,0 +1,84 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n app_tags localcosmos_tags %}
+
+{% block action %}
+	{% if matrix_filter_space %}{% url 'manage_matrix_filter_space' matrix_filter_space.id %}{% else %}{% url 'create_matrix_filter_space' matrix_filter.id %}{% endif %}{% if from_url %}?from_url={{ from_url }}{% endif %}
+{% endblock %}
+
+{% block enctype %}multipart/form-data{% endblock %}
+
+{% block title %}
+	{% if matrix_filter_space %}{% blocktrans %}Manage {{ matrix_filter_space }}{% endblocktrans %}{% else %}{% blocktrans with name=matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}{% endif %}
+{% endblock %}
+
+{% block body %}
+	<p class="animated fadeIn">
+		{% for field in form %}
+			{% if field.name == 'source_image' %}
+				<div class="card bg-light">
+					<div class="card-header">
+						<strong>{% trans 'Image' %}</strong>
+					</div>
+					<div class="card-body">
+			{% endif %}
+
+			{% include 'localcosmos_server/bootstrap_field.html' %}
+
+			{% if field.name == 'licence' %}
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+
+		{% if form.errors %}
+			<div class="alert alert-danger">
+				{{ form.errors }}
+			</div>
+		{% endif %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% blocktrans with name=matrix_filter.matrix_filter_type.verbose_space_name %}Successfully saved {{ name }}.{% endblocktrans %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if from_url %}
+		<button type="button" class="btn btn-outline-secondary xhr" ajax-target="LargeModalContent" data-url="{{ from_url }}">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+{% if success is True %}
+	<script>
+		{% if from_url %}
+			$.get("{{ from_url }}", function(html){
+				$("#LargeModalContent").html(html);
+				ajaxify("LargeModalContent");
+			});
+		{% else %}
+			$("#LargeModal").modal('hide');
+		{% endif %}
+	</script>
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+{% else %}
+	{% if from_url %}
+		<script>
+			$("#LargeModal").scrollTop(0);
+		</script>
+	{% endif %}
+{% endif %}
+
+<script>
+	var image_input = document.getElementById('id_source_image');
+	if (image_input != null){
+		image_input.addEventListener('change', function(event) {
+			document.getElementById('id_creator_name').required = true;
+		});
+	}
+</script>
+{% endblock %}

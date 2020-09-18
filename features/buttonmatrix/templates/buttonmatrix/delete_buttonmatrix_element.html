@@ -1,0 +1,36 @@
+{% load i18n %}
+{% if deleted %}
+	<script>
+		{% if content_type == 'button' %}
+			$("#buttonlabel-{{ object_pk }}").remove();
+			$("#Modal").modal("hide");
+		{% else %}
+			$("#extension-{{ object_pk }}").remove();
+			$("#Modal2").modal("hide");
+		{% endif %}
+	</script>
+{% else %}
+	<form method="POST" action="{% url 'delete_buttonmatrix_element' content_type object_pk %}" class="xhr">{% csrf_token %}
+		<div class="modal-header">
+			<h5 class="modal-title">{% blocktrans %}Delete {{ content_type }}{% endblocktrans %}</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<p>
+				{% blocktrans %}Do you really want to delete this {{ content_type }}?{% endblocktrans %}
+			</p>
+		</div>
+		<div class="modal-footer">
+			{% include 'localcosmos_server/modals/footers/delete.html' %}
+		</div>
+	</form>
+	<script>
+		{% if content_type == "button" %}
+			$("#Modal").modal("show");
+		{% else %}
+			$("#Modal2").modal("show");
+		{% endif %}
+	</script>
+{% endif %}

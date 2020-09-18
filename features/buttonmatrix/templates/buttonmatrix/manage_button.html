@@ -1,0 +1,33 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% url 'manage_buttonmatrix_button' meta_app.id button_matrix.id  row column %}{% endblock %}
+
+{% block title %}{% trans 'Manage button' %}{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	<script>
+		{% if form.is_valid %}
+
+			var html = '{% filter escapejs %}{% include "buttonmatrix/buttonmatrix_button.html" %}{% endfilter %}';
+
+			var button_id = "button-" + {{ button.row }} + "-" + {{ button.column }};
+
+			var button = $("#" + button_id);
+
+			button.html(html);
+
+			ajaxify(button_id);
+
+
+			$("#Modal").modal("hide");
+			$("#ModalContent").empty();
+
+		{% endif %}
+	</script>
+{% endblock %}

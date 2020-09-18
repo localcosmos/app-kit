@@ -1,0 +1,7 @@
+{% load i18n localcosmos_tags %}
+
+<form method="POST" action="{% if typed == 'typed' %}{% url 'add_taxonomic_restriction' content|ctype_id content.id 'typed' %}{% else %}{% url 'add_taxonomic_restriction' content|ctype_id content.id %}{% endif %}" class="xhr">{% csrf_token %}
+
+	{% include 'localcosmos_server/taxonomy/taxonomic_restrictions_form.html' %}
+
+</form>

@@ -1,0 +1,3 @@
+{% for choice in form.fields.generic_form_exposed_field.choices %}
+	<option value="{{ choice.0|stringformat:'s' }}">{{ choice.1 }}</option>
+{% endfor %}

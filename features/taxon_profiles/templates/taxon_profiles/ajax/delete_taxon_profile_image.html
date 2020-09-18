@@ -1,0 +1,12 @@
+{% extends 'app_kit/ajax/delete_content_image.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block success_js %}
+	<script>
+		{# the image is an img within a div or something #}
+		var image_element = $("#content_image_container_{{ deleted_object_id }}");
+		image_element.remove();
+
+		$("#Modal").modal("hide");
+	</script>
+{% endblock %}

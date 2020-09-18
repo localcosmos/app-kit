@@ -1,0 +1,76 @@
+{% load i18n app_tags %}
+
+<div id="matrix-filters" class="text-left">
+	<div class="col-12">
+		<hr>
+		<form id="matrix-filters-form">
+			{% if meta_node_has_matrix_filters %}
+				<ul class="simpleul matrixfiltermanagement" data-store-positions-url="{% url 'store_object_order' matrix_filter_ctype.id %}">
+
+					{% for field in form %}
+						<li id="matrix_filter_{{ field.field.matrix_filter.id }}" data-object-id="{{ field.field.matrix_filter.id }}">
+							<div>
+								<strong>{{ field.label }}</strong>{% if matrix_filter.definition.unit %} ({{ matrix_filter.definition.unit }}){% endif %} {% if matrix_filter.definition.allow_multiple_values %}({% trans 'multiple choices' %}){% endif %}
+								<div class="btn-group dropup">
+									<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% trans 'modify' %} <span class="caret"></span>
+									</button>
+									<div class="dropdown-menu">
+										<a data-url="{% url 'manage_matrix_filter' field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.label %}Edit {{ name }}{% endblocktrans %}</a>
+										<a data-url="{% url 'delete_matrix_filter' field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.label %}Remove {{ name }}{% endblocktrans %}</a>
+			
+										<div class="dropdown-divider"></div>
+										<a class="dropdown-item text-center moveforwardbutton" data-targetid="matrix_filter_{{ field.field.matrix_filter.id }}">&#9650; {% trans 'Move up' %}</a>
+										<div class="dropdown-divider"></div>
+										<a class="dropdown-item text-center movebackbutton" data-targetid="matrix_filter_{{ field.field.matrix_filter.id }}">&#9660; {% trans 'Move down' %}</a>
+									</div>
+									{% if field.field.matrix_filter.matrix_filter_type.is_multispace %}
+										&nbsp;<a href="#" data-url="{% url 'create_matrix_filter_space' field.field.matrix_filter.id %}" class="btn btn-outline-primary btn-xs xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.field.matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}</a>
+									{% endif %}
+								</div>
+							</div><br>
+							{{ field }}
+							<hr>
+						</li>
+					{% endfor %}
+				</ul>
+				{% else %}
+					<div class="alert alert-info">
+						{% trans 'You have not defined traits for this part of your nature guide yet. You can add traits below.' %}
+					</div>
+				{% endif %}
+		</form>
+	</div>
+</div>
+
+<div class="text-left">
+	<div class="btn-group dropup">
+		<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			{% trans 'Add trait or filter' %} <span class="caret"></span>
+		</button>
+		<div class="dropdown-menu">
+			{% for filter_type in matrix_filter_types %}
+				<a data-url="{% url 'create_matrix_filter' meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<script>
+	(function(){
+		$(".matrixfiltermanagement .moveforwardbutton").on("click", positionmanager.onMoveForward);
+		$(".matrixfiltermanagement .movebackbutton").on("click", positionmanager.onMoveBack);
+	})();
+
+	// load the matrix functionality
+	function get_items(callback){
+		$.get("{% url 'get_identification_matrix' meta_node.id %}", function(json){
+			callback(json);
+		});
+	}
+	var identification = IdentificationMatrix.create('matrix-filters-form', get_items);
+
+	$('#btn-reset-filters').on('click', function(event){
+		identification.reset();
+	});
+</script>

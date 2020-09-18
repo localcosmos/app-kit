@@ -1,0 +1,54 @@
+from django.urls import path, re_path
+from . import views
+
+urlpatterns = [
+    path('manage-natureguide/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
+        views.ManageNatureGuide.as_view(), name='manage_natureguide'),
+    path('manage-natureguide/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<int:parent_node_id>/',
+        views.ManageNatureGuide.as_view(), name='manage_natureguide'),
+    # node creation
+    path('create-natureguide-node/<str:node_type>/<int:meta_app_id>/<int:parent_node_id>/',
+        views.ManageNodelink.as_view(), name='create_nodelink'), # create
+    path('manage-natureguide-node/<int:meta_app_id>/<int:node_id>/',
+        views.ManageNodelink.as_view(), name='manage_nodelink'), # manage
+    # node loading
+    path('load-keynodes/<int:meta_app_id>/<int:parent_node_id>/',
+        views.LoadKeyNodes.as_view(), name='load_keynodes'),
+    # nodelink deletion
+    path('delete-nodelink/<int:parent_node_id>/<int:child_node_id>/',
+        views.DeleteNodelink.as_view(), name='delete_nodelink'),
+    # add existing nodes
+    path('add-natureguide-node/<int:meta_app_id>/<int:parent_node_id>/',
+        views.AddExistingNodes.as_view(), name='add_existing_nodes'),
+    # node order
+    path('store-node-order/<int:parent_node_id>/',
+        views.StoreNodeOrder.as_view(), name='store_node_order'),
+    # load menu - used if children count is high
+    path('load-nodemenu/<int:meta_app_id>/<int:parent_node_id>/<int:node_id>/',
+        views.LoadNodeManagementMenu.as_view(), name='load_nodemenu'),
+    # matrix filters
+    path('load-matrix-filters/<int:meta_node_id>/',
+        views.LoadMatrixFilters.as_view(), name='load_matrix_filters'),
+    path('create-matrix-filter/<int:meta_node_id>/<str:filter_type>/',
+         views.ManageMatrixFilter.as_view(), name='create_matrix_filter'),
+    path('manage-matrix-filter/<int:matrix_filter_id>/',
+         views.ManageMatrixFilter.as_view(), name='manage_matrix_filter'),
+    path('delete-matrix-filter/<int:pk>/',
+        views.DeleteMatrixFilter.as_view(), name='delete_matrix_filter'),
+    # space management
+    path('create-matrix-filter-space/<int:matrix_filter_id>/',
+         views.ManageMatrixFilterSpace.as_view(), name='create_matrix_filter_space'),
+    path('manage-matrix-filter-space/<int:space_id>/',
+         views.ManageMatrixFilterSpace.as_view(), name='manage_matrix_filter_space'),
+    path('delete-matrix-filter_space/<int:pk>/',
+        views.DeleteMatrixFilterSpace.as_view(), name='delete_matrix_filter_space'),
+    # node search
+    path('search-for-node/<int:meta_app_id>/<int:nature_guide_id>/',
+        views.SearchForNode.as_view(), name='search_for_node'),
+    # node analysis
+    path('node-analysis/<int:meta_app_id>/<int:meta_node_id>/',
+        views.NodeAnalysis.as_view(), name='node_analysis'),
+    # getting the (cached) identification matrix
+    path('get-identification-matrix/<int:meta_node_id>/',
+        views.GetIdentificationMatrix.as_view(), name='get_identification_matrix'),
+]

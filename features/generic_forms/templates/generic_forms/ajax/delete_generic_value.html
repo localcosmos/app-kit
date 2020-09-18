@@ -1,0 +1,38 @@
+{% load i18n %}
+<form id="delete-choice-form" method="POST" action="{% url 'delete_generic_field_value' meta_app.id generic_form.id generic_field.id generic_value_id %}">{% csrf_token %}
+	<div class="modal-header">
+		<h5 class="modal-title">{% trans 'Delete choice' %}</h5>
+		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		</button>
+	</div>
+	<div class="modal-body">
+		<p>
+			{% trans 'Do you really want to delete this choice?' %}
+		</p>
+	</div>
+	<div class="modal-footer">
+		<a href class="btn btn-outline-secondary xhr" data-url="{% url 'edit_generic_field' meta_app.id generic_field_link.generic_form.id generic_field_link.generic_field.id %}" ajax-target="ModalContent">{% trans 'Back' %}</a>
+		<button type="submit" class="btn btn-danger">{% trans 'Delete' %}</button>
+	</div>
+</form>
+<script>
+	$("#delete-choice-form").submit(function(ev){
+		ev.preventDefault();
+		$.post($(this).attr("action"), {}, function(html){
+			$("#fieldchoices-{{ generic_field.id }}").html(html);
+
+			//reload field in form preview
+			$.get("{% url 'get_generic_field' meta_app.id generic_form.id generic_field.id %}", function(html){
+				$("#li-{{ generic_field_link.id }}").html(html);
+				ajaxify("li-{{ generic_field_link.id }}");
+			});
+
+			// go back to the field
+			$.get("{% url 'edit_generic_field' meta_app.id generic_field_link.generic_form.id generic_field_link.generic_field.id %}", function(html){
+				$("#ModalContent").html(html);
+				ajaxify("ModalContent");
+			});
+		});
+	});
+</script>

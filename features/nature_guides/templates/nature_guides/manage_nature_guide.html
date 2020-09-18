@@ -1,0 +1,78 @@
+{% extends 'nature_guides/manage_node.html' %}
+{% load i18n static localcosmos_tags app_tags %}
+
+{% block extra_style %}{% endblock %}
+
+{% block generic_content_specific %}
+
+	<script type="text/javascript" src="{% static 'nature_guides/IdentificationMatrix.js' %}"></script>
+
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-4">
+		
+			{% render_bootstrap_form search_for_node_form %}
+		
+		</div>
+	</div>
+
+	<h3>
+		{% if parent_node.node_type == 'root' %}
+			
+		{% else %}
+			{{ parent_node }}
+		{% endif %}
+	</h3>
+	<div>
+		{% if parent_node.meta_node.node_type == 'root' %}
+		{% else %}
+			<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">&uarr; {{ parent_node.parent }}</a>
+			{% for crosslink in parent_crosslinks %}
+				&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
+			{% endfor %}
+		{% endif %}	
+	</div>
+
+
+	{% block identification_key %}
+		<div class="card">
+			<div class="card-header text-center">
+				<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#matrix-filters-collapsible" aria-expanded="false" aria-controls="matrix-filters-collapsible">{% trans 'Filter by trait' %} <span class="badge badge-light"><span id="children-count">{{ parent_node.children_count }}</span> {% trans 'results' %}</span></button>
+				<button id="btn-reset-filters" type="button" class="btn btn-secondary">{% trans 'Show all' %}</button>
+				<div id="matrix-filters-collapsible" class="collapse"></div>
+			</div>
+			<div class="card-body">
+				<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
+			</div>
+		</div>
+		<br>
+	{% endblock %}
+
+	<div class="btn-group dropup">
+		<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			{% trans 'Add entry' %} <span class="caret"></span>
+		</button>
+		 <div class="dropdown-menu">
+			<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
+			<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
+			<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
+		</div>
+	</div>
+
+{% endblock %}
+{% block extra_script %}
+
+	<script type="text/javascript" src="{% static 'nature_guides/jquery-searchfornode-autocomplete.js' %}"></script>
+	<script>
+		var url = "{% url 'search_for_node' meta_app.id parent_node.nature_guide.id %}";
+		$('#id_search_node_name').searchfornodeautocomplete(url);
+	</script>
+
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+
+	{% if children_count > 130 %}
+		{% include 'nature_guides/nodemenu_loader.html' %}
+	{% else %}
+		{% include 'nature_guides/ajax/node_loader.html' %}
+	{% endif %}
+
+{% endblock %}

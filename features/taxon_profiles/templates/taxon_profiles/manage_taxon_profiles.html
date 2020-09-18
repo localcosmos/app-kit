@@ -1,0 +1,42 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block generic_content_specific %}
+
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Create your taxon profiles' %}</h4>
+			<div>{% trans 'Type the name of the taxon you want to manage the profile for or select a taxon from your nature guides.' %}</div>
+			<form>
+				<div class="form-group">
+					{{ searchbackboneform }}
+				</div>
+			</form>
+			<hr>
+			<h5>{% trans 'Taxa from nature guides' %}</h5>
+			<div id="taxa" class="card-body endless_page_template">
+				{% include 'taxon_profiles/ajax/taxonlist.html' %}
+			</div>
+		</div>
+	</div>
+
+{% endblock %}
+
+{% block extra_script %}
+
+	<script>
+		
+		var base_url = "{% url 'manage_taxon_profile_baseurl' meta_app.id generic_content.id %}";
+
+		var source_input = document.getElementById("id_taxon_0");
+		var uuid_input = document.getElementById("id_taxon_2");
+
+		uuid_input.addEventListener("change", function(event){
+			if (source_input.value && uuid_input.value){
+				var url = base_url + source_input.value + '/' + uuid_input.value + '/';
+				window.location.replace(url);
+			}
+		});
+	</script>
+
+{% endblock %}

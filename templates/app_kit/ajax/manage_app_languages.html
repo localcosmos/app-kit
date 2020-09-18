@@ -1,0 +1,37 @@
+{% load i18n static localcosmos_tags app_tags %}
+	
+<div class="clearfix">
+	{% for language in languages %}
+		<div id="language-{{ language }}" class="float-left padding">
+			<div class="text-center">
+				<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ language }}.png" /><br>
+				{{ language }}
+			</div>
+			<div>
+				{% if language == primary_language %}
+					<span class="badge badge-info">{% trans 'primary' %}</span>
+				{% else %}
+					<div class="dropdown">
+						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="langdropdown-{{ language }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+							{% trans 'Modify' %}
+							<span class="caret"></span>
+						</button>
+						<div class="dropdown-menu" aria-labelledby="langdropdown-{{ language }}">
+							<a class="dropdown-item xhr" data-url="{% url 'delete_app_language' meta_app.id language %}" ajax-target="ModalContent">{% trans 'Remove language' %}</a>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	{% endfor %}
+</div>
+
+<hr>
+
+<h5>{% trans 'Add language' %}</h5>
+<form method="POST" action="{% url 'add_app_languages' meta_app.id 'add' %}" class="xhr">{% csrf_token %}
+	{% render_bootstrap_form form %}
+	<p>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Add language' %}</button>
+	</p>
+</form>

@@ -1,0 +1,63 @@
+{% extends 'localcosmos_server/setup/base.html' %}
+
+{% load i18n static localcosmos_tags %}
+
+{% block content %}
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="col-12 col-md-8 col-lg-6">
+
+				{% if success is True %}
+					{% if appkit_creation_in_progress %}
+						<div class="text-center">
+							<p>
+								<img src="{% static 'localcosmos_server/setup/Spin.gif' %}" />
+							</p>
+							<br>
+							<h3>
+								{% trans 'Your app kit is being created. This may take a few minutes.' %}
+							</h3>
+						</div>
+					{% else %}
+					{% endif %}
+				{% else %}
+					<div>
+						<div class="text-center">
+							<img src="{% static 'localcosmos_server/setup/logo100blue.png' %}" />
+							<h1>{% trans 'App kit setup' %}</h1>
+						</div>
+						<form method="POST" action="{% url 'setup_initial_appkit' %}">{% csrf_token %}
+							{% render_bootstrap_form form %}
+
+							<p class="text-center">
+								<button type="submit" class="btn btn-outline-primary">{% trans 'Create app kit' %}</button>
+							</p>
+						</form>
+					</div>
+
+				{% endif %}
+			</div>
+		</div>
+	</div>
+{% endblock %}
+{% block extra_script %}
+	{% if success is True %}
+		{% if appkit_creation_in_progress %}
+			<script>
+				var url = "{% url 'setup_check_initial_appkit_creation' schema_name  %}";
+				var checkinterval_id = setInterval(function(){
+					$.get(url, function(response){
+						if (response.success){
+							clearInterval(checkinterval_id);
+							window.location.href = response.success_url;
+						}
+					});
+				}, 3*1000);
+			</script>
+		{% else %}
+			<script>
+				window.location.href = "/";
+			</script>
+		{% endif %}
+	{% endif %}
+{% endblock %}

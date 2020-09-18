@@ -1,0 +1,85 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags localcosmos_tags %}
+
+{% block extra_style %}{% endblock %}
+
+{% block content %}
+	<div class="container">
+		<div class="row mb-4">
+			<div class="col-12">
+				<br>
+				{% if taxon.vernacular %}
+					<h3>{{ taxon.vernacular }}</h3>
+					({{ taxon }})
+				{% elif node_names %}
+					<h3>{{ node_names.0 }}</h3>
+					({{ taxon }})
+				{% else %}
+					<h3>{{ taxon }}</h3>
+				{% endif %}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12">
+				{% get_generic_content_options generic_content as options %}
+				{% if options.enable_wikipedia_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a wikipedia page.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/wikipedia_button.svg' %}" />
+					</a>
+				{% endif %}
+				{% if options.enable_observation_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens an observation form for this taxon.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/observation.svg' %}" />
+					</a>
+				{% endif %}
+				{% if options.enable_gbif_occurrence_map_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a GBIF occurrence map for this taxon.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/occurrence.svg' %}" />
+					</a>
+				{% endif %}
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<h4>{% trans 'Traits' %}</h4>
+				<div id="taxon-traits"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<h4>{% trans 'Images' %}</h4>
+				<div id="taxon-images"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+			</div>
+			<div class="col-12 mt-3">
+				<button type="button" class="btn btn-outline-primary xhr" data-url="{% url 'manage_taxon_profile_image' meta_app.id taxon_profile|ctype_id taxon_profile.id %}?taxon_source={{ taxon.taxon_source }}&name_uuid={{ taxon.name_uuid }}&new=1" ajax-target="LargeModalContent">{% trans 'Add image with text' %}</button>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div id="taxontexts" class="col-12">
+				{% include 'taxon_profiles/ajax/manage_taxon_profile_form.html' %}
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_script %}
+	<script>
+		$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
+			$("#taxon-images").html(html);
+			ajaxify('taxon-images');
+		});
+
+		$.get("{% url 'collect_taxon_traits' taxon.taxon_source taxon.name_uuid %}", function(html){
+			$("#taxon-traits").html(html);
+		});
+	</script>
+{% endblock %}

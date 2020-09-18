@@ -1,0 +1,7 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n %}
+
+{% block title %}{% blocktrans %}Remove {{ verbose_name }}{% endblocktrans %}{% endblock %}
+{% block deletion_text %}
+	{% blocktrans %}Do you really want to remove {{ verbose_name }} from this app?{% endblocktrans %}
+{% endblock %}

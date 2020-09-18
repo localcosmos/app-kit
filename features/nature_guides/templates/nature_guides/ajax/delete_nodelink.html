@@ -1,0 +1,9 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n %}
+
+{% block success_js %}
+	<script>
+		$("#{{ deleted_object_child_uuid }}").remove();
+		$("#Modal").modal("hide");
+	</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+<div class="page">
+
+	<div class="translucent white pt-3">
+		<div class="container">
+			<div class="row">
+				<div class="col-12">
+					<h2>{{vernacular dataset.name_uuid}} (<i>{{ dataset.taxon_latname }}</i>)</h2>
+				</div>
+			</div>
+			<div class="row mt-2">
+				<div class="col-12">
+					<strong>{{tp 'Reported by:'}}</strong> {{#if dataset.user}}{{ dataset.user.username }}{{else}}{{tp 'anonymous user'}}{{/if}}
+				</div>
+			</div>
+			<div class="row mt-2">
+				<div class="col-12">
+					<h4>{{tp 'Recorded data'}}</h4>
+					{{#each recorded_data}}
+						{{#if value}}
+							<div class="mb-2">
+								<div>
+									<b>{{t field.definition.label}}:</b>
+								</div>
+
+								{{#ifequal field.field_class 'PointJSONField'}}
+									<div class="row">
+										<div class="col-12 col-md-6 col-lg-4">
+											<div id="map-{{ field.uuid }}" class="observation-detail-map" data-latitude="{{value.geometry.coordinates.[1]}}" data-longitude="{{value.geometry.coordinates.[0]}}"></div>
+										</div>
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'BooleanField'}}
+									<div>
+										{{#ifequal value 'on'}}
+											{{tp 'yes'}}
+										{{else}}
+											{{tp 'no'}}
+										{{/ifequal}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'CharField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'ChoiceField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'DecimalField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'FloatField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'IntegerField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'MultipleChoiceField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'DateTimeJSONField'}}
+									<div>
+										{{verbose_datetime value.cron.timestamp}}
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'TaxonField'}}
+									<div>
+										{{vernacular value.name_uuid}} ({{value.taxon_latname}})
+									</div>
+								{{/ifequal}}
+
+								{{#ifequal field.field_class 'PictureField'}}
+									<div>
+										{{value}}
+									</div>
+								{{/ifequal}}
+
+							</div>
+						{{else}}
+							{{#ifequal field.field_class 'PictureField'}}
+								<div class="mb-2">
+									<div>
+										<b>{{t field.definition.label}}:</b>
+									</div>
+									<div id="images-{{field.uuid}}" class="observation-detail-images" data-field-uuid="{{field.uuid}}" data-dataset-pk="{{../dataset.id}}">
+										<div id="spinner-{{field.uuid}}" class="spinner-border text-primary" role="status">
+											<span class="sr-only">Loading...</span>
+										</div>
+									</div>
+								</div>
+							{{/ifequal}}
+						{{/if}}
+						
+					{{/each}}
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-12 col-md-6">
+					<div id="observation-map"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+	

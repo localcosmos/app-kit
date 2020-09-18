@@ -1,0 +1,13 @@
+{% load online_content_tags %}
+<div class="translucent white">
+	<h3>
+		{% if preview %}
+			{{ localized_template_content.draft_title }}
+		{% else %}
+			{{ localized_template_content.published_title }}
+		{% endif %}
+	</h3>
+	<p>
+		{% cms_get_microcontent 'news_content' 'layoutable-simple' %}
+	</p>
+</div>
