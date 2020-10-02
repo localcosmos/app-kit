@@ -78,6 +78,7 @@ class ManageNatureGuide(ManageGenericContent):
 '''
     Manage a Node(link)
     - also define which filters apply for an entry
+    - if a taxon is added to a NatureGuideTaxonTree, the TaxonProfile referring taxon has to be updated
 '''
 class ManageNodelink(MetaAppFormLanguageMixin, FormView):
 
@@ -149,7 +150,9 @@ class ManageNodelink(MetaAppFormLanguageMixin, FormView):
             form_class = self.get_form_class()
         return form_class(self.parent_node, **self.get_form_kwargs())
     
-
+    # if a taxon is added to a meta_node without taxon, there could have been a taxon profile referencing
+    # app_kit.features.nature_guides as taxon_source. this taxon profile has to be updated to reference
+    # the new taxon of the meta node
     def save_nodelink(self, form):
         node_id = form.cleaned_data.get('node_id', None)
 
@@ -174,7 +177,20 @@ class ManageNodelink(MetaAppFormLanguageMixin, FormView):
 
         
         if 'taxon' in form.cleaned_data and form.cleaned_data['taxon']:
-            self.node.meta_node.set_taxon(form.cleaned_data['taxon'])
+
+            new_taxon = form.cleaned_data['taxon']
+            
+            # if the meta_node had no taxon, a taxon profile with a fallback taxon might exist
+            if not meta_node.taxon and not meta_node.taxon_source and not meta_node.taxon_latname:
+                
+                taxon_profile = self.node.get_taxon_profile(self.meta_app)
+
+                if taxon_profile:
+                    # update taxon_profile taxon
+                    taxon_profile.set_taxon(new_taxon)
+                    taxon_profile.save()
+                
+            self.node.meta_node.set_taxon(new_taxon)
         else:
             self.node.meta_node.remove_taxon()
 
@@ -820,12 +836,12 @@ class DeleteMatrixFilter(AjaxDeleteView):
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
-        parent_node = self.object.node
+        meta_node = self.object.meta_node
         self.object.delete()
 
         context = {
-            'parent_node' : parent_node,
-            'deleted':True,
+            'meta_node' : meta_node,
+            'deleted' : True,
         }
         return self.render_to_response(context)
         

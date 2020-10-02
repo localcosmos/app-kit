@@ -88,6 +88,8 @@ class ColorFilterManagementForm(MatrixFilterManagementForm):
 
 
 class NumberFilterManagementForm(MatrixFilterManagementFormWithUnit):
+
+    localizeable_fields = ['name', 'unit_verbose']
     
     numbers = forms.CharField(label=_('Selectable Numbers'), help_text=_('Comma-separated list, e.g. 1,2,3.1,5'))
 

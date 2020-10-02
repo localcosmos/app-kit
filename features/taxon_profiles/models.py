@@ -16,8 +16,6 @@ from taxonomy.lazy import LazyTaxonList, LazyTaxon
 from django.contrib.contenttypes.models import ContentType
 from app_kit.models import MetaAppGenericContent
 
-from app_kit.features.nature_guides.models import NatureGuide
-
 
 class TaxonProfiles(GenericContent):
 
@@ -43,6 +41,9 @@ class TaxonProfiles(GenericContent):
 
         taxon_profiles_ctype = ContentType.objects.get_for_model(self)
         applink = MetaAppGenericContent.objects.get(content_type=taxon_profiles_ctype, object_id=self.pk)
+
+        # avoid circular import the ugly way
+        from app_kit.features.nature_guides.models import NatureGuide
 
         nature_guide_ctype = ContentType.objects.get_for_model(NatureGuide)
         content_types = [nature_guide_ctype]

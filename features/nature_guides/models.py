@@ -2,13 +2,16 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 
 from app_kit.generic import GenericContentManager, GenericContent
 
 from localcosmos_server.taxonomy.generic import ModelWithTaxon
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 
-from app_kit.models import ContentImageMixin, UpdateContentImageTaxonMixin
+from app_kit.models import ContentImageMixin, UpdateContentImageTaxonMixin, MetaAppGenericContent
+
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
@@ -545,6 +548,19 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     @property
     def lazy_taxon(self):
         return LazyTaxon(instance=self)
+
+    # in the future, a nature guide might appear in more than one app
+    def get_taxon_profile(self, meta_app):
+
+        taxon_profiles_content_type = ContentType.objects.get_for_model(TaxonProfiles)
+        taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=meta_app,
+                                                content_type=taxon_profiles_content_type)
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
+                taxon_source='app_kit.features.nature_guides', taxon_latname=self.taxon_latname).first()
+
+        return taxon_profile
     
 
     def get_taxon_tree_fields(self, parent=None):

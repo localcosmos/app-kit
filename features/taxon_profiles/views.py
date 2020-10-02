@@ -78,11 +78,16 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         else:
             taxon_latname = request.GET['taxon_latname']
             taxon_author = request.GET['taxon_author']
+
+            if taxon_author == 'None':
+                taxon_author = None
+                
             taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)
 
             self.taxon = LazyTaxon(instance=taxon)        
-            taxon_profile = TaxonProfile.objects.filter(taxon_source=self.taxon.taxon_source,
-                    taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author).first()
+            taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                    taxon_source=self.taxon.taxon_source, taxon_latname=self.taxon.taxon_latname,
+                    taxon_author=self.taxon.taxon_author).first()
 
             # the taxon profile instance might not exist yet
             if not taxon_profile:
