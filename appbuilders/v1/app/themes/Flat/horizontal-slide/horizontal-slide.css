@@ -13,6 +13,14 @@
 	overflow-x: auto;
 }
 
+.horizontal-slide > div.stretch {
+	align-items: stretch;
+}
+
+.horizontal-slide > div.stretch label {
+	height: 2.5rem;
+}
+
 @media (min-width: 768px) {
 	.horizontal-slide > div {
 		flex-direction: row;
@@ -29,6 +37,12 @@
 	white-space: normal;
 }
 
+
+.horizontal-slide.xlarge > div > div {
+	width: 14rem;
+}
+
+
 .horizontal-slide.large > div > div {
 	width: 7rem;
 }
@@ -43,6 +57,55 @@
 	min-height: 2rem;
 }
 
+.horizontal-slide .text-only {
+	padding: .5rem;
+}
+
+.horizontal-slide .text-only > div {
+	padding: 0.3rem 0.3rem 0rem 0.3rem;
+	background: rgba(255,255,255,1);
+	color: rgb(50,50,50);
+	height: 100%;
+	border-radius: .3rem;
+	display: flex;
+	flex-direction: column;
+}
+
+.horizontal-slide .text-only > input:checked + div {
+	background-color: rgb(92,184,92);
+}
+
+.horizontal-slide .text-only > input:checked + div > div > label {
+	background-image: url(../../../img/checkbox-on.svg);
+}
+
+.horizontal-slide .text-only > div > div:first-child {
+	flex : 1;
+}
+
+.horizontal-slide label.slide-element-indicator {
+	display: block;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0.3rem;
+	background-image: url(../../../img/checkbox-off.svg);
+	background-repeat: no-repeat;
+	background-size:contain;
+	background-position: center center;
+	margin-top: .3rem;
+}
+
+.horizontal-slide label.slide-element-indicator img {
+	height: 2rem;
+	width: auto;
+}
+
+.horizontal-slide .text-only .slide-element-text {
+	background-color: #e0e0e0;
+	color: #646464;
+	padding: .5rem;
+}
 
 .horizontal-slide > div::-webkit-scrollbar {
 	width: 0px !important;

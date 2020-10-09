@@ -3,12 +3,16 @@ from django import forms
 from django.conf import settings
 from django.templatetags.static import static
 
+from django.contrib.contenttypes.models import ContentType
+
 from .fields import RangeSpaceField, ObjectLabelModelMultipleChoiceField
 
 from .widgets import (RangePropertyWidget, DefineRangeSpaceWidget, DefineDescriptionWidget, DefineColorsWidget,
                       SliderSelectMultipleColors, SliderSelectMultipleDescriptors, SliderRadioSelectDescriptor,
                       SliderRadioSelectColor, SliderSelectMultipleNumbers, SliderRadioSelectNumber,
-                      SliderRadioSelectTaxonfilter, SliderSelectMultipleTaxonfilters)
+                      SliderRadioSelectTaxonfilter, SliderSelectMultipleTaxonfilters,
+                      SliderSelectMultipleTextDescriptors, SliderRadioSelectTextDescriptor,
+                      DefineTextDescriptionWidget)
 
 from decimal import Decimal
 
@@ -37,6 +41,7 @@ MATRIX_FILTER_TYPES = (
     ('NumberFilter', _('Numbers filter')),
     ('DescriptiveTextAndImagesFilter', _('Descriptive text and images')),
     ('TaxonFilter', _('Taxonomic filter')),
+    ('TextOnlyFilter', _('Text only filter')),
 )
 
 # MetaClass, extends a MatrixFilter class with FilterType-specific methods
@@ -107,6 +112,13 @@ class MatrixFilterType:
     # the field displayed when end-user uses the identification matrix
     def get_matrix_form_field(self):
         raise NotImplementedError('MatrixFilterType subclasses need a get_matrix_form_field method')
+
+    def get_matrix_form_field_widget(self):
+        extra_context = {
+            'matrix_filter_space_ctype' : ContentType.objects.get_for_model(self.matrix_filter.space_model)
+        }
+        widget = self.MatrixFormFieldWidget(self.matrix_filter, extra_context=extra_context)
+        return widget
 
     # the field when adding/editing a matrix node
     # display a field with min value, max value and units
@@ -242,9 +254,11 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
     # field for the end-user input
     def get_matrix_form_field(self):
         # decimalfield as a slider
+        widget = self.get_matrix_form_field_widget()
+        
         return self.MatrixFormFieldClass(required=False, label=self.matrix_filter.name,
                     min_value=self.matrix_filter.encoded_space[0], max_value=self.matrix_filter.encoded_space[1],
-                    decimal_places=None, widget=self.MatrixFormFieldWidget(self.matrix_filter))
+                    decimal_places=None, widget=widget)
 
 
     # display a field with min value, max value and units
@@ -363,7 +377,8 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
     # FORM FIELDS
     def get_matrix_form_field(self):
         choices = self._get_choices()
-        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=self.MatrixFormFieldWidget,
+        widget = self.get_matrix_form_field_widget()
+        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
     def get_node_space_field_kwargs(self):
@@ -509,7 +524,8 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     def get_matrix_form_field(self):
         choices = self._get_choices()
-        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=self.MatrixFormFieldWidget,
+        widget = self.get_matrix_form_field_widget()
+        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
     def get_node_space_definition_form_field(self, from_url):
@@ -662,7 +678,8 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     def get_matrix_form_field(self):
         choices = self._get_choices()
-        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=self.MatrixFormFieldWidget,
+        widget = self.get_matrix_form_field_widget()
+        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
     '''
@@ -730,6 +747,127 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
             return False
 
         return True
+
+
+'''
+    Text only filter
+    - no images, for longer texts
+'''
+
+class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
+
+    is_multispace = True
+
+    definition_parameters = []
+
+    verbose_name = _('Text only filter')
+    verbose_space_name = _('text')
+    
+    MatrixSingleChoiceFormFieldClass = forms.ChoiceField
+    MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
+
+    MatrixMultipleChoiceWidget = SliderSelectMultipleTextDescriptors
+    MatrixSingleChoiceWidget = SliderRadioSelectTextDescriptor
+    
+    NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
+    NodeDefinitionFormFieldWidget = DefineDescriptionWidget
+
+
+    ### FORM FIELDS
+    # the field displayed when end-user uses the identification matrix
+    def _get_choices(self):
+        
+        choices = []
+
+        for space in self.matrix_filter.get_space():
+
+            extra_kwargs = {
+                'modify' : True,
+                'space_id' : space.id,
+            }
+            
+            choices.append((space.encoded_space, space.encoded_space, extra_kwargs))
+
+        return choices
+
+    def get_matrix_form_field(self):
+        choices = self._get_choices()
+        widget = self.get_matrix_form_field_widget()
+        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
+                                         choices=choices, required=False)
+
+
+    # in the ChildrenJsonCache, the (child)node's matrix filter values are stored as a list of values
+    # receives a NodeFilterSpace instance
+    def get_node_filter_space_as_list(self, node_filter_space):
+        space_list = []
+        for space in node_filter_space.values.all():
+            space_list.append(space.encoded_space)
+        return space_list
+    
+    ### FORM DATA -> MatrixFilter instance
+    # store definition and encoded_space
+    # there are two types of form_data
+    # A: data when the user defines the space depending on the parent_node (defining the trait)
+    # B: data when the user assigns trait properties to a matrix entity
+    # encode the value given from a form input
+    # value can be a list
+
+
+    # READ FORMS
+    # TextAndImages is multispatial, the form encodes the space during its save() method
+    def get_encoded_space_from_form(self, form):
+        return []
+
+    # FILL FORMS
+    # get initial for form
+    def get_space_initial(self):
+        return {}
+
+
+    def get_single_space_initial(self, matrix_filter_space):
+
+        initial = {
+            'text' : matrix_filter_space.encoded_space,
+        }
+        return initial
+
+    ### SAVE A SINGLE SPACE (is_multispace == True)
+    def save_single_space(self, form):
+        MatrixFilterSpace = self.matrix_filter.space_model
+
+        matrix_filter_space_id = form.cleaned_data.get('matrix_filter_space_id', None)
+        if matrix_filter_space_id:
+            space = MatrixFilterSpace.objects.get(pk=form.cleaned_data['matrix_filter_space_id'])
+            old_encoded_space = space.encoded_space
+        else:
+            space = MatrixFilterSpace(
+                matrix_filter = self.matrix_filter,
+            )
+            old_encoded_space = None
+
+        # the text is the encoded space
+        space.encoded_space = form.cleaned_data['text']
+        space.save(old_encoded_space=old_encoded_space)
+
+        return space
+
+
+    def get_node_space_definition_form_field(self, from_url):
+        queryset = self.matrix_filter.get_space()
+        extra_context = {
+            'from_url' : from_url,
+        }
+        return ObjectLabelModelMultipleChoiceField(queryset, widget=DefineTextDescriptionWidget(self,
+                                                                            extra_context=extra_context))
+
+    # VALIDATION
+    def validate_encoded_space(self, space):
+        if not isinstance(space, str):
+            return False
+
+        return True
+    
 
 '''
     Taxonomic filtering
@@ -819,7 +957,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     def get_matrix_form_field(self):
         choices = self._get_choices()
-        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=self.MatrixFormFieldWidget,
+        widget = self.get_matrix_form_field_widget()
+        return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
     # READ FORMS

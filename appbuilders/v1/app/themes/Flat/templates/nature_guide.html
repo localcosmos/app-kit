@@ -27,6 +27,25 @@
 									</div>
 								</div>
 							{{/ifequal}}
+							{{#ifequal filter_type 'TextOnlyFilter'}}
+								<div class="horizontal-slide xlarge">
+									<div class="stretch">
+										{{#each space}}
+											<div class="text-only">
+												<input id="{{../uuid}}-{{encoded_space}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<div>
+													<div class="slide-element-text">{{t encoded_space}}</div>
+													<div>
+														<label for="{{../uuid}}-{{encoded_space}}" class="text-center slide-element-indicator">
+															&nbsp;
+														</label>
+													</div>
+												</div>
+											</div>
+										{{/each}}
+									</div>
+								</div>
+							{{/ifequal}}
 							{{#ifequal filter_type 'ColorFilter'}}
 								<div class="horizontal-slide">
 									<div>

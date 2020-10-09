@@ -988,12 +988,26 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         return image_store
 
     def save_image(self, form):
+
+        # flag if the user selected an existing image
+        is_linked_image = False
+        
         # save the uncropped image alongside the cropping parameters
         # the cropped image itself is generated on demand: contentImageInstance.image()
 
         # first, store the image in the imagestore
         if not self.content_image:
-            image_store = self.get_new_image_store()
+
+            # first, check if there is just a linked image
+            referred_content_image_id = form.cleaned_data.get('referred_content_image_id', None)
+
+            if referred_content_image_id:
+                is_linked_image = True
+                referred_content_image = ContentImage.objects.get(pk=referred_content_image_id)
+                image_store = referred_content_image.image_store
+
+            else:
+                image_store = self.get_new_image_store()
         else:
             # check if the image has changed
             current_image_store = self.content_image.image_store
@@ -1003,13 +1017,16 @@ class ManageContentImageMixin(LicencingFormViewMixin):
             else:
                 image_store = current_image_store
 
-        if self.taxon:
-            image_store.set_taxon(self.taxon)
 
-        image_store.source_image = form.cleaned_data['source_image']
-        image_store.md5 = form.cleaned_data['md5']
+        if is_linked_image == False:
+            
+            if self.taxon:
+                image_store.set_taxon(self.taxon)
 
-        image_store.save()
+            image_store.source_image = form.cleaned_data['source_image']
+            image_store.md5 = form.cleaned_data['md5']
+
+            image_store.save()
 
         # store the link between ImageStore and Content in ContentImage
         if not self.content_image:
@@ -1037,7 +1054,9 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         self.content_image.save()
 
         # register content licence
-        self.register_content_licence(form, self.content_image.image_store, 'source_image')
+        if is_linked_image == False:
+            self.register_content_licence(form, self.content_image.image_store, 'source_image')
+        
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1045,8 +1064,9 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         context['content_instance'] = self.content_instance
         context['content_image'] = self.content_image
         context['content_image_taxon'] = self.taxon
-        context['new'] = self.new
+        context['new'] = self.new        
         return context
+    
 
     def get_initial(self):
         initial = super().get_initial()
@@ -1074,6 +1094,48 @@ class ManageContentImageMixin(LicencingFormViewMixin):
             form_kwargs['current_image'] = self.content_image.image_store.source_image
         return form_kwargs
 
+
+
+'''
+    ajax view to fetch image suggestions, and save them
+    in some cases, images reoccur, e.g. something like "circular" for Trait values
+'''
+class ManageContentImageSuggestions(TemplateView):
+
+    template_name = 'app_kit/ajax/get_content_image_suggestions.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+
+        self.content_type = ContentType.objects.get(pk=kwargs['content_type_id'])
+        self.ModelClass = self.content_type.model_class()
+        
+        self.content_instance = None
+        
+        self.searchtext = request.GET.get('searchtext', '')
+        
+        if 'object_id' in kwargs:
+            self.content_instance = self.content_type.get_object_for_this_type(pk=kwargs['object_id'])
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['image_suggestions'] = self.get_image_suggestions()
+        return context
+
+
+    def get_image_suggestions(self):
+
+        if self.content_instance:
+            if hasattr(self.content_instance, 'get_image_suggestions'):
+                return self.content_instance.get_image_suggestions()
+        else:
+            if self.searchtext and len(self.searchtext) >= 3:
+                return self.ModelClass.search_image_suggestions(self.searchtext)
+            
+        return []
+        
     
 
 class ManageContentImage(MetaAppMixin, ManageContentImageMixin, FormView):
@@ -1120,6 +1182,7 @@ class DeleteContentImage(AjaxDeleteView):
         return context
 
 
+    
 '''
     App Theme Images
     - no cropping

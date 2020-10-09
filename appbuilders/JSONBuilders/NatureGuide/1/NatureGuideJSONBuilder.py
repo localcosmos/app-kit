@@ -167,6 +167,20 @@ class NatureGuideJSONBuilder(JSONBuilder):
             matrix_filter_json['space'] = encoded_space
 
 
+        elif matrix_filter.filter_type == 'TextOnlyFilter':
+            
+            spaces = []
+
+            for subspace in space:
+                encoded_space = subspace.encoded_space
+                subspace_entry = {
+                    'encoded_space' : encoded_space,
+                }
+                
+                spaces.append(subspace_entry)
+                
+            matrix_filter_json['space'] = spaces
+
         else:
             raise ValueError('Unsupported filter_type: {0}'.format(matrix_filter.filter_type))
 

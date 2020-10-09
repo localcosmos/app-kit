@@ -1,5 +1,6 @@
 from django import forms
 from django.forms.widgets import Widget, MultiWidget, SelectMultiple, RadioSelect
+from django.contrib.contenttypes.models import ContentType
 
 from django.template import loader, Context
 
@@ -132,7 +133,11 @@ class DefineRangeSpaceWidget(MultiWidget):
     these depend on the previously defined selectable values
 '''
 class DefineDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
-    template_name = 'nature_guides/widgets/define_description_widget.html' 
+    template_name = 'nature_guides/widgets/define_description_widget.html'
+
+
+class DefineTextDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/define_text_description_widget.html' 
     
 
 class DefineColorsWidget(MatrixFilterMixin, SelectMultiple):
@@ -143,29 +148,36 @@ class DefineColorsWidget(MatrixFilterMixin, SelectMultiple):
     Widgets for the end-user matrix key
     - Select and SelectMultiple with templates
 '''
-class SliderSelectMultipleColors(ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleColors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_colors.html'
 
-class SliderRadioSelectColor(ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectColor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_colors.html'
 
 
-class SliderSelectMultipleDescriptors(ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
 
-class SliderRadioSelectDescriptor(ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
 
 
-class SliderSelectMultipleNumbers(SelectMultiple):
+class SliderSelectMultipleTextDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/slider_select_multiple_texts.html'
+
+class SliderRadioSelectTextDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/slider_select_multiple_texts.html'
+
+
+class SliderSelectMultipleNumbers(MatrixFilterMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_numbers.html'
 
-class SliderRadioSelectNumber(RadioSelect):
+class SliderRadioSelectNumber(MatrixFilterMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_numbers.html'
 
 
-class SliderSelectMultipleTaxonfilters(ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleTaxonfilters(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_taxonfilters.html'
 
-class SliderRadioSelectTaxonfilter(ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectTaxonfilter(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_taxonfilters.html'

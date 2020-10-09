@@ -30,6 +30,15 @@ class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFi
         super().__init__(*args, **kwargs)
         self.fields.move_to_end('text', last=False)
 
+
+class TextOnlyFilterSpaceForm(MatrixFilterSpaceForm):
+
+    text = forms.CharField(label=_('Text'), widget=forms.Textarea,
+                           max_length=TEXT_LENGTH_RESTRICTIONS['TextOnlyFilter']['text'])
+    
+    localizeable_fields = ['text']
+
+
 '''
     define/change an rgb color
 '''

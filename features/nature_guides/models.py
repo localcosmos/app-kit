@@ -9,7 +9,7 @@ from app_kit.generic import GenericContentManager, GenericContent
 from localcosmos_server.taxonomy.generic import ModelWithTaxon
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 
-from app_kit.models import ContentImageMixin, UpdateContentImageTaxonMixin, MetaAppGenericContent
+from app_kit.models import ContentImage, ContentImageMixin, UpdateContentImageTaxonMixin, MetaAppGenericContent
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 
@@ -183,7 +183,7 @@ FeatureModel = NatureGuide
 
 
 '''
-    ChildrenJsonManager
+    ChildrenCacheManager
     - manage the children_json attribute (=cache) of a node
 
     CACHE UPDATING:
@@ -364,7 +364,7 @@ class ChildrenCacheManager:
 
         matrix_filter = matrix_filter_space.matrix_filter
 
-        if matrix_filter.filter_type in ['ColorFilter', 'DescriptiveTextAndImagesFilter']:
+        if matrix_filter.filter_type in ['ColorFilter', 'DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
 
             data = self.get_data()
 
@@ -991,8 +991,43 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
     def decode(self):
         return self.matrix_filter.matrix_filter_type.decode(self.encoded_space)
 
+
+    def get_image_suggestions(self):
+        suggestions = []
+        content_type = ContentType.objects.get_for_model(self)
+        matrix_filter_space_images = ContentImage.objects.filter(content_type=content_type)
+
+        for content_image in matrix_filter_space_images:
+
+            matrix_filter_space = content_image.content
+
+            if matrix_filter_space.encoded_space == self.encoded_space:
+                suggestions.append(content_image)
+
+        return suggestions
+
+
+    @classmethod
+    def search_image_suggestions(cls, searchtext):
+        suggestions = []
+
+        content_type = ContentType.objects.get_for_model(cls)
+
+        json_searchtext = '"{0}'.format(searchtext)
+        matrix_filter_spaces = MatrixFilterSpace.objects.filter(encoded_space__istartswith=json_searchtext)
+
+        if matrix_filter_spaces:
+            matrix_filter_space_ids = matrix_filter_spaces.values_list('id', flat=True)
+            suggestions = ContentImage.objects.filter(content_type=content_type,
+                                                      object_id__in=matrix_filter_space_ids)
+
+        return suggestions
+    
+
     def __str__(self):
-        return '{0}'.format(self.matrix_filter.matrix_filter_type.verbose_space_name)
+        if self.pk:
+            return '{0}'.format(self.matrix_filter.matrix_filter_type.verbose_space_name)
+        return self.__class__.__name__
 
     class Meta:
         ordering=('position', )

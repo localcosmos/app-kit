@@ -58,6 +58,8 @@ class MatrixFilterManagementFormWithMultipleValuesAndUnit(MatrixFilterManagement
 class DescriptiveTextAndImagesFilterManagementForm(MatrixFilterManagementForm):
     pass
 
+class TextOnlyFilterManagementForm(MatrixFilterManagementForm):
+    pass
 
 class RangeFilterManagementForm(MatrixFilterManagementFormWithUnit):
 

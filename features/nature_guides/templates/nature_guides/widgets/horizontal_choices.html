@@ -1,11 +1,11 @@
-{% load i18n static %}
+{% load i18n static localcosmos_tags %}
 <div class="horizontal-slide {% block size %}large{% endblock %}">
 
-	<div id="{{ widget.attrs.id }}">
+	<div id="{{ widget.attrs.id }}" data-store-positions-url="{% url 'store_object_order' matrix_filter_space_ctype.id %}">
 		{% for group, options, index in widget.optgroups %}
 			
 			{% for option in options %}
-				<div>
+				<div id="space_{{ option.space_id }}" data-object-id="{{ option.space_id }}">
 					<div>
 						{% block input %}
 							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if select_multiple %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} />
@@ -26,6 +26,10 @@
 								<div class="dropdown-menu">
 									<a data-url="{% url 'manage_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
 									<a data-url="{% url 'delete_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center movespaceleftbutton" data-targetid="space_{{ option.space_id }}">&#9664; {% trans 'Move left' %}</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center movespacerightbutton" data-targetid="space_{{ option.space_id }}">{% trans 'Move right' %} &#9654;</a>
 								</div>
 							</div>
 						{% endif %}
@@ -68,4 +72,8 @@
 			}
 		})()
 	{% endif %}
+	
+		$("#{{ widget.attrs.id }} .movespaceleftbutton").on("click", positionmanager.onMoveForward);
+		$("#{{ widget.attrs.id }} .movespacerightbutton").on("click", positionmanager.onMoveBack);
+
 </script>

@@ -12,10 +12,19 @@
 {% endblock %}
 
 {% block body %}
+	
 	<p class="animated fadeIn">
 		{% for field in form %}
 			{% if field.name == 'source_image' %}
-				<div class="card bg-light">
+				{% if content_image %}
+				{% else %}
+					<p>
+						<h5>{% trans 'Suggested images' %}</h5>
+						<div id="image-suggestions"><span class="text-secondary">{% trans 'type to start image search' %}</span></div>
+					</p>
+				{% endif %}
+			
+				<div id="content-image-formcontainer" class="card bg-light">
 					<div class="card-header">
 						<strong>{% trans 'Image' %}</strong>
 					</div>
@@ -80,5 +89,51 @@
 			document.getElementById('id_creator_name').required = true;
 		});
 	}
+	
+	
+	function load_suggested_images(searchtext){
+	
+		var image_suggestions_container = $("#image-suggestions");
+	
+		var has_selected = image_suggestions_container.attr("has-selected");
+		
+		if (has_selected != "1"){
+						
+			if (searchtext.length >= 3){
+				var url = "{% url 'manage_content_image_suggestions' content_type.id %}?searchtext=" + searchtext; 
+				$.get(url, function(html){
+					$("#image-suggestions").html(html);
+				});
+			}
+			else {
+				$("#content-image-formcontainer").show();
+				image_suggestions_container.empty();
+				$("#id_referred_content_image_id").val('');
+			}
+		}
+	}
+	
+	{% if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
+		{% if matrix_filter_space %}
+			{% if content_image %}
+			{% else %}
+				$.get("{% url 'manage_content_image_suggestions' content_type.id matrix_filter_space.id %}", function(html){
+					$("#image-suggestions").html(html);
+				});
+			{% endif %}
+		{% else %}
+		
+			var text_field = $("#id_text");
+			
+			if (text_field.length){
+				
+				text_field.on("input", function(event){
+					let searchtext = text_field.val();
+				
+					load_suggested_images(searchtext);
+				});
+			}
+		{% endif %}
+	{% endif %}
 </script>
 {% endblock %}

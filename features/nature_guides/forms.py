@@ -147,7 +147,8 @@ class ManageNodelinkForm(LocalizeableForm):
             
             if space:
                 
-                if field.matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter']:
+                if field.matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter',
+                                                       'TextOnlyFilter']:
                     return space.values.all()
                 elif field.matrix_filter.filter_type in ['NumberFilter']:
                     return ['%g' %(float(i)) for i in space.encoded_space]

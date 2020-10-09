@@ -544,6 +544,9 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
                 elif matrix_filter.filter_type == 'NumberFilter':
                     self.assertEqual(node_space.encoded_space, [2.0, 3.0])
 
+                elif matrix_filter.filter_type == 'TextOnlyFilter':
+                    self.assertEqual(node_space.values.count(), 1)
+
                 else:
                     raise ValueError('Invalid filter: {0}'.format(matrix_filter.filter_type))
 
@@ -901,7 +904,8 @@ class TestLoadKeyNodes(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly, Wi
     def test_get_context_data(self):
 
         view = self.get_view()
-
+        view.set_parent_node(**view.kwargs)
+        
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['content_type'], self.content_type)
         self.assertEqual(context['parent_node'], self.start_node)
@@ -1405,7 +1409,7 @@ class TestCreateMatrixFilter(ManageMatrixFilterCommon, WithNatureGuideLink, With
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context_data['success'], True)
-            created_matrix_filter = MatrixFilter.objects.all().last()
+            created_matrix_filter = MatrixFilter.objects.all().order_by('pk').last()
             self.assertEqual(created_matrix_filter.name, post_data['name'])
             self.assertEqual(created_matrix_filter.filter_type, filter_type)
 
@@ -1725,7 +1729,7 @@ class ManageMatrixFilterSpaceCommon:
         return view
 
 
-    def get_post_data(self, matrix_filter, source_image=True):
+    def get_post_data(self, matrix_filter, source_image=True, referred_image=False):
 
         post_data = {
             'input_language' : self.generic_content.primary_language,
@@ -1744,6 +1748,29 @@ class ManageMatrixFilterSpaceCommon:
 
                 post_data.update(self.get_licencing_post_data())
 
+            elif referred_image == True:
+                image_store = self.create_image_store()
+                
+                space = MatrixFilterSpace(
+                    matrix_filter=matrix_filter,
+                    encoded_space='Test space',
+                )
+
+                space.save()
+
+
+                self.referred_content_image = ContentImage(
+                    content_type = ContentType.objects.get_for_model(space),
+                    object_id = space.id,
+                    image_store = image_store,
+                )
+
+                self.referred_content_image.save()
+
+                post_data.update({
+                    'referred_content_image_id' : self.referred_content_image.id,
+                })
+
         elif matrix_filter.filter_type == 'ColorFilter':
             post_data.update({
                 'color' : '#ff00ff',
@@ -1753,7 +1780,8 @@ class ManageMatrixFilterSpaceCommon:
     
     
 class TestCreateMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, WithNatureGuideLink, WithUser,
-                WithMedia, WithMatrixFilters, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+                WithImageStore, WithMedia, WithMatrixFilters, WithLoggedInUser, WithMetaApp, WithTenantClient,
+                TenantTestCase):
 
 
     url_name = 'create_matrix_filter_space'
@@ -1884,9 +1912,45 @@ class TestCreateMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.context_data['success'], True)
 
-                created_space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).last()
+                created_space = MatrixFilterSpace.objects.filter(
+                    matrix_filter=matrix_filter).order_by('pk').last()
                 self.assertEqual(created_space.matrix_filter, matrix_filter)
 
+
+    @test_settings
+    def test_form_valid_referred_image(self):
+        
+        for matrix_filter in self.matrix_filters:
+
+            if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+
+                view = self.get_view(matrix_filter)
+                view.set_space(**view.kwargs)
+                view.set_primary_language()
+
+                # do not supply a source_image as a file
+                # instead, use an existing content_image
+                post_data = self.get_post_data(matrix_filter, source_image=False, referred_image=True)
+
+                form_kwargs = view.get_form_kwargs()
+                form_kwargs['data'] = post_data
+                form_class = view.get_form_class()
+                form = form_class(**form_kwargs)
+
+                form.is_valid()
+                self.assertEqual(form.errors, {})
+
+                response = view.form_valid(form)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context_data['success'], True)
+
+                created_space = MatrixFilterSpace.objects.filter(
+                    matrix_filter=matrix_filter).order_by('pk').last()
+                self.assertEqual(created_space.matrix_filter, matrix_filter)
+                self.assertEqual(created_space.encoded_space, post_data['text'])
+
+                content_image = created_space.image()
+                self.assertEqual(content_image.image_store, self.referred_content_image.image_store)
 
 
 class TestManageMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, WithNatureGuideLink, WithUser,

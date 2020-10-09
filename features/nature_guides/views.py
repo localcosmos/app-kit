@@ -12,9 +12,10 @@ from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForN
 
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
                             RangeFilterManagementForm, ColorFilterManagementForm, NumberFilterManagementForm,
-                            TaxonFilterManagementForm)
+                            TaxonFilterManagementForm, TextOnlyFilterManagementForm)
 
-from .matrix_filter_space_forms import (DescriptiveTextAndImagesFilterSpaceForm, ColorFilterSpaceForm)
+from .matrix_filter_space_forms import (DescriptiveTextAndImagesFilterSpaceForm, ColorFilterSpaceForm,
+                                        TextOnlyFilterSpaceForm)
 
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin, FormLanguageMixin, MetaAppFormLanguageMixin
@@ -818,9 +819,12 @@ class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormVi
 
         self.matrix_filter_space = self.matrix_filter.matrix_filter_type.save_single_space(form)
 
+        self.content_instance = self.matrix_filter_space
+
         # save the image, if any
         if 'source_image' in form.cleaned_data and form.cleaned_data['source_image']:
-            self.content_instance = self.matrix_filter_space
+            self.save_image(form)
+        elif 'referred_content_image_id' in form.cleaned_data and form.cleaned_data['referred_content_image_id']:
             self.save_image(form)
 
         context = self.get_context_data(**self.kwargs)

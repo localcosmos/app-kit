@@ -593,6 +593,13 @@ a.xhr {
 	position: relative;
 }
 
+.textonlyselector {
+	padding: .5rem;
+	background-color: rgba(224,224,224,0.8);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
 input[type="range"] {
 	width:100%;
 	background: #F0F0F0;
@@ -604,6 +611,10 @@ input[type=range]::-moz-range-track {
 
 input[type="color"] {
 	height: 4rem;
+}
+
+.image-suggestion, .image-suggestion > * {
+	cursor: pointer;
 }
 
 /* toggler */

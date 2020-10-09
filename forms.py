@@ -153,6 +153,9 @@ class OptionalContentImageForm(ManageContentImageFormCommon, OptionalLicencingFo
     # md5
     md5 = forms.CharField(widget=forms.HiddenInput, required=False)
 
+    # if suggested images are provided, the user may click on the suggested image
+    referred_content_image_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
+
     def fields_required(self, fields):
         """Used for conditionally marking fields as required."""
         for field in fields:

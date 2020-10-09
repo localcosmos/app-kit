@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-05-12 10:56+0200\n"
+"POT-Creation-Date: 2020-10-09 09:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,37 +18,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: app_kit_api/models.py:10 templates/app_kit/ajax/app_card.html:27
+#: app_kit_api/models.py:9 templates/app_kit/ajax/app_card.html:27
 msgid "live"
 msgstr ""
 
-#: app_kit_api/models.py:11
+#: app_kit_api/models.py:10
 msgid "maintenance"
 msgstr "Wartung"
 
-#: app_kit_api/models.py:40
+#: app_kit_api/models.py:39
 msgid "Waiting for assignment"
 msgstr "Warte auf Zuweisung"
 
-#: app_kit_api/models.py:41
+#: app_kit_api/models.py:40
 msgid "Assigned"
 msgstr "zugewiesen"
 
-#: app_kit_api/models.py:42
+#: app_kit_api/models.py:41
 msgid "Job in progress"
 msgstr "Job in arbeit"
 
-#: app_kit_api/models.py:43
+#: app_kit_api/models.py:42
 msgid "Success"
 msgstr "Erfolg"
 
-#: app_kit_api/models.py:44
+#: app_kit_api/models.py:43
 msgid "Failed"
 msgstr "Fehler"
 
 #: appbuilders/v1/AppReleaseBuilder.py:342
 msgid "Your app needs at least one nature nuide OR one observation form."
-msgstr "Ihre App benötigt mindestens einen Naturführer oder ein Beobachtungsformular."
+msgstr ""
+"Ihre App benötigt mindestens einen Naturführer oder ein Beobachtungsformular."
 
 #: appbuilders/v1/AppReleaseBuilder.py:371
 #: appbuilders/v1/AppReleaseBuilder.py:374
@@ -115,41 +116,41 @@ msgid ""
 "The nature guide %(name)s has no setting for what happens if the "
 "identification has finished."
 msgstr ""
-"Der Naturführer %(name)s hat keine Einstellung dafür, was passieren soll, wenn die "
-"Bestimmung abgeschlossen ist."
+"Der Naturführer %(name)s hat keine Einstellung dafür, was passieren soll, "
+"wenn die Bestimmung abgeschlossen ist."
 
-#: appbuilders/v1/AppReleaseBuilder.py:631
-#: appbuilders/v1/AppReleaseBuilder.py:675
+#: appbuilders/v1/AppReleaseBuilder.py:632
+#: appbuilders/v1/AppReleaseBuilder.py:676
 msgid "Image is missing."
 msgstr "Bild fehlt."
 
-#: appbuilders/v1/AppReleaseBuilder.py:646
+#: appbuilders/v1/AppReleaseBuilder.py:644
 msgid "The nature guide is empty."
 msgstr "Der Naturführer ist leer."
 
-#: appbuilders/v1/AppReleaseBuilder.py:649
+#: appbuilders/v1/AppReleaseBuilder.py:647
 #, python-format
 msgid "The group %(name)s is empty."
 msgstr "Die Gruppe %(name)s ist leer."
 
-#: appbuilders/v1/AppReleaseBuilder.py:667
+#: appbuilders/v1/AppReleaseBuilder.py:665
 msgid "This filter is empty."
 msgstr "Dieser Filter hat keine Einträge."
 
-#: appbuilders/v1/AppReleaseBuilder.py:701
+#: appbuilders/v1/AppReleaseBuilder.py:702
 #, python-format
 msgid ""
 "Profile of %(count)s taxa missing. A generic profile will be used instead."
 msgstr ""
-"Steckbriefe von %(count)s Taxa fehlen. Es werden stattdessen Generische Steckbriefe "
-"benutzt."
+"Steckbriefe von %(count)s Taxa fehlen. Es werden stattdessen Generische "
+"Steckbriefe benutzt."
 
-#: appbuilders/v1/AppReleaseBuilder.py:743
+#: appbuilders/v1/AppReleaseBuilder.py:744
 #, python-format
 msgid "%(field_class)s needs at least 2 choices"
 msgstr "%(field_class)s benötigt mindestens 2 Wahlmöglichkeiten"
 
-#: appbuilders/v1/AppReleaseBuilder.py:760
+#: appbuilders/v1/AppReleaseBuilder.py:761
 #, python-format
 msgid "%(role)s field is missing"
 msgstr "%(role)s Feld fehlt"
@@ -166,17 +167,17 @@ msgstr "Durchsuche Taxa der App"
 msgid "Enter your taxa below. Only scientific names, separated by commas:"
 msgstr ""
 
-#: features/backbonetaxonomy/forms.py:36
+#: features/backbonetaxonomy/forms.py:37
 msgid "Select taxonomic systems"
 msgstr "Wähle taxonomische Systeme"
 
-#: features/backbonetaxonomy/models.py:113
-#: features/backbonetaxonomy/models.py:127
+#: features/backbonetaxonomy/models.py:124
+#: features/backbonetaxonomy/models.py:138
 msgid "Backbone taxonomy"
 msgstr "Backbone Taxonomy"
 
-#: features/backbonetaxonomy/models.py:114
-#: features/backbonetaxonomy/models.py:128
+#: features/backbonetaxonomy/models.py:125
+#: features/backbonetaxonomy/models.py:139
 msgid "Backbone taxonomies"
 msgstr "Backbone Taxonomy"
 
@@ -289,7 +290,8 @@ msgstr ""
 "Beobachtungsformularen verfügbar."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/manage_fulltree_form.html:10
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:49
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:58
+#: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:55
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:27
 #: multi_tenancy/templates/localcosmos/edit_account.html:26
 #: templates/app_kit/ajax/content_image_form.html:24
@@ -328,12 +330,10 @@ msgstr "mit Abkömmlingen"
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:17
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:22
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node_small.html:26
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:70
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:24
 #: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:27
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:17
 #: templates/app_kit/ajax/manage_app_languages.html:16
-#: templates/app_kit/app_overview.html:36
 #: templates/app_kit/manage_generic_content.html:38
 msgid "Modify"
 msgstr "ändern"
@@ -344,8 +344,7 @@ msgstr "ändern"
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:27
 #: templates/app_kit/ajax/app_card.html:19
 #: templates/app_kit/ajax/component_card.html:20
-#: templates/app_kit/app_overview.html:39 templates/app_kit/manage_app.html:16
-#: templates/app_kit/manage_app.html:37
+#: templates/app_kit/manage_app.html:16 templates/app_kit/manage_app.html:37
 msgid "Edit"
 msgstr "bearbeiten"
 
@@ -363,8 +362,8 @@ msgstr ""
 "Wenn für das Matrix Feld keine Beschriftung festgelegt ist, wird der Name "
 "des Taxons als Beschriftung benutzt."
 
-#: features/buttonmatrix/forms.py:148 features/generic_forms/models.py:185
-#: features/nature_guides/models.py:47
+#: features/buttonmatrix/forms.py:148 features/generic_forms/models.py:178
+#: features/nature_guides/models.py:54
 msgid "Observation form"
 msgstr "Beobachtungsformular"
 
@@ -567,168 +566,168 @@ msgstr "Definiert die Schrittweite für die + und - Buttons."
 msgid "Mode"
 msgstr "Modus"
 
-#: features/generic_forms/forms.py:160
+#: features/generic_forms/forms.py:161
 msgid "A widget defines how the field is displayed to the user."
 msgstr "Ein Widget definiert, wie das Feld dem Nutzer angezeigt wird."
 
-#: features/generic_forms/forms.py:191
+#: features/generic_forms/forms.py:192
 msgid "A multiple choice field cannot be a required field."
 msgstr "Ein Multiple Choice Feld kann kein Pflichtfeld sein."
 
-#: features/generic_forms/forms.py:202
+#: features/generic_forms/forms.py:203
 msgid "Max value only applies to number fields."
 msgstr "Maximalwert ist nur auf Zahlenfelder anwendbar."
 
-#: features/generic_forms/forms.py:207 features/generic_forms/forms.py:228
+#: features/generic_forms/forms.py:208 features/generic_forms/forms.py:229
 msgid "Max value has to be a number."
 msgstr "Der Maximalwert muss eine Zahl sein."
 
-#: features/generic_forms/forms.py:211
+#: features/generic_forms/forms.py:212
 msgid "Integer fields can only have integer max values."
 msgstr "Ganzzahlige Felder können nur ganze Zahlen als Maximalwert haben."
 
-#: features/generic_forms/forms.py:223
+#: features/generic_forms/forms.py:224
 msgid "Min value only applies to number fields."
 msgstr "Minimalwert ist nur auf Zahlenfelder anwendbar."
 
-#: features/generic_forms/forms.py:232
+#: features/generic_forms/forms.py:233
 msgid "Integer fields can only have Integer max values."
 msgstr "Ganzzahlige Felder können nur ganze Zahlen als Maximalwert haben."
 
-#: features/generic_forms/forms.py:246
+#: features/generic_forms/forms.py:247
 msgid "Only integers are accepted."
 msgstr "Nur ganze Zahlen werden akzeptiert."
 
-#: features/generic_forms/forms.py:248
+#: features/generic_forms/forms.py:249
 msgid "Decimal places can only be used in decimal fields."
 msgstr "Dezimalstellen sind nur auf Dezimalzahlfelder anwendbar."
 
-#: features/generic_forms/forms.py:284
+#: features/generic_forms/forms.py:286
 msgid "You have no observation forms yet."
 msgstr "Sie haben noch kein Beobachtungsformular."
 
-#: features/generic_forms/forms.py:306
+#: features/generic_forms/forms.py:308
 msgid "Set this observation form as the default observation form of this app."
 msgstr "Dieses Beobachtungsformular als Standard für diese App festlegen."
 
-#: features/generic_forms/models.py:27
+#: features/generic_forms/models.py:21
 msgid "Checkbox"
 msgstr "Checkbox"
 
-#: features/generic_forms/models.py:28
+#: features/generic_forms/models.py:22
 msgid "Single line text input"
 msgstr "Einzeiliges Textfeld"
 
-#: features/generic_forms/models.py:29
+#: features/generic_forms/models.py:23
 msgid "Multi-line text input"
 msgstr "Mehrzeiliges Textfeld"
 
-#: features/generic_forms/models.py:30
+#: features/generic_forms/models.py:24
 msgid "Number field"
 msgstr "Zahlenfeld"
 
-#: features/generic_forms/models.py:31
+#: features/generic_forms/models.py:25
 msgid "Number input with +/- buttons"
 msgstr "Zahlenfeld mit +/- Buttons"
 
-#: features/generic_forms/models.py:32
+#: features/generic_forms/models.py:26
 msgid "Hidden field"
 msgstr "Verstecktes Feld"
 
-#: features/generic_forms/models.py:33
+#: features/generic_forms/models.py:27
 msgid "Dropdown"
 msgstr "Dropdown"
 
-#: features/generic_forms/models.py:34
+#: features/generic_forms/models.py:28
 msgid "Multiple choice"
 msgstr "Multiple Choice"
 
-#: features/generic_forms/models.py:35
+#: features/generic_forms/models.py:29
 msgid "Radio"
 msgstr "Radio"
 
-#: features/generic_forms/models.py:36
+#: features/generic_forms/models.py:30
 msgid "Date and time with autofill"
 msgstr "Datum und Uhrzeit, automatisch"
 
-#: features/generic_forms/models.py:37
+#: features/generic_forms/models.py:31
 msgid "GPS-supported point input with map"
 msgstr "GPS gestützte Eingabe mit Karte"
 
-#: features/generic_forms/models.py:38
+#: features/generic_forms/models.py:32
 msgid "Taxon input with backend search"
 msgstr "Taxon-Eingabe mit Suchfunktion"
 
-#: features/generic_forms/models.py:39
+#: features/generic_forms/models.py:33
 msgid "Camera and album"
 msgstr "Kamera und Album"
 
-#: features/generic_forms/models.py:43
+#: features/generic_forms/models.py:37
 msgid "Checkbox field"
 msgstr "Checkbox Feld"
 
-#: features/generic_forms/models.py:44
+#: features/generic_forms/models.py:38
 msgid "Text field"
 msgstr "Textfeld"
 
-#: features/generic_forms/models.py:45
+#: features/generic_forms/models.py:39
 msgid "Choice field"
 msgstr "Auswahl-Feld"
 
-#: features/generic_forms/models.py:46
+#: features/generic_forms/models.py:40
 msgid "Decimal number field (fixed precision)"
 msgstr "Dezimalzahl-Feld (feste Präzision)"
 
-#: features/generic_forms/models.py:47
+#: features/generic_forms/models.py:41
 msgid "Floating number field (precision not fixed)"
 msgstr "Dezimalzahl-Feld (variable Präzision)"
 
-#: features/generic_forms/models.py:48
+#: features/generic_forms/models.py:42
 msgid "Integer field"
 msgstr "Ganzzahliges Feld"
 
-#: features/generic_forms/models.py:49
+#: features/generic_forms/models.py:43
 msgid "Multiple choice field"
 msgstr "Multiple Choice Feld"
 
-#: features/generic_forms/models.py:50
+#: features/generic_forms/models.py:44
 msgid "Datetime field"
 msgstr "Zeitpunkt-Feld"
 
-#: features/generic_forms/models.py:51
+#: features/generic_forms/models.py:45
 msgid "Taxon field"
 msgstr "Taxon Feld"
 
-#: features/generic_forms/models.py:52
+#: features/generic_forms/models.py:46
 msgid "Point field"
 msgstr "Punkt-Feld"
 
-#: features/generic_forms/models.py:53
+#: features/generic_forms/models.py:47
 msgid "Image field"
 msgstr "Bild-Feld"
 
-#: features/generic_forms/models.py:186
+#: features/generic_forms/models.py:179
 msgid "Observation forms"
 msgstr "Beobachtungsformulare"
 
-#: features/generic_forms/models.py:198
+#: features/generic_forms/models.py:191
 msgid "Temporal Reference"
 msgstr "Zeitliche Referenz"
 
-#: features/generic_forms/models.py:199
-#: features/nature_guides/matrix_filters.py:691
+#: features/generic_forms/models.py:192
+#: features/nature_guides/matrix_filters.py:908
 msgid "Taxon"
 msgstr "Taxon"
 
-#: features/generic_forms/models.py:200
+#: features/generic_forms/models.py:193
 msgid "Geographic Reference"
 msgstr "Geographische Referenz"
 
-#: features/generic_forms/models.py:201
+#: features/generic_forms/models.py:194
 msgid "Regular"
 msgstr "Normal"
 
-#: features/generic_forms/models.py:316
+#: features/generic_forms/models.py:310
 msgid "Choice"
 msgstr "Wahlmöglichkeiten"
 
@@ -913,7 +912,7 @@ msgid "Edit glossary entry"
 msgstr "Glossareintrag bearbeiten"
 
 #: features/glossary/templates/glossary/manage_glossary.html:7
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:92
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:52
 msgid "Add entry"
 msgstr "Eintrag hinzufügen"
 
@@ -948,15 +947,15 @@ msgstr "Ungültige Geometrie"
 msgid "Observations"
 msgstr "Beobachtungen"
 
-#: features/maps/models.py:35
+#: features/maps/models.py:37
 msgid "Map"
 msgstr "Karte"
 
-#: features/maps/models.py:36
+#: features/maps/models.py:38
 msgid "Maps"
 msgstr "Karten"
 
-#: features/maps/models.py:43 features/maps/templates/maps/manage_maps.html:23
+#: features/maps/models.py:45 features/maps/templates/maps/manage_maps.html:23
 msgid "Project area"
 msgstr "Projektgebiet"
 
@@ -1013,15 +1012,15 @@ msgstr "Minimum muss kleiner als Maximum sein"
 msgid "Search nature guide"
 msgstr "Naturführer durchsuchen"
 
-#: features/nature_guides/forms.py:31
+#: features/nature_guides/forms.py:32
 msgid "Search whole tree for an entry."
 msgstr "Ganzen Baum nach einem Eintrag durchsuchen."
 
-#: features/nature_guides/forms.py:48
+#: features/nature_guides/forms.py:49
 msgid "Action when tapping on an identification result"
 msgstr "Aktion wenn auf ein Bestimmungsergebnis getippt wird"
 
-#: features/nature_guides/forms.py:49
+#: features/nature_guides/forms.py:50
 msgid ""
 "Define what happens when the user taps on an entry (not a group) of this "
 "nature guide."
@@ -1029,32 +1028,31 @@ msgstr ""
 "Legen Sie fest, was passiert, wenn der Nutzer auf einen Eintrag (nicht "
 "Gruppe) dieses Naturführers tippt."
 
-#: features/nature_guides/forms.py:67 features/taxon_profiles/models.py:107
-#: features/taxon_profiles/models.py:108
-msgid "Taxon profiles"
-msgstr "Artensteckbriefe"
-
-#: features/nature_guides/forms.py:95 features/nature_guides/models.py:184
+#: features/nature_guides/forms.py:90 features/nature_guides/models.py:401
 msgid "Node"
 msgstr "Knoten"
 
-#: features/nature_guides/forms.py:96 features/nature_guides/models.py:185
+#: features/nature_guides/forms.py:91 features/nature_guides/models.py:402
 msgid "Identification result"
 msgstr "Bestimmungsergebnis"
 
-#: features/nature_guides/forms.py:102
+#: features/nature_guides/forms.py:97
 msgid "Type of node"
 msgstr "Typ des Knotens"
 
-#: features/nature_guides/forms.py:104
+#: features/nature_guides/forms.py:99
 msgid "Name of the taxon or group."
 msgstr "Name des Taxons oder der Gruppe"
 
-#: features/nature_guides/forms.py:107
+#: features/nature_guides/forms.py:102
 msgid "Taxon (makes taxonomic filters work)"
 msgstr "Taxon (macht Taxonomische Filter funktionsfähig)"
 
-#: features/nature_guides/forms.py:112
+#: features/nature_guides/forms.py:105
+msgid "Decision rule"
+msgstr ""
+
+#: features/nature_guides/forms.py:107
 msgid ""
 "Will be shown below the image. Text that describes how to identify this "
 "entry or group, e.g. 'red feet, white body'."
@@ -1063,7 +1061,7 @@ msgstr ""
 "Eintrag oder diese Gruppe identifizieren kann, z.B. 'rote Füße, weißer "
 "Körper'."
 
-#: features/nature_guides/forms.py:169
+#: features/nature_guides/forms.py:170
 msgid "You have to enter at least a name or a decision rule."
 msgstr "Sie müssen entweder einen Namen oder eine Entscheidungsregel angeben"
 
@@ -1095,159 +1093,177 @@ msgstr "Name der Einheit"
 msgid "Full name of the unit, like meters or centimeters."
 msgstr "Vollständiger name der Einheit, wie Meter oder Zentimeter"
 
-#: features/nature_guides/matrix_filter_forms.py:70
+#: features/nature_guides/matrix_filter_forms.py:68
 msgid "Min"
 msgstr "Min"
 
-#: features/nature_guides/matrix_filter_forms.py:71
+#: features/nature_guides/matrix_filter_forms.py:69
 msgid "Max"
 msgstr "Max"
 
-#: features/nature_guides/matrix_filter_forms.py:72
+#: features/nature_guides/matrix_filter_forms.py:70
 msgid ""
 "Range will be rendered as a slider. Step defines the step of this slider."
 msgstr ""
 "Intervall wird als Slider dargestellt. Schrittweite definiert die "
 "Schrittweite dieses Sliders."
 
-#: features/nature_guides/matrix_filter_forms.py:81
+#: features/nature_guides/matrix_filter_forms.py:83
 msgid "Max needs to be higher than min."
 msgstr "max muss höher als min sein"
 
-#: features/nature_guides/matrix_filter_forms.py:92
+#: features/nature_guides/matrix_filter_forms.py:96
 msgid "Selectable Numbers"
 msgstr "Wählbare Zahlen"
 
-#: features/nature_guides/matrix_filter_forms.py:92
+#: features/nature_guides/matrix_filter_forms.py:96
 msgid "Comma-separated list, e.g. 1,2,3.1,5"
 msgstr "Kommagetrennte Liste, z.B. 1,2,3.1,5"
 
-#: features/nature_guides/matrix_filter_forms.py:110
+#: features/nature_guides/matrix_filter_forms.py:115
 #, python-format
 msgid "Only comma separated numbers are allowed. Incorrect character: %s"
 msgstr "Nur kommagetrennte Zahlen sind erlaubt. Falsches Zeichen: %s"
 
 #: features/nature_guides/matrix_filter_space_forms.py:25
+#: features/nature_guides/matrix_filter_space_forms.py:36
 msgid "Text"
 msgstr "Text"
 
-#: features/nature_guides/matrix_filters.py:35
-#: features/nature_guides/matrix_filters.py:384
+#: features/nature_guides/matrix_filters.py:39
+#: features/nature_guides/matrix_filters.py:447
 msgid "Color filter"
 msgstr "Farbfilter"
 
-#: features/nature_guides/matrix_filters.py:36
-#: features/nature_guides/matrix_filters.py:212
+#: features/nature_guides/matrix_filters.py:40
+#: features/nature_guides/matrix_filters.py:229
 msgid "Range filter"
 msgstr "Zahlenintervall-Filter"
 
-#: features/nature_guides/matrix_filters.py:37
+#: features/nature_guides/matrix_filters.py:41
 msgid "Numbers filter"
 msgstr "Zahlenfilter"
 
-#: features/nature_guides/matrix_filters.py:38
+#: features/nature_guides/matrix_filters.py:42
 msgid "Descriptive text and images"
 msgstr "Beschreibender Text mit Bildern"
 
-#: features/nature_guides/matrix_filters.py:39
+#: features/nature_guides/matrix_filters.py:43
 msgid "Taxonomic filter"
 msgstr "Taxonomischer Filter"
 
-#: features/nature_guides/matrix_filters.py:297
+#: features/nature_guides/matrix_filters.py:44
+#: features/nature_guides/matrix_filters.py:763
+#| msgid "Taxonomic filter"
+msgid "Text only filter"
+msgstr "Textbasierter Filter"
+
+#: features/nature_guides/matrix_filters.py:343
 msgid "Number filter"
 msgstr "Zahlenfilter"
 
-#: features/nature_guides/matrix_filters.py:385
+#: features/nature_guides/matrix_filters.py:448
 msgid "color"
 msgstr "Farbe"
 
-#: features/nature_guides/matrix_filters.py:551
+#: features/nature_guides/matrix_filters.py:642
 msgid "Text/Images filter"
 msgstr "Text/Bilder Filter"
 
-#: features/nature_guides/matrix_filters.py:552
+#: features/nature_guides/matrix_filters.py:643
 msgid "text with image"
 msgstr "Text mit Bild"
 
-#: features/nature_guides/matrix_filters.py:664
+#: features/nature_guides/matrix_filters.py:764
+#| msgid "Add text"
+msgid "text"
+msgstr "Text hinzufügen"
+
+#: features/nature_guides/matrix_filters.py:881
 msgid "Animals"
 msgstr "Tiere"
 
-#: features/nature_guides/matrix_filters.py:665
+#: features/nature_guides/matrix_filters.py:882
 msgid "Plants"
 msgstr "Pflanzen"
 
-#: features/nature_guides/matrix_filters.py:666
+#: features/nature_guides/matrix_filters.py:883
 msgid "Mushrooms"
 msgstr "Pilze"
 
-#: features/nature_guides/matrix_filters.py:667
+#: features/nature_guides/matrix_filters.py:884
 msgid "Chordates"
 msgstr "Wirbeltiere"
 
-#: features/nature_guides/matrix_filters.py:668
+#: features/nature_guides/matrix_filters.py:885
 msgid "Mammals"
 msgstr "Säugetiere"
 
-#: features/nature_guides/matrix_filters.py:669
+#: features/nature_guides/matrix_filters.py:886
 msgid "Birds"
 msgstr "Vögel"
 
-#: features/nature_guides/matrix_filters.py:670
+#: features/nature_guides/matrix_filters.py:887
 msgid "Amphibians"
 msgstr "Amphibien"
 
-#: features/nature_guides/matrix_filters.py:671
+#: features/nature_guides/matrix_filters.py:888
 msgid "Frogs"
 msgstr "Frösche"
 
-#: features/nature_guides/matrix_filters.py:672
+#: features/nature_guides/matrix_filters.py:889
 msgid "Fish"
 msgstr "Fische"
 
-#: features/nature_guides/matrix_filters.py:673
+#: features/nature_guides/matrix_filters.py:890
 msgid "Arthropods"
 msgstr "Gliederfüßer"
 
-#: features/nature_guides/matrix_filters.py:674
+#: features/nature_guides/matrix_filters.py:891
 msgid "Insects"
 msgstr "Insekten"
 
-#: features/nature_guides/matrix_filters.py:675
+#: features/nature_guides/matrix_filters.py:892
 msgid "Butterflies"
 msgstr "Schmetterlinge"
 
-#: features/nature_guides/matrix_filters.py:676
+#: features/nature_guides/matrix_filters.py:893
 msgid "Bugs"
 msgstr "Käfer"
 
-#: features/nature_guides/matrix_filters.py:677
+#: features/nature_guides/matrix_filters.py:894
 msgid "Dragonflies and damselflies"
 msgstr "Libellen"
 
-#: features/nature_guides/matrix_filters.py:678
+#: features/nature_guides/matrix_filters.py:895
 msgid "Spiders"
 msgstr "Spinnen"
 
-#: features/nature_guides/matrix_filters.py:679
+#: features/nature_guides/matrix_filters.py:896
 msgid "Molluscs"
 msgstr "Weichtiere"
 
-#: features/nature_guides/matrix_filters.py:690
+#: features/nature_guides/matrix_filters.py:907
 msgid "Taxonomic Filter"
 msgstr "Taxonomischer Filter"
 
-#: features/nature_guides/models.py:46
+#: features/nature_guides/models.py:53
 msgid "Species detail page"
 msgstr "Artensteckbrief"
 
-#: features/nature_guides/models.py:171
+#: features/nature_guides/models.py:178
 msgid "Nature guide"
 msgstr "Naturführer"
 
-#: features/nature_guides/models.py:172
+#: features/nature_guides/models.py:179
 msgid "Nature guides"
 msgstr "Naturführer"
+
+#: features/nature_guides/models.py:400
+#, fuzzy
+#| msgid "Start node"
+msgid "Start"
+msgstr "Anfangsknoten"
 
 #: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:7
 msgid "Circular nodes found"
@@ -1257,39 +1273,28 @@ msgstr "Zirkelschluss gefunden"
 msgid "Add existing node"
 msgstr "Existierenden Knoten hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:31
+#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:39
+#, fuzzy
+#| msgid ""
+#| "The following nodes were not added because it would result in a circular "
+#| "connection:"
 msgid ""
-"The following nodes were not added because it would result in a circular "
-"connection:"
+"The nodes you tried to add would have resulted in a circular connection."
 msgstr ""
 "Folgende Knoten wurden nicht hinzugefügt, da diese einen Zirkelschluss "
 "erzeugt hätten: "
 
-#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:50
+#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:48
 msgid ""
 "Currently you have got no existing entries or groups that could be added."
 msgstr ""
 "Aktuell haben Sie keine existierenden Einträge oder Gruppen, die hinzugefügt "
 "werden könnten."
 
-#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:58
-#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:64
+#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:56
+#: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:62
 msgid "Ok"
 msgstr "Ok"
-
-#: features/nature_guides/templates/nature_guides/ajax/delete_nodelink.html:12
-#, python-format
-msgid "Do you really want to delete %(verbose_name)s?"
-msgstr "Wollen Sie wirklich %(verbose_name)s löschen ?"
-
-#: features/nature_guides/templates/nature_guides/ajax/delete_nodelink.html:13
-#, python-format
-msgid ""
-"This will unlink %(verbose_name)s. You will still be able to add "
-"%(verbose_name)s back later."
-msgstr ""
-"Dies entfernt %(verbose_name)s. Sie haben aber noch die Möglichkeit, "
-"%(verbose_name)s wieder hinzuzufügen."
 
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter.html:9
 #, python-format
@@ -1317,16 +1322,24 @@ msgstr "%(matrix_filter_space)s bearbeiten"
 msgid "Add %(name)s"
 msgstr "%(name)s hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:20
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:22
+msgid "Suggested images"
+msgstr "Vorhandene Bilder"
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:23
+msgid "type to start image search"
+msgstr "Text eingeben um vorhandene Bilder zu suchen"
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:29
 msgid "Image"
 msgstr "Bild"
 
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:41
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:50
 #, python-format
 msgid "Successfully saved %(name)s."
 msgstr "%(name)s erfolgreich gespeichert."
 
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:48
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:57
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:26
 #: templates/app_kit/ajax/content_image_form.html:20
 #: templates/app_kit/ajax/manage_app_theme_image.html:20
@@ -1359,6 +1372,15 @@ msgstr "Merkmale dieses Eintrags"
 #: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:47
 msgid "Successfully saved node."
 msgstr "Knoten erfolgreich gespeichert."
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:54
+#: templates/app_kit/ajax/app_limit_reached.html:15
+#: templates/app_kit/ajax/create_generic_content.html:50
+#: templates/app_kit/ajax/manage_feature.html:28
+#: templates/app_kit/ajax/mockbutton.html:14
+#: templates/app_kit/ajax/zip_import.html:62
+msgid "Close"
+msgstr "Schließen"
 
 #: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:13
 msgid "multiple choices"
@@ -1407,7 +1429,6 @@ msgstr ""
 "Einstellungen."
 
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node_small.html:30
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:74
 msgid "Loading"
 msgstr "lade"
 
@@ -1422,10 +1443,12 @@ msgid "Enter group %(name)s"
 msgstr "Gruppe %(name)s betrachten"
 
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:11
+#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:30
 msgid "Move left"
 msgstr "nach links schieben"
 
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:13
+#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:32
 msgid "Move right"
 msgstr "nach rechts schieben"
 
@@ -1442,44 +1465,45 @@ msgstr ""
 "Die Gruppe <strong>%(name)s</strong> hat noch keine Einträge. Sie können "
 "Einträge unten hinzufügen."
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:35
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:39
 msgid "Filter by trait"
 msgstr "Nach Merkmal filtern"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:35
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:39
 msgid "results"
 msgstr "Ergebnisse"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:36
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:40
 msgid "Show all"
 msgstr "Zeige alle"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:95
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:55
 msgid "Add existing result or group"
 msgstr "Bestehenden Eintrag oder Gruppe hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:96
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:56
 msgid "Add new group"
 msgstr "Neue Gruppe hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:97
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:57
 msgid "Add new identification result"
 msgstr "Neues Bestimmungsergebnis hinzufügen"
 
 #: features/nature_guides/templates/nature_guides/node_analysis.html:20
-#, python-format
-msgid "%(node)s appears in %(length)s locations:"
-msgstr "%(node)s befindet kommt an %(length)s Orten vor:"
+#, fuzzy, python-format
+#| msgid "%(node)s appears in %(length)s locations:"
+msgid "%(meta_node)s appears in %(length)s locations:"
+msgstr "%(meta_node)s befindet kommt an %(length)s Orten vor:"
 
-#: features/nature_guides/templates/nature_guides/node_analysis.html:26
+#: features/nature_guides/templates/nature_guides/node_analysis.html:31
 msgid "Start node"
 msgstr "Anfangsknoten"
 
-#: features/nature_guides/templates/nature_guides/node_analysis.html:38
+#: features/nature_guides/templates/nature_guides/node_analysis.html:42
 msgid "Go to start node"
 msgstr "Gehe zum Anfangsknoten"
 
-#: features/nature_guides/templates/nature_guides/node_analysis.html:38
+#: features/nature_guides/templates/nature_guides/node_analysis.html:42
 #, python-format
 msgid "Go to %(name)s"
 msgstr "Gehe zu %(name)s"
@@ -1496,6 +1520,16 @@ msgstr "max"
 msgid "Clear"
 msgstr "zurücksetzen"
 
+#: features/nature_guides/views.py:327
+#, python-brace-format
+msgid "Do you really want to remove the crosslink to {0}?"
+msgstr "Wollen Sie die Querverbindung zu {0} wirklich entfernen?"
+
+#: features/nature_guides/views.py:329 views.py:910
+#, python-brace-format
+msgid "Do you really want to remove {0}?"
+msgstr "Wollen Sie {0} wirklich entfernen?"
+
 #: features/nature_guides/zip_import.py:127
 #, python-format
 msgid "Expected \"%(expected)s\", found \"%(found)s\""
@@ -1511,7 +1545,8 @@ msgstr "kein Wert for %(node_name)s gefunden"
 msgid ""
 "Length of %(node_name)s is too long: %(inserted_node_name)s. Maximum length "
 "is %(max_length)s"
-msgstr "%(node_name)s ist zu lang: %(inserted_node_name)s. Maximale Länge ist "
+msgstr ""
+"%(node_name)s ist zu lang: %(inserted_node_name)s. Maximale Länge ist "
 "%(max_length)s"
 
 #: features/nature_guides/zip_import.py:161
@@ -1625,7 +1660,12 @@ msgstr "Name des Textinhaltes, fungiert als Überschrift"
 msgid "E.g. habitat. IMPORTANT: changing this affects all texts of this type."
 msgstr "z.B. Lebensraum. WICHTIG: Änderung betrifft alle Texte dieses Typs."
 
+#: features/taxon_profiles/models.py:110 features/taxon_profiles/models.py:111
+msgid "Taxon profiles"
+msgstr "Artensteckbriefe"
+
 #: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:41
+#: templates/app_kit/ajax/get_content_image_suggestions.html:27
 msgid "No images found."
 msgstr "Keine Bilder gefunden."
 
@@ -1669,7 +1709,7 @@ msgstr "Texte speichern"
 msgid "Add new text type"
 msgstr "Neuen Texttyp hinzufügen"
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/taxonlist.html:15
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxonlist.html:16
 msgid "no profile"
 msgstr "Kein Artensteckbrief vorhanden"
 
@@ -1731,41 +1771,41 @@ msgstr "Zellinhalt muss \"Scientific name\" sein, nicht {0}"
 msgid "Cell content has to be \"Taxonomic source\", not {0}"
 msgstr "Zellinhalt muss \"Taxonomic source\" sein, nicht {0}"
 
-#: forms.py:41
+#: forms.py:40
 msgid "Use only [a-z] and [0-9] for the subdomain."
 msgstr "Benutzen Sie nur [a-z] und [0-9] für die Subdomain."
 
-#: forms.py:44
+#: forms.py:43
 msgid "This subdomain is forbidden."
 msgstr "Diese Subdomain ist nicht erlaubt."
 
-#: forms.py:47
+#: forms.py:46
 msgid "The subdomain has to start with a letter."
 msgstr "Die Subdomain muss mit einem Buchstaben beginnen."
 
-#: forms.py:50
+#: forms.py:49
 msgid "The subdomain has to be alphanumeric."
 msgstr "Die Subdomain muss alphanumerisch sein."
 
-#: forms.py:53
+#: forms.py:52
 msgid "This subdomain already exists."
 msgstr "Diese Subdomain ist bereits vergeben."
 
-#: forms.py:68
+#: forms.py:67
 msgid "Name of your app"
 msgstr "Name ihrer App"
 
-#: forms.py:69
+#: forms.py:68
 msgid "In the primary language"
 msgstr "In der Primärsprache"
 
-#: forms.py:72
+#: forms.py:71
 msgid "The language the app is created in. Translations can be made later."
 msgstr ""
 "Die Sprache in der ihre App erstellt wird. Übersetzungen können später "
 "angefertigt werden."
 
-#: forms.py:75
+#: forms.py:74
 msgid ""
 "Your app will be available at subdomain.localcosmos.org, where \"subdomain\" "
 "is the name you configured here."
@@ -1773,43 +1813,44 @@ msgstr ""
 "Ihre App wird unter subdomain.localcosmos.org erreichbar sein, wobei "
 "\"subdomain\" der Name ist, den Sie hier konfigurieren."
 
-#: forms.py:92
+#: forms.py:91
 msgid "An app with this name already exists."
 msgstr "Eine App mit diesem Namen existiert bereits."
 
-#: forms.py:106
+#: forms.py:105
 msgid "Select language"
 msgstr "Sprache wählen"
 
-#: forms.py:141
+#: forms.py:140
 msgid "Text that will be shown together with this image."
 msgstr "Der Text wird zusammen mit diesem Bild angezeigt."
 
-#: forms.py:161
+#: forms.py:163
 msgid "This field is required."
 msgstr "Dieses Feld ist ein Pflichtfeld."
 
-#: forms.py:258
+#: forms.py:261
 msgid "Allow unregistered users to report observations"
 msgstr "Erlaube das anonyme Melden von Beobachtungen"
 
-#: forms.py:259
-msgid "Only applies if your app contains observation forms."
-msgstr "Dies hat nur Auswirkungen, wenn ihre App ein Beobachtungsformular enthält."
-
 #: forms.py:262
+msgid "Only applies if your app contains observation forms."
+msgstr ""
+"Dies hat nur Auswirkungen, wenn ihre App ein Beobachtungsformular enthält."
+
+#: forms.py:265
 msgid "Local Cosmos Private"
 msgstr "Local Cosmos Private"
 
-#: forms.py:263
+#: forms.py:266
 msgid "I run my own Local Cosmos Server"
 msgstr "Ich betreibe meinen eigenen Local Cosmos Server"
 
-#: forms.py:264
+#: forms.py:267
 msgid "API URL of your private Local Cosmos Server"
 msgstr "URL der API ihres privaten Local Cosmos Servers"
 
-#: forms.py:265
+#: forms.py:268
 msgid "Only applies if you run your own Local Cosmos Server."
 msgstr "Nur notwendig, wenn Sie ihren eigenen Local Cosmos Server betreiben."
 
@@ -1821,8 +1862,7 @@ msgstr "Name der Entität"
 msgid ""
 "First- and Surname if you are an individual. Otherwise the name of the legal "
 "entity."
-msgstr ""
-"Vor- und Nachname, oder Name der Institution."
+msgstr "Vor- und Nachname, oder Name der Institution."
 
 #: forms.py:353
 msgid "Street"
@@ -1848,15 +1888,15 @@ msgstr "Telefon"
 msgid "You have to upload an image."
 msgstr "Sie müssen ein Bild hochladen."
 
-#: forms.py:607
+#: forms.py:610
 msgid "ad-hoc"
 msgstr "ad-hoc"
 
-#: forms.py:608
+#: forms.py:611
 msgid "App Stores"
 msgstr "App Stores"
 
-#: forms.py:612
+#: forms.py:615
 msgid "Platforms"
 msgstr "Platformen"
 
@@ -1943,11 +1983,11 @@ msgstr "Warnungen"
 msgid "errors"
 msgstr "Fehler"
 
-#: models.py:854
+#: models.py:842
 msgid "App"
 msgstr "App"
 
-#: models.py:855
+#: models.py:843
 msgid "Meta apps"
 msgstr "Meta Apps"
 
@@ -1973,7 +2013,7 @@ msgstr "Custom App Feature"
 msgid "First name and surname"
 msgstr "Vor- und Nachname"
 
-#: multi_tenancy/models.py:89
+#: multi_tenancy/models.py:98
 msgid "Admin"
 msgstr "Admin"
 
@@ -1982,8 +2022,8 @@ msgid ""
 "Your app kit will be available at subdomain.localcosmos.org, where "
 "\"subdomain\" is the name you configured here."
 msgstr ""
-"Ihr App Kit wird unter subdomain.localcosmos.org erreichbar sein. "
-"\"subomdain\" ist dabei der hier eingegebene Name."
+"Ihr App Kit wird unter subdomain.localcosmos.org erreichbar sein. \"subomdain"
+"\" ist dabei der hier eingegebene Name."
 
 #: multi_tenancy/templates/localcosmos/contact_us.html:9
 #: templates/app_kit/legal/legal_notice.html:16
@@ -2020,7 +2060,6 @@ msgstr ""
 "Wenn Sie ihren Account löschen, werden alle Verweise auf Sie als Person aus "
 "unserer Datenbank gelöscht, sowie alle Bilder gelöscht. Dies kann nicht "
 "Rückgängig gemacht werden."
-
 
 #: multi_tenancy/templates/localcosmos/edit_account.html:9
 msgid "Edit your account"
@@ -2073,6 +2112,34 @@ msgstr "App Kit Setup"
 #: multi_tenancy/templates/localcosmos/setup/setup_initial_appkit.html:33
 msgid "Create app kit"
 msgstr "App Kit erstellen"
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:72
+#: templates/app_kit/base.html:166
+msgid "Sign out"
+msgstr "abmelden"
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:78
+#: templates/app_kit/base.html:172
+msgid "Sign in"
+msgstr "anmelden"
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:105
+msgid "Departments and projects"
+msgstr ""
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:118
+msgid "select the app you want to work on"
+msgstr ""
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:147
+#: templates/app_kit/base.html:339 templates/app_kit/legal/legal_notice.html:4
+msgid "Legal notice"
+msgstr "Impressum"
+
+#: multi_tenancy/templates/multi_tenancy/list_app_kits.html:150
+#: templates/app_kit/base.html:342
+msgid "Privacy"
+msgstr "Privatsphäre"
 
 #: templates/app_kit/ajax/add_existing_generic_content.html:4
 msgid "Successfully added the following to your app:"
@@ -2143,27 +2210,6 @@ msgstr "App Limit erreicht"
 #: templates/app_kit/ajax/app_limit_reached.html:10
 msgid "You are not allowed to create any more apps."
 msgstr "Sie können keine weiteren Apps erstellen."
-
-#: templates/app_kit/ajax/app_limit_reached.html:15
-#: templates/app_kit/ajax/create_generic_content.html:50
-#: templates/app_kit/ajax/manage_feature.html:28
-#: templates/app_kit/ajax/mockbutton.html:14
-#: templates/app_kit/ajax/zip_import.html:62
-msgid "Close"
-msgstr "Schließen"
-
-#: templates/app_kit/ajax/appbar.html:4
-msgid "Currently building your app! Grab a coffee and sit back."
-msgstr "Ihre App wird gerade gebaut!"
-
-#: templates/app_kit/ajax/appbar.html:8 templates/app_kit/build_app.html:232
-#: templates/app_kit/build_app.html:263 templates/app_kit/build_app.html:297
-msgid "Build"
-msgstr "Bauen"
-
-#: templates/app_kit/ajax/appbar.html:11
-msgid "Components"
-msgstr "Komponenten"
 
 #: templates/app_kit/ajax/content_image_form.html:10
 msgid "Manage image"
@@ -2279,45 +2325,25 @@ msgstr ""
 msgid "Import"
 msgstr "Importieren"
 
-#: templates/app_kit/app_overview.html:12
-#, python-format
-msgid "Features of %(meta_app)s"
-msgstr "Features von %(meta_app)s"
-
-#: templates/app_kit/app_overview.html:22
-msgid ""
-"This feature is mandatory and manages all the taxa in your app. It "
-"automatically includes taxa you added to identification keys, button "
-"matrices or nature guides. You can add taxa manually to your backbone and "
-"define profiles for taxa. You only can have one backbone taxonomy per app."
-msgstr ""
-"Dieses Feature ist zwingend notwendig und managed all Taxa ihrer App. Es "
-"fügt automaisch Taxa aus Naturführern hinzu. Sie können manuell Taxa zu ihrem "
-"Backbone hinzufügen und Artensteckbriefe erstellen. Sie können nur eine "
-"Backbone Taxonomie pro App haben."
-
-#: templates/app_kit/app_overview.html:31
-msgid "required"
-msgstr "benötigt"
-
-#: templates/app_kit/app_overview.html:40
-msgid "Remove from app"
-msgstr "aus App entfernen"
-
 #: templates/app_kit/base.html:140 templates/app_kit/manage_app.html:28
 #: templates/app_kit/manage_app.html:29 templates/app_kit/manage_app.html:32
 msgid "Online content"
 msgstr "Online Content"
 
-#: templates/app_kit/base.html:154
-msgid "Sign out"
-msgstr "abmelden"
+#: templates/app_kit/base.html:145
+msgid "Currently building your app! Grab a coffee and sit back."
+msgstr "Ihre App wird gerade gebaut!"
 
-#: templates/app_kit/base.html:160
-msgid "Sign in"
-msgstr "anmelden"
+#: templates/app_kit/base.html:149 templates/app_kit/build_app.html:233
+#: templates/app_kit/build_app.html:264 templates/app_kit/build_app.html:298
+msgid "Build"
+msgstr "Bauen"
 
-#: templates/app_kit/base.html:198
+#: templates/app_kit/base.html:152
+msgid "Components"
+msgstr "Komponenten"
+
+#: templates/app_kit/base.html:210
 msgid ""
 "Your app is currently being validated. You can continue when the validation "
 "process has finished."
@@ -2325,7 +2351,7 @@ msgstr ""
 "Ihre App wird gerade validiert. Sie können weitermachen, sobald die "
 "Validierung abgeschlossen ist."
 
-#: templates/app_kit/base.html:200
+#: templates/app_kit/base.html:212
 msgid ""
 "Your app is currently being built. You can continue when the build process "
 "has finished."
@@ -2333,15 +2359,15 @@ msgstr ""
 "Ihre App wird gerade gebaut. Sie können weitermachen, sobald der Bauvorgang "
 "abgeschlossen ist."
 
-#: templates/app_kit/base.html:202
+#: templates/app_kit/base.html:214
 msgid "Waiting for iOS app build. Build is in progress."
 msgstr "Warte auf iOS build. Bauvorgang im Gange."
 
-#: templates/app_kit/base.html:225
+#: templates/app_kit/base.html:237 templates/app_kit/build_app.html:178
 msgid "App packages"
 msgstr "App Pakete"
 
-#: templates/app_kit/base.html:228
+#: templates/app_kit/base.html:240
 msgid ""
 "You are using Local Cosmos Private Server for this app. You can download "
 "your app packages here or start a new version."
@@ -2349,77 +2375,78 @@ msgstr ""
 "Sie benutzen einen Local Cosmos Private Server für diese App. Sie können "
 "hier ihre App Pakete herunterladen oder eine neue Version starten."
 
-#: templates/app_kit/base.html:232
+#: templates/app_kit/base.html:244
 msgid "Web app .zip"
 msgstr "Webapp .zip"
 
-#: templates/app_kit/base.html:232 templates/app_kit/base.html:234
-#: templates/app_kit/base.html:238 templates/app_kit/base.html:252
-#: templates/app_kit/base.html:256
+#: templates/app_kit/base.html:244 templates/app_kit/base.html:246
+#: templates/app_kit/base.html:250 templates/app_kit/base.html:264
+#: templates/app_kit/base.html:268 templates/app_kit/build_app.html:179
 msgid "Download"
 msgstr "herunterladen"
 
-#: templates/app_kit/base.html:234 templates/app_kit/base.html:252
+#: templates/app_kit/base.html:246 templates/app_kit/base.html:264
 msgid "Android .apk"
 msgstr "Android .apk"
 
-#: templates/app_kit/base.html:236 templates/app_kit/base.html:254
+#: templates/app_kit/base.html:248 templates/app_kit/base.html:266
 msgid "iOS .ipa"
 msgstr "iOS .ipa"
 
-#: templates/app_kit/base.html:240 templates/app_kit/base.html:258
+#: templates/app_kit/base.html:252 templates/app_kit/base.html:270
 msgid "not available"
 msgstr "nicht verfügbar"
 
-#: templates/app_kit/base.html:249
+#: templates/app_kit/base.html:261
 msgid "Status"
 msgstr "Status"
 
-#: templates/app_kit/base.html:249 templates/app_kit/build_app.html:34
+#: templates/app_kit/base.html:261 templates/app_kit/build_app.html:34
 msgid "published"
 msgstr "veröffentlicht"
 
-#: templates/app_kit/base.html:250
+#: templates/app_kit/base.html:262
 msgid "Published version"
 msgstr "Veröffentlichte Version"
 
-#: templates/app_kit/base.html:251
+#: templates/app_kit/base.html:263
 msgid "Web app URL"
 msgstr "Webapp URL"
 
-#: templates/app_kit/base.html:263
+#: templates/app_kit/base.html:275
 msgid "To edit your app, you have to start a new version."
 msgstr "Um ihre App zu bearbeiten müssen Sie eine neue Version starten."
 
-#: templates/app_kit/base.html:272
+#: templates/app_kit/base.html:284
 msgid "Start new app version"
 msgstr "neue App-version starten"
 
-#: templates/app_kit/base.html:275
+#: templates/app_kit/base.html:287
 msgid "Start new version"
 msgstr "neue Version starten"
 
-#: templates/app_kit/base.html:292
+#: templates/app_kit/base.html:304
 msgid "Local Cosmos Private Server instructions"
 msgstr "Anweisungen für ihren privaten Local Cosmos Server"
 
-#: templates/app_kit/base.html:294
+#: templates/app_kit/base.html:306
 msgid "Steps to make everything work with your private server:"
-msgstr "Die nächsten Schritte, damit auf ihrem privaten Server alles funktioniert:"
+msgstr ""
+"Die nächsten Schritte, damit auf ihrem privaten Server alles funktioniert:"
 
-#: templates/app_kit/base.html:296
+#: templates/app_kit/base.html:308
 msgid "Download the zipped web app:"
 msgstr "gezippte WebApp herunterladen:"
 
-#: templates/app_kit/base.html:296
+#: templates/app_kit/base.html:308
 msgid "web app .zip"
 msgstr "Webapp .zip"
 
-#: templates/app_kit/base.html:297
+#: templates/app_kit/base.html:309
 msgid "Go to the Server Control Panel of your private server."
 msgstr "Rufen Sie das Server Control Panel ihres privaten Servers auf."
 
-#: templates/app_kit/base.html:298
+#: templates/app_kit/base.html:310
 msgid ""
 "In your private Server Control Panel click \"Install app\" or \"Update app\" "
 "and follow the instructions."
@@ -2427,17 +2454,9 @@ msgstr ""
 "Klicken Sie In ihrem privaten Server Control Panel auf \"Install App\" oder "
 "\"Update App\", und folgen Sie den Anweisungen"
 
-#: templates/app_kit/base.html:299
+#: templates/app_kit/base.html:311
 msgid "Check that everything is working on your private server."
 msgstr "Überprüfen Sie, ob alles auf ihrem privaten Server funktioniert."
-
-#: templates/app_kit/base.html:327 templates/app_kit/legal/legal_notice.html:4
-msgid "Legal notice"
-msgstr "Impressum"
-
-#: templates/app_kit/base.html:330
-msgid "Privacy"
-msgstr "Privatsphäre"
 
 #: templates/app_kit/build_app.html:27
 msgid "BUILD IN PROGRESS"
@@ -2459,9 +2478,10 @@ msgstr ""
 "Der Bauvorgang ihrer App scheitert momentan, obwohl die Validierung keine "
 "fehler ergab."
 
-#: templates/app_kit/build_app.html:53 templates/app_kit/build_app.html:279
+#: templates/app_kit/build_app.html:53 templates/app_kit/build_app.html:280
 msgid "Our engineers have been notified and will get back to you."
-msgstr "Unsere Ingenieure wurden benachrichtigt und werden sich bei Ihnen melden."
+msgstr ""
+"Unsere Ingenieure wurden benachrichtigt und werden sich bei Ihnen melden."
 
 #: templates/app_kit/build_app.html:59
 msgid "Last validation attempt:"
@@ -2525,43 +2545,43 @@ msgstr "URL der Web app:"
 msgid "opens in new tab"
 msgstr "öffnet in neuem Tab"
 
-#: templates/app_kit/build_app.html:191
+#: templates/app_kit/build_app.html:192
 msgid "Distribution"
 msgstr "Verbreitung"
 
-#: templates/app_kit/build_app.html:201
+#: templates/app_kit/build_app.html:202
 msgid "App creation steps"
 msgstr "Schritte der App-Erstellung"
 
-#: templates/app_kit/build_app.html:226
+#: templates/app_kit/build_app.html:227
 msgid "Create content"
 msgstr "Inhalte erstellen"
 
-#: templates/app_kit/build_app.html:229 templates/app_kit/build_app.html:258
-#: templates/app_kit/build_app.html:293
+#: templates/app_kit/build_app.html:230 templates/app_kit/build_app.html:259
+#: templates/app_kit/build_app.html:294
 msgid "Validate"
 msgstr "Validieren"
 
-#: templates/app_kit/build_app.html:235 templates/app_kit/build_app.html:271
-#: templates/app_kit/build_app.html:288 templates/app_kit/build_app.html:301
+#: templates/app_kit/build_app.html:236 templates/app_kit/build_app.html:272
+#: templates/app_kit/build_app.html:289 templates/app_kit/build_app.html:302
 msgid "Release"
 msgstr "Veröffentlichen"
 
-#: templates/app_kit/build_app.html:244
+#: templates/app_kit/build_app.html:245
 msgid ""
 "The app kit is running in sandbox mode. You can validate, but not build."
 msgstr ""
 "Das App Kit läuft im Sandbox-Modus. Sie können validieren, aber nicht bauen."
 
-#: templates/app_kit/build_app.html:252
+#: templates/app_kit/build_app.html:253
 msgid "Validation in progress."
 msgstr "Validierung im Gange."
 
-#: templates/app_kit/build_app.html:263
+#: templates/app_kit/build_app.html:264
 msgid "ignore warnings and build"
 msgstr "Warnungen ignorieren und bauen"
 
-#: templates/app_kit/build_app.html:279
+#: templates/app_kit/build_app.html:280
 msgid "Due to an error, we could not release your app."
 msgstr "Aufgrund eines Fehlers konnten wir ihre App nicht veröffentlichen."
 
@@ -2680,7 +2700,7 @@ msgstr "Ihre Übersetzungen wurden gespeichert."
 msgid "Save translations"
 msgstr "Übersetzungen speichern"
 
-#: templatetags/app_tags.py:292
+#: templatetags/app_tags.py:238
 msgid ""
 "Manage the taxa of this app. The taxa defined in the backbone taxonomy are "
 "available in observation forms and taxon profiles. Taxa of nature guides are "
@@ -2690,7 +2710,7 @@ msgstr ""
 "Taxa sind in Beobachtungsformularen und Artensteckbriefen verfügbar. Taxa "
 "aus Naturführern werden automatisch zur Backbone Taxonomie hinzugefügt."
 
-#: templatetags/app_tags.py:293
+#: templatetags/app_tags.py:239
 msgid ""
 "Where a glossary entry appears, the user can click on it to read the "
 "explanation."
@@ -2698,24 +2718,24 @@ msgstr ""
 "Wenn ein Begriff aus dem Glossar in einem Text vorkommt, kann der Nutzer ihn "
 "anklicken und die Erklärung lesen."
 
-#: templatetags/app_tags.py:294
+#: templatetags/app_tags.py:240
 msgid "A Nature Guide is an identification key or a simple species list."
 msgstr ""
 "Ein Naturführer ist ein Bestimmungsschlüssel oder eine einfache Artenliste."
 
-#: templatetags/app_tags.py:295
+#: templatetags/app_tags.py:241
 msgid "The map feature plots your observations on a map."
 msgstr "Das Kartenfeature stellt ihre Beobachtungen auf Karten dar."
 
-#: templatetags/app_tags.py:296
+#: templatetags/app_tags.py:242
 msgid "Describe the species of your app using taxon profiles."
 msgstr "Beschreigen Sie die Arten ihrer App mit Artensteckbriefen."
 
-#: templatetags/app_tags.py:297
+#: templatetags/app_tags.py:243
 msgid "An observation form is used to collect data."
 msgstr "Ein Beobachtungsformular dient der Datensammlung."
 
-#: templatetags/app_tags.py:309
+#: templatetags/app_tags.py:255
 msgid "No help text available."
 msgstr "Kein Hilfetext verfügbar"
 
@@ -2724,12 +2744,37 @@ msgstr "Kein Hilfetext verfügbar"
 msgid "File too large. Size should not exceed %(size)s MiB."
 msgstr "Datei zu groß. Die Größe sollte %(size)s MiB nicht überschreiten."
 
-#: views.py:226
+#: views.py:225
 #, python-format
 msgid "Do you really want to delete %s?"
 msgstr "Wollen Sie %s wirklich löschen?"
 
-#: views.py:935
-#, python-format
-msgid "Do you really want to remove %s?"
-msgstr "Wollen Sie %s wirklich entfernen?"
+msgid "Do you really want to delete %(verbose_name)s?"
+msgstr "Wollen Sie wirklich %(verbose_name)s löschen ?"
+
+msgid ""
+"This will unlink %(verbose_name)s. You will still be able to add "
+"%(verbose_name)s back later."
+msgstr ""
+"Dies entfernt %(verbose_name)s. Sie haben aber noch die Möglichkeit, "
+"%(verbose_name)s wieder hinzuzufügen."
+
+msgid "Features of %(meta_app)s"
+msgstr "Features von %(meta_app)s"
+
+msgid ""
+"This feature is mandatory and manages all the taxa in your app. It "
+"automatically includes taxa you added to identification keys, button "
+"matrices or nature guides. You can add taxa manually to your backbone and "
+"define profiles for taxa. You only can have one backbone taxonomy per app."
+msgstr ""
+"Dieses Feature ist zwingend notwendig und managed all Taxa ihrer App. Es "
+"fügt automaisch Taxa aus Naturführern hinzu. Sie können manuell Taxa zu "
+"ihrem Backbone hinzufügen und Artensteckbriefe erstellen. Sie können nur "
+"eine Backbone Taxonomie pro App haben."
+
+msgid "required"
+msgstr "benötigt"
+
+msgid "Remove from app"
+msgstr "aus App entfernen"

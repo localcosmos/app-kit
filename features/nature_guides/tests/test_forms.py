@@ -95,7 +95,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
 
         form = ManageNodelinkForm(parent_node, from_url=from_url)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 10)
+        self.assertEqual(len(form.fields), 11)
         self.assertEqual(form.from_url, from_url)
         self.assertEqual(form.node, None)
 
@@ -119,7 +119,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         node = self.create_node(parent_node, 'First')
         form = ManageNodelinkForm(parent_node, from_url=from_url, node=node)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 10)
+        self.assertEqual(len(form.fields), 11)
         self.assertEqual(form.node, node)
         self.assertEqual(form.from_url, from_url)
 
@@ -149,12 +149,17 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
                                                meta_node=parent_node.meta_node)
         
         dtai_space = MatrixFilterSpace.objects.filter(matrix_filter=dtai_filter).first()
+
+        textonly_filter = MatrixFilter.objects.get(filter_type='TextOnlyFilter',
+                                               meta_node=parent_node.meta_node)
+        textonly_space = MatrixFilterSpace.objects.filter(matrix_filter=textonly_filter).first()
         
         node_filter_spaces = {
             'ColorFilter' : color_space,
             'RangeFilter' : [5,6],
             'NumberFilter' : [1,3],
             'DescriptiveTextAndImagesFilter' : dtai_space,
+            'TextOnlyFilter' : textonly_space,
         }
 
         for filter_type, space in node_filter_spaces.items():

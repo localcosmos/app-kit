@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from django_tenants.utils import get_tenant_model, get_tenant_domain_model
@@ -17,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        base_domain = 'staging.localcosmos.org'
+        base_domain = getattr(settings, APP_KIT_STAGING_BASE_DOMAIN, 'staging.localcosmos.org')
 
         self.stdout.write('Fixing all domains.')
 

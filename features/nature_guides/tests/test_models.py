@@ -776,6 +776,10 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
         self.perform_get_space_test('DescriptiveTextAndImagesFilter', 'description')
 
     @test_settings
+    def test_get_space_textonly(self):
+        self.perform_get_space_test('TextOnlyFilter', 'text only value')
+
+    @test_settings
     def test_get_space_taxon(self):
         self.perform_get_space_test('TaxonFilter', self.get_taxonfilter_space())
 
@@ -990,6 +994,16 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
 
         self.perform_deletion_test(parent_node, space)
 
+
+    @test_settings
+    def test_save_textonly_filter(self):
+
+        parent_node, space = self.perform_save_test('TextOnlyFilter', 'text only value', 1)
+
+        self.perform_update_test(parent_node, space, 'New text only value')
+
+        self.perform_deletion_test(parent_node, space)
+
     
     @test_settings
     def test_save_taxon_filter(self):
@@ -1078,6 +1092,7 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
             'DescriptiveTextAndImagesFilter' : 'description',
             'NumberFilter' : [1,2,3,4],
             'TaxonFilter' : taxonfilter,
+            'TextOnlyFilter' : 'Test text only',
         }
 
         for filter_tuple in MATRIX_FILTER_TYPES:
@@ -1214,6 +1229,7 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
             'DescriptiveTextAndImagesFilter' : 'description',
             'NumberFilter' : [1,2,3,4],
             'TaxonFilter' : taxonfilter,
+            'TextOnlyFilter' : 'text only value'
         }
 
         return encoded_spaces
@@ -1236,6 +1252,7 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
             'RangeFilter' : [5,6],
             'DescriptiveTextAndImagesFilter' :None,
             'NumberFilter' : [1,3],
+            'TextOnlyFilter' : None,
         }
 
         node_space = NodeFilterSpace(
@@ -1575,6 +1592,23 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
                     self.assertFalse(old_value in item['space'][matrix_filter_uuid])
                     self.assertIn(new_value, item['space'][matrix_filter_uuid])
 
+
+                elif filter_type == 'TextOnlyFilter':
+                    old_value = space.values().first()
+                    
+                    self.assertIn(old_value, item['space'][matrix_filter_uuid])
+                    
+                    new_value = 'New text only text'
+
+                    cache.update_matrix_filter_space(matrix_filter_uuid, old_value, new_value)
+                    
+                    meta_node.refresh_from_db()
+                    cache = meta_node.children_cache
+                    item = cache['items'][0]
+
+                    self.assertFalse(old_value in item['space'][matrix_filter_uuid])
+                    self.assertIn(new_value, item['space'][matrix_filter_uuid])
+
                 else:
                     self.assertIn(space.encoded_space, item['space'][matrix_filter_uuid])
                         
@@ -1629,27 +1663,13 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
             if item['uuid'] == node.name_uuid:
 
 
-                if filter_type == 'ColorFilter':
+                if filter_type in ['ColorFilter', 'DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
                     old_value = space.values().first()
                     
                     self.assertIn(old_value, item['space'][matrix_filter_uuid])
                     
                     cache.remove_matrix_filter_space(space)
 
-                    meta_node.refresh_from_db()
-                    cache = meta_node.children_cache
-                    item = cache['items'][0]
-
-                    self.assertFalse(old_value in item['space'][matrix_filter_uuid])
-
-
-                elif filter_type == 'DescriptiveTextAndImagesFilter':
-                    old_value = space.values().first()
-                    
-                    self.assertIn(old_value, item['space'][matrix_filter_uuid])
-                    
-                    cache.remove_matrix_filter_space(space)
-                    
                     meta_node.refresh_from_db()
                     cache = meta_node.children_cache
                     item = cache['items'][0]

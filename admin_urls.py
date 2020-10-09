@@ -79,6 +79,11 @@ urlpatterns = [
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
     path('manage-content-image-with-text/<int:meta_app_id>/<int:content_image_id>/',
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
+    # content image suggestions
+    path('manage-content-image-suggestions/<int:content_type_id>/<int:object_id>/',
+        views.ManageContentImageSuggestions.as_view(), name='manage_content_image_suggestions'),
+    path('manage-content-image-suggestions/<int:content_type_id>/',
+        views.ManageContentImageSuggestions.as_view(), name='manage_content_image_suggestions'),
     # generic object order
     path('store-object-order/<int:content_type_id>/',
         views.StoreObjectOrder.as_view(), name='store_object_order'),

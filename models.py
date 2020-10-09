@@ -975,7 +975,7 @@ class ContentImage(models.Model):
 
         thumbpath = os.path.join(thumbfolder, thumbname)
 
-        if not os.path.isfile(thumbpath) or force==True:
+        if not os.path.isfile(thumbpath) or force == True:
 
             imageFile = Image.open(image_path)
 

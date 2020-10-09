@@ -113,6 +113,7 @@ class WithMatrixFilters(TaxonFilterSpaceMixin):
             'DescriptiveTextAndImagesFilter' : ['description 1', 'description 2'],
             'NumberFilter' : [1,2,3,4],
             'TaxonFilter' : taxonfilter,
+            'TextOnlyFilter' : 'Text only text',
         }
         
         # create all fields with values
@@ -160,7 +161,8 @@ class WithMatrixFilters(TaxonFilterSpaceMixin):
 
             for node in child_nodes:
 
-                if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter']:
+                if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter',
+                                                 'TextOnlyFilter']:
 
                     space = matrix_filter.get_space()
                     node_space = NodeFilterSpace(
@@ -186,6 +188,7 @@ class WithMatrixFilters(TaxonFilterSpaceMixin):
                         encoded_space = [2,3],
                     )
                     node_space.save()
+                    
 
                 elif matrix_filter.filter_type != 'TaxonFilter':
                     raise ValueError('Invalid filter: {0}'.format(matrix_filter.filter_type))
@@ -201,17 +204,12 @@ class WithMatrixFilters(TaxonFilterSpaceMixin):
             post_data['{0}_0'.format(str(matrix_filter.uuid))] = '0.5'
             post_data['{0}_1'.format(str(matrix_filter.uuid))] = '4'
 
-        elif filter_type == 'DescriptiveTextAndImagesFilter':
+        elif filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter', 'TextOnlyFilter']:
             space = matrix_filter.get_space()
             post_data[str(matrix_filter.uuid)] = [space[0].id]
 
         elif filter_type == 'NumberFilter':
             post_data[str(matrix_filter.uuid)] = [2,3]
-
-        elif filter_type == 'ColorFilter':
-        
-            space = matrix_filter.get_space()
-            post_data[str(matrix_filter.uuid)] = [space[0].id]
 
         elif filter_type == 'TaxonFilter':
             pass
