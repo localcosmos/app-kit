@@ -373,7 +373,9 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
 
         self.assertEqual(meta_app.global_build_status, 'in_progress')
         
-        job.job_result = 'failed'
+        job.job_result = {
+            'success' : False
+        }
         job.finished_at = timezone.now()
         job.save()
 
