@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        base_domain = getattr(settings, APP_KIT_STAGING_BASE_DOMAIN, 'staging.localcosmos.org')
+        base_domain = getattr(settings, 'APP_KIT_STAGING_BASE_DOMAIN', 'staging.localcosmos.org')
 
         self.stdout.write('Fixing all domains.')
 
