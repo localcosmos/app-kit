@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.views.generic import TemplateView, FormView
 from django.shortcuts import redirect
+from django.core.mail import EmailMessage
 
 from .forms import DeleteAccountForm, EditAccountForm, ContactForm
 
