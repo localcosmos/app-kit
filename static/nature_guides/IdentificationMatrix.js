@@ -393,13 +393,16 @@ var IdentificationMatrix = {
 	_update_item_visibility : function(item){
 		// only manipulate the DOM of visibility has changed
 		var dom_element = document.getElementById(item.uuid);
+		
+		if (dom_element != null){
 
-		var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
+			var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
 
-		if (dom_element_is_visible != item.is_visible){
+			if (dom_element_is_visible != item.is_visible){
 
-			var style = item.is_visible == true ? '' : 'none';
-			dom_element.style.display = style;
+				var style = item.is_visible == true ? '' : 'none';
+				dom_element.style.display = style;
+			}
 		}
 	},
 
