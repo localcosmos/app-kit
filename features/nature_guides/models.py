@@ -1001,7 +1001,10 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
 
             matrix_filter_space = content_image.content
 
-            if matrix_filter_space.encoded_space == self.encoded_space:
+            # there might not be an instance of content_image.content
+            if not matrix_filter_space:
+                suggestions.append(content_image)
+            elif matrix_filter_space.encoded_space == self.encoded_space:
                 suggestions.append(content_image)
 
         return suggestions
