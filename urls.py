@@ -8,6 +8,6 @@ urlpatterns = [
     path(settings.APP_KIT_URL, views.ListManageApps.as_view(), name='appkit_home'),
     path(settings.APP_KIT_URL, include('app_kit.admin_urls')),
 
-    path('global/', include('app_kit.global_urls')),
+    path('server/', include('app_kit.global_urls')),
     
 ]
