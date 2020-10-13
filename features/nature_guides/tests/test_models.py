@@ -499,7 +499,7 @@ class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
         self.assertFalse(node_qry.exists())
         self.assertFalse(meta_node_qry.exists())
 
-
+    ''' obsolete
     @test_settings
     def test_delete_keep_meta_node(self):
         nature_guide = self.create_nature_guide()
@@ -522,7 +522,7 @@ class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
         node.delete(from_delete_branch=True)
 
         self.assertTrue(meta_node_qry.exists())
-        
+    '''
 
     @test_settings
     def test_delete_branch(self):
@@ -1283,6 +1283,11 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
         children_cache_manager = ChildrenCacheManager(node.meta_node)
 
         self.assertEqual(children_cache_manager.meta_node, node.meta_node)
+
+
+    @test_settings
+    def test_rebuild_cache(self):
+        pass
         
 
     @test_settings

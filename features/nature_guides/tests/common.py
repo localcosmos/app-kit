@@ -1,5 +1,5 @@
 from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, NatureGuidesTaxonTree, MatrixFilter,
-                                                   MatrixFilterSpace, NodeFilterSpace)
+                                                   MatrixFilterSpace, NodeFilterSpace, ChildrenCacheManager)
 
 from app_kit.features.nature_guides.matrix_filters import MATRIX_FILTER_TYPES
 
@@ -59,6 +59,9 @@ class WithNatureGuide(TaxonFilterSpaceMixin):
         )
 
         node.save(parent_node)
+
+        cache = ChildrenCacheManager(node.parent.meta_node)
+        cache.add_or_update_child(node)
 
         return node
 

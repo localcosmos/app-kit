@@ -208,11 +208,39 @@ class ChildrenCacheManager:
     def __init__(self, meta_node):
         self.meta_node = meta_node
 
-    def get_data(self):
+    # rebuild the whole cache for this node from scratch
+    def rebuild_cache(self):
+
+        data = self.get_data(empty=True)
+        
+        # add all matrix filters
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
+        for matrix_filter in matrix_filters:
+            data = self.add_matrix_filter_to_cache(data, matrix_filter)
+        
+        # get all children of this meta_node, including crosslinks
+        children = NatureGuidesTaxonTree.objects.filter(parent__meta_node=self.meta_node)
+
+        for child in children:
+
+            child_json = self.child_as_json(child)
+            data['items'].append(child_json)
+
+
+        crosslink_children = NatureGuideCrosslinks.objects.filter(parent__meta_node=self.meta_node)
+        for crosslink in crosslink_children:
+            child_json = self.child_as_json(child, crosslink=crosslink)
+            data['items'].insert(crosslink.position, child_json)
+
+        self.meta_node.children_cache = data
+        self.meta_node.save()
+        
+
+    def get_data(self, empty=False):
 
         data = self.meta_node.children_cache
 
-        if not data:
+        if not data or empty == True:
             
             data = {
                 'items' : [],
@@ -222,7 +250,7 @@ class ChildrenCacheManager:
         return data
 
 
-    def child_as_json(self, child):
+    def child_as_json(self, child, crosslink=None):
 
         matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
 
@@ -244,6 +272,10 @@ class ChildrenCacheManager:
                 node_filter_space)
 
 
+        decision_rule = child.decision_rule
+        if crosslink:
+            decision_rule = crosslink.decision_rule
+            
         child_json = {
             'id' : child.id,
             'meta_node_id' : child.meta_node.id,
@@ -253,7 +285,7 @@ class ChildrenCacheManager:
             'space' : space,
             'is_visible' : True,
             'name' : child.meta_node.name,
-            'decision_rule' : child.decision_rule,
+            'decision_rule' : decision_rule,
             'taxon' : None,
         }
 
@@ -265,13 +297,13 @@ class ChildrenCacheManager:
     '''
         CHILD MANAGEMENT
     '''
-    def add_or_update_child(self, child_node):
+    def add_or_update_child(self, child_node, crosslink=None):
 
         data = self.get_data()
 
         items = data['items']
 
-        child_json = self.child_as_json(child_node)
+        child_json = self.child_as_json(child_node, crosslink=None)
 
         found_child = False
         for item in items:
@@ -282,12 +314,16 @@ class ChildrenCacheManager:
                 break
 
         if not found_child:
-            items.append(child_json)
+            position = child_node.position
+            if crosslink:
+                position = crosslink.position
+                
+            items.insert(position, child_json)
             
         data['items'] = items
 
         self.meta_node.children_cache = data
-        self.meta_node.save()
+        self.meta_node.save()        
 
         
     def remove_child(self, child_node):
@@ -311,10 +347,17 @@ class ChildrenCacheManager:
     MATRIX FILTER MANAGEMENT
     - MatrixFilterSpaces are not stored in the cache, it is only a uuid -> type map
     '''
+    def add_matrix_filter_to_cache(self, data, matrix_filter):
+
+        data['matrix_filter_types'][str(matrix_filter.uuid)] = matrix_filter.filter_type
+        
+        return data
+        
+        
     def add_matrix_filter(self, matrix_filter):
         data = self.get_data()
 
-        data['matrix_filter_types'][str(matrix_filter.uuid)] = matrix_filter.filter_type
+        data = self.add_matrix_filter_to_cache(data, matrix_filter)
 
         self.meta_node.children_cache = data
         self.meta_node.save()
@@ -392,7 +435,10 @@ class ChildrenCacheManager:
 
 
 '''
-    MetaNodes contain information shared by several nodes across a Tree, like name and image
+    MetaNodes
+    - contain children_cache, which includes crosslink children
+    - necessary for clean crosslink data
+    - contain information independant of the parent node like name and image
     - MetaNode is also necessary for assigning a taxon to the node, because the node itself is a taxon
       in the NatureGuidesTaxonTree
 '''
@@ -410,6 +456,12 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     node_type = models.CharField(max_length=30, choices=NODE_TYPES)
 
     children_cache = models.JSONField(null=True)
+
+    def rebuild_cache(self):
+        cache_manager = ChildrenCacheManager(self)
+        data = cache_manager.rebuild_cache()
+        self.children_cache = data
+        self.save()
 
     def delete(self, *args, **kwargs):
         self.delete_images()
@@ -460,8 +512,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     # NatureGuide specific fields
     nature_guide = models.ForeignKey(NatureGuide, on_delete=models.CASCADE)
     
-    # meta_node contains shared data across nodes
-    meta_node = models.ForeignKey(MetaNode, on_delete=models.CASCADE)
+    # see MetaNode for explanation
+    meta_node = models.OneToOneField(MetaNode, on_delete=models.CASCADE)
 
     # child specific, can be overridden by NatureGuideCrosslinks.decision_rule
     decision_rule = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'], null=True)
@@ -504,7 +556,6 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         for crosslink in crosslinks:
             position_map[crosslink.child.id] = crosslink.position
 
-        
 
         children_ids = crosslinks.values_list('child_id', flat=True)
         tree_entries = NatureGuidesTaxonTree.objects.filter(pk__in=children_ids)
@@ -529,7 +580,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     def children_count(self):
         return len(self.children)
 
-    '''
+    ''' parent not unique due to crosslinks
     @property
     def parent(self):
         if self.meta_node.node_type == 'root':
@@ -637,8 +688,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         super().save(*args, **kwargs)
 
 
-    # delete the MetaNode if it does not occur in the tree anymore
-    # user should call delete_branch, not delete() irectly
+    # user should call delete_branch, not delete() directly
     def delete(self, from_delete_branch=False, *args, **kwargs):
 
         if from_delete_branch != True:
@@ -647,8 +697,6 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if self.has_children:
             raise PermissionError('Cannot remove node from the tree if it has children')
 
-        meta_node = self.meta_node
-
         self.delete_images()
 
         # remove from cache
@@ -656,11 +704,6 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         cache.remove_child(self)
 
         super().delete(*args, **kwargs)
-
-        meta_node_occurs = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node).exists()
-
-        if not meta_node_occurs:
-            meta_node.delete()
             
         
     # deleting a higher node has to delete all nodes below itself
@@ -781,7 +824,7 @@ class NatureGuideCrosslinks(models.Model):
         super().save(*args, **kwargs)
 
         cache = ChildrenCacheManager(self.parent.meta_node)
-        cache.add_or_update_child(self.child)
+        cache.add_or_update_child(self.child, crosslink=self)
 
 
     def delete(self, *args, **kwargs):
