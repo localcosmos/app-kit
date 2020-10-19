@@ -41,9 +41,15 @@
 				});
 			}, 
 			afterSelect : function(item){
-				// go to the parent node
-				var url = item['url'];
-				window.location = url;
+
+				if (options.hasOwnProperty('afterSelect')){
+					options.afterSelect(item);
+				}
+				else {
+					// go to the parent node
+					var url = item['url'];
+					window.location = url;
+				}
 			},
             
 			minLength: 3,

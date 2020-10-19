@@ -273,6 +273,7 @@ class ChildrenCacheManager:
 
 
         decision_rule = child.decision_rule
+
         if crosslink:
             decision_rule = crosslink.decision_rule
             
@@ -303,7 +304,7 @@ class ChildrenCacheManager:
 
         items = data['items']
 
-        child_json = self.child_as_json(child_node, crosslink=None)
+        child_json = self.child_as_json(child_node, crosslink=crosslink)
 
         found_child = False
         for item in items:
@@ -459,9 +460,7 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
 
     def rebuild_cache(self):
         cache_manager = ChildrenCacheManager(self)
-        data = cache_manager.rebuild_cache()
-        self.children_cache = data
-        self.save()
+        cache_manager.rebuild_cache()
 
     def delete(self, *args, **kwargs):
         self.delete_images()
@@ -684,7 +683,10 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
             for key, value in taxon_tree_fields.items():
                 setattr(self, key, value)
 
-            
+        # security: check self.parent.taxon_nuid is start of self.taxon_nuid
+        if self.parent and not self.taxon_nuid.startswith(self.parent.taxon_nuid):
+            raise ValueError('taxon_nuid does not start with parent.taxon_nuid')
+        
         super().save(*args, **kwargs)
 
 
@@ -703,6 +705,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         cache = ChildrenCacheManager(self.parent.meta_node)
         cache.remove_child(self)
 
+        self.meta_node.delete()
+
         super().delete(*args, **kwargs)
             
         
@@ -717,13 +721,153 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
             descendant.delete(from_delete_branch=True)
 
         self.delete(from_delete_branch=True)
+
+
+    '''
+    MOVING a taxon to a new parent
+    - set new parent_id
+    - new nuids for self and all descendants of self
+    - rebuild cache of old parent and of new parent
+    - before save: check if circular connection would occur
+    '''
+    def get_nuid_depending_on_new_parent(self, new_parent):
+
+        # ordering is extremely important
+        
+        new_parent_children = NatureGuidesTaxonTree.objects.filter(parent=new_parent).order_by('taxon_nuid')
+
+        last_child = new_parent_children.last()
+
+        nuidmanager = NuidManager()
+
+        if last_child:
+            next_nuid = nuidmanager.next_nuid(last_child.taxon_nuid)
+
+        else:
+            next_nuid = '{0}{1}'.format(new_parent.taxon_nuid, nuidmanager.decimal_to_nuid(1))
+
+        return next_nuid
+        
+        
+    def move_to_check_crosslinks(self, new_parent):
+
+        old_self_nuid = self.taxon_nuid
+        old_self_nuid_len = len(old_self_nuid)
+
+        old_parent = self.parent
+        old_parent_nuid_len = len(old_parent.taxon_nuid)
+
+        # new nuid depends on the children of the new parent
+        new_self_nuid = self.get_nuid_depending_on_new_parent(new_parent)
+
+        # get all crosslinks of the nature guide
+        all_crosslinks = NatureGuideCrosslinks.objects.filter(parent__nature_guide=self.nature_guide)
+        crosslink_tuples = []
+        
+        for crosslink in all_crosslinks:
+
+            crosslink_parent_nuid = crosslink.parent.taxon_nuid
+            crosslink_child_nuid = crosslink.child.taxon_nuid
+
+            # if the crosslink is an descendant of self, adjust the nuid
+            if crosslink_parent_nuid.startswith(old_self_nuid):
+                crosslink_parent_nuid_tail = crosslink_parent_nuid[old_self_nuid_len:]
+                crosslink_parent_nuid = '{0}{1}'.format(new_self_nuid, crosslink_parent_nuid_tail)
+
+            elif crosslink_child_nuid.startswith(old_self_nuid):
+                crosslink_child_nuid_tail = crosslink_child_nuid[old_self_nuid_len:]
+                crosslink_child_nuid = '{0}{1}'.format(new_self_nuid, crosslink_child_nuid_tail)
+
+            crosslink_tuple = tuple([crosslink_parent_nuid, crosslink_child_nuid])
+            crosslink_tuples.append(crosslink_tuple)
+
+
+        crosslink_manager = CrosslinkManager()
+
+        is_circular = crosslink_manager.check_circularity(crosslink_tuples)
+
+        return is_circular
+
+
+    def move_to_is_valid(self, new_parent):
+
+        if new_parent == self.parent:
+            return False
+
+        # before saving anything, perform a circularity check for the new stuff        
+        is_circular = self.move_to_check_crosslinks(new_parent)
+
+        if is_circular:
+            return False
+
+        # do not allow moving if new_parent is a descendant of self
+        if new_parent.taxon_nuid.startswith(self.taxon_nuid):
+            return False
+
+        return True
             
+        
+    def move_to(self, new_parent):
+
+        old_parent = self.parent
+
+        old_self_nuid = self.taxon_nuid
+        old_self_nuid_len = len(self.taxon_nuid)
+
+        is_valid = self.move_to_is_valid(new_parent)
+
+        if not is_valid:
+            raise ValueError('Moving {0} to {1} would result in an invalid tree'.format(
+                self, new_parent))
+
+
+        new_self_nuid = self.get_nuid_depending_on_new_parent(new_parent)
+
+        self.taxon_nuid = new_self_nuid
+        self.save(new_parent)
+
+        # update all nuids, parent stays the same
+        descendants_and_self = NatureGuidesTaxonTree.objects.filter(taxon_nuid__startswith=old_self_nuid)
+        
+        for descendant in descendants_and_self:
+            
+            new_descendant_nuid_tail = descendant.taxon_nuid[old_self_nuid_len:]
+            new_descendant_nuid = '{0}{1}'.format(new_self_nuid, new_descendant_nuid_tail)
+            descendant.taxon_nuid = new_descendant_nuid
+
+            descendant.save(descendant.parent)
+
+            # update nuid in TaxonProfiles
+            if descendant.meta_node.node_type == 'result':
+                taxon_profile = TaxonProfile.objects.filter(name_uuid=descendant.name_uuid).first()
+                if taxon_profile:
+                    lazy_taxon = LazyTaxon(instance=descendant)
+                    taxon_profile.set_taxon(lazy_taxon)
+                    taxon_profile.save()
+                    
+
+        # currently, the nuid is not present in child_json. child_json['taxon'] can not be a taxon of
+        # NatureGuidesTaxonTree
+        # cycle two times. rebuild_cache required all children of a descendant to be updated
+        #for descendant in descendants_and_self:
+        #    children_cache_manager = ChildrenCacheManager(descendant.meta_node)
+        #    children_cache_manager.rebuild_cache()
+
+        # rebuild cache of new parent
+        new_parent_cache_manager = ChildrenCacheManager(new_parent.meta_node)
+        new_parent_cache_manager.rebuild_cache()
+
+        # rebuild cache of old parent
+        old_parent_cache_manager = ChildrenCacheManager(old_parent.meta_node)
+        old_parent_cache_manager.rebuild_cache()
+        
 
     def __str__(self):
         if self.name:
             return '{0}'.format(self.name)
         
         return '{0}'.format(self.decision_rule)
+    
 
     class Meta:
         unique_together = (('nature_guide', 'taxon_nuid',))
@@ -809,11 +953,20 @@ class NatureGuideCrosslinks(models.Model):
 
     def save(self, *args, **kwargs):
 
+        # only used by moving a crosslink, the old connection has to be ignored
+        exclude_from_check = kwargs.pop('exclude_from_check', None)
+
         all_crosslinks = [tuple([self.parent.taxon_nuid, self.child.taxon_nuid])]
 
         nature_guide = self.parent.nature_guide
         for crosslink in NatureGuideCrosslinks.objects.filter(parent__nature_guide=nature_guide):
-            all_crosslinks.append(tuple([crosslink.parent.taxon_nuid, crosslink.child.taxon_nuid]))
+
+            crosslink_tuple = tuple([crosslink.parent.taxon_nuid, crosslink.child.taxon_nuid])
+
+            if exclude_from_check and crosslink_tuple == exclude_from_check:
+                continue
+            
+            all_crosslinks.append(crosslink_tuple)
 
         crosslink_manager =  CrosslinkManager()
         is_circular = crosslink_manager.check_circularity(all_crosslinks)
@@ -833,6 +986,30 @@ class NatureGuideCrosslinks(models.Model):
         cache.remove_child(self.child)
 
         super().delete(*args, **kwargs)
+
+
+    '''
+    MOVING a crosslink child to a new parent
+    - set new parent_id
+    - rebuild cache of old parent and new parent
+    '''
+    def move_to(self, new_parent):
+
+        old_parent = self.parent
+
+        # update parent of crosslink
+        self.parent = new_parent
+
+        exclude_from_check = tuple([old_parent.taxon_nuid, self.child.taxon_nuid])
+        self.save(exclude_from_check=exclude_from_check) # triggers error if crosslink
+
+        # rebuild cache of new parent
+        new_parent_cache_manager = ChildrenCacheManager(new_parent.meta_node)
+        new_parent_cache_manager.add_or_update_child(self.child)
+
+        # rebuild cache of old parent
+        old_parent_cache_manager = ChildrenCacheManager(old_parent.meta_node)
+        old_parent_cache_manager.remove_child(self.child)
         
 
     class Meta:

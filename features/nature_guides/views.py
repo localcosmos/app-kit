@@ -8,7 +8,8 @@ from django.http import JsonResponse # NodeSearch
 from .models import (NatureGuide, MetaNode, MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
                      NatureGuidesTaxonTree, CrosslinkManager, NatureGuideCrosslinks, ChildrenCacheManager)
 
-from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm)
+from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm,
+                    MoveNodeForm)
 
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
                             RangeFilterManagementForm, ColorFilterManagementForm, NumberFilterManagementForm,
@@ -534,31 +535,52 @@ class LoadNodeManagementMenu(MetaAppMixin, TemplateView):
 '''
 class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 
+
+    def get_on_click_url(self, meta_node):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'meta_node_id' : meta_node.id
+        }
+
+        url = reverse('node_analysis', kwargs=url_kwargs)
+
+        return url
+
+
+    def get_queryset(self, request, **kwargs):
+
+        meta_nodes = []
+
+        searchtext = request.GET.get('name', '')
+        
+        if len(searchtext) > 2:
+
+            meta_nodes = MetaNode.objects.filter(name__istartswith=searchtext).exclude(node_type='root')[:15]
+
+        return meta_nodes
+        
+
     @method_decorator(ajax_required)
     def get(self, request, *args, **kwargs):
 
         nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
 
         results = []
-        searchtext = request.GET.get('name', '')
+
+        meta_nodes = self.get_queryset(request, **kwargs)
         
-        if len(searchtext) > 2:
+        for meta_node in meta_nodes:
+
+            url = self.get_on_click_url(meta_node)
+
+            choice = {
+                'name' : meta_node.name,
+                'id' : meta_node.id,
+                'url' : url,
+            }
             
-            meta_nodes = MetaNode.objects.filter(name__istartswith=searchtext).exclude(node_type='root')[:15]
-            for meta_node in meta_nodes:
-
-                url_kwargs = {
-                    'meta_app_id':self.meta_app.id,
-                    'meta_node_id':meta_node.id
-                }
-
-                choice = {
-                    'name' : meta_node.name,
-                    'id' : meta_node.id,
-                    'url' : reverse('node_analysis', kwargs=url_kwargs),
-                }
-                
-                results.append(choice)
+            results.append(choice)
 
         return JsonResponse(results, safe=False) 
 
@@ -922,3 +944,80 @@ class GetIdentificationMatrix(TemplateView):
 
     def get(self, request, *args, **kwargs):        
         return JsonResponse(self.meta_node.children_cache, safe=False)
+
+
+
+'''
+    move a NatureGuidesTaxonTree node or a NatureGuideCrosslinks.child
+    - node_id and parent_node id are required to determine if it is a crosslink or not
+'''
+class MoveNatureGuideNode(MetaAppFormLanguageMixin, FormView):
+
+    template_name = 'nature_guides/ajax/move_natureguide_node.html'
+    form_class = MoveNodeForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_nodes(**kwargs)
+        # new parent is fetched using the form
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_nodes(self, **kwargs):
+        self.old_parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
+        self.child_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['child_node_id'])
+
+
+    def get_form(self, form_class=None):
+
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.child_node, **self.get_form_kwargs())
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['old_parent_node'] = self.old_parent_node
+        context['child_node'] = self.child_node
+        context['success'] = False
+        return context
+
+    def form_valid(self, form):
+
+        new_parent_node_id = form.cleaned_data['new_parent_node_id']
+        new_parent_node = NatureGuidesTaxonTree.objects.get(pk=new_parent_node_id)
+
+        # check if it is a crosslink
+        crosslink = NatureGuideCrosslinks.objects.filter(parent=self.old_parent_node,
+                                                         child=self.child_node).first()
+        
+        if crosslink:
+            crosslink.move_to(new_parent_node)
+
+        else:
+            self.child_node.move_to(new_parent_node)
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['new_parent_node'] = new_parent_node
+        context['success'] = True
+
+        return self.render_to_response(context)
+
+
+class SearchMoveToGroup(SearchForNode):
+
+    def get_queryset(self, request, **kwargs):
+
+        meta_nodes = []
+
+        searchtext = request.GET.get('name', '')
+        
+        if len(searchtext) > 2:
+            node_types = ['node', 'root']
+            meta_nodes = MetaNode.objects.filter(name__istartswith=searchtext).filter(
+                node_type__in=node_types)[:15]
+
+        return meta_nodes
+
+    def get_on_click_url(self, meta_node):
+        return None

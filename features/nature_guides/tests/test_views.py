@@ -16,13 +16,13 @@ from app_kit.models import MetaAppGenericContent, ContentImage
 from app_kit.features.nature_guides.views import (ManageNatureGuide, ManageNodelink, DeleteNodelink,
         AddExistingNodes, LoadKeyNodes, StoreNodeOrder, LoadNodeManagementMenu, DeleteMatrixFilter,
         SearchForNode, LoadMatrixFilters, ManageMatrixFilter, ManageMatrixFilterSpace, DeleteMatrixFilterSpace,
-        NodeAnalysis, GetIdentificationMatrix)
+        NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup)
 
 
 from app_kit.features.nature_guides.models import (NatureGuide, NatureGuidesTaxonTree, NatureGuideCrosslinks,
                                         MetaNode, MatrixFilter, NodeFilterSpace, MatrixFilterSpace)
 
-from app_kit.features.nature_guides.forms import (NatureGuideOptionsForm, SearchForNodeForm,
+from app_kit.features.nature_guides.forms import (NatureGuideOptionsForm, SearchForNodeForm, MoveNodeForm,
                                                   IdentificationMatrixForm, ManageNodelinkForm)
 
 
@@ -831,7 +831,7 @@ class TestAddExistingNodes(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly
         self.assertEqual(context['parent_node'], self.view_node)
         self.assertEqual(context['content_type'], self.content_type)
         nodes = list(context['nodes'].values_list('id', flat=True))
-        self.assertEqual(nodes, [self.nodes[0].id, self.nodes[1].id])
+        self.assertEqual(set(nodes), set([self.nodes[0].id, self.nodes[1].id]))
 
 
     @test_settings
@@ -2180,7 +2180,7 @@ class TestGetIdentificationMatrix(WithNatureGuideLink, WithAjaxAdminOnly, ViewTe
                             WithLoggedInUser, WithMatrixFilters, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'get_identification_matrix'
-    view_name = GetIdentificationMatrix
+    view_class = GetIdentificationMatrix
 
 
     def setUp(self):
@@ -2199,3 +2199,184 @@ class TestGetIdentificationMatrix(WithNatureGuideLink, WithAjaxAdminOnly, ViewTe
             'meta_node_id' : self.view_node.meta_node.id,
         }
         return url_kwargs
+
+
+class TestMoveNatureGuideNode(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMixin, WithUser,
+                            WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'move_natureguide_node'
+    view_class = MoveNatureGuideNode
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.left = self.create_node(self.start_node, 'Left')
+        self.middle = self.create_node(self.start_node, 'Middle')
+        self.right = self.create_node(self.start_node, 'Right')
+        
+        self.left_1 = self.create_node(self.left, 'Left child')
+        self.right_1 = self.create_node(self.right, 'Right child')
+
+        self.crosslink = NatureGuideCrosslinks(
+            parent = self.middle,
+            child = self.right_1,
+        )
+
+        self.crosslink.save()
+        
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'parent_node_id' : self.right_1.parent.id,
+            'child_node_id' : self.right_1.id,
+        }
+
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_nodes(self):
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_nodes(**view.kwargs)
+
+        self.assertEqual(view.child_node, self.right_1)
+        self.assertEqual(view.old_parent_node, self.right_1.parent)
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_nodes(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+
+        self.assertEqual(context['meta_app'], self.meta_app)
+        self.assertEqual(context['old_parent_node'], self.right_1.parent)
+        self.assertEqual(context['child_node'], self.right_1)
+        self.assertEqual(context['form'].__class__, MoveNodeForm)
+        self.assertEqual(context['success'], False)
+
+
+    @test_settings
+    def test_post_valid(self):
+
+        self.assertEqual(self.right_1.parent, self.right)
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_nodes(**view.kwargs)
+
+        # move right_1 to left
+        post_data = {
+            'input_language' : 'en',
+            'new_parent_node_id' : self.left.id,
+        }
+
+        form_kwargs = view.get_form_kwargs()
+        form_kwargs['data'] = post_data
+        form_class = view.get_form_class()
+        form = form_class(self.right_1, **form_kwargs)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+
+        self.right_1.refresh_from_db()
+        self.assertEqual(self.right_1.parent, self.left)
+        self.assertTrue(self.right_1.taxon_nuid.startswith(self.left.taxon_nuid))
+
+
+    @test_settings
+    def test_post_invalid(self):
+
+        self.assertEqual(self.right_1.parent, self.right)
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_nodes(**view.kwargs)
+
+        view.request.POST = QueryDict('new_parent_node_id={0}'.format(self.right.id))
+
+        response = view.post(view.request, **view.kwargs)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], False)
+
+
+
+class TestMoveNatureGuideNodeCrosslink(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMixin, WithUser,
+                            WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'move_natureguide_node'
+    view_class = MoveNatureGuideNode
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.left = self.create_node(self.start_node, 'Left')
+        self.middle = self.create_node(self.start_node, 'Middle')
+        self.right = self.create_node(self.start_node, 'Right')
+        
+        self.left_1 = self.create_node(self.left, 'Left child')
+        self.right_1 = self.create_node(self.right, 'Right child')
+
+        self.crosslink = NatureGuideCrosslinks(
+            parent = self.middle,
+            child = self.right_1,
+        )
+
+        self.crosslink.save()
+        
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'parent_node_id' : self.middle.id, # middle is parent of crosslink
+            'child_node_id' : self.right_1.id,
+        }
+
+        return url_kwargs
+        
+    @test_settings
+    def test_post_valid_crosslink(self):
+
+        self.assertEqual(self.right_1.parent, self.right)
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_nodes(**view.kwargs)
+
+        # move right_1 to left
+        post_data = {
+            'input_language' : 'en',
+            'new_parent_node_id' : self.left.id,
+        }
+
+        form_kwargs = view.get_form_kwargs()
+        form_kwargs['data'] = post_data
+        form_class = view.get_form_class()
+        form = form_class(self.right_1, **form_kwargs)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+
+        self.crosslink.refresh_from_db()
+        self.assertEqual(self.crosslink.parent, self.left)
+    

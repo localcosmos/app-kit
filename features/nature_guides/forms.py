@@ -6,7 +6,7 @@ from localcosmos_server.forms import LocalizeableForm
 
 from localcosmos_server.taxonomy.fields import TaxonField
 
-from .models import MatrixFilter, NodeFilterSpace
+from .models import MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree
 
 from app_kit.utils import get_appkit_taxon_search_url
 
@@ -170,3 +170,39 @@ class ManageNodelinkForm(LocalizeableForm):
             self.add_error('name', _('You have to enter at least a name or a decision rule.'))
 
         return cleaned_data
+
+
+
+class MoveNodeForm(LocalizeableForm):
+
+    localizeable_fields = ['search_group_name']
+    search_group_name = forms.CharField(label=_('Name of new group'), required=False,
+                                       help_text=_('Search whole tree for a group.'))
+
+    new_parent_node_id = forms.IntegerField(widget=forms.HiddenInput, label=_('New group'))
+
+
+    def __init__(self, child_node, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.child_node = child_node
+
+    # check circularity
+    def clean(self):
+
+        cleaned_data = super().clean()
+
+        new_parent_node_id = cleaned_data.get('new_parent_node_id', None)
+
+        if new_parent_node_id:
+            new_parent_node = NatureGuidesTaxonTree.objects.get(pk=new_parent_node_id)
+
+            is_valid = self.child_node.move_to_is_valid(new_parent_node)
+
+            if not is_valid:
+                del cleaned_data['new_parent_node_id']
+                self.add_error('new_parent_node_id',
+                               _('Moving {0} to {1} would result in an invalid tree.'.format(
+                                   self.child_node, new_parent_node)))
+
+        return cleaned_data
+        

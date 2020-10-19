@@ -23,6 +23,11 @@ urlpatterns = [
     # node order
     path('store-node-order/<int:parent_node_id>/',
         views.StoreNodeOrder.as_view(), name='store_node_order'),
+    # move node
+    path('move-natureguide-node/<int:meta_app_id>/<int:parent_node_id>/<int:child_node_id>/',
+        views.MoveNatureGuideNode.as_view(), name='move_natureguide_node'),
+    path('search-move-to-group/<int:meta_app_id>/<int:nature_guide_id>/',
+        views.SearchMoveToGroup.as_view(), name='search_move_to_group'),
     # load menu - used if children count is high
     path('load-nodemenu/<int:meta_app_id>/<int:parent_node_id>/<int:node_id>/',
         views.LoadNodeManagementMenu.as_view(), name='load_nodemenu'),

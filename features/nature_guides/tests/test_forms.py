@@ -8,9 +8,11 @@ from app_kit.tests.mixins import WithMetaApp
 from app_kit.features.nature_guides.tests.common import WithMatrixFilters, WithNatureGuide
 
 from app_kit.features.nature_guides.forms import (IdentificationMatrixForm, SearchForNodeForm,
-        NatureGuideOptionsForm, ManageNodelinkForm)
+        NatureGuideOptionsForm, ManageNodelinkForm, MoveNodeForm)
 
-from app_kit.features.nature_guides.models import MatrixFilter, MatrixFilterSpace, NodeFilterSpace
+from app_kit.features.nature_guides.models import (MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
+                                                   NatureGuideCrosslinks)
+
 from app_kit.features.taxon_profiles.models import TaxonProfiles
 
 from app_kit.models import MetaAppGenericContent
@@ -238,3 +240,72 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         form.is_valid()
         self.assertEqual(form.errors, {})
         
+
+class TestMoveNodeForm(WithNatureGuide, TenantTestCase):
+
+    @test_settings
+    def test_init(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        left = self.create_node(root_node, 'Left')
+
+        form = MoveNodeForm(left)
+        self.assertEqual(form.child_node, left)
+
+    @test_settings
+    def test_clean(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        left = self.create_node(root_node, 'Left')
+        middle = self.create_node(root_node, 'Middle')
+        right = self.create_node(root_node, 'Right')
+
+        middle_1 = self.create_node(middle, 'Middle child')
+        right_1 = self.create_node(right, 'Right child')
+
+        # parent of this one will be moved
+        crosslink = NatureGuideCrosslinks(
+            parent=right_1,
+            child=middle,
+        )
+        crosslink.save()
+
+        crosslink_2 = NatureGuideCrosslinks(
+            parent=middle_1,
+            child=left,
+        )
+
+        crosslink_2.save()
+
+        is_circular = right_1.move_to_check_crosslinks(left)
+
+        self.assertTrue(is_circular)
+
+        # test the form
+        post_data = {
+            'input_language' : 'en',
+            'new_parent_node_id' : left.id,
+        }
+
+        form = MoveNodeForm(right_1, data=post_data)
+        
+        is_valid = form.is_valid()
+        self.assertFalse(is_valid)
+        self.assertIn('new_parent_node_id', form.errors)
+
+
+        # test new parent equals old parent
+        post_data_2 = {
+            'input_language' : 'en',
+            'new_parent_node_id' : right_1.parent.id,
+        }
+
+        form_2 = MoveNodeForm(right_1, data=post_data_2)
+        
+        is_valid_2 = form_2.is_valid()
+        self.assertFalse(is_valid_2)
+        self.assertIn('new_parent_node_id', form_2.errors)

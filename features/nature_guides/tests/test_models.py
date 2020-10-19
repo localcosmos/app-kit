@@ -1,5 +1,7 @@
 from django_tenants.test.cases import TenantTestCase
 
+from django.contrib.contenttypes.models import ContentType
+
 from app_kit.tests.common import test_settings
 
 from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, CrosslinkManager,
@@ -7,12 +9,18 @@ from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, Crossl
             NatureGuideCrosslinks, ChildrenCacheManager)
 
 
-from app_kit.features.nature_guides.tests.common import WithNatureGuide
+from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
 
 from app_kit.features.nature_guides.zip_import import NatureGuideZipImporter
 
 from app_kit.features.nature_guides.matrix_filters import (MATRIX_FILTER_TYPES, RangeFilter, NumberFilter,
         ColorFilter, DescriptiveTextAndImagesFilter, TaxonFilter)
+
+
+from app_kit.tests.mixins import WithMetaApp
+
+from app_kit.models import MetaAppGenericContent
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 
 from taxonomy.lazy import LazyTaxonList, LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
@@ -106,6 +114,7 @@ class TestNatureGuide(WithNatureGuide, TenantTestCase):
 
     @test_settings
     def test_crosslinks(self):
+
         nature_guide = self.create_nature_guide()
 
         # add a node with decision_rule
@@ -187,7 +196,7 @@ class TestMetaNode(WithNatureGuide, TenantTestCase):
         meta_node.save()
 
 
-class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
+class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
 
     @test_settings
     def test_name(self):
@@ -472,7 +481,7 @@ class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
         node_name_uuid = str(node.name_uuid)
 
         node_qry = NatureGuidesTaxonTree.objects.filter(decision_rule=decision_rule)
-        meta_node_qry = MetaNode.objects.filter(name=node_name)
+        meta_node_qry = MetaNode.objects.filter(pk=node.pk)
 
         with self.assertRaises(PermissionError):
             node.delete()
@@ -499,30 +508,6 @@ class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
         self.assertFalse(node_qry.exists())
         self.assertFalse(meta_node_qry.exists())
 
-    ''' obsolete
-    @test_settings
-    def test_delete_keep_meta_node(self):
-        nature_guide = self.create_nature_guide()
-
-        parent_node = nature_guide.root_node
-        node_name = 'First'
-        node = self.create_node(parent_node, 'First')
-
-        meta_node_qry = MetaNode.objects.filter(name=node_name)
-
-        node_2 = NatureGuidesTaxonTree(
-            nature_guide=nature_guide,
-            meta_node=node.meta_node,
-        )
-
-        node_2.save(nature_guide.root_node)
-
-        self.assertTrue(meta_node_qry.exists())
-        
-        node.delete(from_delete_branch=True)
-
-        self.assertTrue(meta_node_qry.exists())
-    '''
 
     @test_settings
     def test_delete_branch(self):
@@ -561,7 +546,261 @@ class TestNatureGuidesTaxonTree(WithNatureGuide, TenantTestCase):
 
         self.assertEqual(str(node), node_name)
 
+    @test_settings
+    def test_get_nuid_depending_on_new_parent(self):
 
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        parent = self.create_node(root_node, 'First')        
+        sibling = self.create_node(root_node, 'Second')
+
+        sibling_child_1 = self.create_node(sibling, 'Sibling child 1')
+        sibling_child_2 = self.create_node(sibling, 'Sibling child 2')
+
+        # delete sibling_child_1 for nuid test
+        sibling_child_1.delete_branch()
+        
+        child = self.create_node(parent, 'Child')
+
+        # moving child to sibling nuid would have to result in 003 suffix
+        self.assertEqual(sibling_child_2.taxon_nuid, '{0}002'.format(sibling.taxon_nuid))
+
+        new_nuid = child.get_nuid_depending_on_new_parent(sibling)
+        self.assertEqual(new_nuid, '{0}003'.format(sibling.taxon_nuid))
+
+
+    @test_settings
+    def test_get_nuid_depending_on_new_EMPTY_parent(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        parent = self.create_node(root_node, 'First')        
+        sibling = self.create_node(root_node, 'Second')
+        
+        child = self.create_node(parent, 'Child')
+
+        new_nuid = child.get_nuid_depending_on_new_parent(sibling)
+        self.assertEqual(new_nuid, '{0}001'.format(sibling.taxon_nuid))
+
+
+    @test_settings
+    def test_get_nuid_depending_on_new_parent_move_one_up(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        left = self.create_node(root_node, 'First')        
+        left_1 = self.create_node(left, 'Second')
+
+        new_nuid = left_1.get_nuid_depending_on_new_parent(root_node)
+        self.assertEqual(new_nuid, '{0}002'.format(root_node.taxon_nuid))
+
+
+    @test_settings
+    def test_move_to_check_crosslinks_simple(self):
+        # move to the parent of the crosslink creates a circular connection
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        left = self.create_node(root_node, 'Left')        
+        right = self.create_node(root_node, 'Right')
+
+        right_1 = self.create_node(right, 'Right child 1')
+
+        crosslink = NatureGuideCrosslinks(
+            parent=right_1,
+            child=left,
+        )
+        crosslink.save()
+
+        is_circular = right_1.move_to_check_crosslinks(left)
+
+        self.assertTrue(is_circular)
+
+
+    @test_settings
+    def test_move_to_check_crosslinks_simple_2(self):
+
+        # move to the parent of the crosslink creates a circular connection
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        left = self.create_node(root_node, 'Left')        
+        right = self.create_node(root_node, 'Right')
+
+        right_1 = self.create_node(right, 'Right child 1')
+        right_1_1 = self.create_node(right_1, 'Right child 1 child')
+
+        crosslink = NatureGuideCrosslinks(
+            parent=right_1_1,
+            child=left,
+        )
+        crosslink.save()
+
+        is_circular = right_1.move_to_check_crosslinks(left)
+
+        self.assertTrue(is_circular)
+
+
+    @test_settings
+    def test_move_to_check_crosslinks_complex(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        left = self.create_node(root_node, 'Left')
+        middle = self.create_node(root_node, 'Middle')
+        right = self.create_node(root_node, 'Right')
+
+        middle_1 = self.create_node(middle, 'Middle child')
+        right_1 = self.create_node(right, 'Right child')
+
+        # parent of this one will be moved
+        crosslink = NatureGuideCrosslinks(
+            parent=right_1,
+            child=middle,
+        )
+        crosslink.save()
+
+        crosslink_2 = NatureGuideCrosslinks(
+            parent=middle_1,
+            child=left,
+        )
+
+        crosslink_2.save()
+
+        is_circular = right_1.move_to_check_crosslinks(left)
+
+        self.assertTrue(is_circular)
+
+
+    @test_settings
+    def test_move_to_is_valid_equal_parents(self):
+        
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        right = self.create_node(root_node, 'Right')
+        right_1 = self.create_node(right, 'Right child')
+
+        is_valid = right_1.move_to_is_valid(right)
+        self.assertFalse(is_valid)
+
+
+    def test_move_to_is_valid_move_into_own_branch(self):
+        
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        right = self.create_node(root_node, 'Right')
+        right_1 = self.create_node(right, 'Right child')
+        right_2 = self.create_node(right_1, 'Right child child')
+
+        is_valid = right.move_to_is_valid(right_2)
+        self.assertFalse(is_valid)
+        
+        
+    @test_settings
+    def test_move_to(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        parent = self.create_node(root_node, 'First')        
+        sibling = self.create_node(root_node, 'Second')
+
+        sibling_child_1 = self.create_node(sibling, 'Sibling child 1')
+        sibling_child_2 = self.create_node(sibling, 'Sibling child 2')
+
+        # delete sibling_child_1 for nuid test
+        sibling_child_1.delete_branch()
+        
+        child = self.create_node(parent, 'Child')
+        child_child = self.create_node(child, 'Child child')
+        child_child_child = self.create_node(child_child, 'Child child child')
+
+        result_kwargs = {
+            'node_type' : 'result',
+        }
+        child_child_result = self.create_node(child, 'Child child result', **result_kwargs)
+
+        self.assertEqual(parent.taxon_nuid, '{0}001'.format(root_node.taxon_nuid))
+        self.assertEqual(sibling.taxon_nuid, '{0}002'.format(root_node.taxon_nuid))
+        self.assertEqual(child.taxon_nuid, '{0}001001'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child.taxon_nuid, '{0}001001001'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child_result.taxon_nuid, '{0}001001002'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child_child.taxon_nuid, '{0}001001001001'.format(root_node.taxon_nuid))
+
+        self.assertEqual(child.parent, parent)
+
+        # create a taxon profile
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        link = MetaAppGenericContent.objects.get(content_type=taxon_profiles_ctype, meta_app=self.meta_app)
+
+        taxon_profiles = link.generic_content
+        
+        result_profile = TaxonProfile(
+            taxon_profiles = taxon_profiles,
+        )
+
+        lazy_taxon = LazyTaxon(instance=child_child_result)
+        result_profile.set_taxon(lazy_taxon)
+        result_profile.save()
+        result_profile.refresh_from_db()
+
+        self.assertEqual(child_child_result.meta_node.node_type, 'result')
+        self.assertEqual(result_profile.taxon_nuid, child_child_result.taxon_nuid)
+        self.assertEqual(str(result_profile.name_uuid), str(child_child_result.name_uuid))
+
+        # perfrom move_to
+        child.move_to(sibling)
+
+        # refresh db instances
+        parent.refresh_from_db()
+        sibling.refresh_from_db()
+        child.refresh_from_db()
+        child_child.refresh_from_db()
+        child_child_result.refresh_from_db()
+        child_child_child.refresh_from_db()
+
+        self.assertEqual(parent.taxon_nuid, '{0}001'.format(root_node.taxon_nuid))
+        self.assertEqual(sibling.taxon_nuid, '{0}002'.format(root_node.taxon_nuid))
+        # child is the 2nd sibling on this level, one has been deleted, so nuid ends with 003
+        self.assertEqual(child.taxon_nuid, '{0}002003'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child.taxon_nuid, '{0}002003001'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child_result.taxon_nuid, '{0}002003002'.format(root_node.taxon_nuid))
+        self.assertEqual(child_child_child.taxon_nuid, '{0}002003001001'.format(root_node.taxon_nuid))
+
+        self.assertEqual(child.parent, sibling)
+
+        # test taxon profile nuid
+        result_profile.refresh_from_db()
+        self.assertEqual(result_profile.taxon_nuid, child_child_result.taxon_nuid)
+
+        # test new parent cache, should have 2 entries
+        new_parent_cache = sibling.meta_node.children_cache
+        self.assertEqual(new_parent_cache['items'][0]['id'], sibling_child_2.id)
+        self.assertEqual(new_parent_cache['items'][1]['id'], child.id)
+
+        # test old parent cache
+        old_parent_cache = parent.meta_node.children_cache
+        for item in old_parent_cache['items']:
+            self.assertTrue(item['id'] != child.id)
+
+
+    @test_settings
+    def test_move_to_one_up(self):
+
+        nature_guide = self.create_nature_guide()
+        root_node = nature_guide.root_node
+        
+        left = self.create_node(root_node, 'First')        
+        left_1 = self.create_node(left, 'Second')
+
+        left_1.move_to(root_node)
+
+        left_1.refresh_from_db()
+
+        self.assertEqual(left_1.taxon_nuid, '{0}002'.format(root_node.taxon_nuid))
+
+            
 
 class TestCrosslinkManager(WithNatureGuide, TenantTestCase):
 
@@ -609,7 +848,7 @@ class TestCrosslinkManager(WithNatureGuide, TenantTestCase):
 
 
 
-class TestNatureGuidesCrosslinks(WithNatureGuide, TenantTestCase):
+class TestNatureGuideCrosslinks(WithNatureGuide, TenantTestCase):
 
     @test_settings
     def test_save(self):
@@ -696,6 +935,86 @@ class TestNatureGuidesCrosslinks(WithNatureGuide, TenantTestCase):
 
         uuids_in_cache = [item['uuid'] for item in cache['items']]
         self.assertFalse(str(sibling.name_uuid) in uuids_in_cache)
+
+    
+    @test_settings
+    def test_move_to(self):
+
+        nature_guide = self.create_nature_guide()
+        
+        parent_node = nature_guide.root_node
+        node = self.create_node(parent_node, 'First')
+        
+        sibling = self.create_node(parent_node, 'Second')
+
+        child = self.create_node(node, 'Child')
+        child_child = self.create_node(child, 'Child child')
+    
+        crosslink = NatureGuideCrosslinks(
+            parent=child,
+            child=sibling,
+            position=3,
+        )
+
+        crosslink.save()
+
+        old_crosslink_parent = child
+        new_crosslink_parent = child_child
+
+        old_parent_cache = child.meta_node.children_cache
+        self.assertEqual(old_parent_cache['items'][0]['id'], child_child.id)
+        self.assertEqual(old_parent_cache['items'][1]['id'], sibling.id)
+
+        self.assertEqual(crosslink.parent, old_crosslink_parent)
+        self.assertEqual(crosslink.child, sibling)
+
+        crosslink.move_to(new_crosslink_parent)
+
+        old_crosslink_parent.refresh_from_db()
+        new_crosslink_parent.refresh_from_db()
+        crosslink.refresh_from_db()
+
+        self.assertEqual(crosslink.parent, new_crosslink_parent)
+        self.assertEqual(crosslink.child, sibling)
+
+        old_parent_cache = child.meta_node.children_cache
+        self.assertEqual(old_parent_cache['items'][0]['id'], child_child.id)
+        self.assertEqual(len(old_parent_cache['items']), 1)
+
+        new_parent_cache = new_crosslink_parent.meta_node.children_cache
+        self.assertEqual(new_parent_cache['items'][0]['id'], sibling.id)
+
+
+    def test_move_to_circular(self):
+        nature_guide = self.create_nature_guide()
+        
+        parent_node = nature_guide.root_node
+        left_1 = self.create_node(parent_node, 'Left')
+        
+        right_1 = self.create_node(parent_node, 'Right')
+
+        left_1_1 = self.create_node(left_1, 'Left Child')
+        right_1_1 = self.create_node(right_1, 'Right Child 1')
+
+        right_1_2 = self.create_node(right_1, 'Right Child 2')
+        
+        right_1_2_1 = self.create_node(right_1_2, 'Right Child 2 Child')
+    
+        crosslink = NatureGuideCrosslinks(
+            parent=right_1_1,
+            child=left_1,
+        )
+
+        crosslink.save()
+
+        old_crosslink = NatureGuideCrosslinks(
+            parent=right_1_2_1,
+            child=right_1_1,
+        )
+        old_crosslink.save()
+
+        with self.assertRaises(ValueError):
+            old_crosslink.move_to(left_1_1)
         
 
 class TestMatrixFilter(WithNatureGuide, TenantTestCase):
@@ -1217,7 +1536,7 @@ class TestNodeFilterSpace(WithNatureGuide, TenantTestCase):
 
 
 
-class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
+class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCase):
 
     def get_encoded_spaces(self):
 
@@ -1287,8 +1606,52 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
 
     @test_settings
     def test_rebuild_cache(self):
-        pass
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+        node = self.create_node(parent_node, 'First')
+
+        self.create_all_matrix_filters(parent_node)
+
+        children_cache_manager = ChildrenCacheManager(meta_node)
+
+        empty_data = children_cache_manager.get_data(empty=True)
+
+        meta_node.children_cache = empty_data
+        meta_node.save()
+
+        children_cache_manager.rebuild_cache()
+
+        meta_node.refresh_from_db()
+
+        data = meta_node.children_cache
+        self.assertEqual(len(data['matrix_filter_types']), len(MATRIX_FILTER_TYPES))
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
+
+        for matrix_filter in matrix_filters:
+            self.assertEqual(data['matrix_filter_types'][str(matrix_filter.uuid)], matrix_filter.filter_type)
+
+        self.assertEqual(len(data['items']), 1)
+        self.assertEqual(data['items'][0]['id'], node.id)
         
+    @test_settings
+    def test_get_empty_data(self):
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+        node = self.create_node(parent_node, 'First')
+
+        children_cache_manager = ChildrenCacheManager(meta_node)
+
+        data = children_cache_manager.get_data(empty=True)
+        empty_data = {
+            'items' : [],
+            'matrix_filter_types' : {},
+        }
+
+        self.assertEqual(data, empty_data)
 
     @test_settings
     def test_get_data(self):
@@ -1301,9 +1664,23 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
         children_cache_manager = ChildrenCacheManager(meta_node)
 
         expected_data = {
-            'items' : [],
-            'matrix_filter_types' : {},
+            'items': [
+                {
+                    'decision_rule': None,
+                    'id': node.id,
+                    'image_url': '/static/noimage.png',
+                    'is_visible': True,
+                    'meta_node_id': node.meta_node.id,
+                    'name': node.meta_node.name,
+                    'node_type': 'node',
+                    'space': {},
+                    'taxon': None,
+                    'uuid': str(node.name_uuid)
+                }
+            ],
+            'matrix_filter_types': {}
         }
+
 
         data = children_cache_manager.get_data()
 
@@ -1398,6 +1775,39 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
 
         # check the spaces
         self.assertEqual(expected_space, child_json_wspaces['space'])
+
+
+    @test_settings
+    def test_child_as_json_crosslink(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        node = self.create_node(parent_node, 'First')
+        node_sibling = self.create_node(parent_node, 'Second')
+        node_child_1 = self.create_node(node, 'First Child 1')
+        node_child_2 = self.create_node(node, 'First Child 2')
+
+        decision_rule = 'crosslink decision rule'
+
+        crosslink = NatureGuideCrosslinks(
+            parent=node_child_1,
+            child=node_sibling,
+            decision_rule = decision_rule,
+            position = 0,
+        )
+        crosslink.save()
+
+        node_child_1.refresh_from_db()
+
+        children_cache_manager = ChildrenCacheManager(node_child_1.meta_node)
+
+        child_json = children_cache_manager.child_as_json(node_sibling, crosslink=crosslink)
+        self.assertEqual(child_json['decision_rule'], decision_rule)
+
+        item = node_child_1.meta_node.children_cache['items'][0]
+
+        self.assertEqual(item['id'], crosslink.child.id)
+        self.assertEqual(item['decision_rule'], decision_rule)
         
 
     @test_settings
@@ -1409,7 +1819,11 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
 
         children_cache_manager = ChildrenCacheManager(meta_node)
 
-        self.assertEqual(meta_node.children_cache, None)
+        empty_cache = children_cache_manager.get_data(empty=True)
+        meta_node.children_cache = empty_cache
+        meta_node.save()
+        meta_node.refresh_from_db()
+
 
         children_cache_manager.add_or_update_child(node)
         parent_node.refresh_from_db()
@@ -1420,7 +1834,7 @@ class TestChildrenCacheManager(WithNatureGuide, TenantTestCase):
 
         # 'items' is a list - check if the child is not added twice
         children_cache_manager.add_or_update_child(node)
-        parent_node.refresh_from_db()
+        meta_node.refresh_from_db()
         self.assertEqual(len(meta_node.children_cache['items']), 1)
 
 
