@@ -46,6 +46,8 @@ class ColorFilterSpaceForm(MatrixFilterSpaceForm):
 
     localizeable_fields = []
 
+    gradient = forms.BooleanField(required=False, label=_('gradient'))
+
     color = forms.CharField(widget=forms.TextInput(attrs={'type':'color'}))
     description = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['ColorFilter']['description'],
                                   required=False)
