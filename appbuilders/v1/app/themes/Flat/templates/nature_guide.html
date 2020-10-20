@@ -47,13 +47,18 @@
 								</div>
 							{{/ifequal}}
 							{{#ifequal filter_type 'ColorFilter'}}
-								<div class="horizontal-slide">
+								<div class="horizontal-slide large">
 									<div>
 										{{#each space}}
 											<div>
 												<input id="{{../uuid}}-{{@index}}" type="{{#if ../allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 												<label for="{{../uuid}}-{{@index}}" class="text-center">
 													<div class="square responsiveback border-black" style="background-color:{{rgba}};"></div>
+													{{#if description}}
+														<div>
+															{{ description }}
+														</div>
+													{{/if}}
 												</label>
 											</div>
 										{{/each}}

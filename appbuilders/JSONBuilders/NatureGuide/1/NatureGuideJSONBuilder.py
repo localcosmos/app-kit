@@ -143,10 +143,17 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             for subspace in space:
                 encoded_space = subspace.encoded_space
+
+                description = None
+
+                if subspace.additional_information:
+                    description = subspace.additional_information.get('description', None)
+                
                 subspace_entry = {
                     'encoded_space' : encoded_space,
                     'rgba' : 'rgba({0},{1},{2},{3})'.format(encoded_space[0], encoded_space[1], encoded_space[2],
                                                            encoded_space[3]),
+                    'description' : description,
                 }
                 spaces.append(subspace_entry)
                 
