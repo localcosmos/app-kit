@@ -536,11 +536,11 @@ class LoadNodeManagementMenu(MetaAppMixin, TemplateView):
 class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 
 
-    def get_on_click_url(self, meta_node):
+    def get_on_click_url(self, node):
 
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
-            'meta_node_id' : meta_node.id
+            'meta_node_id' : node.meta_node.id
         }
 
         url = reverse('node_analysis', kwargs=url_kwargs)
@@ -550,15 +550,16 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 
     def get_queryset(self, request, **kwargs):
 
-        meta_nodes = []
+        nodes = []
 
         searchtext = request.GET.get('name', '')
         
         if len(searchtext) > 2:
 
-            meta_nodes = MetaNode.objects.filter(name__istartswith=searchtext).exclude(node_type='root')[:15]
+            nodes = NatureGuidesTaxonTree.objects.filter(meta_node__name__istartswith=searchtext).exclude(
+                meta_node__node_type='root')[:15]
 
-        return meta_nodes
+        return nodes
         
 
     @method_decorator(ajax_required)
@@ -568,15 +569,15 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 
         results = []
 
-        meta_nodes = self.get_queryset(request, **kwargs)
+        nodes = self.get_queryset(request, **kwargs)
         
-        for meta_node in meta_nodes:
+        for node in nodes:
 
-            url = self.get_on_click_url(meta_node)
+            url = self.get_on_click_url(node)
 
             choice = {
-                'name' : meta_node.name,
-                'id' : meta_node.id,
+                'name' : node.meta_node.name,
+                'id' : node.id,
                 'url' : url,
             }
             
@@ -1008,16 +1009,16 @@ class SearchMoveToGroup(SearchForNode):
 
     def get_queryset(self, request, **kwargs):
 
-        meta_nodes = []
+        nodes = []
 
         searchtext = request.GET.get('name', '')
         
         if len(searchtext) > 2:
             node_types = ['node', 'root']
-            meta_nodes = MetaNode.objects.filter(name__istartswith=searchtext).filter(
-                node_type__in=node_types)[:15]
+            nodes = NatureGuidesTaxonTree.objects.filter(meta_node__name__istartswith=searchtext).filter(
+                meta_node__node_type__in=node_types)[:15]
 
-        return meta_nodes
+        return nodes
 
     def get_on_click_url(self, meta_node):
         return None
