@@ -165,7 +165,7 @@ msgstr "Durchsuche Taxa der App"
 
 #: features/backbonetaxonomy/forms.py:27
 msgid "Enter your taxa below. Only scientific names, separated by commas:"
-msgstr ""
+msgstr "Geben Sie unten die Taxa ein. Nur wissenschaftliche Namen, durch Kommat getrennt:"
 
 #: features/backbonetaxonomy/forms.py:37
 msgid "Select taxonomic systems"
@@ -1476,7 +1476,7 @@ msgstr "nach rechts schieben"
 
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:15
 msgid "Move to different group"
-msgstr ""
+msgstr "In andere Gruppe verschieben"
 
 #: features/nature_guides/templates/nature_guides/ajax/nodelist.html:10
 msgid "This nature guide is empty. You can add entries below."
