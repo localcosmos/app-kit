@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-09 09:54+0000\n"
+"POT-Creation-Date: 2020-10-20 11:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -507,7 +507,7 @@ msgstr ""
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:16
 #: features/generic_forms/templates/generic_forms/generic_field_modify.html:16
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:21
-#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:16
+#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:18
 #: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:33
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:23
 #: templates/app_kit/ajax/component_card.html:11
@@ -715,7 +715,7 @@ msgid "Temporal Reference"
 msgstr "Zeitliche Referenz"
 
 #: features/generic_forms/models.py:192
-#: features/nature_guides/matrix_filters.py:908
+#: features/nature_guides/matrix_filters.py:932
 msgid "Taxon"
 msgstr "Taxon"
 
@@ -1028,11 +1028,11 @@ msgstr ""
 "Legen Sie fest, was passiert, wenn der Nutzer auf einen Eintrag (nicht "
 "Gruppe) dieses Naturführers tippt."
 
-#: features/nature_guides/forms.py:90 features/nature_guides/models.py:401
+#: features/nature_guides/forms.py:90 features/nature_guides/models.py:448
 msgid "Node"
 msgstr "Knoten"
 
-#: features/nature_guides/forms.py:91 features/nature_guides/models.py:402
+#: features/nature_guides/forms.py:91 features/nature_guides/models.py:449
 msgid "Identification result"
 msgstr "Bestimmungsergebnis"
 
@@ -1064,6 +1064,23 @@ msgstr ""
 #: features/nature_guides/forms.py:170
 msgid "You have to enter at least a name or a decision rule."
 msgstr "Sie müssen entweder einen Namen oder eine Entscheidungsregel angeben"
+
+#: features/nature_guides/forms.py:179
+msgid "Name of new group"
+msgstr "Name der neuen Gruppe"
+
+#: features/nature_guides/forms.py:180
+msgid "Search whole tree for a group."
+msgstr "Ganzen Baum nach einem Eintrag durchsuchen."
+
+#: features/nature_guides/forms.py:182
+msgid "New group"
+msgstr "Neue Gruppe"
+
+#: features/nature_guides/forms.py:204
+#, python-brace-format
+msgid "Moving {0} to {1} would result in an invalid tree."
+msgstr "Die Verschiebung von {0} nach {1} würde die Baumstruktur kompromittieren."
 
 #: features/nature_guides/matrix_filter_forms.py:13
 msgid "Name of filter or trait"
@@ -1153,8 +1170,7 @@ msgid "Taxonomic filter"
 msgstr "Taxonomischer Filter"
 
 #: features/nature_guides/matrix_filters.py:44
-#: features/nature_guides/matrix_filters.py:763
-#| msgid "Taxonomic filter"
+#: features/nature_guides/matrix_filters.py:787
 msgid "Text only filter"
 msgstr "Textbasierter Filter"
 
@@ -1166,84 +1182,83 @@ msgstr "Zahlenfilter"
 msgid "color"
 msgstr "Farbe"
 
-#: features/nature_guides/matrix_filters.py:642
+#: features/nature_guides/matrix_filters.py:666
 msgid "Text/Images filter"
 msgstr "Text/Bilder Filter"
 
-#: features/nature_guides/matrix_filters.py:643
+#: features/nature_guides/matrix_filters.py:667
 msgid "text with image"
 msgstr "Text mit Bild"
 
-#: features/nature_guides/matrix_filters.py:764
-#| msgid "Add text"
+#: features/nature_guides/matrix_filters.py:788
 msgid "text"
 msgstr "Text hinzufügen"
 
-#: features/nature_guides/matrix_filters.py:881
+#: features/nature_guides/matrix_filters.py:905
 msgid "Animals"
 msgstr "Tiere"
 
-#: features/nature_guides/matrix_filters.py:882
+#: features/nature_guides/matrix_filters.py:906
 msgid "Plants"
 msgstr "Pflanzen"
 
-#: features/nature_guides/matrix_filters.py:883
+#: features/nature_guides/matrix_filters.py:907
 msgid "Mushrooms"
 msgstr "Pilze"
 
-#: features/nature_guides/matrix_filters.py:884
+#: features/nature_guides/matrix_filters.py:908
 msgid "Chordates"
 msgstr "Wirbeltiere"
 
-#: features/nature_guides/matrix_filters.py:885
+#: features/nature_guides/matrix_filters.py:909
 msgid "Mammals"
 msgstr "Säugetiere"
 
-#: features/nature_guides/matrix_filters.py:886
+#: features/nature_guides/matrix_filters.py:910
 msgid "Birds"
 msgstr "Vögel"
 
-#: features/nature_guides/matrix_filters.py:887
+#: features/nature_guides/matrix_filters.py:911
 msgid "Amphibians"
 msgstr "Amphibien"
 
-#: features/nature_guides/matrix_filters.py:888
+#: features/nature_guides/matrix_filters.py:912
 msgid "Frogs"
 msgstr "Frösche"
 
-#: features/nature_guides/matrix_filters.py:889
+#: features/nature_guides/matrix_filters.py:913
 msgid "Fish"
 msgstr "Fische"
 
-#: features/nature_guides/matrix_filters.py:890
+#: features/nature_guides/matrix_filters.py:914
 msgid "Arthropods"
 msgstr "Gliederfüßer"
 
-#: features/nature_guides/matrix_filters.py:891
+#: features/nature_guides/matrix_filters.py:915
 msgid "Insects"
 msgstr "Insekten"
 
-#: features/nature_guides/matrix_filters.py:892
+#: features/nature_guides/matrix_filters.py:916
 msgid "Butterflies"
 msgstr "Schmetterlinge"
 
-#: features/nature_guides/matrix_filters.py:893
+#: features/nature_guides/matrix_filters.py:917
 msgid "Bugs"
 msgstr "Käfer"
 
-#: features/nature_guides/matrix_filters.py:894
+#: features/nature_guides/matrix_filters.py:918
 msgid "Dragonflies and damselflies"
 msgstr "Libellen"
 
-#: features/nature_guides/matrix_filters.py:895
+#: features/nature_guides/matrix_filters.py:919
 msgid "Spiders"
 msgstr "Spinnen"
 
-#: features/nature_guides/matrix_filters.py:896
+#: features/nature_guides/matrix_filters.py:920
 msgid "Molluscs"
 msgstr "Weichtiere"
 
-#: features/nature_guides/matrix_filters.py:907
+#: features/nature_guides/matrix_filters.py:931
 msgid "Taxonomic Filter"
 msgstr "Taxonomischer Filter"
 
@@ -1259,9 +1274,7 @@ msgstr "Naturführer"
 msgid "Nature guides"
 msgstr "Naturführer"
 
-#: features/nature_guides/models.py:400
-#, fuzzy
-#| msgid "Start node"
+#: features/nature_guides/models.py:447
 msgid "Start"
 msgstr "Anfangsknoten"
 
@@ -1274,15 +1287,10 @@ msgid "Add existing node"
 msgstr "Existierenden Knoten hinzufügen"
 
 #: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:39
-#, fuzzy
-#| msgid ""
-#| "The following nodes were not added because it would result in a circular "
-#| "connection:"
 msgid ""
 "The nodes you tried to add would have resulted in a circular connection."
 msgstr ""
-"Folgende Knoten wurden nicht hinzugefügt, da diese einen Zirkelschluss "
-"erzeugt hätten: "
+"Die Knoten, die Sie hinzufügen wollten, hätten einen Zirkelschluss erzeugt."
 
 #: features/nature_guides/templates/nature_guides/ajax/add_existing_nodes.html:48
 msgid ""
@@ -1374,6 +1382,7 @@ msgid "Successfully saved node."
 msgstr "Knoten erfolgreich gespeichert."
 
 #: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:54
+#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:28
 #: templates/app_kit/ajax/app_limit_reached.html:15
 #: templates/app_kit/ajax/create_generic_content.html:50
 #: templates/app_kit/ajax/manage_feature.html:28
@@ -1409,6 +1418,19 @@ msgstr ""
 #: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:49
 msgid "Add trait or filter"
 msgstr "Merkmal oder Filter hinzufügen"
+
+#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:9
+msgid "Move tree entry"
+msgstr "Eintrag verschieben"
+
+#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:15
+#, python-format
+msgid "%(child_node)s has successfully been moved to %(new_parent_node)s"
+msgstr "%(child_node)s wurde in die Gruppe %(new_parent_node)s verschoben"
+
+#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:19
+msgid "Go to %(new_parent_node)s"
+msgstr "Gehe zu %(new_parent_node)s"
 
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:12
 msgid ""
@@ -1452,6 +1474,10 @@ msgstr "nach links schieben"
 msgid "Move right"
 msgstr "nach rechts schieben"
 
+#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:15
+msgid "Move to different group"
+msgstr ""
+
 #: features/nature_guides/templates/nature_guides/ajax/nodelist.html:10
 msgid "This nature guide is empty. You can add entries below."
 msgstr "Dieser Naturführer ist leer. Sie können unten Einträge hinzufügen."
@@ -1490,8 +1516,6 @@ msgid "Add new identification result"
 msgstr "Neues Bestimmungsergebnis hinzufügen"
 
 #: features/nature_guides/templates/nature_guides/node_analysis.html:20
-#, fuzzy, python-format
-#| msgid "%(node)s appears in %(length)s locations:"
 msgid "%(meta_node)s appears in %(length)s locations:"
 msgstr "%(meta_node)s befindet kommt an %(length)s Orten vor:"
 
@@ -1520,12 +1544,12 @@ msgstr "max"
 msgid "Clear"
 msgstr "zurücksetzen"
 
-#: features/nature_guides/views.py:327
+#: features/nature_guides/views.py:328
 #, python-brace-format
 msgid "Do you really want to remove the crosslink to {0}?"
 msgstr "Wollen Sie die Querverbindung zu {0} wirklich entfernen?"
 
-#: features/nature_guides/views.py:329 views.py:910
+#: features/nature_guides/views.py:330 views.py:910
 #, python-brace-format
 msgid "Do you really want to remove {0}?"
 msgstr "Wollen Sie {0} wirklich entfernen?"
@@ -2125,11 +2149,11 @@ msgstr "anmelden"
 
 #: multi_tenancy/templates/multi_tenancy/list_app_kits.html:105
 msgid "Departments and projects"
-msgstr ""
+msgstr "Abteilungen und Projekte"
 
 #: multi_tenancy/templates/multi_tenancy/list_app_kits.html:118
 msgid "select the app you want to work on"
-msgstr ""
+msgstr "wählen Sie die App, an der Sie arbeiten wollen"
 
 #: multi_tenancy/templates/multi_tenancy/list_app_kits.html:147
 #: templates/app_kit/base.html:339 templates/app_kit/legal/legal_notice.html:4
