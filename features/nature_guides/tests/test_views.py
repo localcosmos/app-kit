@@ -2380,3 +2380,52 @@ class TestMoveNatureGuideNodeCrosslink(WithNatureGuideLink, WithAjaxAdminOnly, V
         self.crosslink.refresh_from_db()
         self.assertEqual(self.crosslink.parent, self.left)
     
+
+class TestSearchMoveToGroup(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMixin, WithUser,
+                            WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'search_move_to_group'
+    view_class = SearchMoveToGroup
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.left = self.create_node(self.start_node, 'Left')
+        self.middle = self.create_node(self.start_node, 'Middle')
+        self.right = self.create_node(self.start_node, 'Right')
+        
+        self.left_1 = self.create_node(self.left, 'Left child')
+        self.right_1 = self.create_node(self.right, 'Right child')
+
+        self.crosslink = NatureGuideCrosslinks(
+            parent = self.middle,
+            child = self.right_1,
+        )
+
+        self.crosslink.save()
+
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'nature_guide_id' : self.left.nature_guide.id,
+        }
+
+        return url_kwargs
+
+
+    def test_get_queryset(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+
+        view.request.GET = {
+            'name' : 'lEft',
+        }
+
+        queryset = view.get_queryset(view.request, **view.kwargs)
+
+        self.assertEqual(len(queryset), 2)

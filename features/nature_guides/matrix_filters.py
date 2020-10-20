@@ -511,9 +511,15 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             choice_value = ','.join(str(n) for n in encoded_space)
             color_rgba = self.encoded_space_to_rgba_str(encoded_space)
 
+            description = None
+
+            if space.additional_information:
+                description = space.additional_information.get('description', None)
+
             extra_kwargs = {
                 'modify' : True,
                 'space_id' : space.id,
+                'description' : description,
             }
 
             choice = (choice_value, color_rgba, extra_kwargs)
@@ -533,8 +539,10 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         extra_context = {
             'from_url' : from_url,
         }
-        return ObjectLabelModelMultipleChoiceField(queryset, widget=DefineColorsWidget(self,
-                                                                                       extra_context=extra_context))
+        field = ObjectLabelModelMultipleChoiceField(queryset, widget=DefineColorsWidget(self,
+                                                                                extra_context=extra_context))
+
+        return field
 
     # READ FORMS
     # ColorFilter is multispatial
@@ -557,6 +565,12 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         initial = {
             'color' : color_hex,
         }
+
+        if matrix_filter_space.additional_information:
+            description = matrix_filter_space.additional_information.get('description', None)
+            if description:
+                initial['description'] = description
+                
         return initial
 
     ### SAVE ONE COLOR
@@ -574,6 +588,16 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
                 matrix_filter = self.matrix_filter,
             )
             old_encoded_space = None
+
+        # save description
+        description = form.cleaned_data.get('description', None)
+        if description:
+            if not space.additional_information:
+                space.additional_information = {}
+            space.additional_information['description'] = description
+        else:
+            if space.additional_information:
+                del space.additional_information['description']
 
         # put the color into the encoded space
         hex_value = form.cleaned_data['color']

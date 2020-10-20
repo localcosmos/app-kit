@@ -13,6 +13,8 @@ TEXT_LENGTH_RESTRICTIONS = {
     },
     'TextOnlyFilter' : {
         'text' : 200,
+    },
+    'ColorFilter' : {
+        'description' : 40,
     }
-    
 }
