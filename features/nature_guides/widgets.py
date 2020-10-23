@@ -60,7 +60,7 @@ class MatrixFilterMixin:
         context = super().get_context(name, value, attrs)
 
         if not hasattr(self, 'matrix_filter'):
-            raise ValueError('MatrixFilterMixin neeeds the matrix_filter attribute')
+            raise ValueError('MatrixFilterMixin needs the matrix_filter attribute')
         
         context['matrix_filter'] = self.matrix_filter
 
@@ -130,6 +130,7 @@ class DefineRangeSpaceWidget(MultiWidget):
 
 
 '''
+    Widgets for assigning values to a node (child)
     these depend on the previously defined selectable values
 '''
 class DefineDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):

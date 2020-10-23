@@ -22,7 +22,8 @@ class MatrixFilterSpaceForm(LocalizeableForm):
 from app_kit.forms import OptionalContentImageForm
 class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFilterSpaceForm):
 
-    text = forms.CharField(label=_('Text'), max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'])
+    text = forms.CharField(label=_('Text'),
+                           max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'])
     
     localizeable_fields = ['text']
 
@@ -49,5 +50,20 @@ class ColorFilterSpaceForm(MatrixFilterSpaceForm):
     gradient = forms.BooleanField(required=False, label=_('gradient'))
 
     color = forms.CharField(widget=forms.TextInput(attrs={'type':'color'}))
+
+    color_2 = forms.CharField(required=False, widget=forms.TextInput(attrs={'type':'color'}))
+    
     description = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['ColorFilter']['description'],
                                   required=False)
+
+    def clean(self):
+        
+        cleaned_data = super().clean()
+
+        gradient = cleaned_data.get('gradient', False)
+        color_2 = cleaned_data.get('color_2', None)
+
+        if gradient and not color_2:
+            self.add_error('color_2', _('You have to define a second color if you want to create a gradient.'))
+
+        return cleaned_data

@@ -763,14 +763,23 @@ class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormVi
     form_class = None
     template_name = 'nature_guides/ajax/manage_matrix_filter_space.html'
 
+    template_names = {
+        'ColorFilter' : 'nature_guides/ajax/manage_color_filter_space.html',
+    }
+
     # ContentImageTaxon
     taxon = None
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):        
         self.set_space(**kwargs)
+        self.set_template_name()
         return super().dispatch(request, *args, **kwargs)
 
+
+    def set_template_name(self):
+        if self.matrix_filter.filter_type in self.template_names:
+            self.template_name = self.template_names[self.matrix_filter.filter_type]
 
     def set_space(self, **kwargs):
 

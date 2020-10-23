@@ -1,0 +1,107 @@
+{% extends 'nature_guides/ajax/manage_matrix_filter_space.html' %}
+{% load i18n app_tags localcosmos_tags %}
+
+
+{% block body %}
+	
+	<p class="animated fadeIn">
+	
+		<div class="row justify-content-center">
+			<div class="col-6 col-mg-4 col-lg-3">
+				<div id="trait-value-color" class="trait-value-color square"></div>
+			</div>
+		</div>
+		
+		{% for field in form %}
+			{% if field.name == 'color' %}
+				<div class="row">
+					<div class="col-6">
+			{% endif %}
+			
+			{% if field.name == 'color_2' %}
+					<div id="color-2-container" class="col-6 {% if form.initial.gradient %}{% else %}d-none{% endif %}">
+			{% endif %}
+
+			{% include 'localcosmos_server/bootstrap_field.html' %}
+
+			{% if field.name == 'color' %}
+					</div>
+			{% endif %}
+			
+			{% if field.name == 'color_2' %}
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+
+		{% if form.errors %}
+			<div class="alert alert-danger">
+				{{ form.errors }}
+			</div>
+		{% endif %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% blocktrans with name=matrix_filter.matrix_filter_type.verbose_space_name %}Successfully saved {{ name }}.{% endblocktrans %}
+		</div>
+	{% endif %}
+	
+	<script>
+		(function(){
+			var trait_value_color = document.getElementById("trait-value-color");
+			
+			var color_1 = $("#id_color");
+			var color_2 = $("#id_color_2");
+			var gradient = $("#id_gradient");
+			
+			function update_trait_value_color(event){
+				let gradient_is_checked = gradient.is(":checked");
+				
+				color_1_value = color_1.val();
+				
+				
+				if (gradient_is_checked){
+					color_2_value = color_2.val();
+					
+					trait_value_color.style.backgroundImage = "linear-gradient(to right, " + color_1_value + "," + color_2_value + ")";
+				}
+				else {
+					trait_value_color.style.backgroundImage = "";
+					trait_value_color.style.backgroundColor = color_1_value;
+				}
+
+			}
+			
+			color_1.on("change", update_trait_value_color);
+			color_2.on("change", update_trait_value_color);
+			
+			var color_2_container = $("#color-2-container");
+			gradient.on("change", function(event){
+				let gradient_is_checked = gradient.is(":checked");
+				
+				if (gradient_is_checked == true){
+					color_2_container.removeClass("d-none");
+				}
+				else {
+					color_2_container.addClass("d-none");
+				}
+				
+				update_trait_value_color(null);
+				
+			});
+			
+			update_trait_value_color(null);
+			
+
+		})();
+	</script>
+{% endblock %}
+
+{% block footer %}
+	{% if from_url %}
+		<button type="button" class="btn btn-outline-secondary xhr" ajax-target="LargeModalContent" data-url="{{ from_url }}">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}

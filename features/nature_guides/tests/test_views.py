@@ -1918,6 +1918,42 @@ class TestCreateMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
 
 
     @test_settings
+    def test_form_valid_color_gradient(self):
+        for matrix_filter in self.matrix_filters:
+
+            if matrix_filter.filter_type == 'ColorFilter':
+
+                view = self.get_view(matrix_filter)
+                view.set_space(**view.kwargs)
+                view.set_primary_language()
+
+                post_data = self.get_post_data(matrix_filter)
+
+                # include gradient in post_data
+                post_data.update({
+                    'gradient' : True,
+                    'color_2' : '#f1f1f1',
+                    'description' : 'red',
+                })
+
+                form_kwargs = view.get_form_kwargs()
+                form_kwargs['data'] = post_data
+                form_class = view.get_form_class()
+                form = form_class(**form_kwargs)
+
+                form.is_valid()
+                self.assertEqual(form.errors, {})
+
+                response = view.form_valid(form)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context_data['success'], True)
+
+                created_space = MatrixFilterSpace.objects.filter(
+                    matrix_filter=matrix_filter).order_by('pk').last()
+                self.assertEqual(created_space.matrix_filter, matrix_filter)
+
+
+    @test_settings
     def test_form_valid_referred_image(self):
         
         for matrix_filter in self.matrix_filters:

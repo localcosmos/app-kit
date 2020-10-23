@@ -2,15 +2,21 @@
 <div class="row">
 	{% for group, options, index in widget.optgroups %}
 		{% for option in options %}
-			<div class="col-3 col-md-2 col-lg-1 text-center node-space-definition-item">
+			<div class="col-4 col-md-3 col-lg-2 text-center node-space-definition-item">
+
 				<label class="checkbox">
-					<div class="square responsiveback" style="background-color: {{ option.label.decode }};"></div>
+					<div class="square responsiveback" {% if option.label.additional_information.gradient %}style="background-image: {{ option.label.decode }};"{% else %}style="background-color: {{ option.label.decode }};"{% endif %}></div>
+					{% if option.label.additional_information.description %}
+						<div class="text-center">
+							{{ option.label.additional_information.description }}
+						</div>
+					{% endif %}
 					<input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %}>
 				</label>
 			</div>
 		{% endfor %}
 	{% endfor %}
-	<div class="col-3 col-md-2 col-lg-1 text-center">
+	<div class="col-4 col-md-3 col-lg-2 text-center">
 		<a href="#" class="square add_element xhr" style="background-image:url('{% static 'app_kit/images/add_element.png' %}')" ajax-target="LargeModalContent" data-url="{% url 'create_matrix_filter_space' matrix_filter.matrix_filter.id %}?from_url={{ from_url }}"></a>
 	</div>
 </div>

@@ -96,7 +96,7 @@ class ManageNodelinkForm(LocalizeableForm):
     
     node_type = forms.ChoiceField(widget=forms.HiddenInput, choices=NODE_TYPE_CHOICES, label=_('Type of node'))
 
-    name = forms.CharField(help_text=_('Name of the taxon or group.'), required=False,
+    name = forms.CharField(help_text=_('Name of the taxon or group.'),
                            max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'])
 
     taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
@@ -115,6 +115,8 @@ class ManageNodelinkForm(LocalizeableForm):
 
     def __init__(self, parent_node, *args, **kwargs):
 
+        self.parent_node = parent_node
+        
         self.node = kwargs.pop('node', None)
         self.from_url = kwargs.pop('from_url')
 
@@ -157,20 +159,39 @@ class ManageNodelinkForm(LocalizeableForm):
 
         return None
 
-
+    # the database does not allow 2 nodes with the same name for a NatureGuidesTaxonTree
     def clean(self):
 
         cleaned_data = super().clean()
 
         name = cleaned_data.get('name', None)
+
+        if name:
+            exists_qry = NatureGuidesTaxonTree.objects.filter(nature_guide=self.parent_node.nature_guide,
+                                                         meta_node__name__iexact=name)
+
+            node_id = cleaned_data.get('node_id', None)
+
+            if node_id:
+                exists_qry = exists_qry.exclude(pk=node_id)
+
+            exists = exists_qry.first()
+            
+            if exists:
+                self.add_error('name',_('A node with the name {0} already exists'.format(
+                    exists.meta_node.name)))
+
+        ''' currently, 'name' is required
         decision_rule = cleaned_data.get('decision_rule', None)
 
         if not name and not decision_rule:
-            del cleaned_data['name']
+            if 'name' in cleaned_data:
+                del cleaned_data['name']
+                
             self.add_error('name', _('You have to enter at least a name or a decision rule.'))
-
+        '''
+        
         return cleaned_data
-
 
 
 class MoveNodeForm(LocalizeableForm):

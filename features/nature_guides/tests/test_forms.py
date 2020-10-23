@@ -10,6 +10,8 @@ from app_kit.features.nature_guides.tests.common import WithMatrixFilters, WithN
 from app_kit.features.nature_guides.forms import (IdentificationMatrixForm, SearchForNodeForm,
         NatureGuideOptionsForm, ManageNodelinkForm, MoveNodeForm)
 
+from app_kit.features.nature_guides.matrix_filter_space_forms import ColorFilterSpaceForm
+
 from app_kit.features.nature_guides.models import (MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
                                                    NatureGuideCrosslinks)
 
@@ -238,7 +240,8 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         self.assertTrue(form.is_bound)
 
         form.is_valid()
-        self.assertEqual(form.errors, {})
+        #self.assertEqual(form.errors, {})
+        self.assertIn('name', form.errors)
         
 
 class TestMoveNodeForm(WithNatureGuide, TenantTestCase):

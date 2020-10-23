@@ -9,7 +9,7 @@ TEXT_LENGTH_RESTRICTIONS = {
         'name' : 150,
     },
     'DescriptiveTextAndImages' : {
-        'name' : 40,
+        'name' : 60,
     },
     'TextOnlyFilter' : {
         'text' : 200,

@@ -459,6 +459,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     # COLOR ENCODING CONVERSION
     # transform hex values #RRGGBB or #RRGGBBAA to the encoded form [r,g,b,a]
+    # OR a list of rgba colors [[r,g,b,a],[r,g,b,a]]
     def encode_from_hex(self, value):
         """Return (red, green, blue) for the color given as #rrggbbaa or rrggbb."""
         value = value.lstrip('#')
@@ -484,45 +485,64 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             return '#%02x%02x%02x%02x' % (r, g, b, a)
         return '#%02x%02x%02x' % (r, g, b)
 
-    def encoded_space_to_rgba_str(self, encoded_space):
 
-        r = encoded_space[0]
-        g = encoded_space[1]
-        b = encoded_space[2]
+    def list_to_rgba_str(self, rgba_list):
+        r = rgba_list[0]
+        g = rgba_list[1]
+        b = rgba_list[2]
         a = 1
         
-        if len(encoded_space) >= 4:
-            a = encoded_space[3]
+        if len(rgba_list) >= 4:
+            a = rgba_list[3]
         
         rgba_str = 'rgba({0},{1},{2},{3})'.format(r,g,b,a)
 
         return rgba_str
+        
+    # encoded space can be [r,g,b,a] or [[r,g,b,a], [r,g,b,a]]
+    def encoded_space_to_html(self, encoded_space):
+
+        if isinstance(encoded_space[0], list):
+            gradient_colors = []
+            for color in encoded_space:
+                rgba_str = self.list_to_rgba_str(color)
+                gradient_colors.append(rgba_str)
+            html = 'linear-gradient(to right, {0})'.format(','.join(gradient_colors))
+        else:
+            html = self.list_to_rgba_str(encoded_space)
+
+        return html
 
     def decode(self, encoded_space):
-        return self.encoded_space_to_rgba_str(encoded_space)
+        return self.encoded_space_to_html(encoded_space)
 
     def _get_choices(self):
 
         choices = []
 
         for space in self.matrix_filter.get_space():
-            encoded_space = space.encoded_space
-            #r,g,b,a
-            choice_value = ','.join(str(n) for n in encoded_space)
-            color_rgba = self.encoded_space_to_rgba_str(encoded_space)
 
             description = None
+            gradient = False
 
             if space.additional_information:
                 description = space.additional_information.get('description', None)
+                gradient = space.additional_information.get('gradient', False)
+
+            encoded_space = space.encoded_space
+
+            #r,g,b,a
+            choice_value = json.dumps(encoded_space)#','.join(str(n) for n in encoded_space)
+            space_html = self.encoded_space_to_html(encoded_space)
 
             extra_kwargs = {
                 'modify' : True,
                 'space_id' : space.id,
                 'description' : description,
+                'gradient' : gradient,
             }
 
-            choice = (choice_value, color_rgba, extra_kwargs)
+            choice = (choice_value, space_html, extra_kwargs)
             
             choices.append(choice)
 
@@ -534,6 +554,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
+    # node space definition: assign colors to a node (child)
     def get_node_space_definition_form_field(self, from_url):
         queryset = self.matrix_filter.get_space()
         extra_context = {
@@ -554,9 +575,17 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
     def get_space_initial(self):
         return {}
 
+    # initial for the html color fields (color, color_2), description and gradient
     def get_single_space_initial(self, matrix_filter_space):
 
-        color_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space)
+        encoded_space = matrix_filter_space.encoded_space
+
+        if isinstance(encoded_space[0], list):
+            color_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space[0])
+            color_2_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space[1])
+
+        else:
+            color_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space)
 
         # currently, the html color input does not support alpha channels, respect leading #
         if len(color_hex) > 7:
@@ -570,6 +599,12 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             description = matrix_filter_space.additional_information.get('description', None)
             if description:
                 initial['description'] = description
+
+            gradient = matrix_filter_space.additional_information.get('gradient', False)
+            initial['gradient'] = gradient
+
+            if gradient:
+                initial['color_2'] = color_2_hex
                 
         return initial
 
@@ -589,19 +624,29 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             )
             old_encoded_space = None
 
-        # save description
+        # save description and gradient
+        if not space.additional_information:
+            space.additional_information = {}
+            
         description = form.cleaned_data.get('description', None)
+        gradient = form.cleaned_data.get('gradient', False)
+
+        space.additional_information['gradient'] = gradient
+        
         if description:
-            if not space.additional_information:
-                space.additional_information = {}
             space.additional_information['description'] = description
         else:
-            if space.additional_information:
+            if 'description' in space.additional_information:
                 del space.additional_information['description']
 
         # put the color into the encoded space
-        hex_value = form.cleaned_data['color']
-        encoded_space = self.encode_from_hex(hex_value)
+        color_1_hex_value = form.cleaned_data['color']
+        encoded_space = self.encode_from_hex(color_1_hex_value)
+
+        color_2_hex_value = form.cleaned_data.get('color_2', None)
+        if gradient and color_2_hex_value:
+            encoded_color_2 = self.encode_from_hex(color_2_hex_value)
+            encoded_space = [encoded_space, encoded_color_2]
 
         space.encoded_space = encoded_space
         space.save(old_encoded_space=old_encoded_space)
@@ -620,16 +665,17 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return space_list
 
 
-    def validate_encoded_space(self, space):
-        
+    # color as a list : [r,g,b,a]
+    def validate_single_color(left, color_as_list):
+
         is_valid = True
         
-        #[r,g,b,a]
-        if isinstance(space, list) and len(space) == 4:
-            r = space[0]
-            g = space[1]
-            b = space[2]
-            a = space[3]
+        if len(color_as_list) == 4:
+        
+            r = color_as_list[0]
+            g = color_as_list[1]
+            b = color_as_list[2]
+            a = color_as_list[3]
 
             for parameter in [r,g,b]:
                 if not isinstance(parameter, int):
@@ -639,7 +685,29 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             if isinstance(a, float) or isinstance(a, int):
                 pass
             else:
-                is_valid = True
+                is_valid = False
+
+        else:
+            is_valid = False
+
+        return is_valid
+            
+                    
+    def validate_encoded_space(self, space):
+        
+        is_valid = True
+        
+        #[r,g,b,a]
+        if isinstance(space, list) and len(space) > 0:
+
+            if isinstance(space[0], list):
+
+                for color in space:
+                    is_valid = self.validate_single_color(color)
+                    if is_valid == False:
+                        break
+            else:
+                is_valid = self.validate_single_color(space)
                     
         else:
             is_valid = False
