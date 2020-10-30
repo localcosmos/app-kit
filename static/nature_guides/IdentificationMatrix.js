@@ -299,12 +299,8 @@ var IdentificationMatrix = {
 							if (matrix_filter_type == "ColorFilter"){
 								
 								value = JSON.parse(value);
-
-								if (item_is_visible == false){
-									break;
-								}
 								
-								item_is_visible = true;
+								item_is_visible = false;
 								
 								if (value[0] instanceof Array){
 
@@ -315,8 +311,8 @@ var IdentificationMatrix = {
 										if (item_color[0] instanceof Array){
 											
 											var equals = self.compare_gradients(item_color, value);
-											if (equals == false){
-												item_is_visible = false;
+											if (equals == true){
+												item_is_visible = true;
 												break;
 											}
 										}
@@ -338,8 +334,8 @@ var IdentificationMatrix = {
 										var item_rgb = item_space[r];
 
 										var equals = self.compare_colors(item_rgb, selected_rgb);
-										if (equals == false){
-											item_is_visible = false;
+										if (equals == true){
+											item_is_visible = true;
 											break;
 										}
 									}
