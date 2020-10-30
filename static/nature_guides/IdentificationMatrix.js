@@ -452,13 +452,6 @@ var IdentificationMatrix = {
 				self.sorted_out_keynodes_container.appendChild(dom_element);
 			}
 
-			/*var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
-
-			if (dom_element_is_visible != item.is_visible){
-				
-				var style = item.is_visible == true ? '' : 'none';
-				dom_element.style.display = style;
-			}*/
 		}
 	},
 
