@@ -142,17 +142,22 @@ class NatureGuideJSONBuilder(JSONBuilder):
             spaces = []
 
             for subspace in space:
+                
                 encoded_space = subspace.encoded_space
 
+                html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
+
                 description = None
+                gradient = False
 
                 if subspace.additional_information:
                     description = subspace.additional_information.get('description', None)
+                    gradient = subspace.additional_information.get('gradient', False)
                 
                 subspace_entry = {
                     'encoded_space' : encoded_space,
-                    'rgba' : 'rgba({0},{1},{2},{3})'.format(encoded_space[0], encoded_space[1], encoded_space[2],
-                                                           encoded_space[3]),
+                    'html' : html,
+                    'gradient' : gradient,
                     'description' : description,
                 }
                 spaces.append(subspace_entry)

@@ -54,13 +54,13 @@ class MatrixFilterType:
     MatrixSingleChoiceFormFieldClass = None
     MatrixMultipleChoiceFormFieldClass = None
     
-    MatrixSingleChoiceWidget = forms.Select
-    MatrixMultipleChoiceWidget = forms.CheckboxSelectMultiple
+    MatrixSingleChoiceWidgetClass = forms.Select
+    MatrixMultipleChoiceWidgetClass = forms.CheckboxSelectMultiple
 
 
     # a form field for defining a valid space for a node
     NodeSpaceDefinitionFormFieldClass = None
-    NodeSpaceDefinitionFormFieldWidget = None
+    NodeSpaceDefinitionWidgetClass = None
 
     # e.g. color for ColorFilter
     verbose_space_name = None
@@ -74,25 +74,26 @@ class MatrixFilterType:
         self.matrix_filter = matrix_filter
 
         # set encoded_space for the matrix_filter
-        self.set_encoded_space(matrix_filter)
+        self.set_encoded_space()
 
         # check if the user allows the end-user to select multiple values 
         allow_multiple_values = False
         if self.matrix_filter.definition:
             allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
 
-        if allow_multiple_values:
+        if allow_multiple_values == True:
             self.MatrixFormFieldClass = self.MatrixMultipleChoiceFormFieldClass
-            self.MatrixFormFieldWidget = self.MatrixMultipleChoiceWidget
+            self.MatrixFormFieldWidget = self.MatrixMultipleChoiceWidgetClass
 
         else:
             self.MatrixFormFieldClass = self.MatrixSingleChoiceFormFieldClass
-            self.MatrixFormFieldWidget = self.MatrixSingleChoiceWidget
+            self.MatrixFormFieldWidget = self.MatrixSingleChoiceWidgetClass
 
     ### DEFINITION
     def get_default_definition(self):
         return {}
 
+    ''' never executed
     # make sure the definition is complete
     def set_definition(self, matrix_filter):
 
@@ -100,12 +101,14 @@ class MatrixFilterType:
             default_definition = self.get_default_definition()
             matrix_filter.definition = default_definition
 
+    '''
+    
     ### ENCODED SPACE
     def get_empty_encoded_space(self):
         raise NotImplementedError('MatrixFilterType subclasses need a get_empty_encoded_space method')
 
     # make sure there is at least the empty space
-    def set_encoded_space(self, matrix_filter):
+    def set_encoded_space(self):
         raise NotImplementedError('MatrixFilterType subclasses need a set_encoded_space method')
 
     ### FORM FIELDS
@@ -114,8 +117,15 @@ class MatrixFilterType:
         raise NotImplementedError('MatrixFilterType subclasses need a get_matrix_form_field method')
 
     def get_matrix_form_field_widget(self):
+
+        allow_multiple_values = False
+
+        if self.matrix_filter.definition:
+            allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
+        
         extra_context = {
-            'matrix_filter_space_ctype' : ContentType.objects.get_for_model(self.matrix_filter.space_model)
+            'matrix_filter_space_ctype' : ContentType.objects.get_for_model(self.matrix_filter.space_model),
+            'allow_multiple_values' : allow_multiple_values,
         }
         widget = self.MatrixFormFieldWidget(self.matrix_filter, extra_context=extra_context)
         return widget
@@ -132,9 +142,8 @@ class MatrixFilterType:
         widget_attrs = self.get_node_space_widget_attrs()
         field_kwargs = self.get_node_space_field_kwargs()
         
-
         field = self.NodeSpaceDefinitionFormFieldClass(
-            widget=self.NodeSpaceDefinitionFormFieldWidget(attrs=widget_attrs), **field_kwargs)
+            widget=self.NodeSpaceDefinitionWidgetClass(attrs=widget_attrs), **field_kwargs)
 
         return field
 
@@ -156,6 +165,7 @@ class MatrixFilterType:
         raise NotImplementedError('MatrixFilterType subclasses need a encoded_space_from_form method')
 
     # B, can have multiple values
+    # executed when a nodelink is saved, field is get_node_space_definition_form_field
     def encode_entity_form_value(self, form_value):
         raise NotImplementedError('MatrixFilterType subclasses need a encode_entity_form_value method')
 
@@ -188,36 +198,38 @@ class MatrixFilterType:
     the encoded space of this one MatrixFilterSpace is the encoded space
     of the MatrixFilter
 '''
+# passing matrix_filter might have become obsolete
 class SingleSpaceFilterMixin:
 
-    def set_encoded_space(self, matrix_filter):
-        matrix_filter_space = matrix_filter.get_space().first()
+    def set_encoded_space(self):
+        matrix_filter_space = self.matrix_filter.get_space().first()
 
         if matrix_filter_space:
-            matrix_filter.encoded_space = matrix_filter_space.encoded_space
+            self.matrix_filter.encoded_space = matrix_filter_space.encoded_space
         else:
-            matrix_filter.encoded_space = self.get_empty_encoded_space()
+            self.matrix_filter.encoded_space = self.get_empty_encoded_space()
 
 
 class MultiSpaceFilterMixin:
 
     def encode_entity_form_value(self, form_value):
-        raise NotImplementedError('%s is a multispatial filter and cant encode single form values' % self.__class__.__name__)
+        raise NotImplementedError('{0} is a multispatial filter and cant encode single form values'.format(
+            self.__class__.__name__))
 
 
     def get_empty_encoded_space(self):
         return []
 
-    def set_encoded_space(self, matrix_filter):
+    def set_encoded_space(self):
         
-        matrix_filter.encoded_space = self.get_empty_encoded_space()
+        self.matrix_filter.encoded_space = self.get_empty_encoded_space()
         
-        matrix_filter_spaces = matrix_filter.get_space()
+        matrix_filter_spaces = self.matrix_filter.get_space()
 
         if matrix_filter_spaces:
-            encoded_space = []
+            
             for space in matrix_filter_spaces:
-                matrix_filter.encoded_space.append(space.encoded_space)
+                self.matrix_filter.encoded_space.append(space.encoded_space)
         
 
 '''
@@ -232,11 +244,11 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.DecimalField
     MatrixMultipleChoiceFormFieldClass = forms.DecimalField
 
-    MatrixSingleChoiceWidget = RangePropertyWidget
-    MatrixMultipleChoiceWidget = RangePropertyWidget
+    MatrixSingleChoiceWidgetClass = RangePropertyWidget
+    MatrixMultipleChoiceWidgetClass = RangePropertyWidget
 
     NodeSpaceDefinitionFormFieldClass = RangeSpaceField
-    NodeSpaceDefinitionFormFieldWidget = DefineRangeSpaceWidget
+    NodeSpaceDefinitionWidgetClass = DefineRangeSpaceWidget
 
     def get_default_definition(self):
         definition = {
@@ -293,17 +305,23 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
         encoded_space = [form.cleaned_data['min_value'], form.cleaned_data['max_value']]
         return encoded_space
 
-    # the form field already produces [min,max]
+    # the form field (RangeSpaceField) already produces [min,max]
     def encode_entity_form_value(self, form_value):
         return form_value
 
     # FILL FORMS
     # get initial for form
     def get_space_initial(self):
-        space_initial = {
-            'min_value' : self.matrix_filter.encoded_space[0],
-            'max_value' : self.matrix_filter.encoded_space[1]
-        }
+
+        space_initial = {}
+
+        if self.matrix_filter.encoded_space:
+            
+            space_initial = {
+                'min_value' : self.matrix_filter.encoded_space[0],
+                'max_value' : self.matrix_filter.encoded_space[1]
+            }
+            
         return space_initial
 
 
@@ -347,15 +365,15 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixMultipleChoiceWidget = SliderSelectMultipleNumbers
-    MatrixSingleChoiceWidget = SliderRadioSelectNumber
+    MatrixSingleChoiceWidgetClass = SliderRadioSelectNumber
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleNumbers
     
     NodeSpaceDefinitionFormFieldClass = forms.MultipleChoiceField
-    NodeSpaceDefinitionFormFieldWidget = forms.CheckboxSelectMultiple
+    NodeSpaceDefinitionWidgetClass = forms.CheckboxSelectMultiple
 
     def get_default_definition(self):
         definition = {
-            unit : '',
+            'unit' : '',
         }
 
         return definition
@@ -364,7 +382,10 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return []            
 
     def _strip(self, number_str):
-        return number_str.rstrip('0').rstrip('.')
+        if '.' in number_str:
+            number_str = number_str.rstrip('0').rstrip('.')
+
+        return number_str
 
     def _get_choices(self):
         
@@ -442,7 +463,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = []
+    definition_parameters = ['allow_multiple_values']
 
     verbose_name = _('Color filter')
     verbose_space_name = _('color')
@@ -450,11 +471,11 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidget = SliderRadioSelectColor
-    MatrixMultipleChoiceWidget = SliderSelectMultipleColors
+    MatrixSingleChoiceWidgetClass = SliderRadioSelectColor
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleColors
     
-    NodeSpaceDefinitionFormFieldClass = forms.MultipleChoiceField
-    NodeSpaceDefinitionFormFieldWidget = DefineColorsWidget   
+    NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
+    NodeSpaceDefinitionWidgetClass = DefineColorsWidget
 
 
     # COLOR ENCODING CONVERSION
@@ -464,6 +485,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         """Return (red, green, blue) for the color given as #rrggbbaa or rrggbb."""
         value = value.lstrip('#')
 
+        # encoded len is always 4, including alpha channel
         if len(value) == 6:
             lv = len(value)
             encoded_color = [int(value[i:i+2], 16) for i in (0, 2 ,4)] + [1]
@@ -481,9 +503,19 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     def rgb_to_hex(self, r, g, b, a=None):
         """Return color as #rrggbb for the given color values."""
+        color_hex = '#%02x%02x%02x' % (r, g, b)
+        
         if a is not None:
-            return '#%02x%02x%02x%02x' % (r, g, b, a)
-        return '#%02x%02x%02x' % (r, g, b)
+            # a is a percentage between 0.0 and 1.0
+            # decimal = percentage * 255, percentage as float
+            # convert decimal to hexadecimal value . ex: 127.5 in decimal = 7*16ˆ1 + 15 = 7F in hexadecimal
+
+            alpha_decimal = a * 255
+            alpha_hex = hex(alpha_decimal).split('x')[-1]
+            
+            color_hex = '{0}{1}'.format(color_hex, alpha_hex)
+            
+        return color_hex
 
 
     def list_to_rgba_str(self, rgba_list):
@@ -529,10 +561,14 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
                 description = space.additional_information.get('description', None)
                 gradient = space.additional_information.get('gradient', False)
 
+                # fallback
+                if isinstance(space.encoded_space[0], list):
+                    gradient = True
+
             encoded_space = space.encoded_space
 
-            #r,g,b,a
-            choice_value = json.dumps(encoded_space)#','.join(str(n) for n in encoded_space)
+            # r,g,b,a
+            choice_value = json.dumps(encoded_space)
             space_html = self.encoded_space_to_html(encoded_space)
 
             extra_kwargs = {
@@ -560,8 +596,9 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         extra_context = {
             'from_url' : from_url,
         }
-        field = ObjectLabelModelMultipleChoiceField(queryset, widget=DefineColorsWidget(self,
-                                                                                extra_context=extra_context))
+
+        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
+        field = self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
 
         return field
 
@@ -729,7 +766,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = []
+    definition_parameters = ['allow_multiple_values']
 
     verbose_name = _('Text/Images filter')
     verbose_space_name = _('text with image')
@@ -737,8 +774,8 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixMultipleChoiceWidget = SliderSelectMultipleDescriptors
-    MatrixSingleChoiceWidget = SliderRadioSelectDescriptor
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleDescriptors
+    MatrixSingleChoiceWidgetClass = SliderRadioSelectDescriptor
     
     NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeDefinitionFormFieldWidget = DefineDescriptionWidget
@@ -850,7 +887,7 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = []
+    definition_parameters = ['allow_multiple_values']
 
     verbose_name = _('Text only filter')
     verbose_space_name = _('text')
@@ -858,8 +895,8 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixMultipleChoiceWidget = SliderSelectMultipleTextDescriptors
-    MatrixSingleChoiceWidget = SliderRadioSelectTextDescriptor
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTextDescriptors
+    MatrixSingleChoiceWidgetClass = SliderRadioSelectTextDescriptor
     
     NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeDefinitionFormFieldWidget = DefineDescriptionWidget
@@ -1002,8 +1039,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidget = SliderRadioSelectTaxonfilter
-    MatrixMultipleChoiceWidget = SliderSelectMultipleTaxonfilters
+    MatrixSingleChoiceWidgetClass = SliderRadioSelectTaxonfilter
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTaxonfilters
     
     NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeDefinitionFormFieldWidget = DefineDescriptionWidget

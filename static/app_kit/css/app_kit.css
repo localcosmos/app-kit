@@ -342,6 +342,11 @@ a.xhr {
 	font-size: .9rem;
 }
 
+.matrix-filter-inactive {
+	pointer-events:none;
+	opacity: .3;
+}
+
 
 /* APPBAR */
 .appbar {

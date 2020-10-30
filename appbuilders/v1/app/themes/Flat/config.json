@@ -3,8 +3,8 @@
 		"default" : "DefaultAppbar",
 		"Home" : "HomeAppbar"
 	},
-	"css" : ["bootstrap-4.3.1-dist/css/bootstrap.css", "css/flat.css", "horizontal-slide/horizontal-slide.css"],
-	"js" : ["js/jquery-3.5.0.min.js", "bootstrap-4.3.1-dist/js/bootstrap.bundle.min.js", "js/listeners.js"],
+	"css" : ["bootstrap-4.5.3-dist/css/bootstrap.css", "css/flat.css", "horizontal-slide/horizontal-slide.css"],
+	"js" : ["js/jquery-3.5.0.min.js", "bootstrap-4.5.3-dist/js/bootstrap.bundle.min.js", "js/listeners.js"],
 	"name" : "Flat",
 	"online_content" : {
 		"verbose_template_names" : {

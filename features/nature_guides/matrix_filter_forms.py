@@ -46,19 +46,22 @@ class MatrixFilterManagementFormWithUnit(MatrixFilterManagementForm):
     field_order = ['input_language', 'name', 'filter_type', 'unit', 'unit_verbose']
 
 
-''' postponed
+
 class MatrixFilterManagementFormWithMultipleValues(MatrixFilterManagementForm):
-    allow_multiple_values = forms.BooleanField(label=_('allow the user to select multiple values'), required=False)
+    allow_multiple_values = forms.BooleanField(label=_('allow the selection of multiple values'),
+                                help_text=_('The end user will be able to select more than one value. The selected values will be treated as "OR".'),
+                                required=False)
 
 
+'''
 class MatrixFilterManagementFormWithMultipleValuesAndUnit(MatrixFilterManagementFormWithUnit):
     allow_multiple_values = forms.BooleanField(label=_('allow the user to select multiple values'), required=False)
 '''
 
-class DescriptiveTextAndImagesFilterManagementForm(MatrixFilterManagementForm):
+class DescriptiveTextAndImagesFilterManagementForm(MatrixFilterManagementFormWithMultipleValues):
     pass
 
-class TextOnlyFilterManagementForm(MatrixFilterManagementForm):
+class TextOnlyFilterManagementForm(MatrixFilterManagementFormWithMultipleValues):
     pass
 
 class RangeFilterManagementForm(MatrixFilterManagementFormWithUnit):
@@ -85,7 +88,7 @@ class RangeFilterManagementForm(MatrixFilterManagementFormWithUnit):
         return max_value
 
 
-class ColorFilterManagementForm(MatrixFilterManagementForm):
+class ColorFilterManagementForm(MatrixFilterManagementFormWithMultipleValues):
     pass
 
 

@@ -1022,6 +1022,11 @@ input[type="range"] {
 	margin-bottom: 0;
 }
 
+.matrix-filter-inactive {
+	pointer-events: none;
+	opacity: .3;
+}
+
 /* fix slider */
 input[type=range]::-moz-range-track {
 	background-color: black;

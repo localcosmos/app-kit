@@ -18,7 +18,6 @@ from .widgets import DefineRangeSpaceWidget
     A) -> 'DEFINE'SpaceWidget (eg for Range: a min value and a max value)
     B) -> 'SELECT'SpaceWidget (eg for Range: a slider with one or two slideable dots)
 
-    Maybe B is not a Spacewidget, but a TraitWidget -> DefineSpaceWidget and TraitWidget
 '''    
 
 class RangeSpaceField(forms.MultiValueField):

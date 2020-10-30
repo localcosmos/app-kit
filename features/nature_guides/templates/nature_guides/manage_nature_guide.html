@@ -42,6 +42,17 @@
 			</div>
 			<div class="card-body">
 				<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
+				<hr>
+				<div>
+					<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+					
+					<div id="sorted-out-container" class="collapse mt-4">
+						<h5>{% trans 'Sorted out:' %}</h5>
+						<div id="sorted-out-keynodes" class="row">
+						
+						</div>	
+					</div>
+				</div>
 			</div>
 		</div>
 		<br>

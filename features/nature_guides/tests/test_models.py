@@ -1196,6 +1196,31 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
         matrix_filter.save()
 
         self.assertEqual(str(matrix_filter), name)
+        
+
+    def test_definition(self):
+
+        nature_guide = self.create_nature_guide()
+
+        parent_node = nature_guide.root_node
+        
+        node = self.create_node(parent_node, 'First')
+
+        name = 'Test Filter'
+
+        matrix_filter = MatrixFilter(
+            meta_node=node.meta_node,
+            name=name,
+            filter_type='ColorFilter',
+            definition = {
+                'allow_multiple_values' : True,
+            }
+        )
+
+        matrix_filter.save()
+
+        matrix_filter.refresh_from_db()
+        self.assertTrue(matrix_filter.definition['allow_multiple_values'])
 
 
 class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):

@@ -22,17 +22,27 @@ var MatrixFilterValue = {
 
 		self.input = input;
 		
+		self.allow_multiple_values = false;
+		
+		if (self.input.type == "checkbox"){
+			self.allow_multiple_values = true;
+		}
+		
 
 		return self;
 	},
 	hide : function(){
 		var self = this;
-		self.input.parentElement.style.display = "none";
+		
+		self.input.parentElement.classList.add("matrix-filter-inactive");
+		
 		return self;
 	},
 	show : function(){
 		var self = this;
-		self.input.parentElement.style.display = "";
+		
+		self.input.parentElement.classList.remove("matrix-filter-inactive");
+		
 		return self;
 	}
 };
@@ -77,6 +87,10 @@ var IdentificationMatrix = {
 		self._attach_filterupdate_listeners();
 
 		self.visible_count = 0;
+		
+		// containers
+		self.nodes_container = document.getElementById("nodes");
+		self.sorted_out_nodes_container = document.getElementById("sorted-out-nodes");
 
 		return self;
 
@@ -151,7 +165,7 @@ var IdentificationMatrix = {
 
 		}
 	},
-
+	
 	compare_colors : function(color_a, color_b){
 
 		for (var c=0; c<color_a.length; c++){
@@ -160,6 +174,30 @@ var IdentificationMatrix = {
 			}
 		}
 		return true;
+	},
+	
+	compare_gradients : function(gradient_a, gradient_b){
+		// gradients are arraysof arrays [[255,255,255,1],[0,0,0,1]]
+		var gradient_a_color_count = gradient_a.length;
+		var gradient_b_color_count = gradient_b.length;
+		
+		if (gradient_a_color_count != gradient_b_color_count){
+			return false;
+		}
+		
+		for (let c=0; c<gradient_a_color_count; c++){
+			let color_a = gradient_a[c];
+			let color_b = gradient_b[c];
+			
+			let equals = this.compare_colors(color_a, color_b);
+			
+			if (equals == false){
+				return false;
+			}
+		}
+		
+		return true;
+		
 	},
 
 	/* check if a lower taxon is a descendant of a higher taxon
@@ -273,30 +311,51 @@ var IdentificationMatrix = {
 
 
 							if (matrix_filter_type == "ColorFilter"){
-								value = value.split(',');
+							
+								value = JSON.parse(value);
 
 								if (item_is_visible == false){
 									break;
 								}
-
-								var selected_rgb = [0, 0, 0, 0];
-								for (var v=0; v<value.length; v++){
-									var color_part = parseInt(value[v]);
-									selected_rgb[v] = color_part;
-								}
-
-								// compare the 2 rgb values. the selected value is compare with all values of the item
-								// as soon as one color matches, the item is visible
-
+								
 								item_is_visible = false;
+								
+								if (value[0] instanceof Array){
 
-								for (var r=0; r<item_space.length; r++){
-									var item_rgb = item_space[r];
+									for (var r=0; r<item_space.length; r++){
+									
+										var item_color = item_space[r];
+										
+										if (item_color[0] instanceof Array){
+											
+											var equals = self.compare_gradients(item_color, value);
+											if (equals == true){
+												item_is_visible = true;
+												break;
+											}
+										}
+									}
+								}
+								else {
 
-									var equals = self.compare_colors(item_rgb, selected_rgb);
-									if (equals == true){
-										item_is_visible = true;
-										break;
+									var selected_rgb = [0, 0, 0, 0];
+									
+									for (var v=0; v<value.length; v++){
+										var color_part = parseInt(value[v]);
+										selected_rgb[v] = color_part;
+									}
+
+									// compare the 2 rgb values. the selected value is compare with all values of the item
+									// as soon as one color matches, the item is visible
+
+									for (var r=0; r<item_space.length; r++){
+										var item_rgb = item_space[r];
+
+										var equals = self.compare_colors(item_rgb, selected_rgb);
+										if (equals == true){
+											item_is_visible = true;
+											break;
+										}
 									}
 								}
 								
@@ -402,6 +461,32 @@ var IdentificationMatrix = {
 	},
 
 	_update_item_visibility : function(item){
+	
+		var self = this;
+	
+		// only manipulate the DOM of visibility has changed
+		var dom_element = document.getElementById(item.uuid);
+		
+		if (dom_element != null){
+			
+			if (item.is_visible == true && dom_element.parentElement.id != "nodes"){
+				self.nodes_container.appendChild(dom_element);
+			}
+			else if (item.is_visible == false && dom_element.parentElement.id != "sorted-out-nodes") {
+				self.sorted_out_nodes_container.appendChild(dom_element);
+			}
+
+			/*var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
+
+			if (dom_element_is_visible != item.is_visible){
+				
+				var style = item.is_visible == true ? '' : 'none';
+				dom_element.style.display = style;
+			}*/
+		}
+		
+		/*
+	
 		// only manipulate the DOM of visibility has changed
 		var dom_element = document.getElementById(item.uuid);
 
@@ -411,7 +496,7 @@ var IdentificationMatrix = {
 
 			var style = item.is_visible == true ? '' : 'none';
 			dom_element.style.display = style;
-		}
+		}*/
 	},
 
 	reset : function(){

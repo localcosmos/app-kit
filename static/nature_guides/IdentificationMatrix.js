@@ -14,21 +14,20 @@ var MatrixFilterValue = {
 
 		self.id = '' + self.uuid + '_' + self.value;
 
-		self.container = document.getElementById('' + self.uuid + '_' + self.value + '_container');
-
+		/*self.container = document.getElementById('' + self.uuid + '_' + self.value + '_container');*/
+	
 		self.input = input;
-		
 
 		return self;
 	},
 	hide : function(){
 		var self = this;
-		self.input.parentElement.style.display = "none";
+		self.input.parentElement.classList.add("matrix-filter-inactive");
 		return self;
 	},
 	show : function(){
 		var self = this;
-		self.input.parentElement.style.display = "";
+		self.input.parentElement.classList.remove("matrix-filter-inactive");
 		return self;
 	}
 };
@@ -73,6 +72,10 @@ var IdentificationMatrix = {
 		self._attach_filterupdate_listeners();
 
 		self.visible_count = 0;
+		
+		// containers
+		self.keynodes_container = document.getElementById("keynodes");
+		self.sorted_out_keynodes_container = document.getElementById("sorted-out-keynodes");
 
 		return self;
 
@@ -408,7 +411,7 @@ var IdentificationMatrix = {
 			self.reset();
 		}
 		else {
-			/* currently, matrix filters are not hidden
+			
 			for (var v=0; v<self.matrix_filter_values.length; v++){
 
 				var matrix_filter_value = self.matrix_filter_values[v];
@@ -427,7 +430,7 @@ var IdentificationMatrix = {
 				}
 		
 			}
-			*/
+			
 			self.update_visible_count();
 
 		}
@@ -435,18 +438,27 @@ var IdentificationMatrix = {
 	},
 
 	_update_item_visibility : function(item){
+		var self = this;
+		
 		// only manipulate the DOM of visibility has changed
 		var dom_element = document.getElementById(item.uuid);
 		
 		if (dom_element != null){
+			
+			if (item.is_visible == true && dom_element.parentElement.id != "keynodes"){
+				self.keynodes_container.appendChild(dom_element);
+			}
+			else if (item.is_visible == false && dom_element.parentElement.id != "sorted-out-keynodes") {
+				self.sorted_out_keynodes_container.appendChild(dom_element);
+			}
 
-			var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
+			/*var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
 
 			if (dom_element_is_visible != item.is_visible){
-
+				
 				var style = item.is_visible == true ? '' : 'none';
 				dom_element.style.display = style;
-			}
+			}*/
 		}
 	},
 

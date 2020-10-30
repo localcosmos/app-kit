@@ -35,6 +35,14 @@ var upstart = {
 			}
 			return new Handlebars.SafeString(result);
 		});
+		
+		
+		Handlebars.registerHelper('stringify', function (json) {
+
+			let json_string = JSON.stringify(json);
+			
+			return new Handlebars.SafeString(json_string);
+		});
 
 		Handlebars.registerHelper('date', function (date_obj) {
 			if (!date_obj){

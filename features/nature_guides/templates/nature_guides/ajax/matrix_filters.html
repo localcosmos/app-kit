@@ -10,7 +10,7 @@
 					{% for field in form %}
 						<li id="matrix_filter_{{ field.field.matrix_filter.id }}" data-object-id="{{ field.field.matrix_filter.id }}">
 							<div>
-								<strong>{{ field.label }}</strong>{% if matrix_filter.definition.unit %} ({{ matrix_filter.definition.unit }}){% endif %} {% if matrix_filter.definition.allow_multiple_values %}({% trans 'multiple choices' %}){% endif %}
+								<strong>{{ field.label }}</strong>{% if field.field.matrix_filter.definition.unit %} ({{ field.field.matrix_filter.definition.unit }}){% endif %} {% if field.field.matrix_filter.definition.allow_multiple_values %}({% trans 'multiple choices' %}){% endif %}
 								<div class="btn-group dropup">
 									<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 										{% trans 'modify' %} <span class="caret"></span>
