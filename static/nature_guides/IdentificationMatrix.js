@@ -15,17 +15,28 @@ var MatrixFilterValue = {
 		self.id = '' + self.uuid + '_' + self.value;
 	
 		self.input = input;
+		
+		self.allow_multiple_values = false;
+		
+		if (self.input.type == "checkbox"){
+			self.allow_multiple_values = true;
+		}
+		
 
 		return self;
 	},
 	hide : function(){
 		var self = this;
+		
 		self.input.parentElement.classList.add("matrix-filter-inactive");
+		
 		return self;
 	},
 	show : function(){
 		var self = this;
+		
 		self.input.parentElement.classList.remove("matrix-filter-inactive");
+		
 		return self;
 	}
 };
@@ -154,7 +165,7 @@ var IdentificationMatrix = {
 
 		}
 	},
-
+	
 	compare_colors : function(color_a, color_b){
 
 		for (var c=0; c<color_a.length; c++){
@@ -303,7 +314,7 @@ var IdentificationMatrix = {
 								value = JSON.parse(value);
 								
 								item_is_visible = false;
-							
+								
 								if (value[0] instanceof Array){
 
 									for (let c=0; c<item_space.length; c++){
@@ -341,7 +352,7 @@ var IdentificationMatrix = {
 											break;
 										}
 									}
-								}						
+								}
 								
 							}
 
@@ -381,7 +392,6 @@ var IdentificationMatrix = {
 					if (matrix_filter_type != "RangeFilter"){
 
 						var space = item.space[key];
-						
 
 						for (var s=0; s<space.length; s++){
 							var value = space[s];
@@ -407,6 +417,7 @@ var IdentificationMatrix = {
 			if (item_is_visible == true){
 				self.visible_count++;
 			}
+
 		}
 
 		// all items have been traveled - adjust the displayed filters now
@@ -451,7 +462,7 @@ var IdentificationMatrix = {
 
 	_update_item_visibility : function(item){
 		var self = this;
-		
+	
 		// only manipulate the DOM of visibility has changed
 		var dom_element = document.getElementById(item.uuid);
 		
@@ -465,6 +476,7 @@ var IdentificationMatrix = {
 			}
 
 		}
+		
 	},
 
 	reset : function(){
@@ -478,6 +490,7 @@ var IdentificationMatrix = {
 			item.is_visible = true;
 		
 			self._update_item_visibility(item);
+
 		}
 
 		for (var v=0; v<self.matrix_filter_values.length; v++){

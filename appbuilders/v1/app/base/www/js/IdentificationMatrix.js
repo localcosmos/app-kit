@@ -16,12 +16,8 @@ var MatrixFilterValue = {
 		self.uuid = input.name;
 		self.value = input.value;
 
-		var value_spaceless = self.value.replace(/\s/g, '');
-
-		self.id = '' + self.uuid + '_' + value_spaceless;
-
-		self.matrix_filter = document.getElementById(self.uuid);
-
+		self.id = '' + self.uuid + '_' + self.value;
+	
 		self.input = input;
 		
 		self.allow_multiple_values = false;
@@ -112,7 +108,13 @@ var IdentificationMatrix = {
 			if (element.type == "radio" || element.type == "checkbox"){
 
 				if (element.checked){
-					selected_filters[element.name] = [element.dataset.value];
+				
+					if (selected_filters.hasOwnProperty(element.name)){
+						selected_filters[element.name].push(element.dataset.value);
+					}
+					else {
+						selected_filters[element.name] = [element.dataset.value];
+					}
 				}
 			}
 			else if (element.type == "range"){
@@ -249,14 +251,11 @@ var IdentificationMatrix = {
 		// formdata is unsupported by IE
 		var new_filters = self._read_form() //new FormData(self.filterform);
 
-		var workspace = 'all'; // all, visible, invisible
-
-
 		if (self.current_filters == null){
 			self.current_filters = new_filters;
 		}
 		else {
-			// compare filters and set workspace
+			// compare filters
 		}
 
 		var new_filters_uuids = Object.keys(new_filters);
@@ -266,10 +265,6 @@ var IdentificationMatrix = {
 			var item = self.data.items[i];
 
 			var item_is_visible = true;
-
-			if ((item.is_visible == true && workspace == "invisible") || (item.is_visible == false && workspace == "visible")){
-				continue;
-			}
 
 			// iterate over all filters and check if the items space is a subspace of new_filters
 			for (var k=0; k<new_filters_uuids.length; k++){
@@ -291,6 +286,7 @@ var IdentificationMatrix = {
 
 				else if (item.space.hasOwnProperty(matrix_filter_uuid)){
 					
+					// a list of selected spaces
 					var selected = new_filters[matrix_filter_uuid];
 					
 					if (matrix_filter_type == "RangeFilter"){
@@ -311,22 +307,23 @@ var IdentificationMatrix = {
 							
 							var value = selected[v];
 
-
 							if (matrix_filter_type == "ColorFilter"){
 							
-								value = JSON.parse(value);
-
 								if (item_is_visible == false){
 									break;
 								}
+							
+								// check if the value is in the item space
+								
+								value = JSON.parse(value);
 								
 								item_is_visible = false;
 								
 								if (value[0] instanceof Array){
 
-									for (var r=0; r<item_space.length; r++){
+									for (let c=0; c<item_space.length; c++){
 									
-										var item_color = item_space[r];
+										var item_color = item_space[c];
 										
 										if (item_color[0] instanceof Array){
 											
@@ -339,18 +336,18 @@ var IdentificationMatrix = {
 									}
 								}
 								else {
-
+								
 									var selected_rgb = [0, 0, 0, 0];
 									
-									for (var v=0; v<value.length; v++){
-										var color_part = parseInt(value[v]);
-										selected_rgb[v] = color_part;
+									for (let cp=0; cp<value.length; cp++){
+										var color_part = parseInt(value[cp]);
+										selected_rgb[cp] = color_part;
 									}
 
 									// compare the 2 rgb values. the selected value is compare with all values of the item
 									// as soon as one color matches, the item is visible
 
-									for (var r=0; r<item_space.length; r++){
+									for (let r=0; r<item_space.length; r++){
 										var item_rgb = item_space[r];
 
 										var equals = self.compare_colors(item_rgb, selected_rgb);
@@ -402,13 +399,13 @@ var IdentificationMatrix = {
 
 						for (var s=0; s<space.length; s++){
 							var value = space[s];
-							// {{ name }}_{{ choice.0 }}
 							
 							if (matrix_filter_type == "ColorFilter"){
 								value = JSON.stringify(value);
 							}
-							
+							// {{ name }}_{{ choice.0 }}
 							var property_value_id = '' + key + '_' + value;
+
 							if (self.possible_values.indexOf(property_value_id) == -1){
 								self.possible_values.push(property_value_id);
 							}
@@ -436,9 +433,15 @@ var IdentificationMatrix = {
 		}
 		else {
 			
-			for (var v=0; v<self.matrix_filter_values.length; v++){
+			for (let v=0; v<self.matrix_filter_values.length; v++){
 
 				var matrix_filter_value = self.matrix_filter_values[v];
+				var matrix_filter_type = self.data.matrix_filter_types[matrix_filter_value.uuid];
+				
+				var matrix_filter_value_id = matrix_filter_value.id;
+				if (matrix_filter_type == "ColorFilter"){
+					matrix_filter_value_id = matrix_filter_value.id.replace(/\s/g, '');
+				}
 
 				var selected = [];
 				
@@ -446,7 +449,7 @@ var IdentificationMatrix = {
 					selected = new_filters[matrix_filter_value.uuid];
 				}
 	
-				if (self.possible_values.indexOf(matrix_filter_value.id) != -1 || selected.indexOf(matrix_filter_value.value) >= 0){
+				if (self.possible_values.indexOf(matrix_filter_value_id) != -1 || selected.indexOf(matrix_filter_value.value) >= 0){
 					matrix_filter_value.show();
 				}
 				else {
