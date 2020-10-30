@@ -304,7 +304,7 @@ var IdentificationMatrix = {
 									break;
 								}
 								
-								item_is_visible = false;
+								item_is_visible = true;
 								
 								if (value[0] instanceof Array){
 
@@ -315,8 +315,8 @@ var IdentificationMatrix = {
 										if (item_color[0] instanceof Array){
 											
 											var equals = self.compare_gradients(item_color, value);
-											if (equals == true){
-												item_is_visible = true;
+											if (equals == false){
+												item_is_visible = false;
 												break;
 											}
 										}
