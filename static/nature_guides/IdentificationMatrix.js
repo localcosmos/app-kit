@@ -338,8 +338,8 @@ var IdentificationMatrix = {
 										var item_rgb = item_space[r];
 
 										var equals = self.compare_colors(item_rgb, selected_rgb);
-										if (equals == true){
-											item_is_visible = true;
+										if (equals == false){
+											item_is_visible = false;
 											break;
 										}
 									}
