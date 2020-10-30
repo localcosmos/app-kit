@@ -16,7 +16,9 @@ var MatrixFilterValue = {
 		self.uuid = input.name;
 		self.value = input.value;
 
-		self.id = '' + self.uuid + '_' + self.value;
+		var value_spaceless = self.value.replace(/\s/g, '');
+
+		self.id = '' + self.uuid + '_' + value_spaceless;
 
 		self.matrix_filter = document.getElementById(self.uuid);
 
@@ -401,6 +403,11 @@ var IdentificationMatrix = {
 						for (var s=0; s<space.length; s++){
 							var value = space[s];
 							// {{ name }}_{{ choice.0 }}
+							
+							if (matrix_filter_type == "ColorFilter"){
+								value = JSON.stringify(value);
+							}
+							
 							var property_value_id = '' + key + '_' + value;
 							if (self.possible_values.indexOf(property_value_id) == -1){
 								self.possible_values.push(property_value_id);
@@ -476,27 +483,8 @@ var IdentificationMatrix = {
 				self.sorted_out_nodes_container.appendChild(dom_element);
 			}
 
-			/*var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
-
-			if (dom_element_is_visible != item.is_visible){
-				
-				var style = item.is_visible == true ? '' : 'none';
-				dom_element.style.display = style;
-			}*/
 		}
 		
-		/*
-	
-		// only manipulate the DOM of visibility has changed
-		var dom_element = document.getElementById(item.uuid);
-
-		var dom_element_is_visible = dom_element.style.display == 'none' ? false : true;
-
-		if (dom_element_is_visible != item.is_visible){
-
-			var style = item.is_visible == true ? '' : 'none';
-			dom_element.style.display = style;
-		}*/
 	},
 
 	reset : function(){

@@ -11,8 +11,10 @@ var MatrixFilterValue = {
 
 		self.uuid = input.name;
 		self.value = input.value;
+		
+		var value_spaceless = self.value.replace(/\s/g, '');
 
-		self.id = '' + self.uuid + '_' + self.value;
+		self.id = '' + self.uuid + '_' + value_spaceless;
 
 		/*self.container = document.getElementById('' + self.uuid + '_' + self.value + '_container');*/
 	
@@ -381,11 +383,17 @@ var IdentificationMatrix = {
 					if (matrix_filter_type != "RangeFilter"){
 
 						var space = item.space[key];
+						
 
 						for (var s=0; s<space.length; s++){
 							var value = space[s];
+							
+							if (matrix_filter_type == "ColorFilter"){
+								value = JSON.stringify(value);
+							}
 							// {{ name }}_{{ choice.0 }}
 							var property_value_id = '' + key + '_' + value;
+
 							if (self.possible_values.indexOf(property_value_id) == -1){
 								self.possible_values.push(property_value_id);
 							}
