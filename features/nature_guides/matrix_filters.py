@@ -706,21 +706,32 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
     def validate_single_color(left, color_as_list):
 
         is_valid = True
-        
-        if len(color_as_list) == 4:
-        
-            r = color_as_list[0]
-            g = color_as_list[1]
-            b = color_as_list[2]
-            a = color_as_list[3]
 
-            for parameter in [r,g,b]:
-                if not isinstance(parameter, int):
+        if isinstance(color_as_list, list):
+        
+            if len(color_as_list) == 4:
+            
+                r = color_as_list[0]
+                g = color_as_list[1]
+                b = color_as_list[2]
+                a = color_as_list[3]
+
+                for parameter in [r,g,b]:
+                    if not isinstance(parameter, int):
+                        is_valid = False
+                        break
+
+                    if parameter < 0 or parameter > 255:
+                        is_valid = False
+                        break
+
+                if isinstance(a, float) or isinstance(a, int):
+                    if a < 0 or a > 1:
+                        is_valid = False
+                        
+                else:
                     is_valid = False
-                    break
 
-            if isinstance(a, float) or isinstance(a, int):
-                pass
             else:
                 is_valid = False
 
@@ -774,11 +785,11 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleDescriptors
     MatrixSingleChoiceWidgetClass = SliderRadioSelectDescriptor
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleDescriptors
     
-    NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
-    NodeDefinitionFormFieldWidget = DefineDescriptionWidget
+    NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
+    NodeSpaceDefinitionWidgetClass = DefineDescriptionWidget
 
     def get_default_definition(self):
         return {}
@@ -819,8 +830,10 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
         extra_context = {
             'from_url' : from_url,
         }
-        return ObjectLabelModelMultipleChoiceField(queryset, widget=DefineDescriptionWidget(self,
-                                                                            extra_context=extra_context))
+
+        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
+        
+        return self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
 
 
     # READ FORMS
@@ -895,11 +908,11 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTextDescriptors
     MatrixSingleChoiceWidgetClass = SliderRadioSelectTextDescriptor
+    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTextDescriptors
     
-    NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
-    NodeDefinitionFormFieldWidget = DefineDescriptionWidget
+    NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
+    NodeSpaceDefinitionWidgetClass = DefineTextDescriptionWidget
 
 
     ### FORM FIELDS
@@ -987,8 +1000,19 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
         extra_context = {
             'from_url' : from_url,
         }
-        return ObjectLabelModelMultipleChoiceField(queryset, widget=DefineTextDescriptionWidget(self,
-                                                                            extra_context=extra_context))
+
+        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
+        
+        return self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
+
+
+    # node filter space as list
+    def get_node_filter_space_as_list(self, node_filter_space):
+        space_list = []
+        for space in node_filter_space.values.all():
+            space_list.append(space.encoded_space)
+        return space_list
+    
 
     # VALIDATION
     def validate_encoded_space(self, space):
@@ -1042,8 +1066,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceWidgetClass = SliderRadioSelectTaxonfilter
     MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTaxonfilters
     
-    NodeDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
-    NodeDefinitionFormFieldWidget = DefineDescriptionWidget
+    NodeSpaceDefinitionFormFieldClass = None # works automatically, no definition required
+    NodeSpaceDefinitionFormFieldWidget = None # works automatically, no definition required
 
     def get_default_definition(self):
         return {}
@@ -1061,13 +1085,13 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
             for taxonfilter in self.matrix_filter.encoded_space:
                 # example taxon filter: 
                 # {"taxa": [{"taxon_nuid": "001", "name_uuid": "f61b30e9-90d3-4e87-9641-eee71506aada",
-                # "taxon_source": "taxonomy.sources.col", "taxon_latname": "Animalia"}],"latname": "Animalia",
+                # "taxon_source": "taxonomy.sources.col", "taxon_latname": "Animalia", "taxon_author":None}],"latname": "Animalia",
                 # "is_custom": false}
 
                 taxonfilter_json = json.dumps(taxonfilter)
                 
                 extra_kwargs = {
-                    'image' : static('app_kit/buttons/taxonfilters/%s.svg' %(taxonfilter['latname']) ),
+                    'image' : static('app_kit/buttons/taxonfilters/{0}.svg'.format(taxonfilter['latname']) ),
                     'is_custom' : taxonfilter['is_custom'],
                     'data_value' : taxonfilter,
                     'data_b64value' : b64encode(taxonfilter_json.encode('utf-8')).decode('utf-8'),
@@ -1093,7 +1117,7 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
     # READ FORMS
 
     def make_taxonfilter_taxon(self, lazy_taxon):
-        taxonfilter_entry = {
+        taxonfilter_taxon = {
             'taxon_source' : lazy_taxon.taxon_source,
             'taxon_latname' : lazy_taxon.taxon_latname,
             'taxon_author' : lazy_taxon.taxon_author,
@@ -1101,7 +1125,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
             'taxon_nuid' : lazy_taxon.taxon_nuid,
         }
 
-        return taxonfilter_entry
+        return taxonfilter_taxon
+    
 
     def make_taxonfilter_entry(self, latname, sources):
 
@@ -1190,7 +1215,7 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     # taxon json
     #{"taxa": [{"taxon_nuid": "001", "name_uuid": "f61b30e9-90d3-4e87-9641-eee71506aada",
-    # "taxon_source": "taxonomy.sources.col", "taxon_latname": "Animalia"}],"latname": "Animalia",
+    # "taxon_source": "taxonomy.sources.col", "taxon_latname": "Animalia", "taxon_author":None}],"latname": "Animalia",
     # "is_custom": false}
     def validate_encoded_space(self, space):
 
