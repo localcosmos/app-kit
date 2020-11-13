@@ -79,7 +79,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
             taxon_latname = request.GET['taxon_latname']
             taxon_author = request.GET['taxon_author']
 
-            if taxon_author == 'None':
+            if taxon_author == 'None' or taxon_author == '':
                 taxon_author = None
                 
             taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)

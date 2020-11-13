@@ -1634,7 +1634,15 @@ class AppReleaseBuilder(AppBuilder):
 
 
         # open the image, apply crop parameters and resize
-        crop_parameters = json.loads(content_image.crop_parameters)
+        if content_image.crop_parameters:
+            crop_parameters = json.loads(content_image.crop_parameters)
+        else:
+            crop_parameters = {
+                'x' : 0,
+                'y' : 0,
+                'width' : image_file.width,
+                'height' : image_file.height,
+            }
 
         original = Image.open(image_file.path)
 

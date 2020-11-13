@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load i18n online_content_tags %}
+
+{% block title %}
+	{% if preview %}
+		{{ localized_template_content.draft_title }}
+	{% else %}
+		{{ localized_template_content.published_title }}
+	{% endif %}
+{% endblock %}
+
+{% block content %}
+	<div class="container translucent white">
+	
+		{% cms_get_image 'background_image' as image %}
+		<div class="row">
+			<div class="col-12 text-white" style="background:url({{ image.url }}); background-size: cover; background-position: bottom center;">
+				<h1 class="mt-5">
+					{% if preview %}
+						{{ localized_template_content.draft_title }}
+					{% else %}
+						{{ localized_template_content.published_title }}
+					{% endif %}
+				</h1>
+				
+				<h5>{% cms_get_microcontent 'Subtitle' %}</h5>
+			</div>
+		</div>
+		<div class="row mt-3">
+			<div class="col-12">	
+				<b><i>{% cms_get_microcontent 'Introduction' 'layoutable-simple' %}</i></b>
+			</div>
+		</div>
+		<ht>
+		<div class="row">
+			<div class="col-12">	
+				{% cms_get_microcontent 'Content' 'layoutable-full' %}
+			</div>
+		</div>
+
+		<div class="row pb-3">
+			<div class="col-12">
+				<h4>{% trans 'Images:' %}</h4>
+				{% cms_get_images 'Images' as mimages %}
+				<div class="row">
+					{% for mimage in mimages %}
+						<div class="col-6 col-md-4 col-lg-2">
+							<img src="{{ mimage.url }}" class="img-thumbnail" />
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+		
+	</div>
+{% endblock %}
