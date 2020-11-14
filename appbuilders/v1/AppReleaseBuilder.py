@@ -1679,6 +1679,7 @@ class AppReleaseBuilder(AppBuilder):
 
             image_format = original.format
             if original.format.lower() == 'bmp':
+                cropped = cropped.convert('RGB')
                 image_format = 'JPEG'
                 
             cropped.save(absolute_image_filepath, image_format)
