@@ -1312,7 +1312,7 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
     def test_save_color_filter(self):
 
         parent_node, space = self.perform_save_test('ColorFilter', [255,255,255,0.5], [255,'255',255,0.5])
-        self.perform_update_test(parent_node, space, [111,222,333,1.0])
+        self.perform_update_test(parent_node, space, [111,222,255,1.0])
 
         self.perform_deletion_test(parent_node, space)
         
@@ -1521,7 +1521,7 @@ class TestNodeFilterSpace(WithNatureGuide, TenantTestCase):
     @test_settings
     def test_save_color(self):
 
-        node, matrix_filter, space = self.create_matrix_filter_space('ColorFilter', [123,456,101,0.5])
+        node, matrix_filter, space = self.create_matrix_filter_space('ColorFilter', [123,255,101,0.5])
 
         self.perform_save_test(node, matrix_filter, space, encoded_space=None, value=space)
             

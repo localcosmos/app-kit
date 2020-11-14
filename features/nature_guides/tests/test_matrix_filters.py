@@ -20,13 +20,22 @@ from app_kit.features.nature_guides.widgets import (RangePropertyWidget, DefineR
                     SliderRadioSelectTextDescriptor, DefineTextDescriptionWidget)
 
 from app_kit.features.nature_guides.matrix_filter_forms import (RangeFilterManagementForm,
-                    NumberFilterManagementForm, ColorFilterManagementForm)
+                    NumberFilterManagementForm, ColorFilterManagementForm, TaxonFilterManagementForm)
 
-from app_kit.features.nature_guides.matrix_filter_space_forms import ColorFilterSpaceForm
+from app_kit.features.nature_guides.matrix_filter_space_forms import (ColorFilterSpaceForm,
+                    DescriptiveTextAndImagesFilterSpaceForm, TextOnlyFilterSpaceForm)
 
 from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
 
 from app_kit.tests.mixins import WithMetaApp
+
+from taxonomy.lazy import LazyTaxonList, LazyTaxon
+from taxonomy.models import TaxonomyModelRouter
+
+from base64 import b64encode, b64decode
+from django.templatetags.static import static
+
+import json
 
 
 class MatrixFilterTestCommon:
@@ -678,12 +687,12 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
     @test_settings
     def test_init_with_encoded_space(self):
-        space_1 = self.create_space([111,222,333,1])
-        space_2 = self.create_space([444,555,666,1])
+        space_1 = self.create_space([111,222,255,1])
+        space_2 = self.create_space([255,222,111,1])
 
         color_filter = ColorFilter(self.matrix_filter)
 
-        expected_space = [[111,222,333,1],[444,555,666,1]]
+        expected_space = [[111,222,255,1],[255,222,111,1]]
         self.assertEqual(color_filter.matrix_filter.encoded_space, expected_space)
 
         # test multiple values
@@ -707,12 +716,12 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         color_filter.set_encoded_space()
         self.assertEqual(color_filter.matrix_filter.encoded_space, [])
 
-        space_1 = self.create_space([111,222,333,1])
-        space_2 = self.create_space([444,555,666,1])
+        space_1 = self.create_space([111,222,255,1])
+        space_2 = self.create_space([255,222,111,1])
 
         # multple spaces
         color_filter.set_encoded_space()
-        expected_space = [[111,222,333,1],[444,555,666,1]]
+        expected_space = [[111,222,255,1],[255,222,111,1]]
         self.assertEqual(color_filter.matrix_filter.encoded_space, expected_space)
 
         # one gradient
@@ -720,7 +729,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         space_3 = self.create_space(gradient)
 
         color_filter.set_encoded_space()
-        expected_space_w_gradient = [[111,222,333,1],[444,555,666,1], [[0,0,0,1],[255,255,255,1]]]
+        expected_space_w_gradient = [[111,222,255,1],[255,222,111,1], [[0,0,0,1],[255,255,255,1]]]
         self.assertEqual(color_filter.matrix_filter.encoded_space, expected_space_w_gradient)
         
         
@@ -850,14 +859,14 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertEqual(choices, [])
 
         # with spaces, 1 color, gradient
-        space_1 = self.create_space([111,222,333,1])
+        space_1 = self.create_space([111,222,255,1])
         
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
 
         choices = color_filter._get_choices()
         expected_choices = [
-            ('[111, 222, 333, 1]', 'rgba(111,222,333,1)', {
+            ('[111, 222, 255, 1]', 'rgba(111,222,255,1)', {
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
@@ -884,7 +893,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertTrue(isinstance(field.widget, SliderRadioSelectColor))
         
         # with choices
-        space_1 = self.create_space([111,222,333,1])
+        space_1 = self.create_space([111,222,255,1])
         
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
@@ -894,7 +903,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         field = color_filter.get_matrix_form_field()
 
         expected_choices = [
-            ('[111, 222, 333, 1]', 'rgba(111,222,333,1)', {
+            ('[111, 222, 255, 1]', 'rgba(111,222,255,1)', {
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
@@ -937,7 +946,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertTrue(isinstance(field.widget, DefineColorsWidget))
 
         # with space
-        space_1 = self.create_space([111,222,333,1])
+        space_1 = self.create_space([111,222,255,1])
         
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
@@ -970,12 +979,12 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
     def test_get_single_space_initial(self):
 
         color_filter = ColorFilter(self.matrix_filter)
-        space_1 = self.create_space([111,222,333,1])
+        space_1 = self.create_space([111,222,255,1])
 
         initial = color_filter.get_single_space_initial(space_1)
 
         expected_initial = {
-            'color' : '#6fde14',
+            'color' : '#6fdeff',
         }
 
         self.assertEqual(expected_initial, initial)
@@ -998,22 +1007,1150 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
     @test_settings
     def test_save_single_space(self):
 
+        # create
         color_filter = ColorFilter(self.matrix_filter)
 
-        form = ColorFilterSpaceForm()
+        data = {
+            'input_language' : 'en',
+            'color' : '#000000',
+        }
 
+        form = ColorFilterSpaceForm(data=data)
 
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        space = color_filter.save_single_space(form)
+        self.assertEqual(space.matrix_filter, self.matrix_filter)
+        self.assertEqual(space.encoded_space, [0,0,0,1])        
+
+        # edit
+        data_2 = {
+            'input_language' : 'en',
+            'color' : '#ff00ff',
+            'color_2': '#00ff00',
+            'description' : 'rainbow',
+            'gradient' : True,
+        }
+
+        form_2 = ColorFilterSpaceForm(data=data_2)
+
+        is_valid = form_2.is_valid()
+        self.assertEqual(form_2.errors, {})
+
+        space_2 = color_filter.save_single_space(form_2)
+        self.assertEqual(space_2.matrix_filter, self.matrix_filter)
+        self.assertEqual(space_2.encoded_space, [[255,0,255,1],[0,255,0,1]])
+        self.assertEqual(space_2.additional_information['description'], 'rainbow')
+        self.assertEqual(space_2.additional_information['gradient'], True)
+        
+        
     @test_settings
     def test_get_node_filter_space_as_list(self):
-        pass
 
+        child = self.create_node(self.root_node, 'Child')
+
+        color_filter = ColorFilter(self.matrix_filter)
+        space_1 = self.create_space([111,222,255,1])
+
+        # gradient
+        gradient = [[0,0,0,1],[255,255,255,1]]
+        space_2 = self.create_space(gradient)
+
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        
+        space_list = color_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [[111,222,255,1]])
+
+        node_filter_space.values.add(space_2)
+
+        space_list = color_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [[111,222,255,1], [[0,0,0,1],[255,255,255,1]]])
+        
 
     @test_settings
     def test_validate_single_color(self):
-        pass
+
+        color_filter = ColorFilter(self.matrix_filter)
+
+        invalid_colors = ['a', 1, [], [1,2,3],[0,0,256,1],[-1,0,0,1],[0,0,0,2]]
+
+        for invalid_color in invalid_colors:
+            is_valid = color_filter.validate_single_color(invalid_color)
+            self.assertFalse(is_valid)
+
+        valid_color = [0,255,123,1]
+        is_valid = color_filter.validate_single_color(valid_color)
+        self.assertTrue(is_valid)
 
 
     @test_settings
     def test_validate_encoded_space(self):
-        pass
+
+        color_filter = ColorFilter(self.matrix_filter)
+
+        invalid_encoded_spaces = [1,'a',[],[[1,2,3,1],[]], [355,1,1,1]]
+
+        for invalid_space in invalid_encoded_spaces:
+            is_valid = color_filter.validate_encoded_space(invalid_space)
+            self.assertFalse(is_valid)
+
+
+        valid_encoded_spaces = [[111,222,255,1], [[0,0,0,0],[255,255,255,1]] ]
+
+        for space in valid_encoded_spaces:
+            is_valid = color_filter.validate_encoded_space(space)
+            self.assertTrue(is_valid)
+            
+        
+
+class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters,
+                                         TenantTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+        filter_kwargs = {
+            'definition' : {
+                'allow_multiple_values' : False,
+            }
+        }
+
+        self.matrix_filter = self.create_matrix_filter('DTAI Filter', self.root_meta_node,
+                                                       'DescriptiveTextAndImagesFilter', **filter_kwargs)
+
+
+    def create_space(self, text):
+        
+        matrix_filter_space = MatrixFilterSpace(
+            matrix_filter = self.matrix_filter,
+            encoded_space = text,
+        )
+
+        matrix_filter_space.save()
+
+        return matrix_filter_space
+
+
+    def check_field_classes(self, dtai_filter):
+
+        self.assertEqual(dtai_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
+        self.assertEqual(dtai_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
+
+        self.assertEqual(dtai_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectDescriptor)
+        self.assertEqual(dtai_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleDescriptors)
+
+        self.assertEqual(dtai_filter.NodeSpaceDefinitionFormFieldClass, ObjectLabelModelMultipleChoiceField)
+        self.assertEqual(dtai_filter.NodeSpaceDefinitionWidgetClass, DefineDescriptionWidget)
+
+        self.assertEqual(dtai_filter.matrix_filter, self.matrix_filter)
+
+
+        if self.matrix_filter.definition and self.matrix_filter.definition.get('allow_multiple_values', False) == False:
+            self.assertEqual(dtai_filter.MatrixFormFieldClass, forms.ChoiceField)
+            self.assertEqual(dtai_filter.MatrixFormFieldWidget, SliderRadioSelectDescriptor)
+
+        else:
+            self.assertEqual(dtai_filter.MatrixFormFieldClass, forms.MultipleChoiceField)
+            self.assertEqual(dtai_filter.MatrixFormFieldWidget, SliderSelectMultipleDescriptors)
+
+
+    # test both single space and multispace
+    @test_settings
+    def test_init_no_encoded_space(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        self.assertTrue(dtai_filter.is_multispace)
+        
+        self.check_field_classes(dtai_filter)
+
+        # no encoded space, so set_encoded_space
+        expected_space = []
+        self.assertEqual(dtai_filter.matrix_filter.encoded_space, expected_space)
+
+
+    @test_settings
+    def test_init_with_encoded_space(self):
+        space_1 = self.create_space('pattern 1')
+        space_2 = self.create_space('pattern 2')
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        expected_space = ['pattern 1', 'pattern 2']
+        self.assertEqual(dtai_filter.matrix_filter.encoded_space, expected_space)
+
+        # test multiple values
+        self.matrix_filter.definition = {
+            'allow_multiple_values' : True,
+        }
+
+        self.matrix_filter.save()
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+        self.assertTrue(self.matrix_filter.definition.get('allow_multiple_values', False))
+
+        self.check_field_classes(dtai_filter)
+
+
+    @test_settings
+    def test_get_default_definition(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        definition = dtai_filter.get_default_definition()
+        self.assertEqual(definition, {})
+
+
+    @test_settings
+    def test_get_choices(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        # empty
+        choices = dtai_filter._get_choices()
+        self.assertEqual(choices, [])
+
+        # with choices
+        space_1 = self.create_space('pattern 1')
+        space_2 = self.create_space('pattern 2')
+
+        choices = dtai_filter._get_choices()
+        expected_choices = [
+            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id}),
+            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id})
+        ]
+
+        self.assertEqual(choices, expected_choices)
+
+
+    @test_settings
+    def test_get_matrix_form_field(self):
+        
+        # empty, single choices
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        field = dtai_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectDescriptor))
+
+        # empty, multiple choices
+        dtai_filter.matrix_filter.definition = {
+            'allow_multiple_values' : True
+        }
+        dtai_filter.matrix_filter.save()
+
+        self.matrix_filter.refresh_from_db()
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        field = dtai_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.MultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderSelectMultipleDescriptors))
+        self.assertEqual(field.choices, [])
+
+        # with choices
+        dtai_filter.matrix_filter.definition = {
+            'allow_multiple_values' : False
+        }
+        dtai_filter.matrix_filter.save()
+        self.matrix_filter.refresh_from_db()
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        space_1 = self.create_space('pattern 1')
+        space_2 = self.create_space('pattern 2')
+
+        expected_choices = [
+            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id}),
+            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id})
+        ]
+
+        field = dtai_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectDescriptor))
+        self.assertEqual(field.choices, expected_choices)
+
+        # choices, multiple allowed
+        dtai_filter.matrix_filter.definition = {
+            'allow_multiple_values' : True
+        }
+        dtai_filter.matrix_filter.save()
+
+        self.matrix_filter.refresh_from_db()
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        field = dtai_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.MultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderSelectMultipleDescriptors))
+        
+        self.assertEqual(field.choices, expected_choices)
+
+
+    @test_settings
+    def test_get_node_space_definition_form_field(self):
+
+        from_url = '/test-url/'
+        
+        # empty
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        field = dtai_filter.get_node_space_definition_form_field(from_url)
+        self.assertTrue(isinstance(field, ObjectLabelModelMultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, DefineDescriptionWidget))
+
+        # with choices
+        space_1 = self.create_space('pattern 1')
+        space_2 = self.create_space('pattern 2')
+
+        field = dtai_filter.get_node_space_definition_form_field(from_url)
+        self.assertTrue(isinstance(field, ObjectLabelModelMultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, DefineDescriptionWidget))
+        
+
+    @test_settings
+    def test_get_encoded_space_from_form(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+        form = DescriptiveTextAndImagesFilterSpaceForm()
+
+        space = dtai_filter.get_encoded_space_from_form(form)
+        self.assertEqual(space, [])
+
+
+    @test_settings
+    def test_get_space_initial(self):
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        initial = dtai_filter.get_space_initial()
+        
+        self.assertEqual(initial, {})
+        
+
+    @test_settings
+    def test_get_single_space_initial(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+        space_1 = self.create_space('pattern 1')
+
+        initial = dtai_filter.get_single_space_initial(space_1)
+        expected_initial = {
+            'text' : 'pattern 1',
+        }
+
+        self.assertEqual(initial, expected_initial)
+        
+
+    @test_settings
+    def test_save_single_space(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        text = 'pattern a'
+
+        # create
+        data = {
+            'input_language' : 'en',
+            'text' : text,
+        }
+
+        form = DescriptiveTextAndImagesFilterSpaceForm(data=data)
+
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        space = dtai_filter.save_single_space(form)
+
+        self.assertEqual(space.matrix_filter, self.matrix_filter)
+        self.assertEqual(space.encoded_space, text)
+        
+        # edit
+        data['matrix_filter_space_id'] = space.id
+        text_2 = 'updated pattern'
+        data['text'] = text_2
+
+        form = DescriptiveTextAndImagesFilterSpaceForm(data=data)
+        is_valid = form.is_valid()
+
+        space_2 = dtai_filter.save_single_space(form)
+
+        self.assertEqual(space, space_2)
+        self.assertEqual(space_2.encoded_space, text_2)
+        
+
+    @test_settings
+    def test_get_node_filter_space_as_list(self):
+
+        child = self.create_node(self.root_node, 'Child')
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        space_1 = self.create_space('pattern 1')
+        space_2 = self.create_space('pattern 2')
+
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        
+        space_list = dtai_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, ['pattern 1'])
+
+        node_filter_space.values.add(space_2)
+
+        space_list = dtai_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, ['pattern 1', 'pattern 2'])
+
+
+    @test_settings
+    def test_validate_encoded_space(self):
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        invalid_spaces = [[],1]
+
+        for invalid_space in invalid_spaces:
+
+            is_valid = dtai_filter.validate_encoded_space(invalid_space)
+            self.assertFalse(is_valid)
+
+        valid_spaces = ['a', 'asfdergt rt hgrwth ', str(1)]
+        
+
+        for space in valid_spaces:
+            is_valid = dtai_filter.validate_encoded_space(space)
+            self.assertTrue(is_valid)
+
+
+
+class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters, TenantTestCase):
     
+
+    def setUp(self):
+        super().setUp()
+
+        filter_kwargs = {
+            'definition' : {
+                'allow_multiple_values' : False,
+            }
+        }
+
+        self.matrix_filter = self.create_matrix_filter('Text only Filter', self.root_meta_node,
+                                                       'TextOnlyFilter', **filter_kwargs)
+
+
+    def create_space(self, text):
+        
+        matrix_filter_space = MatrixFilterSpace(
+            matrix_filter = self.matrix_filter,
+            encoded_space = text,
+        )
+
+        matrix_filter_space.save()
+
+        return matrix_filter_space
+
+
+    def check_field_classes(self, text_filter):
+
+        self.assertEqual(text_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
+        self.assertEqual(text_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
+
+        self.assertEqual(text_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectTextDescriptor)
+        self.assertEqual(text_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleTextDescriptors)
+
+        self.assertEqual(text_filter.NodeSpaceDefinitionFormFieldClass, ObjectLabelModelMultipleChoiceField)
+        self.assertEqual(text_filter.NodeSpaceDefinitionWidgetClass, DefineTextDescriptionWidget)
+
+        self.assertEqual(text_filter.matrix_filter, self.matrix_filter)
+
+
+        if self.matrix_filter.definition and self.matrix_filter.definition.get('allow_multiple_values', False) == False:
+            self.assertEqual(text_filter.MatrixFormFieldClass, forms.ChoiceField)
+            self.assertEqual(text_filter.MatrixFormFieldWidget, SliderRadioSelectTextDescriptor)
+
+        else:
+            self.assertEqual(text_filter.MatrixFormFieldClass, forms.MultipleChoiceField)
+            self.assertEqual(text_filter.MatrixFormFieldWidget, SliderSelectMultipleTextDescriptors)
+
+
+    # test both single space and multispace
+    @test_settings
+    def test_init_no_encoded_space(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        self.assertTrue(text_filter.is_multispace)
+        
+        self.check_field_classes(text_filter)
+
+        # no encoded space, so set_encoded_space
+        expected_space = []
+        self.assertEqual(text_filter.matrix_filter.encoded_space, expected_space)
+
+
+    @test_settings
+    def test_init_with_encoded_space(self):
+        text_1 = 'text 1. Can be long.'
+        text_2 = 'text 2. Can be long, too.'
+        
+        space_1 = self.create_space(text_1)
+        space_2 = self.create_space(text_2)
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        expected_space = [text_1, text_2]
+        self.assertEqual(text_filter.matrix_filter.encoded_space, expected_space)
+
+        # test multiple values
+        self.matrix_filter.definition = {
+            'allow_multiple_values' : True,
+        }
+
+        self.matrix_filter.save()
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+        self.assertTrue(self.matrix_filter.definition.get('allow_multiple_values', False))
+
+        self.check_field_classes(text_filter)
+
+
+    @test_settings
+    def test_get_choices(self):
+
+        # empty
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        choices = text_filter._get_choices()
+        self.assertEqual(choices, [])
+
+        # choices
+        text_1 = 'text 1. Can be long.'
+        text_2 = 'text 2. Can be long, too.'
+        
+        space_1 = self.create_space(text_1)
+        space_2 = self.create_space(text_2)
+
+        choices = text_filter._get_choices()
+
+        expected_choices = [
+            (text_1, text_1, {'modify':True,'space_id':space_1.id}),
+            (text_2, text_2, {'modify':True,'space_id':space_2.id}),
+        ]
+
+        self.assertEqual(choices, expected_choices)
+
+
+    @test_settings
+    def test_get_matrix_form_field(self):
+
+        # empty, single choice
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        field = text_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectTextDescriptor))
+
+        # empty, multiple choice
+        text_filter.matrix_filter.definition = {
+            'allow_multiple_values' : True,
+        }
+        text_filter.matrix_filter.save()
+
+        self.matrix_filter.refresh_from_db()
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        field = text_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.MultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderSelectMultipleTextDescriptors))
+
+        # choices
+        text_1 = 'text 1. Can be long.'
+        text_2 = 'text 2. Can be long, too.'
+        
+        space_1 = self.create_space(text_1)
+        space_2 = self.create_space(text_2)
+
+
+        expected_choices = [
+            (text_1, text_1, {'modify':True,'space_id':space_1.id}),
+            (text_2, text_2, {'modify':True,'space_id':space_2.id}),
+        ]
+
+        text_filter.matrix_filter.definition = {
+            'allow_multiple_values' : False,
+        }
+        text_filter.matrix_filter.save()
+
+        self.matrix_filter.refresh_from_db()
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        field = text_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectTextDescriptor))
+        self.assertEqual(field.choices, expected_choices)
+
+
+        # choices, multiple allowed
+        text_filter.matrix_filter.definition = {
+            'allow_multiple_values' : True,
+        }
+        text_filter.matrix_filter.save()
+
+        self.matrix_filter.refresh_from_db()
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        field = text_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.MultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderSelectMultipleTextDescriptors))
+        self.assertEqual(field.choices, expected_choices)
+
+
+    @test_settings
+    def test_get_node_filter_space_as_list(self):
+
+        child = self.create_node(self.root_node, 'Child')
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        text_1 = 'text 1. Can be long.'
+        text_2 = 'text 2. Can be long, too.'
+        
+        space_1 = self.create_space(text_1)
+        space_2 = self.create_space(text_2)
+
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        
+        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [text_1])
+
+        node_filter_space.values.add(space_2)
+
+        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [text_1, text_2])
+
+
+    @test_settings
+    def test_get_encoded_space_from_form(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+        form = TextOnlyFilterSpaceForm()
+
+        space = text_filter.get_encoded_space_from_form(form)
+        self.assertEqual(space, [])
+
+
+    @test_settings
+    def test_get_space_initial(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        initial = text_filter.get_space_initial()
+        self.assertEqual(initial, {})
+
+
+    @test_settings
+    def test_get_single_space_initial(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        text_1 = 'text 1. Can be long.'
+        
+        space_1 = self.create_space(text_1)
+
+        space_initial = text_filter.get_single_space_initial(space_1)
+        expected_initial = {
+            'text' : text_1,
+        }
+
+        self.assertEqual(space_initial, expected_initial)
+
+
+    @test_settings
+    def test_save_single_space(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+        
+        text_1 = 'text 1. Can be long.'
+
+        # create
+        data = {
+            'input_language' : 'en',
+            'text' : text_1,
+        }
+        form = TextOnlyFilterSpaceForm(data=data)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        space = text_filter.save_single_space(form)
+        self.assertEqual(space.matrix_filter, self.matrix_filter)
+        self.assertEqual(space.encoded_space, text_1)
+
+        # edit
+        text_2 = 'updated text'
+        data['text'] = text_2
+        data['matrix_filter_space_id'] = space.id
+
+        form = TextOnlyFilterSpaceForm(data=data)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        space_2 = text_filter.save_single_space(form)
+        self.assertEqual(space_2.matrix_filter, self.matrix_filter)
+        self.assertEqual(space_2.encoded_space, text_2)
+
+        self.assertEqual(space, space_2)
+
+
+    @test_settings
+    def test_get_node_space_definition_form_field(self):
+
+        from_url = '/test-url/'
+        
+        # empty
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        field = text_filter.get_node_space_definition_form_field(from_url)
+        self.assertTrue(isinstance(field, ObjectLabelModelMultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, DefineTextDescriptionWidget))
+
+        # with choices
+        space_1 = self.create_space('text 1')
+        space_2 = self.create_space('text 2')
+
+        field = text_filter.get_node_space_definition_form_field(from_url)
+        self.assertTrue(isinstance(field, ObjectLabelModelMultipleChoiceField))
+        self.assertTrue(isinstance(field.widget, DefineTextDescriptionWidget))
+        
+
+    @test_settings
+    def test_get_node_filter_space_as_list(self):
+
+        child = self.create_node(self.root_node, 'Child')
+
+        text_1 = 'text 1. Can be long.'
+        text_2 = 'text 2. Can be long, too.'
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        space_1 = self.create_space(text_1)
+        space_2 = self.create_space(text_2)
+
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        
+        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [text_1])
+
+        node_filter_space.values.add(space_2)
+
+        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [text_1, text_2])
+
+    
+    @test_settings
+    def test_validate_encoded_space(self):
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        invalid_spaces = [1, []]
+
+        for invalid_space in invalid_spaces:
+            is_valid = text_filter.validate_encoded_space(invalid_space)
+            self.assertFalse(is_valid)
+
+        valid_spaces = ['a', str(1)]
+
+        for space in valid_spaces:
+            is_valid = text_filter.validate_encoded_space(space)
+            self.assertTrue(is_valid)
+            
+    
+
+
+class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters, TenantTestCase):
+    
+
+    def setUp(self):
+        super().setUp()
+
+        filter_kwargs = {
+            'definition' : {
+                'allow_multiple_values' : False,
+            }
+        }
+
+        self.matrix_filter = self.create_matrix_filter('Taxon Filter', self.root_meta_node,
+                                                       'TaxonFilter', **filter_kwargs)
+
+    def create_space(self, encoded_space):
+
+        matrix_filter_space = MatrixFilterSpace(
+            matrix_filter = self.matrix_filter,
+            encoded_space = encoded_space,
+        )
+
+        matrix_filter_space.save()
+
+        return matrix_filter_space
+        
+        
+    def check_field_classes(self, taxon_filter):
+
+        self.assertEqual(taxon_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
+        self.assertEqual(taxon_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
+
+        self.assertEqual(taxon_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectTaxonfilter)
+        self.assertEqual(taxon_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleTaxonfilters)
+
+        self.assertEqual(taxon_filter.NodeSpaceDefinitionFormFieldClass, None)
+        self.assertEqual(taxon_filter.NodeSpaceDefinitionWidgetClass, None)
+
+        self.assertEqual(taxon_filter.matrix_filter, self.matrix_filter)
+
+        self.assertEqual(taxon_filter.MatrixFormFieldClass, forms.ChoiceField)
+        self.assertEqual(taxon_filter.MatrixFormFieldWidget, SliderRadioSelectTaxonfilter)
+
+
+    def get_encoded_space(self, lazy_taxon=None):
+
+        is_custom = True
+
+        if lazy_taxon == None:
+            is_custom = False
+
+            models = TaxonomyModelRouter('taxonomy.sources.col')
+            animalia = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+            lazy_taxon = LazyTaxon(instance=animalia)
+
+        encoded_space = [{
+            "taxa": [
+                {
+                    "taxon_nuid": lazy_taxon.taxon_nuid,
+                    "name_uuid": str(lazy_taxon.name_uuid),
+                    "taxon_source": lazy_taxon.taxon_source,
+                    "taxon_latname": lazy_taxon.taxon_latname,
+                    "taxon_author" : lazy_taxon.taxon_author
+                }
+            ],
+            "latname": lazy_taxon.taxon_latname,
+            "is_custom": is_custom,
+        }]
+
+        return encoded_space
+
+
+
+    # test both single space and multispace
+    @test_settings
+    def test_init_no_encoded_space(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        self.assertFalse(taxon_filter.is_multispace)
+        
+        self.check_field_classes(taxon_filter)
+
+        # no encoded space, so set_encoded_space
+        expected_space = []
+        self.assertEqual(taxon_filter.matrix_filter.encoded_space, expected_space)
+
+    
+
+    @test_settings
+    def test_init_with_encoded_space(self):
+
+        encoded_space = self.get_encoded_space()
+        
+        space_1 = self.create_space(encoded_space)
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        expected_space = encoded_space
+        self.assertEqual(taxon_filter.matrix_filter.encoded_space, expected_space)
+        
+
+    @test_settings
+    def test_get_node_space_definition_form_field(self):
+        pass
+
+
+    @test_settings
+    def test_get_default_definition(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        definition = taxon_filter.get_default_definition()
+        self.assertEqual(definition, {})
+
+
+    @test_settings
+    def test_get_empty_encoded_space(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        space = taxon_filter.get_empty_encoded_space()
+        self.assertEqual(space, [])
+
+
+    @test_settings
+    def test_get_choices(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        # empty
+        choices = taxon_filter._get_choices()
+        self.assertEqual(choices, [])
+
+        # with choice
+        encoded_space = self.get_encoded_space()
+        space_1 = self.create_space(encoded_space)
+
+        self.matrix_filter.refresh_from_db()
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        choices = taxon_filter._get_choices()
+        
+        taxonfilter_json = json.dumps(encoded_space[0])
+        
+        extra_kwargs = {
+            'image' : static('app_kit/buttons/taxonfilters/Animalia.svg'),
+            'is_custom' : False,
+            'data_value' : space_1.encoded_space[0],
+            'data_b64value' : b64encode(taxonfilter_json.encode('utf-8')).decode('utf-8'),
+        }
+        
+        expected_choices = [
+            ('Animalia', 'Animalia', extra_kwargs)
+        ]
+        
+        self.assertEqual(choices[0][0], expected_choices[0][0])
+        self.assertEqual(choices[0][1], expected_choices[0][1])
+        self.assertEqual(choices[0][2]['image'], expected_choices[0][2]['image'])
+        self.assertEqual(choices[0][2]['is_custom'], expected_choices[0][2]['is_custom'])
+        self.assertEqual(choices[0][2]['data_value'], expected_choices[0][2]['data_value'])
+
+        choices_b64_loaded = json.loads(b64decode(choices[0][2]['data_b64value']))
+        expected_choices_b64_loaded = json.loads(b64decode(expected_choices[0][2]['data_b64value']))
+        self.assertEqual(type(choices_b64_loaded), dict)
+        self.assertEqual(choices_b64_loaded, expected_choices_b64_loaded)
+
+
+    @test_settings
+    def test_get_matrix_form_field(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        # empty
+        field = taxon_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectTaxonfilter))
+        self.assertEqual(field.choices, [])
+
+        # with choice
+        encoded_space = self.get_encoded_space()
+        space_1 = self.create_space(encoded_space)
+
+        self.matrix_filter.refresh_from_db()
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        field = taxon_filter.get_matrix_form_field()
+        self.assertTrue(isinstance(field, forms.ChoiceField))
+        self.assertTrue(isinstance(field.widget, SliderRadioSelectTaxonfilter))
+        self.assertEqual(len(field.choices), 1)
+        
+
+    @test_settings
+    def test_make_taxonfilter_taxon(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        animalia = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+        lazy_taxon = LazyTaxon(instance=animalia)
+
+        taxonfilter_taxon = taxon_filter.make_taxonfilter_taxon(lazy_taxon)
+
+        expected_taxon = {
+            'taxon_source' : 'taxonomy.sources.col',
+            'taxon_latname' : 'Animalia',
+            'taxon_author' : lazy_taxon.taxon_author,
+            'name_uuid' : lazy_taxon.name_uuid,
+            'taxon_nuid' : '001',
+        }
+
+        self.assertEqual(taxonfilter_taxon, expected_taxon)
+        
+
+    @test_settings
+    def test_make_taxonfilter_entry(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        animalia = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+        lazy_taxon = LazyTaxon(instance=animalia)
+
+        taxonfilter_entry = taxon_filter.make_taxonfilter_entry('Animalia',['taxonomy.sources.col'])
+
+        expected_entry = {
+            "taxa": [
+                {
+                    "taxon_nuid": lazy_taxon.taxon_nuid,
+                    "name_uuid": str(lazy_taxon.name_uuid),
+                    "taxon_source": lazy_taxon.taxon_source,
+                    "taxon_latname": lazy_taxon.taxon_latname,
+                    "taxon_author" : lazy_taxon.taxon_author
+                }
+            ],
+            "latname": lazy_taxon.taxon_latname,
+            "is_custom": False,
+        }
+
+        self.assertEqual(taxonfilter_entry, expected_entry)
+        
+
+    @test_settings
+    def test_get_encoded_space_from_form(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        # no custom taxon
+        data = {
+            'input_language' : 'en',
+            'name' : 'Animalia',
+            'filter_type' : 'TaxonFilter',
+            'taxonomic_filters' : ['Animalia'],
+            'add_custom_taxonomic_filter' : None, # or a taxon
+        }
+
+        form = TaxonFilterManagementForm(self.root_meta_node, self.matrix_filter, data=data)
+
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        encoded_space = taxon_filter.get_encoded_space_from_form(form)
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        animalia = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+        animalia_lazy_taxon = LazyTaxon(instance=animalia)
+        expected_encoded_space = [
+            {
+                "taxa": [
+                    {
+                        "taxon_nuid": animalia_lazy_taxon.taxon_nuid,
+                        "name_uuid": str(animalia_lazy_taxon.name_uuid),
+                        "taxon_source": animalia_lazy_taxon.taxon_source,
+                        "taxon_latname": animalia_lazy_taxon.taxon_latname,
+                        "taxon_author" : animalia_lazy_taxon.taxon_author
+                    }
+                ],
+                "latname": animalia_lazy_taxon.taxon_latname,
+                "is_custom": False,
+            }
+        ]
+
+        self.assertEqual(encoded_space, expected_encoded_space)
+
+        # with custom taxon
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta')
+        lacerta_lazy_taxon = LazyTaxon(instance=lacerta)
+
+        data['add_custom_taxonomic_filter_0'] = lacerta_lazy_taxon.taxon_source
+        data['add_custom_taxonomic_filter_1'] = lacerta_lazy_taxon.taxon_latname
+        data['add_custom_taxonomic_filter_2'] = lacerta_lazy_taxon.taxon_author
+        data['add_custom_taxonomic_filter_3'] = str(lacerta_lazy_taxon.name_uuid)
+        data['add_custom_taxonomic_filter_4'] = lacerta_lazy_taxon.taxon_nuid
+
+        form = TaxonFilterManagementForm(self.root_meta_node, self.matrix_filter, data=data)
+
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+        self.assertEqual(form.cleaned_data['add_custom_taxonomic_filter'], lacerta_lazy_taxon)
+
+        encoded_space_2 = taxon_filter.get_encoded_space_from_form(form)
+
+        expected_encoded_space_2 = expected_encoded_space.copy()
+        expected_encoded_space_2.append(
+            {
+                "taxa": [
+                    {
+                        "taxon_nuid": lacerta_lazy_taxon.taxon_nuid,
+                        "name_uuid": str(lacerta_lazy_taxon.name_uuid),
+                        "taxon_source": lacerta_lazy_taxon.taxon_source,
+                        "taxon_latname": lacerta_lazy_taxon.taxon_latname,
+                        "taxon_author" : '',
+                    }
+                ],
+                "latname": lacerta_lazy_taxon.taxon_latname,
+                "is_custom": True,
+            }
+        )
+
+        self.assertEqual(encoded_space_2[0], expected_encoded_space_2[0])
+        self.assertEqual(encoded_space_2[1], expected_encoded_space_2[1])
+        
+
+    @test_settings
+    def test_get_space_initial(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+        
+        # empty
+        initial = taxon_filter.get_space_initial()
+        self.assertEqual(initial, {'taxonomic_filters':[]})
+        
+        # with space
+        encoded_space = self.get_encoded_space()
+        space_1 = self.create_space(encoded_space)
+
+        self.matrix_filter.refresh_from_db()
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        initial = taxon_filter.get_space_initial()
+        self.assertEqual(initial, {'taxonomic_filters':['Animalia']})
+
+    @test_settings
+    def test_validate_encoded_space(self):
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+
+        invalid_spaces = [1,'a']
+        for invalid_space in invalid_spaces:
+            is_valid = taxon_filter.validate_encoded_space(invalid_space)
+            self.assertFalse(is_valid)
+
+        valid_space = self.get_encoded_space()
+        is_valid = taxon_filter.validate_encoded_space(valid_space)
+        self.assertTrue(is_valid)
+
