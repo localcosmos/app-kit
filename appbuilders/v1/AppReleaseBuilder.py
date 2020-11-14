@@ -1676,7 +1676,12 @@ class AppReleaseBuilder(AppBuilder):
         absolute_image_filepath = os.path.join(absolute_content_images_root, filename)
 
         if not os.path.isfile(absolute_image_filepath):
-            cropped.save(absolute_image_filepath, original.format)
+
+            image_format = original.format
+            if original.format.lower() == 'bmp':
+                image_format = 'JPEG'
+                
+            cropped.save(absolute_image_filepath, image_format)
 
 
         # add image to licence_registry
