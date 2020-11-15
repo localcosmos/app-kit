@@ -508,7 +508,6 @@ var IdentificationMatrix = {
 			var matrix_filter_value = self.matrix_filter_values[v];
 			matrix_filter_value.show();
 			matrix_filter_value.input.checked = false;
-			matrix_filter_value.matrix_filter.setAttribute('current-selection', '');
 		}
 
 		var ranges = self.filterform.querySelectorAll('input[type=range]');
