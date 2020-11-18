@@ -728,6 +728,14 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
         self.assertEqual(child_child_result.taxon_nuid, '{0}001001002'.format(root_node.taxon_nuid))
         self.assertEqual(child_child_child.taxon_nuid, '{0}001001001001'.format(root_node.taxon_nuid))
 
+        # check all source ids
+        self.assertEqual(parent.taxon_nuid, parent.source_id)
+        self.assertEqual(sibling.taxon_nuid, sibling.source_id)
+        self.assertEqual(child.taxon_nuid, child.source_id)
+        self.assertEqual(child_child.taxon_nuid, child_child.source_id)
+        self.assertEqual(child_child_result.taxon_nuid, child_child_result.source_id)
+        self.assertEqual(child_child_child.taxon_nuid, child_child_child.source_id)
+
         self.assertEqual(child.parent, parent)
 
         # create a taxon profile
@@ -769,6 +777,14 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
         self.assertEqual(child_child_child.taxon_nuid, '{0}002003001001'.format(root_node.taxon_nuid))
 
         self.assertEqual(child.parent, sibling)
+
+        # check all source ids
+        self.assertEqual(parent.taxon_nuid, parent.source_id)
+        self.assertEqual(sibling.taxon_nuid, sibling.source_id)
+        self.assertEqual(child.taxon_nuid, child.source_id)
+        self.assertEqual(child_child.taxon_nuid, child_child.source_id)
+        self.assertEqual(child_child_result.taxon_nuid, child_child_result.source_id)
+        self.assertEqual(child_child_child.taxon_nuid, child_child_child.source_id)
 
         # test taxon profile nuid
         result_profile.refresh_from_db()

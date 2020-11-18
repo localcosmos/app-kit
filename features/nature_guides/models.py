@@ -824,6 +824,9 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         new_self_nuid = self.get_nuid_depending_on_new_parent(new_parent)
 
         self.taxon_nuid = new_self_nuid
+
+        self.source_id = new_self_nuid
+        
         self.save(new_parent)
 
         # update all nuids, parent stays the same
@@ -834,6 +837,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
             new_descendant_nuid_tail = descendant.taxon_nuid[old_self_nuid_len:]
             new_descendant_nuid = '{0}{1}'.format(new_self_nuid, new_descendant_nuid_tail)
             descendant.taxon_nuid = new_descendant_nuid
+
+            descendant.source_id = new_descendant_nuid
 
             descendant.save(descendant.parent)
 
