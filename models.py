@@ -387,6 +387,29 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         AppReleaseBuilderClass = get_app_release_builder_class(self.appbuilder_version)
         return AppReleaseBuilderClass()
 
+    # depend on theme
+    def get_fact_sheet_templates_path(self):
+        theme_path = self.app.get_theme_path()
+        fact_sheets_templates_path = os.path.join(theme_path, 'fact_sheets', 'templates')
+
+        return fact_sheets_templates_path
+        
+    def get_fact_sheet_templates(self):
+
+        fact_sheets_templates_path = self.get_fact_sheet_templates_path()
+
+        templates = []
+
+        # iterate over templates shipped with the theme
+        for filename in os.listdir(fact_sheets_templates_path):
+
+            template_path = '{0}'.format(filename)
+            verbose_name = template_path
+
+            templates.append((template_path, verbose_name))
+            
+        return templates
+
     
     # BUILDING 
     # on a new version, the old www folder is moved and renamed, same for config.xml
