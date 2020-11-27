@@ -513,6 +513,10 @@ body {
 	background-image: url("../../../user_content/themes/Flat/images/logo.png"), url( "../../../user_content/themes/Flat/images/logo.jpg"), url("../../../user_content/themes/Flat/images/logo.jpeg"), url("../../../user_content/themes/Flat/images/logo.svg");
 }
 
+.image-text {
+	line-height: .9;
+}
+
 @media only screen and (orientation: landscape) {
 
 	.homenu {
