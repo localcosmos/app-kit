@@ -25,14 +25,7 @@
 				{{#each taxon_profile.images.taxon_profile_images}}
 					{{#if small_url}}
 						<div class="col-4 col-md-3 col-lg-2 col-xl-1 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-							<div>
-								<img src="{{small_url}}" class="img-fluid" />
-							</div>
-							{{#if text}}
-								<div>
-									{{ text }}
-								</div>
-							{{/if}}
+							<img src="{{small_url}}" class="img-fluid" />
 						</div>
 					{{/if}}
 				{{/each}}
