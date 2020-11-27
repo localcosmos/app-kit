@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from django.contrib.contenttypes.models import ContentType
 
 from app_kit.appbuilders.JSONBuilders.JSONBuilder import JSONBuilder
@@ -75,8 +77,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         nature_guide_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app,
                                                                   content_type=nature_guide_type)
         nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
-        
-        node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
+
+        installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
+        if profile_taxon.taxon_source in installed_taxonomic_sources:
+            node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
+                        meta_node__taxon_latname=profile_taxon.taxon_latname,
+                        meta_node__taxon_author=profile_taxon.taxon_author)
+        else:
+            node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author)
 
 

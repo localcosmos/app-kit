@@ -111,7 +111,7 @@ class NatureGuide(GenericContent):
                 if matrix_filter.description:
                     locale[matrix_filter.description] = matrix_filter.description
 
-                if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter']:
+                if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
 
                     spaces = matrix_filter.get_space()
 
