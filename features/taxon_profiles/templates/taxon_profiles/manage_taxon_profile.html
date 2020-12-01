@@ -81,5 +81,7 @@
 		$.get("{% url 'collect_taxon_traits' taxon.taxon_source taxon.name_uuid %}", function(html){
 			$("#taxon-traits").html(html);
 		});
+		
+		
 	</script>
 {% endblock %}

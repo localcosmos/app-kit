@@ -116,6 +116,11 @@
 														{{tp encoded_space}}
 													</div>
 												{{/ifequal}}
+												{{#ifequal ../matrix_filter.filter_type 'TextOnlyFilter'}}
+													<div class="text-center taxon-profile-trait-text">
+														{{t encoded_space}}
+													</div>
+												{{/ifequal}}
 											{{/each}}
 										{{else}}
 											{{#ifequal matrix_filter.filter_type 'RangeFilter'}}
