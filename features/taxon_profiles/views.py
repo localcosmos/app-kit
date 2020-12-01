@@ -243,7 +243,8 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
 
     def get_taxon_profile_images(self):
         taxon_profile_ctype = ContentType.objects.get_for_model(self.taxon_profile)
-        images = ContentImage.objects.filter(content_type=taxon_profile_ctype, object_id=self.taxon_profile.id)
+        images = ContentImage.objects.filter(content_type=taxon_profile_ctype,
+                                             object_id=self.taxon_profile.id).order_by('position')
 
         return images
 
@@ -308,6 +309,8 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
 
         context['taxon_profile'] = self.taxon_profile
         context['taxon'] = self.taxon
+
+        context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
         return context
 
 
@@ -349,3 +352,5 @@ class ManageTaxonProfileImage(ManageContentImageWithText):
 
 class DeleteTaxonProfileImage(DeleteContentImage):
     template_name = 'taxon_profiles/ajax/delete_taxon_profile_image.html'
+
+

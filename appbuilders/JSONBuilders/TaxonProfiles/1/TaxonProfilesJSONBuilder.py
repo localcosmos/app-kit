@@ -22,6 +22,54 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         return self._build_common_json()
 
 
+    def collect_node_traits(self, node):
+
+        node_traits = []
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
+
+        for matrix_filter in matrix_filters:
+            node_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter)
+
+
+            node_trait = {
+                'matrix_filter' : {
+                    'name' : matrix_filter.name,
+                    'is_multispace' : matrix_filter.matrix_filter_type.is_multispace,
+                    'description' : matrix_filter.description,
+                    'filter_type' : matrix_filter.filter_type,
+                    'definition' : matrix_filter.definition,
+                },
+            }
+
+            if matrix_filter.matrix_filter_type.is_multispace == True:
+                node_trait['values'] = []
+
+            for node_space in node_spaces:
+
+                if matrix_filter.matrix_filter_type.is_multispace == True:
+                    
+                    for value in node_space.values.all():
+                        values_entry = {
+                            'encoded_space': value.encoded_space,
+                            'image_url' : self._get_image_url(value),
+                        }
+
+                        if matrix_filter.filter_type == 'ColorFilter':
+                            encoded_space = value.encoded_space
+                            values_entry['rgba'] = 'rgba({0},{1},{2},{3})'.format(encoded_space[0],
+                                                    encoded_space[1], encoded_space[2], encoded_space[3])
+                            
+                        node_trait['values'].append(values_entry)
+
+                else:
+                    node_trait['values'] = node_space.encoded_space
+
+            node_traits.append(node_trait)
+
+
+        return node_traits
+    
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, gbiflib, languages):
 
@@ -69,7 +117,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 collected_content_image_ids.add(content_image.id)
 
         
-
         # get information (traits, node_names) from nature guides if possible
         # collect node images
         # only use occurrences in nature guides of this app
@@ -88,6 +135,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author)
 
 
+        # collect traits of upward branch in tree (higher taxa)
+        parent_nuids = set([])
+        
         for node in node_occurrences:
             if node.meta_node.name not in taxon_profile['node_names']:
                 taxon_profile['node_names'].append(node.meta_node.name)
@@ -108,48 +158,25 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             if node.decision_rule and node.decision_rule not in taxon_profile['node_decision_rules']:
                 taxon_profile['node_decision_rules'].append(node.decision_rule)
 
-            matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
-
-            for matrix_filter in matrix_filters:
-                node_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter)
-
-
-                node_trait = {
-                    'matrix_filter' : {
-                        'name' : matrix_filter.name,
-                        'is_multispace' : matrix_filter.matrix_filter_type.is_multispace,
-                        'description' : matrix_filter.description,
-                        'filter_type' : matrix_filter.filter_type,
-                        'definition' : matrix_filter.definition,
-                    },
-                }
-
-                if matrix_filter.matrix_filter_type.is_multispace == True:
-                    node_trait['values'] = []
-
-                for node_space in node_spaces:
-
-                    if matrix_filter.matrix_filter_type.is_multispace == True:
-                        
-                        for value in node_space.values.all():
-                            values_entry = {
-                                'encoded_space': value.encoded_space,
-                                'image_url' : self._get_image_url(value),
-                            }
-
-                            if matrix_filter.filter_type == 'ColorFilter':
-                                encoded_space = value.encoded_space
-                                values_entry['rgba'] = 'rgba({0},{1},{2},{3})'.format(encoded_space[0],
-                                                        encoded_space[1], encoded_space[2], encoded_space[3])
-                                
-                            node_trait['values'].append(values_entry)
-
-                    else:
-                        node_trait['values'] = node_space.encoded_space
-                        
-
+            node_traits = self.collect_node_traits(node)
+            for node_trait in node_traits:
+                
                 taxon_profile['traits'].append(node_trait)
 
+            current_nuid = node.taxon_nuid
+            while len(current_nuid) > 3:
+                current_nuid = current_nuid[:-3]
+                parent_nuids.add(current_nuid)
+
+        # collect all traits of all parent nuids
+        parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
+        for parent in parents:
+            if parent.parent:
+                parent_node_traits = self.collect_node_traits(parent)
+                for parent_node_trait in parent_node_traits:
+                    
+                    taxon_profile['traits'].append(parent_node_trait)
+                
 
         # get taxonomic images
         taxon_images = ContentImage.objects.filter(image_store__taxon_source=profile_taxon.taxon_source,
