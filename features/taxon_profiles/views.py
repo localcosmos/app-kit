@@ -331,11 +331,29 @@ class CollectTaxonTraits(TemplateView):
 
 
     def get_taxon_traits(self):
+
+        spaces = []
+        
         nodes = NatureGuidesTaxonTree.objects.filter(meta_node__taxon_source=self.taxon.taxon_source,
                 meta_node__taxon_latname=self.taxon.taxon_latname,
                 meta_node__taxon_author=self.taxon.taxon_author)
         
-        spaces = NodeFilterSpace.objects.filter(node__in=nodes)
+        node_spaces = NodeFilterSpace.objects.filter(node__in=nodes)
+
+        spaces += list(node_spaces)
+
+        for node in nodes:
+
+            parent_node_nuids = []
+            current_nuid = node.taxon_nuid
+            while len(current_nuid) >= 9:
+                current_nuid = current_nuid[:-3]
+                parent_node_nuids.append(current_nuid)
+
+            parent_nodes = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_node_nuids)
+            parent_node_spaces = NodeFilterSpace.objects.filter(node__in=parent_nodes)
+            spaces += list(parent_node_spaces)
+        
         return spaces
 
 

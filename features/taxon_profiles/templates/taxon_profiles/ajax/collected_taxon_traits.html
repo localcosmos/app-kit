@@ -15,6 +15,14 @@
 									</div>
 								</div>
 							{% endfor %}
+						{% elif node_space.matrix_filter.filter_type == 'TextOnlyFilter' %}
+							{% for space in node_space.values.all %}
+								<div class="row no-gutters justify-content-center">
+									<div class="col-12 col-md-10 col-lg-8">
+										<div class="text-center text-small">{{ space.encoded_space }}</div>
+									</div>
+								</div>
+							{% endfor %}
 						{% elif node_space.matrix_filter.filter_type == 'RangeFilter' %}
 							<div class="text-center">
 								{{ node_space.encoded_space.0 }}{{ node_space.matrix_filter.definition.unit }} - {{ node_space.encoded_space.1 }}{{ node_space.matrix_filter.definition.unit }}
