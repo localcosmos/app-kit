@@ -30,7 +30,14 @@
 						{% elif node_space.matrix_filter.filter_type == 'ColorFilter' %}
 							<div class="row no-gutters justify-content-center">
 								{% for space in node_space.values.all %}
-									<div class="trait-color" style="background-color:{{ space.decode }};">&nbsp;</div>
+									<div class="col-6 text-center">
+										<div class="trait-color" {% if space.additional_information.gradient %}style="background-image: {{ space.decode }};"{% else %}style="background-color: {{ space.decode }};"{% endif %}>&nbsp;</div>
+										{% if space.additional_information.description %}
+											
+											<small>{{ space.additional_information.description }}</small>
+											
+										{% endif %}
+									</div>
 								{% endfor %}
 							</div>
 						{% elif node_space.matrix_filter.filter_type == 'NumberFilter' %}
