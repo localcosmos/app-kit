@@ -33,9 +33,9 @@
 									<div class="col-6 text-center">
 										<div class="trait-color" {% if space.additional_information.gradient %}style="background-image: {{ space.decode }};"{% else %}style="background-color: {{ space.decode }};"{% endif %}>&nbsp;</div>
 										{% if space.additional_information.description %}
-											
-											<small>{{ space.additional_information.description }}</small>
-											
+											<div>
+												<small>{{ space.additional_information.description }}</small>
+											</div>										
 										{% endif %}
 									</div>
 								{% endfor %}
