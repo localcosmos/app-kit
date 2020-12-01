@@ -2,6 +2,9 @@
 {% load i18n static app_tags localcosmos_tags %}
 
 {% block extra_style %}{% endblock %}
+{% block extra_head_script %}
+	<script src="{% static 'app_kit/ckeditor5/build/ckeditor.js' %}"></script>
+{% endblock%}
 
 {% block content %}
 	<div class="container">
