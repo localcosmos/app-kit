@@ -72,6 +72,7 @@
 {% endblock %}
 
 {% block extra_script %}
+
 	<script>
 		$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
 			$("#taxon-images").html(html);
@@ -84,4 +85,5 @@
 		
 		
 	</script>
+	
 {% endblock %}

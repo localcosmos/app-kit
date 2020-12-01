@@ -1,10 +1,12 @@
 {% load i18n localcosmos_tags %}
 {% if success is True %}
 	<script>
+
 		// reload taxon texts form
 		$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}", function(html){
 			$('#taxontexts').html(html);
 			ajaxify('taxontexts');
+
 		});
 		
 		$("#Modal").modal("hide");

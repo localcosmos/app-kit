@@ -139,7 +139,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
             if key in form.text_type_fields:
             
-                taxon_text_type = TaxonTextType.objects.get(text_type=key)
+                taxon_text_type = TaxonTextType.objects.get(taxon_profiles=self.taxon_profiles, text_type=key)
 
                 taxon_text, created = TaxonText.objects.get_or_create(taxon_profile=self.taxon_profile,
                                                                       taxon_text_type=taxon_text_type)
