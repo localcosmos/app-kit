@@ -2,6 +2,9 @@
 {% load i18n static app_tags localcosmos_tags %}
 
 {% block extra_style %}{% endblock %}
+{% block extra_head_script %}
+	<script src="{% static 'app_kit/ckeditor5/build/ckeditor.js' %}"></script>
+{% endblock%}
 
 {% block content %}
 	<div class="container">
@@ -72,6 +75,7 @@
 {% endblock %}
 
 {% block extra_script %}
+
 	<script>
 		$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
 			$("#taxon-images").html(html);
@@ -84,4 +88,5 @@
 		
 		
 	</script>
+	
 {% endblock %}

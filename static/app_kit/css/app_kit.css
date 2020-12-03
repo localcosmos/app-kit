@@ -675,6 +675,10 @@ input[type="color"] {
 }
 
 
+.ck-editor__editable {
+    min-height: 300px;
+}
+
 /* bootstrap additions */
 .btn-xs, .btn-group-xs > .btn {
   padding: 0.15rem 0.3rem;

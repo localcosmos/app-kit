@@ -1,6 +1,6 @@
 {% load i18n static localcosmos_tags %}
 {% if text_types %}
-<form method="POST" action="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{% csrf_token %}
+<form id="taxon-text-types-form" method="POST" action="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{% csrf_token %}
 	{% for field in form %}
 		<div {% if field.name in form.text_type_fields %}id="ctype-{{ field.field.taxon_text_type|ctype_id }}-{{ field.field.taxon_text_type.id }}"{% endif %} class="row">
 			<div class="col-12">
@@ -58,4 +58,17 @@
 		</div>
 	</div>
 </form>
+
+<script>
+	(function(){
+	{% for field_name in form.layoutable_simple_fields %}
+		var field = document.getElementById('id_{{ field_name }}');
+
+		ClassicEditor.create( field, { 
+			toolbar: ['bold', 'italic', 'underline', '|', 'blockquote', '|', 'undo', 'redo']
+		});
+	{% endfor %}
+	})();
+	
+</script>
 {% endif %}

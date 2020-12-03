@@ -56,6 +56,9 @@ class ManageTaxonTextsForm(LocalizeableForm):
     
     def __init__(self, taxon_profiles, taxon_profile=None, *args, **kwargs):
         self.localizeable_fields = []
+
+        self.layoutable_simple_fields = []
+        
         super().__init__(*args, **kwargs)
 
         
@@ -63,7 +66,9 @@ class ManageTaxonTextsForm(LocalizeableForm):
 
         for text_type in types:
 
-            self.text_type_fields.append(text_type.text_type)
+            field_name = text_type.text_type
+
+            self.text_type_fields.append(field_name)
             field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
                                     required=False, label=text_type.text_type)
             field.taxon_text_type = text_type
@@ -74,9 +79,11 @@ class ManageTaxonTextsForm(LocalizeableForm):
                 if content:
                     field.initial = content.text
             
-            self.fields[text_type.text_type] = field
+            self.fields[field_name] = field
             self.localizeable_fields.append(text_type.text_type)
-            self.fields[text_type.text_type].language = self.language
+            self.fields[field_name].language = self.language
+            
+            self.layoutable_simple_fields.append(field_name)
 
 
 ''' currently unused
