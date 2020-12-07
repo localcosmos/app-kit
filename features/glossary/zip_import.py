@@ -79,18 +79,20 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
                 self.validate_glossary_entry(term, synonyms, definition, glossary_sheet.name, row_index)
 
-                synonyms_list = synonyms.split('|')
-                synonyms_list = [s.strip() for s in synonyms_list]
-                
-                for synonym in synoynms_list:
-                    if synonym not in found_synonyms:
-                        found_synonyms[synonym] = term
+                if synonyms:
+                    synonyms_list = synonyms.split('|')
+                    synonyms_list = [s.strip() for s in synonyms_list]
+                    
+                    for synonym in synonyms_list:
+                        if synonym not in found_synonyms:
+                            found_synonyms[synonym] = term
 
-                    else:
-                        if found_synonyms[synonym] != term:
-                            message = _('Unambiguous synonym: {0} is mapped to {1} and {2}'.format(
-                                synonym, term, found_synonyms[synonym])
-                        self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                        else:
+                            if found_synonyms[synonym] != term:
+                                message = _('Unambiguous synonym: {0} is mapped to {1} and {2}'.format(
+                                    synonym, term, found_synonyms[synonym]))
+                                            
+                                self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
                             
 
     def validate_glossary_entry(self, term, synonyms, definition, glossary_sheet_name, row_index):
