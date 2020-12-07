@@ -134,7 +134,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
                 iexact_qry = GlossaryEntry.objects.filter(glossary=self.generic_content, term__iexact=term)
 
                 if iexact_qry.count() == 1:
-                    db_glossary_entry = entry.first()                    
+                    db_glossary_entry = iexact_qry.first()                    
 
                     # exists in db and excel, do not delete this glossary entry
                     del delete_glossary_entries[delete_glossary_entries.index(db_glossary_entry.term)]
@@ -172,24 +172,37 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
 
             # add or delete synonyms
-            existing_synonyms = TermSynonym.objects.filter(glossary_entry=db_glossary_entry)
+            existing_synonyms = TermSynonym.objects.filter(glossary_entry__glossary=self.generic_content,
+                                                           glossary_entry=db_glossary_entry)
+            
             delete_synonyms = [s.term for s in existing_synonyms]
 
             for synonym in synonyms:
 
-                db_synonym = TermSynonym.objects.filter(glossary_entry=db_glossary_entry, term=synonym).first()
+                db_synonym = TermSynonym.objects.filter(glossary_entry__glossary=self.generic_content,
+                                                        term=synonym).first()
 
                 if db_synonym:
+
+                    if db_synonym.glossary_entry != db_glossary_entry:
+                        db_synonym.glossary_entry = db_glossary_entry
+                        db_synonym.save()
+                        
                     # exists in db and in excel, do not delete
-                    del delete_synonyms[delete_synonyms.index(db_synonym.term)]
+                    if db_synonym.term in delete_synonyms:
+                        del delete_synonyms[delete_synonyms.index(db_synonym.term)]
                     
                 else:
                     # iexact query
-                    db_synonym = TermSynonym.objects.filter(glossary_entry=db_glossary_entry,
+                    db_synonym = TermSynonym.objects.filter(glossary_entry__glossary=self.generic_content,
                                                             term__iexact=synonym).first()
 
                     # correct case, eg TErm -> Term
                     if db_synonym:
+
+                        if db_synonym.glossary_entry != db_glossary_entry:
+                            db_synonym.glossary_entry = db_glossary_entry
+                            
                         db_synonym.term = synonym
                         db_synonym.save()
 
@@ -218,9 +231,3 @@ class GlossaryZipImporter(GenericContentZipImporter):
             entries.delete()
             
 
-                
-
-
-        
-
-    
