@@ -48,6 +48,8 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
         glossary_sheet = self.workbook.sheet_by_index(0)
 
+        found_synonyms = {}
+
         for row_index, row in enumerate(glossary_sheet.get_rows(), 0):
 
             if row_index == 0:
@@ -77,6 +79,19 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
                 self.validate_glossary_entry(term, synonyms, definition, glossary_sheet.name, row_index)
 
+                synonyms_list = synonyms.split('|')
+                synonyms_list = [s.strip() for s in synonyms_list]
+                
+                for synonym in synoynms_list:
+                    if synonym not in found_synonyms:
+                        found_synonyms[synonym] = term
+
+                    else:
+                        if found_synonyms[synonym] != term:
+                            message = _('Unambiguous synonym: {0} is mapped to {1} and {2}'.format(
+                                synonym, term, found_synonyms[synonym])
+                        self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                            
 
     def validate_glossary_entry(self, term, synonyms, definition, glossary_sheet_name, row_index):
 
@@ -179,18 +194,11 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
             for synonym in synonyms:
 
-                db_synonym = TermSynonym.objects.filter(glossary_entry__glossary=self.generic_content,
+                db_synonym = TermSynonym.objects.filter(glossary_entry=db_glossary_entry,
                                                         term=synonym).first()
 
                 if db_synonym:
-
-                    if db_synonym.glossary_entry != db_glossary_entry:
-                        db_synonym.glossary_entry = db_glossary_entry
-                        db_synonym.save()
-                        
-                    # exists in db and in excel, do not delete
-                    if db_synonym.term in delete_synonyms:
-                        del delete_synonyms[delete_synonyms.index(db_synonym.term)]
+                    del delete_synonyms[delete_synonyms.index(db_synonym.term)]
                     
                 else:
                     # iexact query
@@ -227,7 +235,8 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
         # delete all entries that are present in the db, but not in excel
         if delete_glossary_entries:
-            entries = GlossaryEntry.objects.filter(glossary=self.generic_content, term__in=delete_glossary_entries)
+            entries = GlossaryEntry.objects.filter(glossary=self.generic_content,
+                                                   term__in=delete_glossary_entries)
             entries.delete()
             
 
