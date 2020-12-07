@@ -2,7 +2,7 @@ from django.conf import settings
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import FactSheetTemplates
+from .models import FactSheetTemplates, FactSheetImages
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
@@ -63,8 +63,14 @@ class ManageFactSheetForm(FactSheetFormCommon):
         # the fields should be in self.fields        
         for tag in cms_tags:
 
+            instances = []
+
+            if tag.microcontent_category in ['image', 'images']:
+                instances = FactSheetImages.objects.filter(fact_sheet=self.fact_sheet,
+                                                           microcontent_type=tag.microcontent_type)
+
             # get cms form fields for each tag
-            for field in tag.form_fields():
+            for field in tag.form_fields(instances=instances):
                 
                 self.fields[field['name']] = field['field']
 
@@ -74,5 +80,22 @@ class ManageFactSheetForm(FactSheetFormCommon):
                     self.layoutable_simple_fields.add(field['name'])
                 elif 'layoutable-full' in tag.args:
                     self.layoutable_full_fields.add(field['name'])
+   
 
-        
+
+from content_licencing.mixins import LicencingFormMixin
+from localcosmos_server.widgets import ImageInputWithPreview
+from localcosmos_server.forms import ManageContentImageFormCommon
+class UploadFactSheetImageForm(ManageContentImageFormCommon, LicencingFormMixin, forms.Form):
+
+    def get_source_image_field(self):
+        # unfortunately, a file field cannot be prepoluated due to html5 restrictions
+        # therefore, source_image has to be optional. Otherwise, editing would be impossible
+        # check if a new file is required in clean
+        required = False
+        if not self.current_image:
+            required = True
+        source_image_field = forms.ImageField(widget=ImageInputWithPreview, required=required)
+        source_image_field.widget.current_image = self.current_image
+
+        return source_image_field

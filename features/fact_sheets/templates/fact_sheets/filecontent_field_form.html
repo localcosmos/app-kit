@@ -1,0 +1,10 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+
+{% block above %}
+	<form method="POST" action="{% url 'upload_factsheet_image' fact_sheet.id microcontent_type %}" class="xhr" enctype="multipart/form-data">{% csrf_token %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}

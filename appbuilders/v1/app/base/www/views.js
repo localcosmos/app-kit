@@ -4384,6 +4384,36 @@ var OnlineContentView = View(RemoteView, {
 
 });
 
+
+// FactSheetView
+// - for both preview and view
+var FactSheetView = View(RemoteView, {
+
+	"identifier" : "FactSheetView",
+	"template_name" : "themes/" + settings.THEME + "/templates/fact_sheet.html",	
+	
+	get_local_html : function (self, onsuccess, onerror){
+		alert("local");
+	},
+	
+	get_preview_html : function(self, onsuccess, onerror){
+		// settings.API_URL points to the app kit if settings.PREVIEW == true
+		var url = '' + settings.API_URL + 'fact-sheet-preview/' + self.kwargs["slug"] + "/" + self.request.GET["meta_app_id"] + "/";
+		self.perform_request(self, url, 'GET', 'HTML', {}, onsuccess, onerror);
+	},
+	
+	get_html : function(self, onsuccess, onerror){
+
+		if (settings.PREVIEW == true){
+			self.get_preview_html(self, onsuccess, onerror);
+		}
+		else {
+			self.get_local_html(self, onsuccess, onerror);
+		}
+
+	}
+});
+
 // header views
 var BaseHeaderView = View(TemplateView, {
 

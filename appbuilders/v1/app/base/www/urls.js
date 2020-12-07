@@ -31,6 +31,7 @@ var urlpatterns = urlpatterns.concat([
 	path("toggle/<str:element_id>/", Toggle.as_view(), {"name" : "toggle"}),
 	path("online-content/<str:slug>/", OnlineContentView.as_view(), {"name" : "online_content"}),
 	path("online-content/<str:slug>/<str:preview_token>/", OnlineContentView.as_view(), {"name" : "online_content_preview"}),
+	path("fact-sheet/<str:slug>/", FactSheetView.as_view(), {"name" : "fact_sheet"}),
 	path("map/<uuid:map_uuid>/", MapView.as_view(), {"name" : "map"}),
 	path("theme-text/<str:key>/", ThemeTextView.as_view(), {"name" : "theme_text"}),
 	path("funding-partners/", FundingPartners.as_view(), {"name" : "funding_partners"}),

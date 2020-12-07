@@ -6,8 +6,14 @@ from django.utils.decorators import method_decorator
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin
 
-from .forms import CreateFactSheetForm, ManageFactSheetForm
-from .models import FactSheets, FactSheet
+from app_kit.models import MetaApp
+
+from .forms import CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetImageForm
+from .models import FactSheets, FactSheet, FactSheetImages
+
+from localcosmos_server.decorators import ajax_required
+from django.utils.decorators import method_decorator
+
 
 class ManageFactSheets(ManageGenericContent):
     template_name = 'fact_sheets/manage_fact_sheets.html'
@@ -63,7 +69,7 @@ class CreateFactSheet(MetaAppMixin, FormView):
         fact_sheet.save()
 
         # save fact sheet and redirect
-        return redirect('manage_factsheet', meta_app_id=self.meta_app.id, pk=fact_sheet.pk)
+        return redirect('manage_factsheet', meta_app_id=self.meta_app.id, fact_sheet_id=fact_sheet.pk)
         
     
 
@@ -79,14 +85,158 @@ class ManageFactSheet(MetaAppMixin, FormView):
         return super().dispatch(request, *args, **kwargs)
 
 
+    def get_initial(self):
+        
+        initial = {
+            'title' : self.fact_sheet.title,
+            'navigation_link_name' : self.fact_sheet.navigation_link_name,
+            'input_language' : self.fact_sheet.fact_sheets.primary_language,
+        }
+
+        for microcontent_type, data in self.fact_sheet.contents.items():
+            initial[microcontent_type] = data
+            
+        return initial
+
+
     def get_form(self, form_class=None):
         if form_class is None:
             form_class = self.get_form_class()
         return form_class(self.meta_app, self.fact_sheet, **self.get_form_kwargs())
 
 
+    def get_preview_url(self):
+        app_preview_url_suffix = '/fact-sheet/{0}/?meta_app_id={1}'.format(self.fact_sheet.slug,
+                                                                           self.meta_app.id)
+
+        # the relative preview url
+        unschemed_preview_url = '{0}#{1}'.format(self.meta_app.app.get_preview_url(), app_preview_url_suffix)
+
+        # the host where the preview is served. on LCOS it is simply the website
+        if unschemed_preview_url.startswith('http://') or unschemed_preview_url.startswith('https://'):
+            preview_url = unschemed_preview_url
+        else:
+            preview_url = '{0}://{1}'.format(self.request.scheme, unschemed_preview_url)
+        
+        return preview_url
+        
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fact_sheet'] = self.fact_sheet
+        context['preview_url'] = self.get_preview_url()
         return context
 
+
+    def form_valid(self, form):
+
+        self.fact_sheet.title = form.cleaned_data['title']
+        self.fact_sheet.navigation_link_name = form.cleaned_data['navigation_link_name']
+
+        if not self.fact_sheet.contents:
+            self.fact_sheet.contents = {}
+
+        for field_ in form:
+
+            field = field_.field
+            if hasattr(field, 'cms_tag'):
+
+                data = form.cleaned_data[field_.name]
+
+                if data and type(data) in [str, list] and len(data) > 0 and data not in self.empty_values:
+
+                    microcontent_type = field.cms_tag.microcontent_type
+
+                    self.fact_sheet.contents[microcontent_type] = data
+
+        self.fact_sheet.save()
+
+        context = self.get_context_data(**self.kwargs)
+        return self.render_to_response(context)
+
+
+# primary language only
+# CSRF exempt ?
+# mapped in app_kit.urls to be accessible from the apps settings.API_URL
+class GetFactSheetPreview(TemplateView):
+
+    template_name = 'fact_sheets/fact_sheet_preview.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        slug = kwargs['slug']
+        self.fact_sheet = FactSheet.objects.get(slug=slug)
+        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def get_context_data(self, **kwargs):
+        
+        context = {
+            'html' : self.fact_sheet.render_as_html(self.meta_app),
+        }
+
+        return context
+
+
+'''
+    There are 2 types of images:
+    - images/files that are microcontent_types themselves
+    - images/files that are added to a text microcontent_type via ckeditor
+'''
+from content_licencing.view_mixins import LicencingFormViewMixin
+class UploadFactSheetImage(LicencingFormViewMixin, FormView):
+
+    template_name = 'fact_sheets/filecontent_field_form.html'
+
+    form_class = UploadFactSheetImageForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_file(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_file(self, **kwargs):
+        self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
+        self.microcontent_type = kwargs['microcontent_type']
+
+        self.image = None
+
+        if 'pk' in kwargs:
+            self.image = FactSheetImages.objects.get(pk=kwargs['pk'])
+    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fact_sheet'] = self.fact_sheet
+        context['microcontent_type'] = self.microcontent_type
+        context['success'] = False
+        context['image'] = self.image
+        return context
+
+
+    def form_valid(self, form):
+
+        image_file = form.cleaned_data['source_image']
+
+        if not self.image:
+            self.image = FactSheetImages(
+                fact_sheet = self.fact_sheet,
+                content = self.microcontent_type,
+            )
+
+        self.image.image = image_file
+
+        self.image.save()
+
+        self.register_content_licence(form, self.image, 'image')
+
+        context = super().get_context_data(**self.kwargs)
+        context['success'] = True
+        context['image'] = self.image
+
+        return self.render_to_response(context)
+
+
+
+    

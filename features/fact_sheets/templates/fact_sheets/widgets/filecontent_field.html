@@ -1,0 +1,26 @@
+{% load i18n static online_content_tags imagekit %}
+{% with cms_object=field.field.cms_tag %}
+
+<div class="col-4 col-md-3 col-lg-2 fileupload" {% if not field.field.current_image %}data-new="1"{% endif %}>
+	
+	{{ field }}
+
+	<label style="background-image:url({% if field.field.current_image %}{% thumbnail '100x100' field.field.current_image.image as th %}{% image_url th %}{% else %}{% static 'localcosmos_server/images/add_image.svg' %}{% endif %});">
+		<span>&nbsp;</span>
+	</label>
+
+	<div class="btn-group dropup">
+		<button id="dropdown-{{ field.auto_id }}" class="btn btn-outline-primary btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			{% trans 'Modify' %}
+		</button>
+		<div class="dropdown-menu" aria-labelledby="dropdown-{{ field.auto_id }}">
+			<a class="dropdown-item xhr" data-url="{{ field.field.licenced_url }}" ajax-target="ModalContent">{% if field.field.current_image %}{% trans 'Change image' %}{% else %}{% trans 'Add image' %}{% endif %}</a>
+			{% if field.field.current_image %}
+				<a class="dropdown-item xhr" data-url="{{ field.field.delete_url }}?microcontentcategory={{ cms_object.microcontent_category }}&image_pk={{ cms_object.image.pk }}&microcontenttype={{ cms_object.microcontent_type }}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+			{% endif %}
+		</div>
+	</div>
+		
+</div>
+
+{% endwith %}

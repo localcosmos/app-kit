@@ -1,12 +1,16 @@
 {% extends 'app_kit/manage_generic_content.html' %}
 {% load i18n imagekit static %}
 
+{% block extra_style %}
+	<link href="{% static 'online_content/online_content.css' %}" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 	<div class="container-fluid mt-3">
 		<div class="row">
 			<div class="col-12">
 				<h3>
-					{{ fact_sheet.title }} <img src="{% static 'localcosmos_server/images/countries_big/' %}{{ fact_sheet.fact_sheets.primary_language }}.png" />
+					{{ fact_sheet.title }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ fact_sheet.fact_sheets.primary_language }}.gif" />
 				</h3>
 
 				{% if saved %}
@@ -27,7 +31,7 @@
 				<form id="contentform" action="{% url 'manage_factsheet' meta_app.id fact_sheet.id %}" method="POST">{% csrf_token %}
 
 					{% for field in form %}
-						{% with cms_object=field.field.cms_object %}
+						{% with cms_object=field.field.cms_tag %}
 
 							{% if cms_object.multi %}
 			
@@ -43,7 +47,7 @@
 								{% endif %}
 
 										{% if cms_object.is_file %}
-											{% include 'online_content/filecontent_field.html' %}
+											{% include 'fact_sheets/widgets/filecontent_field.html' %}
 										{% else %}
 											<div class="col-12" {% if not cms_object.localized_instance.pk %}data-new="1"{% endif %}>
 												{% include 'online_content/textcontent_field.html' %}
@@ -72,7 +76,7 @@
 										</div>
 									{% endif %}
 									<div id="{{ cms_object.microcontent_category }}-{{ cms_object.microcontent_type }}-container" class="row">
-										{% include 'online_content/filecontent_field.html' %}
+										{% include 'fact_sheets/widgets/filecontent_field.html' %}
 									</div>
 								{% else %}
 									{% include 'online_content/textcontent_field.html' %}
@@ -91,10 +95,8 @@
 				</form>
 			</div>
 			<div class="col-12 col-md-6">
-				{% if template_content %}
-					<h4>{% trans 'Preview' %} <small><a href="{{ preview_url }}" target="_blank">{% trans 'Show in separate window' %}</a></small></h4>
-					<object id="contentPreview" type="text/html" data="{{ preview_url }}"></object>
-				{% endif %}
+				<h4>{% trans 'Preview' %} <small><a href="{{ preview_url }}" target="_blank">{% trans 'Show in separate window' %}</a></small></h4>
+				<object id="contentPreview" type="text/html" data="{{ preview_url }}"></object>
 			</div>
 		</div>
 	</div>

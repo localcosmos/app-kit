@@ -8,4 +8,8 @@ urlpatterns = [
          name='create_factsheet'),
     path('manage-factsheet/<int:meta_app_id>/<int:fact_sheet_id>/', views.ManageFactSheet.as_view(),
          name='manage_factsheet'),
+    path('upload-factsheet-image/<int:fact_sheet_id>/<str:microcontent_type>/',
+         views.UploadFactSheetImage.as_view(), name='upload_factsheet_image'),
+    path('upload-factsheet-image/<int:fact_sheet_id>/<str:microcontent_type>/<int:pk>/',
+         views.UploadFactSheetImage.as_view(), name='manage_factsheet_image'),
 ]
