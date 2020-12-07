@@ -55,7 +55,7 @@ class GlossaryEntry(models.Model):
 
     glossary = models.ForeignKey(Glossary, on_delete=models.CASCADE)
 
-    term = models.CharField(max_length=355, unique=True)
+    term = models.CharField(max_length=355) # cannot be unique, a user might remove a linked glossary and add a new one
     definition = models.TextField()
 
     @property
@@ -67,12 +67,13 @@ class GlossaryEntry(models.Model):
 
     class Meta:
         ordering = ['term']
+        unique_together = ('glossary', 'term')
     
 
 class TermSynonym(models.Model):
 
     glossary_entry = models.ForeignKey(GlossaryEntry, on_delete=models.CASCADE)
-    term = models.CharField(max_length=355, unique=True) # unique or unique_together ? current setup makes no sense
+    term = models.CharField(max_length=355) # unambiguous synonyms are detected during validation
 
     def __str__(self):
         return self.term
