@@ -57,8 +57,18 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                         if matrix_filter.filter_type == 'ColorFilter':
                             encoded_space = value.encoded_space
-                            values_entry['rgba'] = 'rgba({0},{1},{2},{3})'.format(encoded_space[0],
-                                                    encoded_space[1], encoded_space[2], encoded_space[3])
+                            gradient = False
+                            description = None
+
+                            if value.additional_information:
+                                description = value.additional_information.get('description', None)
+                                gradient = value.additional_information.get('gradient', False)
+                                
+
+                            html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
+                            values_entry['html'] = html
+                            values_entry['gradient'] = gradient
+                            values_entry['description'] = description
                             
                         node_trait['values'].append(values_entry)
 

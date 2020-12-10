@@ -106,7 +106,12 @@
 										{{#if matrix_filter.is_multispace}}
 											{{#each values}}
 												{{#ifequal ../matrix_filter.filter_type 'ColorFilter'}}
-													<div style="background-color:{{rgba}}" class="taxon-profile-trait-color">&nbsp;</div>
+													<div class="taxon-profile-trait-color" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}>&nbsp;</div>
+													{{#if description}}
+														<div class="mb-2">
+															<small>{{ description }}</small>
+														</div>
+													{{/if}}
 												{{/ifequal}}
 												{{#ifequal ../matrix_filter.filter_type 'DescriptiveTextAndImagesFilter'}}
 													<div class="text-center">
