@@ -16,7 +16,7 @@
 		<div class="dropdown-menu" aria-labelledby="dropdown-{{ field.auto_id }}">
 			<a class="dropdown-item xhr" data-url="{{ field.field.licenced_url }}" ajax-target="ModalContent">{% if field.field.current_image %}{% trans 'Change image' %}{% else %}{% trans 'Add image' %}{% endif %}</a>
 			{% if field.field.current_image %}
-				<a class="dropdown-item xhr" data-url="{{ field.field.delete_url }}?microcontentcategory={{ cms_object.microcontent_category }}&image_pk={{ cms_object.image.pk }}&microcontenttype={{ cms_object.microcontent_type }}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+				<a class="dropdown-item xhr" data-url="{{ field.field.delete_url }}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
 			{% endif %}
 		</div>
 	</div>

@@ -88,7 +88,6 @@ class FactSheet(models.Model):
             raise TemplateDoesNotExist(msg)
 
 
-
         params = {
             'NAME' : 'FactSheetsEngine',
             #'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -146,6 +145,10 @@ class FactSheet(models.Model):
             super().save(*args, **kwargs)
 
 
+    def __str__(self):
+        return self.title
+
+
     class Meta:
         verbose_name = _('Fact sheet')
         verbose_name_plural = _('Fact sheets')
@@ -158,12 +161,7 @@ def factsheet_images_upload_path(instance, filename):
     fact_sheet_id = instance.fact_sheet.id
 
     base_path = os.path.join('fact_sheets', 'content', str(generic_content_id), str(fact_sheet_id), 'images')
-
-    if instance.content:
-        path = os.path.join(base_path, instance.content, filename)
-
-    else:
-        path = os.path.join(base_path, filename)
+    path = os.path.join(base_path, instance.microcontent_type, filename)
 
     return path
 
@@ -179,16 +177,6 @@ class FactSheetImages(models.Model):
     text = models.CharField(max_length=355, null=True)
     
     licences = GenericRelation(ContentLicenceRegistry)
-
-
-
-'''
-    A fact sheet might apply to taxa ot nodes in the identification tree, which itself acts
-    as a taxonomic source
-'''
-class FactSheetTaxa(ModelWithRequiredTaxon):
-
-    fact_sheet = models.ForeignKey(FactSheet, on_delete=models.CASCADE)
 
 
 def factsheet_templates_upload_path(instance, filename):

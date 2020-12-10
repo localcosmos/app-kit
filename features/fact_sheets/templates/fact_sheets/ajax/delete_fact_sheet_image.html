@@ -1,0 +1,20 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block success_js %}
+	<script>
+		$("#Modal").modal("hide");
+		{% if deleted %}
+			var url = "{% url 'get_factsheet_form_field' fact_sheet.id microcontent_category microcontent_type %}";
+			$.get(url, function(html){
+				$("#{{ microcontent_category }}-{{ microcontent_type }}-container").html(html);
+				ajaxify("{{ microcontent_category }}-{{ microcontent_type }}-container");
+			});
+
+			$("#Modal").modal("hide");
+			$("#ModalContent").empty();
+
+			reloadPreview();
+			
+		{% endif %}
+	</script>
+{% endblock %}

@@ -241,6 +241,7 @@ GENERIC_CONTENT_HELP_TEXTS = {
     'Map' : _('The map feature plots your observations on a map.'),
     'TaxonProfiles' : _('Describe the species of your app using taxon profiles.'),
     'GenericForm': _('An observation form is used to collect data.'),
+    'FactSheets' : _('Create pages for certain groups of species.'),
     'App' : '',
 }
 

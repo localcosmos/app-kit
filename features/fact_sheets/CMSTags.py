@@ -47,7 +47,61 @@ class CMSTag:
             'data-type' : '{0}-{1}'.format(self.microcontent_category, self.microcontent_type),
         }
 
+        if self.multi:
+            widget_attrs.update({
+                'multi' : True,
+            })
+
         return widget_attrs
+
+
+    def get_label(self):
+        return self.microcontent_type.replace('_', ' ').capitalize()
+
+
+    def get_image_form_field(self, current_image=None):
+
+        widget_attrs = self._get_widget_attrs()
+
+        label = self.get_label()
+
+        field_kwargs = {
+            'required' : False,
+            'label' : label
+        }
+        
+        delete_url = None
+
+        data_url_kwargs = {
+            'fact_sheet_id' : self.fact_sheet.id,
+            'microcontent_category' : self.microcontent_category,
+            'microcontent_type' : self.microcontent_type,
+        }
+
+        data_url = reverse('upload_factsheet_image', kwargs=data_url_kwargs)
+
+        if current_image:
+
+            data_url_kwargs['pk'] = current_image.pk
+            data_url = reverse('manage_factsheet_image', kwargs=data_url_kwargs)
+            
+            delete_kwargs = {
+                'pk' : current_image.pk,
+            }
+            delete_url = reverse('delete_factsheet_image', kwargs=delete_kwargs)
+            delete_url = '{0}?microcontent_category={1}'.format(delete_url, self.microcontent_category)
+            
+        widget_attrs['data-url'] = data_url  
+        widget_attrs['accept'] = 'image/*'
+
+        form_field = forms.ImageField(widget=forms.FileInput(widget_attrs), **field_kwargs)
+        form_field.cms_tag = self
+        form_field.current_image = current_image
+
+        form_field.licenced_url = data_url
+        form_field.delete_url = delete_url
+
+        return form_field
 
         
     '''
@@ -57,59 +111,65 @@ class CMSTag:
 
         form_fields = []
 
-        widget_attrs = self._get_widget_attrs()
-
-        '''
-        if self.multi:
-            widget_attrs.update({
-                'multi' : True,
-            })
-        '''
-        label = self.microcontent_type.replace('_', ' ').capitalize()
-
-        field_kwargs = {
-            'required' : False,
-            'label' : label
-        }
-
         if self.microcontent_category in ['image', 'images']:
 
             if self.multi:
-                pass
+
+                is_first = True
+                is_last = False
+                field_count = 0
+
+                for current_image in instances:
+
+                    field_count += 1
+
+                    form_field = self.get_image_form_field(current_image)
+
+                    if field_count == self.max_num:
+                        is_last = True
+
+                    form_field.is_first = is_first
+                    form_field.is_last = is_last
+                    
+                    field_name = '{0}-{1}'.format(self.microcontent_type, field_count)
+
+                    field = {
+                        'name' : field_name,
+                        'field' : form_field,
+                    }
+
+                    form_fields.append(field)
+
+                    if is_first == True:
+                        is_first = False
+
+
+                # optionally add empty field
+                if self.max_num is None or field_count < self.max_num:
+                    # is_last is False
+                    is_last = True
+
+                    form_field = self.get_image_form_field()
+                    
+                    form_field.is_first = is_first
+                    form_field.is_last = is_last
+            
+                    field = {
+                        'name' : self.microcontent_type,
+                        'field' : form_field,
+                    }
+                    
+                    form_fields.append(field)
+                    
 
             else:
 
                 current_image = None
 
-                data_url_kwargs = {
-                    'fact_sheet_id' : self.fact_sheet.id,
-                    'microcontent_type' : self.microcontent_type,
-                }
-
-                data_url = reverse('upload_factsheet_image', kwargs=data_url_kwargs)
-
                 if instances:
-
                     current_image = instances[0]
-
-                    data_url_kwargs['pk'] = current_image.pk
-                    data_url = reverse('manage_factsheet_image', kwargs=data_url_kwargs)
-                    '''
-                    delete_kwargs = {
-                        'app_uid' : app.uid,
-                        'template_content_id' : template_content.id,
-                        'language' : language,
-                    }
-                    delete_url = reverse('DeleteFileContent', kwargs=delete_kwargs)
-                    '''
-                widget_attrs['data-url'] = data_url  
-                widget_attrs['accept'] = 'image/*'
-
-                form_field = forms.ImageField(widget=forms.FileInput(widget_attrs), **field_kwargs)
-                form_field.cms_tag = self
-                form_field.current_image = current_image
-
-                form_field.licenced_url = data_url
+                
+                form_field = self.get_image_form_field(current_image)
 
                 field = {
                     'name' : self.microcontent_type,
@@ -119,6 +179,15 @@ class CMSTag:
                 form_fields.append(field)
         
         else:
+
+            widget_attrs = self._get_widget_attrs()
+
+            label = self.get_label()
+
+            field_kwargs = {
+                'required' : False,
+                'label' : label
+            }
 
             if self.multi:
 

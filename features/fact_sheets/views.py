@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.views.generic import FormView, TemplateView
 from django.utils.decorators import method_decorator
 
+from django import forms
+
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin
 
@@ -10,9 +12,12 @@ from app_kit.models import MetaApp
 
 from .forms import CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetImageForm
 from .models import FactSheets, FactSheet, FactSheetImages
+from .CMSTags import CMSTag
 
 from localcosmos_server.decorators import ajax_required
 from django.utils.decorators import method_decorator
+
+from localcosmos_server.generic_views import AjaxDeleteView
 
 
 class ManageFactSheets(ManageGenericContent):
@@ -93,8 +98,9 @@ class ManageFactSheet(MetaAppMixin, FormView):
             'input_language' : self.fact_sheet.fact_sheets.primary_language,
         }
 
-        for microcontent_type, data in self.fact_sheet.contents.items():
-            initial[microcontent_type] = data
+        if self.fact_sheet.contents:
+            for microcontent_type, data in self.fact_sheet.contents.items():
+                initial[microcontent_type] = data
             
         return initial
 
@@ -187,7 +193,7 @@ class GetFactSheetPreview(TemplateView):
 from content_licencing.view_mixins import LicencingFormViewMixin
 class UploadFactSheetImage(LicencingFormViewMixin, FormView):
 
-    template_name = 'fact_sheets/filecontent_field_form.html'
+    template_name = 'fact_sheets/factsheet_image_form.html'
 
     form_class = UploadFactSheetImageForm
 
@@ -198,21 +204,44 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
 
     def set_file(self, **kwargs):
         self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
+        self.microcontent_category = kwargs['microcontent_category']
         self.microcontent_type = kwargs['microcontent_type']
 
         self.image = None
 
         if 'pk' in kwargs:
             self.image = FactSheetImages.objects.get(pk=kwargs['pk'])
+
+            self.set_licence_registry_entry(self.image, 'image')
     
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fact_sheet'] = self.fact_sheet
+        context['microcontent_category'] = self.microcontent_category
         context['microcontent_type'] = self.microcontent_type
         context['success'] = False
         context['image'] = self.image
         return context
+
+
+
+    def get_initial(self):
+        initial = super().get_initial()
+
+        if self.image:
+            initial['source_image'] = self.image.image
+            licencing_initial = self.get_licencing_initial()
+            initial.update(licencing_initial)
+
+        return initial
+            
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        if self.image:
+            form_kwargs['current_image'] = self.image
+        return form_kwargs
 
 
     def form_valid(self, form):
@@ -222,7 +251,7 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
         if not self.image:
             self.image = FactSheetImages(
                 fact_sheet = self.fact_sheet,
-                content = self.microcontent_type,
+                microcontent_type = self.microcontent_type,
             )
 
         self.image.image = image_file
@@ -230,8 +259,10 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
         self.image.save()
 
         self.register_content_licence(form, self.image, 'image')
+        self.set_licence_registry_entry(self.image, 'image')
 
-        context = super().get_context_data(**self.kwargs)
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
         context['success'] = True
         context['image'] = self.image
 
@@ -239,4 +270,64 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
 
 
 
+class DeleteFactSheetImage(AjaxDeleteView):
     
+    model = FactSheetImages
+
+    template_name = 'fact_sheets/ajax/delete_fact_sheet_image.html'
+
+    def get_verbose_name(self):
+        name = ' '.join(self.object.microcontent_type.split('_')).capitalize()
+        return name
+
+    def get_context_data(self, **kwargs):
+        microcontent_category = self.request.GET['microcontent_category']
+        context = super().get_context_data(**kwargs)
+        context['fact_sheet'] = self.object.fact_sheet
+        context['microcontent_type'] = self.object.microcontent_type
+        context['microcontent_category'] = microcontent_category
+        context['url'] = '{0}?microcontent_category={1}'.format(self.request.path, microcontent_category)
+        return context
+    
+'''
+    get all fields for a microcontent_type
+    ajax only
+    for successful image deletions and uploads
+    reloads all fields if field is multi
+'''
+class GetFactSheetFormField(FormView):
+
+    template_name = 'fact_sheets/ajax/reloaded_file_fields.html'
+    form_class = forms.Form
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
+        self.microcontent_category = kwargs['microcontent_category']
+        self.microcontent_type = kwargs['microcontent_type']
+            
+        return super().dispatch(request, *args, **kwargs)
+    
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fact_sheet'] = self.fact_sheet
+        return context
+    
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = forms.Form
+
+        cms_tag = CMSTag(self.fact_sheet, self.microcontent_category, self.microcontent_type)
+
+        form = form_class(**self.get_form_kwargs())
+
+        instances = FactSheetImages.objects.filter(fact_sheet=self.fact_sheet,
+                                                   microcontent_type=self.microcontent_type)
+
+        for field in cms_tag.form_fields(instances=instances):
+            form.fields[field['name']] = field['field']
+
+        return form
+

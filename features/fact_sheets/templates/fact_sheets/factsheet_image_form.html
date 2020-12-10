@@ -1,0 +1,32 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n %}
+
+{% block above %}
+	<form method="POST" action="{% if image %}{% url 'manage_factsheet_image' fact_sheet.id microcontent_category microcontent_type image.id %}{% else %}{% url 'upload_factsheet_image' fact_sheet.id microcontent_category microcontent_type %}{% endif %}" class="xhr" enctype="multipart/form-data">{% csrf_token %}
+{% endblock %}
+
+{% block title %}
+	{% trans 'Manage image' %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	<script>
+		{% if form.is_valid %}
+			var url = "{% url 'get_factsheet_form_field' fact_sheet.id microcontent_category microcontent_type %}";
+			$.get(url, function(html){
+				$("#{{ microcontent_category }}-{{ microcontent_type }}-container").html(html);
+				ajaxify("{{ microcontent_category }}-{{ microcontent_type }}-container");
+			});
+
+			$("#Modal").modal("hide");
+			$("#ModalContent").empty();
+
+			reloadPreview();
+			
+		{% endif %}
+	</script>
+{% endblock %}

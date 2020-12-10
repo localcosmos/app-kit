@@ -93,9 +93,13 @@ class UploadFactSheetImageForm(ManageContentImageFormCommon, LicencingFormMixin,
         # therefore, source_image has to be optional. Otherwise, editing would be impossible
         # check if a new file is required in clean
         required = False
-        if not self.current_image:
+        image_file = None
+        
+        if self.current_image:
+            image_file = self.current_image.image
+        else:
             required = True
         source_image_field = forms.ImageField(widget=ImageInputWithPreview, required=required)
-        source_image_field.widget.current_image = self.current_image
+        source_image_field.widget.current_image = image_file
 
         return source_image_field
