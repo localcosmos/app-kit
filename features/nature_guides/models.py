@@ -830,7 +830,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         self.save(new_parent)
 
         # update all nuids, parent stays the same
-        descendants_and_self = NatureGuidesTaxonTree.objects.filter(taxon_nuid__startswith=old_self_nuid)
+        descendants_and_self = NatureGuidesTaxonTree.objects.filter(
+            taxon_nuid__startswith=old_self_nuid).order_by('taxon_nuid')
         
         for descendant in descendants_and_self:
             
