@@ -8,12 +8,14 @@ from django.conf import settings
 
 from django_tenants.test.cases import TenantTestCase
 
-from app_kit.tests.common import test_settings
+from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 from app_kit.tests.mixins import WithMetaApp
 
 from app_kit.features.fact_sheets.models import (FactSheet, FactSheetImages, FactSheets,
                 factsheet_images_upload_path, factsheet_templates_upload_path, FactSheetTemplates)
 
+
+import os, shutil
 
 class WithFactSheets:
 
@@ -33,9 +35,30 @@ class WithFactSheets:
         fact_sheet.save()
 
         return fact_sheet
+
+
+    def get_image(self, name='test_image.jpg'):
+        image = SimpleUploadedFile(name=name, content=open(TEST_IMAGE_PATH, 'rb').read(),
+                                        content_type='image/jpeg')
+
+        return image
+
+
+    def clean_media(self):
+        
+        if os.path.isdir(TEST_MEDIA_ROOT):
+            shutil.rmtree(TEST_MEDIA_ROOT)
+
+        os.makedirs(TEST_MEDIA_ROOT)  
+
+    
+    def tearDown(self):
+        super().tearDown()
+        self.clean_media()
         
 
     def setUp(self):
+        self.clean_media()
         super().setUp()
         self.fact_sheets = self.create_fact_sheets()
         
@@ -107,12 +130,27 @@ class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
         self.assertEqual(str(fact_sheet), self.title)
 
 
-class TestFactSheetImagesUploadPath(WithFactSheets, TenantTestCase):
+
+class TestFactSheetImagesUploadPath(WithFactSheets, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_path(self):
-        pass
 
+        fact_sheet = self.create_fact_sheet()
+
+        filename = 'test.jpg'
+
+        fact_sheet_image = FactSheetImages(
+            fact_sheet = self.fact_sheet,
+            microcontent_type = 'test_image',
+            image = self.get_image(filename)
+        )
+
+        path = factsheet_images_upload_path(fact_sheet_image)
+
+        expected_path = 'fact_sheets/content/{0}/{1}/images/{2}'.format(self.fact_sheets.id, self.fact_sheet.id,
+                                                                        filename)
+        self.assertEqual(path, expected_path)
 
 class TestFactSheetImages(WithFactSheets, TenantTestCase):
 
@@ -121,11 +159,13 @@ class TestFactSheetImages(WithFactSheets, TenantTestCase):
         pass
 
 
+
 class TestFactSheetTemplatesUploadPath(WithFactSheets, TenantTestCase):
 
     @test_settings
     def test_path(self):
         pass
+
 
 
 class TestFactSheetTemplates(WithFactSheets, TenantTestCase):
