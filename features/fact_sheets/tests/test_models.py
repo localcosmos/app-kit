@@ -8,66 +8,21 @@ from django.conf import settings
 
 from django_tenants.test.cases import TenantTestCase
 
-from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
-from app_kit.tests.mixins import WithMetaApp
+from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH, TEST_TEMPLATE_PATH)
+from app_kit.tests.mixins import WithMetaApp, WithUser
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from app_kit.features.fact_sheets.models import (FactSheet, FactSheetImages, FactSheets,
                 factsheet_images_upload_path, factsheet_templates_upload_path, FactSheetTemplates)
 
 
+from app_kit.features.fact_sheets.tests.common import WithFactSheets
+
+
 import os, shutil
 
-class WithFactSheets:
 
-    def create_fact_sheets(self):
-        fact_sheets = FactSheets.objects.create('Test Fact Sheets', 'en')
-        return fact_sheets
-
-    def create_fact_sheet(self):
-
-        fact_sheet = FactSheet(
-            fact_sheets = self.fact_sheets,
-            template_name = self.template_name,
-            title = self.title,
-            navigation_link_name = self.navigation_link_name,
-        )
-
-        fact_sheet.save()
-
-        return fact_sheet
-
-
-    def get_image(self, name='test_image.jpg'):
-        image = SimpleUploadedFile(name=name, content=open(TEST_IMAGE_PATH, 'rb').read(),
-                                        content_type='image/jpeg')
-
-        return image
-
-
-    def clean_media(self):
-        
-        if os.path.isdir(TEST_MEDIA_ROOT):
-            shutil.rmtree(TEST_MEDIA_ROOT)
-
-        os.makedirs(TEST_MEDIA_ROOT)  
-
-    
-    def tearDown(self):
-        super().tearDown()
-        self.clean_media()
-        
-
-    def setUp(self):
-        self.clean_media()
-        super().setUp()
-        self.fact_sheets = self.create_fact_sheets()
-        
-    
 class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
-
-    template_name = 'test.html'
-    title = 'Neobiota'
-    navigation_link_name = 'Neobiota link'
 
     @test_settings
     def test_create(self):
@@ -141,35 +96,72 @@ class TestFactSheetImagesUploadPath(WithFactSheets, WithMetaApp, TenantTestCase)
         filename = 'test.jpg'
 
         fact_sheet_image = FactSheetImages(
-            fact_sheet = self.fact_sheet,
+            fact_sheet = fact_sheet,
             microcontent_type = 'test_image',
             image = self.get_image(filename)
         )
 
-        path = factsheet_images_upload_path(fact_sheet_image)
+        fact_sheet_image.save()
 
-        expected_path = 'fact_sheets/content/{0}/{1}/images/{2}'.format(self.fact_sheets.id, self.fact_sheet.id,
-                                                                        filename)
+        path = factsheet_images_upload_path(fact_sheet_image, filename)
+
+        expected_path = 'fact_sheets/content/{0}/{1}/images/test_image/{2}'.format(self.fact_sheets.id,
+                                                                        fact_sheet.id, filename)
         self.assertEqual(path, expected_path)
+
+
 
 class TestFactSheetImages(WithFactSheets, TenantTestCase):
 
     @test_settings
     def test_create(self):
-        pass
+
+        fact_sheet = self.create_fact_sheet()
+
+        filename = 'test.jpg'
+
+        fact_sheet_image = FactSheetImages(
+            fact_sheet = fact_sheet,
+            microcontent_type = 'test_image',
+            image = self.get_image(filename)
+        )
+
+        fact_sheet_image.save()
+
+        fact_sheet_image.refresh_from_db()
+
+        self.assertEqual(fact_sheet_image.microcontent_type, 'test_image')
+        self.assertEqual(fact_sheet_image.fact_sheet, fact_sheet)
 
 
 
-class TestFactSheetTemplatesUploadPath(WithFactSheets, TenantTestCase):
+class TestFactSheetTemplates(WithFactSheets, WithUser, TenantTestCase):
 
     @test_settings
-    def test_path(self):
-        pass
+    def test_create_and_path(self):
 
+        filename = 'neobiota.html'
 
+        template = SimpleUploadedFile(name=filename, content=open(TEST_TEMPLATE_PATH , 'rb').read(),
+                                        content_type='text/html')
 
-class TestFactSheetTemplates(WithFactSheets, TenantTestCase):
+        user = self.create_user()
 
-    @test_settings
-    def test_create(self):
-        pass
+        fact_sheet_template = FactSheetTemplates(
+            fact_sheets = self.fact_sheets,
+            template = template,
+            uploaded_by = user,
+        )
+
+        fact_sheet_template.save()
+
+        fact_sheet_template.refresh_from_db()
+        self.assertEqual(fact_sheet_template.fact_sheets, self.fact_sheets)
+        self.assertEqual(fact_sheet_template.uploaded_by, user)
+
+        # test upload path
+
+        path = factsheet_templates_upload_path(fact_sheet_template, filename)
+        expected_path = 'fact_sheets/templates/{0}/{1}'.format(self.fact_sheets.id, filename)
+        self.assertEqual(path, expected_path)
+

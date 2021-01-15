@@ -24,8 +24,8 @@ def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
     if microcontent_category == 'microcontent':
 
         if fact_sheet.contents:
-            
-            content = fact_sheet.contents.get(microcontent_type, '')
+            fallback = ' '.join(microcontent_type.split('_'))
+            content = fact_sheet.contents.get(microcontent_type, fallback)
             if type(content) == str:
                 return mark_safe(content)
             return content
@@ -52,7 +52,7 @@ def cms_get_multiple(context, microcontent_category, microcontent_type, *args, *
     if microcontent_category == 'microcontent':
 
         if fact_sheet.contents:
-            return fact_sheet.contents.get(microcontent_type, [])
+            contents =  fact_sheet.contents.get(microcontent_type, [])
 
     elif microcontent_category in ['image', 'images']:
         images = FactSheetImages.objects.filter(fact_sheet=fact_sheet,

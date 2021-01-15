@@ -333,12 +333,13 @@ class WithFormTest:
         return licencing_data
 
 
-    def perform_form_test(self, FormClass, post_data, form_kwargs={}, file_data={}, required_fields=[]):
+    def perform_form_test(self, FormClass, post_data, form_kwargs={}, file_data={}, required_fields=[],
+                          form_args=[]):
 
         if not required_fields:
             required_fields = []
 
-        form = FormClass(**form_kwargs)
+        form = FormClass(*form_args, **form_kwargs)
 
         # support multivaluefields
         for field in form:
@@ -359,7 +360,7 @@ class WithFormTest:
             post_and_files.update(file_data.copy())
         
         testcases = powersetdic(post_and_files)
-        print('testing {0} possibilites'.format(len(testcases)))
+        print('testing {0} possibilities'.format(len(testcases)))
 
         for post in testcases:
 
@@ -374,10 +375,10 @@ class WithFormTest:
                     files[key] = file_data[key]()
 
             if files:
-                form = FormClass(data=data, files=files, **form_kwargs)
+                form = FormClass(*form_args, data=data, files=files, **form_kwargs)
                 keys = set(data.keys()).union(set(files.keys()))
             else:
-                form = FormClass(data=data, **form_kwargs)
+                form = FormClass(*form_args, data=data, **form_kwargs)
                 keys = set(data.keys())
 
             is_valid = form.is_valid()

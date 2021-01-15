@@ -6,6 +6,8 @@ TESTS_ROOT = os.path.dirname(os.path.realpath(__file__))
 TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'Leaf.jpg')
 TEST_BACKGROUND_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'app-background.jpg')
 
+TEST_TEMPLATE_PATH = os.path.join(TESTS_ROOT, 'templates', 'neobiota.html')
+
 LARGE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'test-image-2560-1440.jpg')
 
 TEST_MEDIA_ROOT = os.path.join(TESTS_ROOT, 'media_for_tests')

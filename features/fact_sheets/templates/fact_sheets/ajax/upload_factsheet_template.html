@@ -1,0 +1,42 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block above %}
+	<form method="POST" action="{% url 'upload_factsheet_template' meta_app.id fact_sheets.id %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
+{% endblock %}
+
+{% block title %}
+	{% trans 'Upload custom template' %}
+{% endblock %}
+
+{% block body %}
+	<p>
+		{% if success %}
+			<div class="alert alert-success">
+				{% trans 'Your template has been uploaded successfully.' %}
+			</div>
+		{% else %}
+			{% render_bootstrap_form form %}
+		{% endif %}
+	</p>
+{% endblock %}
+
+{% block footer %}
+	{% if success %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+	{% else %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Upload' %}</button>
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+	<script>
+		{% if success %}
+			setTimeout(function(){
+				window.location.reload();
+			}, 1500);
+		{% endif %}
+	</script>
+{% endblock %}

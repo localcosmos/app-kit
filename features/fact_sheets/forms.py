@@ -2,13 +2,17 @@ from django.conf import settings
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import FactSheetTemplates, FactSheetImages
+from django.core.validators import FileExtensionValidator
+
+from .models import FactSheetTemplates, FactSheetImages, build_factsheets_templates_upload_path
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
 from localcosmos_server.forms import LocalizeableForm
 
 from .parser import FactSheetTemplateParser
+
+import os
 
 
 class FactSheetFormCommon(LocalizeableForm):
@@ -30,8 +34,9 @@ class CreateFactSheetForm(FactSheetFormCommon):
 
     template_name = forms.ChoiceField(label=_('Template'))
 
-    def __init__(self, meta_app, **kwargs):
+    def __init__(self, meta_app, fact_sheets, **kwargs):
         self.meta_app = meta_app
+        self.fact_sheets = fact_sheets
         super().__init__(**kwargs)
 
         choices = self.get_template_choices()
@@ -40,6 +45,17 @@ class CreateFactSheetForm(FactSheetFormCommon):
 
     def get_template_choices(self):
         templates = self.meta_app.get_fact_sheet_templates()
+
+        # add custom templates
+        custom_templates = FactSheetTemplates.objects.filter(fact_sheets=self.fact_sheets)
+
+        for template in custom_templates:
+            name = template.name
+            if not name:
+                name = os.path.basename(template.template.name)
+            choice = (template.template.name, name)
+            templates.append(choice)
+            
         return templates
 
 
@@ -103,3 +119,35 @@ class UploadFactSheetImageForm(ManageContentImageFormCommon, LicencingFormMixin,
         source_image_field.widget.current_image = image_file
 
         return source_image_field
+
+
+# check if the template already exists in templates provided by the theme
+class UploadFactSheetTemplateForm(forms.Form):
+
+    template = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['html'])])
+    name = forms.CharField(required=False)
+    overwrite_existing_template = forms.BooleanField(required=False)
+
+    def __init__(self, fact_sheets, *args, **kwargs):
+        self.fact_sheets = fact_sheets
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+
+        template = self.cleaned_data.get('template')
+
+        if template:
+            overwrite = self.cleaned_data.get('overwrite_existing_template', False)
+
+            path = build_factsheets_templates_upload_path(self.fact_sheets, template.name)
+
+            exists = FactSheetTemplates.objects.filter(fact_sheets=self.fact_sheets,
+                                                       template=path).exists()
+
+            
+            if exists and not overwrite:
+                del self.cleaned_data['template']
+                raise forms.ValidationError(
+                    _('This template already exists. Did you want to overwrite the existing one?'))
+        
+        return self.cleaned_data

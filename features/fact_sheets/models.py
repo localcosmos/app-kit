@@ -38,13 +38,61 @@ class FactSheets(GenericContent):
         return LazyTaxonList()
 
 
+    def get_template(self, meta_app, template_name):
+
+        templates_base_dir = meta_app.get_fact_sheet_templates_path()
+        user_uploaded_templates_base_dir = get_user_uploaded_templates_base_dir(self)
+
+        # first, check custom templates
+        db_template = FactSheetTemplates.objects.filter(fact_sheets=self, template=template_name).first()
+
+        if db_template:
+            template_path = db_template.template.path
+
+        else:
+            template_path = os.path.join(templates_base_dir, template_name)
+
+        if not os.path.isfile(template_path):
+            msg = 'Fact Sheet Template {0} does not exist. Tried: {1}'.format(template_name, template_path)
+            
+            raise TemplateDoesNotExist(msg)
+
+
+        params = {
+            'NAME' : 'FactSheetsEngine',
+            #'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [templates_base_dir, user_uploaded_templates_base_dir],
+            'APP_DIRS': False,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.debug',
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+                ],
+                'loaders' : [
+                    'django.template.loaders.filesystem.Loader',
+                ]
+            },
+        }
+        engine = DjangoTemplates(params)
+
+        with open(template_path, encoding=engine.engine.file_charset) as fp:
+            contents = fp.read()
+
+        # use the above engine with dirs
+        template = Template(contents, engine=engine.engine)
+        
+        return template
+
+
     class Meta:
         verbose_name = _('Fact sheets')
         verbose_name_plural = _('Fact sheets')
 
 
-    
 FeatureModel = FactSheets
+
 
 '''
     Template based offline content
@@ -78,42 +126,7 @@ class FactSheet(models.Model):
 
     def get_template(self, meta_app):
 
-        templates_base_dir = meta_app.get_fact_sheet_templates_path()
-
-        template_path = os.path.join(templates_base_dir, self.template_name)
-
-        if not os.path.isfile(template_path):
-            msg = 'Fact Sheet Template {0} does not exist. Tried: {1}'.format(self.template_name,
-                                                                              template_path)
-            raise TemplateDoesNotExist(msg)
-
-
-        params = {
-            'NAME' : 'FactSheetsEngine',
-            #'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [templates_base_dir],#, user_uploaded_templates_base_dir],
-            'APP_DIRS': False,
-            'OPTIONS': {
-                'context_processors': [
-                    'django.template.context_processors.debug',
-                    'django.template.context_processors.request',
-                    'django.contrib.auth.context_processors.auth',
-                    'django.contrib.messages.context_processors.messages',
-                ],
-                'loaders' : [
-                    'django.template.loaders.filesystem.Loader',
-                ]
-            },
-        }
-        engine = DjangoTemplates(params)
-
-        with open(template_path, encoding=engine.engine.file_charset) as fp:
-            contents = fp.read()
-
-        # use the above engine with dirs
-        template = Template(contents, engine=engine.engine)
-        return template
-        
+        return self.fact_sheets.get_template(meta_app, self.template_name)
         
 
     def get_atomic_content(self, microcontent_type):
@@ -179,17 +192,28 @@ class FactSheetImages(models.Model):
     licences = GenericRelation(ContentLicenceRegistry)
 
 
-def factsheet_templates_upload_path(instance, filename):
+def get_user_uploaded_templates_base_dir(fact_sheets):
+    return os.path.join('fact_sheets', 'templates', str(fact_sheets.id))
 
-    generic_content_id = instance.fact_sheets.id
 
-    path = os.path.join('fact_sheets', 'templates', str(generic_content_id), filename)
+def build_factsheets_templates_upload_path(fact_sheets, filename):
+
+    base_dir = get_user_uploaded_templates_base_dir(fact_sheets)
+    path = os.path.join(base_dir, filename)
 
     return path
+
+
+def factsheet_templates_upload_path(instance, filename):
+    return build_factsheets_templates_upload_path(instance.fact_sheets, filename)
 
 
 class FactSheetTemplates(models.Model):
 
     fact_sheets = models.ForeignKey(FactSheets, on_delete=models.CASCADE)
     template = models.FileField(upload_to=factsheet_templates_upload_path)
+    name = models.CharField(max_length=255, null=True)
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        unique_together = ('fact_sheets', 'template')

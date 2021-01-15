@@ -16,4 +16,6 @@ urlpatterns = [
          views.DeleteFactSheetImage.as_view(), name='delete_factsheet_image'),
     path('get-factsheet-formfield/<int:fact_sheet_id>/<str:microcontent_category>/<str:microcontent_type>/',
          views.GetFactSheetFormField.as_view(), name='get_factsheet_form_field'),
+    path('upload-factsheet-template/<int:meta_app_id>/<int:fact_sheets_id>/',
+         views.UploadFactSheetTemplate.as_view(), name='upload_factsheet_template'),
 ]

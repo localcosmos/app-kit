@@ -73,7 +73,7 @@
 									</div>
 									<div class="row">
 										<div class="col-12 text-center"><br>
-											<button type="button" class="btn btn-outline-secondary add-content-button" data-target="{{ cms_object.microcontent_category }}-{{ cms_object.microcontent_type }}-container">{% blocktrans with name=cms_object.microcontent_type %}add {{ name }}{% endblocktrans %}</button>
+											<button type="button" class="btn btn-outline-secondary add-content-button" data-target="{{ cms_object.microcontent_category }}-{{ cms_object.microcontent_type }}-container">{% blocktrans with name=field.label %}add {{ name }}{% endblocktrans %}</button>
 										</div>
 									</div>
 								{% endif %}

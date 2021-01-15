@@ -10,14 +10,20 @@ from app_kit.view_mixins import MetaAppMixin
 
 from app_kit.models import MetaApp
 
-from .forms import CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetImageForm
-from .models import FactSheets, FactSheet, FactSheetImages
+from .forms import (CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetImageForm,
+                    UploadFactSheetTemplateForm)
+
+from .models import (FactSheets, FactSheet, FactSheetImages, FactSheetTemplates,
+                     build_factsheets_templates_upload_path)
+                     
 from .CMSTags import CMSTag
 
 from localcosmos_server.decorators import ajax_required
 from django.utils.decorators import method_decorator
 
 from localcosmos_server.generic_views import AjaxDeleteView
+
+import os
 
 
 class ManageFactSheets(ManageGenericContent):
@@ -52,7 +58,7 @@ class CreateFactSheet(MetaAppMixin, FormView):
     def get_form(self, form_class=None):
         if form_class is None:
             form_class = self.get_form_class()
-        return form_class(self.meta_app, **self.get_form_kwargs())
+        return form_class(self.meta_app, self.generic_content, **self.get_form_kwargs())
 
 
     def get_initial(self):
@@ -170,10 +176,14 @@ class GetFactSheetPreview(TemplateView):
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.set_factsheet(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_factsheet(self, **kwargs):
         slug = kwargs['slug']
         self.fact_sheet = FactSheet.objects.get(slug=slug)
         self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
-        return super().dispatch(request, *args, **kwargs)
 
 
     def get_context_data(self, **kwargs):
@@ -302,11 +312,14 @@ class GetFactSheetFormField(FormView):
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.set_content(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_content(self, **kwargs):
         self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
         self.microcontent_category = kwargs['microcontent_category']
         self.microcontent_type = kwargs['microcontent_type']
-            
-        return super().dispatch(request, *args, **kwargs)
     
 
     def get_context_data(self, **kwargs):
@@ -331,3 +344,54 @@ class GetFactSheetFormField(FormView):
 
         return form
 
+
+class UploadFactSheetTemplate(MetaAppMixin, FormView):
+
+    template_name = 'fact_sheets/ajax/upload_factsheet_template.html'
+    form_class = UploadFactSheetTemplateForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.fact_sheets = FactSheets.objects.get(pk=kwargs['fact_sheets_id'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        """Return an instance of the form to be used in this view."""
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.fact_sheets, **self.get_form_kwargs())
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fact_sheets'] = self.fact_sheets
+        context['success'] = False
+        return context
+        
+
+    def form_valid(self, form):
+
+        template_file = form.cleaned_data['template']
+
+        path = build_factsheets_templates_upload_path(self.fact_sheets, template_file.name)
+
+        template = FactSheetTemplates.objects.filter(fact_sheets = self.fact_sheets, template = path).first()
+
+        if template:
+            if template.template and os.path.isfile(template.template.path):
+                os.remove(template.template.path)
+        else:
+            template = FactSheetTemplates(
+                fact_sheets = self.fact_sheets,
+            )
+
+        template.template = template_file
+        template.uploaded_by = self.request.user
+        template.name = form.cleaned_data.get('name', None)
+        template.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        return self.render_to_response(context)

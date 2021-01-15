@@ -705,6 +705,15 @@ class AppReleaseBuilder(AppBuilder):
             result['warnings'].append(warning)
             
         return result
+
+
+    def validate_FactSheets(self, meta_app, fact_sheets):
+        result = {
+            'warnings' : [],
+            'errors' : [],
+        }
+
+        return result
     
 
     def validate_GenericForm(self, meta_app, generic_form):
@@ -1532,6 +1541,15 @@ class AppReleaseBuilder(AppBuilder):
                     json.dump(profile_json, f, indent=4, ensure_ascii=False)
 
 
+
+    ###############################################################################################################
+    # TAXON PROFILES
+    # - one file per taxon profile which includes all languages
+    
+    def _build_FactSheets(self, app_generic_content):
+        pass
+    
+        
     ###############################################################################################################
     # GENERIC FORMS
     # - one file for all languages
