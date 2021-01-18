@@ -29,12 +29,13 @@
 		var base_url = "{% url 'manage_taxon_profile_baseurl' meta_app.id generic_content.id %}";
 
 		var source_input = document.getElementById("id_taxon_0");
-		var uuid_input = document.getElementById("id_taxon_2");
+		var uuid_input = document.getElementById("id_taxon_3");
 
 		uuid_input.addEventListener("change", function(event){
+
 			if (source_input.value && uuid_input.value){
 				var url = base_url + source_input.value + '/' + uuid_input.value + '/';
-				window.location.replace(url);
+				window.location = url;
 			}
 		});
 	</script>
