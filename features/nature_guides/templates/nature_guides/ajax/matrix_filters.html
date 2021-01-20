@@ -17,6 +17,7 @@
 									</button>
 									<div class="dropdown-menu">
 										<a data-url="{% url 'manage_matrix_filter' field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.label %}Edit {{ name }}{% endblocktrans %}</a>
+										<a data-url="{% url 'manage_matrix_filter_restrictions' meta_node.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Manage visibility{% endblocktrans %}</a>
 										<a data-url="{% url 'delete_matrix_filter' field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.label %}Remove {{ name }}{% endblocktrans %}</a>
 			
 										<div class="dropdown-divider"></div>

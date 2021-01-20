@@ -6,7 +6,7 @@ from localcosmos_server.forms import LocalizeableForm
 
 from localcosmos_server.taxonomy.fields import TaxonField
 
-from .models import MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree
+from .models import MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction
 
 from app_kit.utils import get_appkit_taxon_search_url
 
@@ -83,6 +83,40 @@ class NatureGuideOptionsForm(GenericContentOptionsForm):
     - group links have a different form from result links
     - common form parts are in ManageNodeLinkForm
 '''
+
+class MatrixFilterValueChoicesMixin:
+
+    show_add_button = True
+
+    def get_matrix_filters(self):
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
+        return matrix_filters
+
+
+    def add_matrix_filter_value_choices(self):
+
+        # get all available matrix filters for the parent node
+        matrix_filters = self.get_matrix_filters()
+
+        for matrix_filter in matrix_filters:
+
+            field = matrix_filter.matrix_filter_type.get_node_space_definition_form_field(self.from_url,
+                                                                    show_add_button=self.show_add_button)
+
+            # not all filters return fields. eg TaxonFilter works automatically
+            if field:
+
+                field.required = False
+                             
+                field.label = matrix_filter.name
+                field.is_matrix_filter = True
+                field.matrix_filter = matrix_filter
+                self.fields[str(matrix_filter.uuid)] = field
+
+                field.initial = self.get_matrix_filter_field_initial(field)
+        
+
+    
 # node_id and parent_node_id are transmitted via url
 # locale is always primary language
 # node type is filled from the view
@@ -92,7 +126,7 @@ NODE_TYPE_CHOICES = (
 )
 
  # parent_node is fetched using view kwargs
-class ManageNodelinkForm(LocalizeableForm):
+class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     
     node_type = forms.ChoiceField(widget=forms.HiddenInput, choices=NODE_TYPE_CHOICES, label=_('Type of node'))
 
@@ -116,29 +150,14 @@ class ManageNodelinkForm(LocalizeableForm):
     def __init__(self, parent_node, *args, **kwargs):
 
         self.parent_node = parent_node
+        self.meta_node = self.parent_node.meta_node
         
         self.node = kwargs.pop('node', None)
         self.from_url = kwargs.pop('from_url')
 
         super().__init__(*args, **kwargs)
 
-        # get all available matrix filters for the parent node
-        matrix_filters = MatrixFilter.objects.filter(meta_node=parent_node.meta_node)
-
-        for matrix_filter in matrix_filters:
-            field = matrix_filter.matrix_filter_type.get_node_space_definition_form_field(self.from_url)
-
-            # not all filters return fields. eg TaxonFilter works automatically
-            if field:
-
-                field.required = False
-                             
-                field.label = matrix_filter.name
-                field.is_matrix_filter = True
-                field.matrix_filter = matrix_filter
-                self.fields[str(matrix_filter.uuid)] = field
-
-                field.initial = self.get_matrix_filter_field_initial(field)
+        self.add_matrix_filter_value_choices()
         
     # only called if field has a matrix filter assigned to field.matrix_filter
     def get_matrix_filter_field_initial(self, field):
@@ -192,6 +211,48 @@ class ManageNodelinkForm(LocalizeableForm):
         '''
         
         return cleaned_data
+
+
+
+class ManageMatrixFilterRestrictionsForm(MatrixFilterValueChoicesMixin, forms.Form):
+
+    show_add_button = False
+
+    def __init__(self, matrix_filter, meta_node, *args, **kwargs):
+
+        self.meta_node = meta_node
+        self.matrix_filter = matrix_filter
+
+        self.from_url = kwargs.pop('from_url')
+
+        super().__init__(*args, **kwargs)
+
+        self.add_matrix_filter_value_choices()
+
+
+    def get_matrix_filters(self):
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node).exclude(pk=self.matrix_filter.pk)
+        return matrix_filters
+
+
+    # only called if field has a matrix filter assigned to field.matrix_filter
+    def get_matrix_filter_field_initial(self, field):
+
+        restrictions = MatrixFilterRestriction.objects.filter(matrix_filter=field.matrix_filter)
+            
+        if restrictions:
+            
+            if field.matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter',
+                                                   'TextOnlyFilter']:
+                return restrictions.values('matrix_filter_space').all()
+            elif field.matrix_filter.filter_type in ['NumberFilter']:
+                
+                return ['%g' %(float(i)) for i in restrictions[0].encoded_space]
+            else:
+                return restrictions[0].encoded_space
+        
+        return None
+        
 
 
 class MoveNodeForm(LocalizeableForm):

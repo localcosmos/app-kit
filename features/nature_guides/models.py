@@ -1304,9 +1304,32 @@ class NodeFilterSpace(models.Model):
                 raise ValueError('{0} Node space do not support .encoded_space. Use values instead.'.format(self.matrix_filter.filter_type))
 
 
-
         super().save(*args, **kwargs)
 
 
     class Meta:
         unique_together = ('node', 'matrix_filter')
+
+
+
+'''
+    MatrixFilterRestrictions
+    - a matrix filter may depend on a value
+'''
+MATRIX_FILTER_RESTRICTION_TYPES = (
+    ('selected', 'is selected'),
+)
+class MatrixFilterRestriction(models.Model):
+
+    matrix_filter = models.ForeignKey(MatrixFilter, on_delete=models.CASCADE)
+
+    # the space the matrix_filter is restricted to
+    matrix_filter_space = models.ForeignKey(MatrixFilterSpace, on_delete=models.CASCADE)
+
+    encoded_space = models.JSONField(null=True) # for ranges [2,4] and numbers only
+    
+    restriction_type = models.CharField(max_length=50, choices=MATRIX_FILTER_RESTRICTION_TYPES)
+
+    class Meta:
+        unique_together = ('matrix_filter', 'matrix_filter_space')
+    

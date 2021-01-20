@@ -132,18 +132,48 @@ class MatrixFilterType:
 
     # the field when adding/editing a matrix node
     # display a field with min value, max value and units
-    def get_node_space_field_kwargs(self):
-        return {}
-
     def get_node_space_widget_attrs(self):
         return {}
     
-    def get_node_space_definition_form_field(self, from_url):
-        widget_attrs = self.get_node_space_widget_attrs()
-        field_kwargs = self.get_node_space_field_kwargs()
+    def get_node_space_widget_args(self):
+        return []
+    
+    def get_node_space_widget_kwargs(self, from_url, **kwargs):
+        show_add_button = kwargs.get('show_add_button', True)
+        widget_kwargs = {
+            'extra_context' : {
+                'from_url' : from_url,
+                'show_add_button' : show_add_button,
+            },
+            'attrs' : self.get_node_space_widget_attrs(),
+        }
+        return widget_kwargs
+
+
+    def get_node_space_widget(self, from_url, **kwargs):
+
+        widget_kwargs = self.get_node_space_widget_kwargs(from_url, **kwargs)
+        widget_args = self.get_node_space_widget_args()
+        widget = self.NodeSpaceDefinitionWidgetClass(*widget_args, **widget_kwargs)
+
+        return widget
+
+    
+    def get_node_space_field_kwargs(self, from_url, **kwargs):
         
-        field = self.NodeSpaceDefinitionFormFieldClass(
-            widget=self.NodeSpaceDefinitionWidgetClass(attrs=widget_attrs), **field_kwargs)
+        widget = self.get_node_space_widget(from_url, **kwargs)
+        
+        field_kwargs = {
+            'widget' : widget,
+        }
+        
+        return field_kwargs
+
+    
+    def get_node_space_definition_form_field(self, from_url, **kwargs):
+        
+        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)        
+        field = self.NodeSpaceDefinitionFormFieldClass(**field_kwargs)
 
         return field
 
@@ -274,27 +304,44 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
 
     # display a field with min value, max value and units
-    def get_node_space_field_kwargs(self):
-        field_kwargs = {
-            'subfield_kwargs': {
+    def get_node_space_field_kwargs(self, from_url, **kwargs):
+
+        field_kwargs = super().get_node_space_field_kwargs(from_url, **kwargs)
+        
+        field_kwargs.update({
+            'subfield_kwargs' : {
                 'decimal_places' : None,
             }
-        }
+        })
+    
         return field_kwargs
+
+
+    def get_node_space_widget_kwargs(self, from_url, **kwargs):
+
+        widget_kwargs = super().get_node_space_widget_kwargs(from_url, **kwargs)
+
+        if self.matrix_filter.definition:
+            unit = self.matrix_filter.definition.get('unit', '')
+        else:
+            unit = ''
+
+        widget_kwargs['extra_context'].update({
+            'unit' : unit,
+        })
+        
+        return widget_kwargs
+    
 
     def get_node_space_widget_attrs(self):
 
         if self.matrix_filter.definition:
-            unit = self.matrix_filter.definition.get('unit', '')
+            
             step =  self.matrix_filter.definition.get('step', 1)
         else:
-            unit = ''
             step = 1
             
         widget_attrs = {
-            'extra_context': {
-                'unit' : unit,
-            },
             'step' : step,
         }
         return widget_attrs
@@ -402,11 +449,13 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
-    def get_node_space_field_kwargs(self):
-        kwargs = {
+    def get_node_space_field_kwargs(self, from_url, **kwargs):
+
+        field_kwargs = super().get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs.update({
             'choices' : self._get_choices(),
-        }
-        return kwargs
+        })
+        return field_kwargs
 
     # ENCODE FORM VALUES TO ENCODED SPACES
     # A, exepcts numbers as a list [1,2,3]
@@ -590,15 +639,17 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
-    # node space definition: assign colors to a node (child)
-    def get_node_space_definition_form_field(self, from_url):
-        queryset = self.matrix_filter.get_space()
-        extra_context = {
-            'from_url' : from_url,
-        }
 
-        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
-        field = self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
+    def get_node_space_widget_args(self):
+        return [self]
+    
+    # node space definition: assign colors to a node (child)
+    def get_node_space_definition_form_field(self, from_url, **kwargs):
+        queryset = self.matrix_filter.get_space()
+
+        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
+        
+        field = self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
         return field
 
@@ -822,18 +873,19 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
+
+    def get_node_space_widget_args(self):
+        return [self]
+    
     '''
     this method needs a queryset in the space as it works with ModelMultipleChoiceField
     '''
-    def get_node_space_definition_form_field(self, from_url):
+    def get_node_space_definition_form_field(self, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
-        extra_context = {
-            'from_url' : from_url,
-        }
 
-        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
+        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
         
-        return self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
+        return self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
 
     # READ FORMS
@@ -995,15 +1047,15 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return space
 
 
-    def get_node_space_definition_form_field(self, from_url):
+    def get_node_space_widget_args(self):
+        return [self]
+    
+    def get_node_space_definition_form_field(self, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
-        extra_context = {
-            'from_url' : from_url,
-        }
 
-        widget = self.NodeSpaceDefinitionWidgetClass(self, extra_context=extra_context)
+        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
         
-        return self.NodeSpaceDefinitionFormFieldClass(queryset, widget=widget)
+        return self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
 
     # node filter space as list
@@ -1206,7 +1258,7 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         
         return initial
 
-    def get_node_space_definition_form_field(self, from_url):
+    def get_node_space_definition_form_field(self, from_url, **kwargs):
         return None
 
 

@@ -56,4 +56,7 @@ urlpatterns = [
     # getting the (cached) identification matrix
     path('get-identification-matrix/<int:meta_node_id>/',
         views.GetIdentificationMatrix.as_view(), name='get_identification_matrix'),
+    # matrix filter restrictions
+    path('manage-matrix-filter-restrictions/<int:meta_node_id>/<int:matrix_filter_id>',
+         views.ManageMatrixFilterRestrictions.as_view(), name='manage_matrix_filter_restrictions'),
 ]

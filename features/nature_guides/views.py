@@ -6,10 +6,11 @@ from django.db.models.query import QuerySet # needed for saving node matrix filt
 from django.http import JsonResponse # NodeSearch
 
 from .models import (NatureGuide, MetaNode, MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
-                     NatureGuidesTaxonTree, CrosslinkManager, NatureGuideCrosslinks, ChildrenCacheManager)
+                     NatureGuidesTaxonTree, CrosslinkManager, NatureGuideCrosslinks, ChildrenCacheManager,
+                     MatrixFilterRestriction)
 
 from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm,
-                    MoveNodeForm)
+                    MoveNodeForm, ManageMatrixFilterRestrictionsForm)
 
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
                             RangeFilterManagementForm, ColorFilterManagementForm, NumberFilterManagementForm,
@@ -1031,3 +1032,42 @@ class SearchMoveToGroup(SearchForNode):
 
     def get_on_click_url(self, meta_node):
         return None
+
+
+class ManageMatrixFilterRestrictions(FormView):
+
+    template_name = 'nature_guides/ajax/manage_matrix_filter_restrictions.html'
+    form_class = ManageMatrixFilterRestrictionsForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_node(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_node(self, **kwargs):
+        self.meta_node = MetaNode.objects.get(pk=kwargs['meta_node_id'])
+        self.matrix_filter = MatrixFilter.objects.get(pk=kwargs['matrix_filter_id'])
+
+    def get_form(self, form_class=None):
+
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.matrix_filter, self.meta_node, **self.get_form_kwargs())
+
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['from_url'] = self.request.path
+        return form_kwargs
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meta_node'] = self.meta_node
+        context['matrix_filter'] = self.matrix_filter
+        return context
+
+
+    def form_valid(self, form):
+        pass
+    
