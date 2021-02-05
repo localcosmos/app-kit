@@ -64,7 +64,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                     # a list of spaces applicable for this entry/matrix_filter combination
                     # is added to the cache
-                    child_space[node_matrix_filter_uuid] = node_matrix_filter.matrix_filter_type.get_node_filter_space_as_list(
+                    child_space[node_matrix_filter_uuid] = node_matrix_filter.matrix_filter_type.get_filter_space_as_list(
                         node_filter_space)
 
 

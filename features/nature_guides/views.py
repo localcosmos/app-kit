@@ -74,16 +74,90 @@ class ManageNatureGuide(ManageGenericContent):
         
         context['parent_crosslinks'] = NatureGuideCrosslinks.objects.filter(child=self.parent_node)
 
+        # add filters button
+        context['matrix_filter_types'] = MATRIX_FILTER_TYPES
+
         return context
 
 
+class MultipleTraitValuesIterator:
+
+    def get_existing_space_link(self, matrix_filter):
+        raise NotImplementedError('MultipleTraitValuesIterator requires a get_space method')
+
+    def get_all_existing_space_links(self, matrix_filter):
+        raise NotImplementedError('MultipleTraitValuesIterator requires a get_all_existing_space_links method')
+
+    def instantiate_new_space_link(self, matrix_filter):
+        raise NotImplementedError('MultipleTraitValuesIterator requires a instantiate_space method')
+    
+    def iterate_matrix_form_fields(self, form):
+
+        # save matrix filters if any
+        # now save all inserted trait values
+        for field in form:
+            
+            is_matrix_filter = getattr(field.field, 'is_matrix_filter', False)
+
+            if is_matrix_filter == True:
+                
+                matrix_filter_uuid = field.name
+                matrix_filter = MatrixFilter.objects.get(uuid=matrix_filter_uuid)
+                
+                # add posted, remove unposted
+                if matrix_filter_uuid in form.cleaned_data and form.cleaned_data[matrix_filter_uuid]:
+                    
+                    space_value = form.cleaned_data[matrix_filter_uuid]
+                    is_new_space_link = False
+
+                    space_link = self.get_existing_space_link(matrix_filter)
+
+                    if not space_link:
+                        is_new_space_link = True
+
+                        space_link = self.instantiate_new_space_link(matrix_filter)
+                        
+
+                    # Color, TextAndImages
+                    if isinstance(space_value, QuerySet):
+                        
+                        if is_new_space_link == True:
+                            space_link.save()
+
+                        # remove existing
+                        available_spaces = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter)
+                        
+                        for matrix_filter_space in available_spaces:
+                            if matrix_filter_space in space_value:
+                                space_link.values.add(matrix_filter_space)
+                                
+                            else:
+                                space_link.values.remove(matrix_filter_space)
+
+                    # Range, Numbers
+                    else:
+                        # the value needs to be encoded correctly by the TraitProperty Subclass
+                        encoded_space = matrix_filter.matrix_filter_type.encode_entity_form_value(space_value)
+                        
+                        space_link.encoded_space = encoded_space
+                        space_link.save()
+
+                # remove filter which uuids are not present in the posted data
+                else:
+                    existing_space_links = self.get_all_existing_space_links(matrix_filter)
+
+                    if existing_space_links.exists():
+
+                        for space_link in existing_space_links:
+                            space_link.delete()
+        
 
 '''
     Manage a Node(link)
     - also define which filters apply for an entry
     - if a taxon is added to a NatureGuideTaxonTree, the TaxonProfile referring taxon has to be updated
 '''
-class ManageNodelink(MetaAppFormLanguageMixin, FormView):
+class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, FormView):
 
     template_name = 'nature_guides/ajax/manage_nodelink_form.html'
 
@@ -209,65 +283,8 @@ class ManageNodelink(MetaAppFormLanguageMixin, FormView):
         # save nodelink, make self.nodelink available
         self.save_nodelink(form)
 
+        self.iterate_matrix_form_fields(form)
         
-        # save matrix filters if any
-        # now save all inserted trait values
-        for field in form:
-            
-            is_matrix_filter = getattr(field.field, 'is_matrix_filter', False)
-
-            if is_matrix_filter == True:
-
-                matrix_filter_uuid = field.name
-                matrix_filter = MatrixFilter.objects.get(uuid=matrix_filter_uuid)
-
-                # add posted, remove unposted
-                if matrix_filter_uuid in form.cleaned_data and form.cleaned_data[matrix_filter_uuid]:
-
-                    is_new_node_filter_space = False
-                    node_filter_space = NodeFilterSpace.objects.filter(node=self.node,
-                                                                       matrix_filter=matrix_filter).first()
-
-                    if not node_filter_space:
-                        is_new_node_filter_space = True
-                        node_filter_space = NodeFilterSpace(node=self.node, matrix_filter=matrix_filter)
-                        
-
-                    value = form.cleaned_data[matrix_filter_uuid]
-
-                    # Color, TextAndImages
-                    if isinstance(value, QuerySet):
-
-                        if is_new_node_filter_space == True:
-                            node_filter_space.save()
-                        
-                        # remove existing
-                        available_spaces = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter)
-                        
-                        for space in available_spaces:
-                            if space in value:
-                                node_filter_space.values.add(space)
-                            else:
-                                node_filter_space.values.remove(space)
-
-                    # Range, Numbers
-                    else:
-                        # the value needs to be encoded correctly by the TraitProperty Subclass
-                        encoded_space = matrix_filter.matrix_filter_type.encode_entity_form_value(value)
-                        
-                        node_filter_space.encoded_space = encoded_space
-                        node_filter_space.save()
-
-                # remove filter which uuids are not present in the posted data
-                else:
-                    node_filter_space = NodeFilterSpace.objects.filter(node=self.node,
-                                                                       matrix_filter=matrix_filter)
-
-                    if node_filter_space.exists():
-
-                        for space in node_filter_space:
-                            space.delete()
-
         # update cache, cannot be done in .models because the node is saved BEFORE the spaces are added
         cache = ChildrenCacheManager(self.node.parent.meta_node)
         cache.add_or_update_child(self.node)
@@ -279,6 +296,19 @@ class ManageNodelink(MetaAppFormLanguageMixin, FormView):
         return self.render_to_response(context)
 
 
+    # methods for iterating over selected traits
+    def get_existing_space_link(self, matrix_filter):
+        node_filter_space = NodeFilterSpace.objects.filter(node=self.node, matrix_filter=matrix_filter).first()
+        return node_filter_space
+
+    def get_all_existing_space_links(self, matrix_filter):
+        node_filter_spaces = NodeFilterSpace.objects.filter(node=self.node, matrix_filter=matrix_filter)
+        return node_filter_spaces
+
+    def instantiate_new_space_link(self, matrix_filter):
+        node_filter_space = NodeFilterSpace(node=self.node, matrix_filter=matrix_filter)
+        return node_filter_space
+
 
 '''
     DeleteNodelink has to respect the deletion of crosslinks
@@ -288,7 +318,6 @@ class ManageNodelink(MetaAppFormLanguageMixin, FormView):
 class DeleteNodelink(AjaxDeleteView):
 
     template_name = 'nature_guides/ajax/delete_nodelink.html'
-
 
     def dispatch(self, request, *args, **kwargs):
         self.set_node(**kwargs)
@@ -511,7 +540,6 @@ class StoreNodeOrder(StoreObjectOrder):
 class LoadNodeManagementMenu(MetaAppMixin, TemplateView):
 
     template_name = 'nature_guides/ajax/node_management_menu.html'
-
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
@@ -942,7 +970,7 @@ class NodeAnalysis(MetaAppMixin, TemplateView):
 
 '''
     GetIdentificationMatrix
-    - granular space is a list of length n
+    - space is a list of length n, except for range space
     - range space is a list of length 2
 '''
 class GetIdentificationMatrix(TemplateView):
@@ -953,7 +981,10 @@ class GetIdentificationMatrix(TemplateView):
         self.meta_node = MetaNode.objects.get(pk=kwargs['meta_node_id'])
         return super().dispatch(request, *args, **kwargs)
 
-    def get(self, request, *args, **kwargs):        
+    def get(self, request, *args, **kwargs):
+        if not self.meta_node.children_cache or 'matrix_filters' not in self.meta_node.children_cache:
+            manager = ChildrenCacheManager(self.meta_node)
+            manager.rebuild_cache()
         return JsonResponse(self.meta_node.children_cache, safe=False)
 
 
@@ -1034,7 +1065,7 @@ class SearchMoveToGroup(SearchForNode):
         return None
 
 
-class ManageMatrixFilterRestrictions(FormView):
+class ManageMatrixFilterRestrictions(MultipleTraitValuesIterator, FormView):
 
     template_name = 'nature_guides/ajax/manage_matrix_filter_restrictions.html'
     form_class = ManageMatrixFilterRestrictionsForm
@@ -1065,9 +1096,41 @@ class ManageMatrixFilterRestrictions(FormView):
         context = super().get_context_data(**kwargs)
         context['meta_node'] = self.meta_node
         context['matrix_filter'] = self.matrix_filter
+        context['success'] = False
         return context
 
 
     def form_valid(self, form):
-        pass
+        self.iterate_matrix_form_fields(form)
+
+        cache_manager = ChildrenCacheManager(self.meta_node)
+        cache_manager.update_matrix_filter_restrictions(self.matrix_filter)
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+        
+        return self.render_to_response(context)
     
+
+    # methods for iterating over selected traits
+    # use self.matrix_filter, which is the restricted filter
+    # the passed 'matrix_filter' argument is the filter which restricts self.matrix_filter
+    def get_existing_space_link(self, restrictive_matrix_filter):
+        restriction_space = MatrixFilterRestriction.objects.filter(restricted_matrix_filter=self.matrix_filter,
+                                                restrictive_matrix_filter=restrictive_matrix_filter).first()
+        
+        return restriction_space
+
+
+    def get_all_existing_space_links(self, restrictive_matrix_filter):
+        restriction_spaces = MatrixFilterRestriction.objects.filter(restricted_matrix_filter=self.matrix_filter,
+                    restrictive_matrix_filter=restrictive_matrix_filter)
+        
+        return restriction_spaces
+
+        
+    def instantiate_new_space_link(self, restrictive_matrix_filter):
+        restriction_space = MatrixFilterRestriction(restricted_matrix_filter=self.matrix_filter,
+                                                    restrictive_matrix_filter=restrictive_matrix_filter)
+        return restriction_space

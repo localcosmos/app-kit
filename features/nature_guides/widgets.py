@@ -1,5 +1,5 @@
 from django import forms
-from django.forms.widgets import Widget, MultiWidget, SelectMultiple, RadioSelect
+from django.forms.widgets import Widget, MultiWidget, SelectMultiple, RadioSelect, CheckboxSelectMultiple
 from django.contrib.contenttypes.models import ContentType
 
 from django.template import loader, Context
@@ -44,15 +44,26 @@ class ChoiceExtraKwargsMixin:
         return option
 
 
+class WidgetExtraContextMixin:
+
+    def __init__(self, *args, **kwargs):
+        self.extra_context = kwargs.pop('extra_context', {})
+        super().__init__(*args, **kwargs)
+
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context.update(self.extra_context)
+        return context
+        
 '''
     Although the e.g. DecimalField min_value and max_value are set, for rendering a slider,
     the widget needs those values as well -> supply the MatrixFilter instance for the widget
 '''
-class MatrixFilterMixin:
+class MatrixFilterMixin(WidgetExtraContextMixin):
 
     def __init__(self, matrix_filter, *args, **kwargs):
         self.matrix_filter = matrix_filter
-        self.extra_context = kwargs.pop('extra_context', {})
         super().__init__(*args, **kwargs)
 
     def get_context(self, name, value, attrs):
@@ -63,8 +74,6 @@ class MatrixFilterMixin:
             raise ValueError('MatrixFilterMixin needs the matrix_filter attribute')
         
         context['matrix_filter'] = self.matrix_filter
-
-        context.update(self.extra_context)
 
         return context
     
@@ -96,26 +105,17 @@ class RangePropertyWidget(MatrixFilterMixin, Widget):
 ''' NODE DEFINITION
     - Widgets for adding new Nodes to a matrixkey
 '''
-class DefineRangeSpaceWidget(MultiWidget):
+class DefineRangeSpaceWidget(WidgetExtraContextMixin, MultiWidget):
 
     template_name = 'nature_guides/widgets/define_range_widget.html'
 
-    def __init__(self, attrs={}):
+    def __init__(self, attrs={}, **kwargs):
 
-        self.extra_context = attrs.pop('extra_context', {})
-        
         widgets = (
             forms.NumberInput(attrs=attrs),
             forms.NumberInput(attrs=attrs),
         )
         super().__init__(widgets, attrs)
-
-
-    def get_context(self, name, value, attrs):
-        context = super().get_context(name, value, attrs)
-        context.update(self.extra_context)
-
-        return context
 
 
     def decompress(self, value):
@@ -143,6 +143,10 @@ class DefineTextDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, Sel
 
 class DefineColorsWidget(MatrixFilterMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/define_colors_widget.html'
+    
+
+class DefineNumbersWidget(WidgetExtraContextMixin, CheckboxSelectMultiple):
+    template_name = 'nature_guides/widgets/define_numbers_widget.html'
 
     
 ''' END-USER INPUT
@@ -182,3 +186,41 @@ class SliderSelectMultipleTaxonfilters(MatrixFilterMixin, ChoiceExtraKwargsMixin
 
 class SliderRadioSelectTaxonfilter(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_taxonfilters.html'
+
+
+'''
+    END USER INPUT, no slider
+'''
+class SelectMultipleColors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/select_multiple_colors.html'
+
+class RadioSelectColor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/select_multiple_colors.html'
+
+
+class SelectMultipleDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
+
+class RadioSelectDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/select_multiple_patterns.html'
+
+
+class SelectMultipleTextDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/select_multiple_texts.html'
+
+class RadioSelectTextDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/select_multiple_texts.html'
+
+
+class SelectMultipleNumbers(MatrixFilterMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/select_multiple_numbers.html'
+
+class RadioSelectNumber(MatrixFilterMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/select_multiple_numbers.html'
+
+
+class SelectMultipleTaxonfilters(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+    template_name = 'nature_guides/widgets/select_multiple_taxonfilters.html'
+
+class RadioSelectTaxonfilter(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+    template_name = 'nature_guides/widgets/select_multiple_taxonfilters.html'

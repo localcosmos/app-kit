@@ -16,14 +16,15 @@ from app_kit.models import MetaAppGenericContent, ContentImage
 from app_kit.features.nature_guides.views import (ManageNatureGuide, ManageNodelink, DeleteNodelink,
         AddExistingNodes, LoadKeyNodes, StoreNodeOrder, LoadNodeManagementMenu, DeleteMatrixFilter,
         SearchForNode, LoadMatrixFilters, ManageMatrixFilter, ManageMatrixFilterSpace, DeleteMatrixFilterSpace,
-        NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup)
+        NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup,
+        ManageMatrixFilterRestrictions)
 
 
 from app_kit.features.nature_guides.models import (NatureGuide, NatureGuidesTaxonTree, NatureGuideCrosslinks,
-                                        MetaNode, MatrixFilter, NodeFilterSpace, MatrixFilterSpace)
+                MetaNode, MatrixFilter, NodeFilterSpace, MatrixFilterSpace, MatrixFilterRestriction)
 
 from app_kit.features.nature_guides.forms import (NatureGuideOptionsForm, SearchForNodeForm, MoveNodeForm,
-                                                  IdentificationMatrixForm, ManageNodelinkForm)
+                        IdentificationMatrixForm, ManageNodelinkForm, ManageMatrixFilterRestrictionsForm)
 
 
 from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
@@ -35,6 +36,8 @@ from content_licencing.models import ContentLicenceRegistry
 
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
+
+from app_kit.multi_tenancy.models import TenantUserRole
 
 
 import json
@@ -2465,3 +2468,367 @@ class TestSearchMoveToGroup(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMixi
         queryset = view.get_queryset(view.request, **view.kwargs)
 
         self.assertEqual(len(queryset), 2)
+
+
+
+class TestManageMatrixFilterRestrictionsCreate(WithMatrixFilters, WithNatureGuideLink, WithAjaxAdminOnly,
+            ViewTestMixin, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'manage_matrix_filter_restrictions'
+    view_class = ManageMatrixFilterRestrictions
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.nature_guide = self.generic_content
+        self.matrix_filters = self.create_all_matrix_filters(self.start_node)
+        self.meta_node = self.start_node.meta_node
+        
+
+
+    def get_url_kwargs(self, matrix_filter):
+
+        url_kwargs = {
+            'meta_node_id' : self.meta_node.id,
+            'matrix_filter_id' : matrix_filter.id,
+        }
+
+        return url_kwargs
+
+
+    def get_url(self, matrix_filter):
+        url_kwargs = self.get_url_kwargs(matrix_filter)
+        url = reverse(self.url_name, kwargs=url_kwargs)
+        
+        return url
+    
+
+    def get_request(self, matrix_filter):
+        factory = RequestFactory()
+        url = self.get_url(matrix_filter)
+
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+        request = factory.get(url, **url_kwargs)
+        
+        request.user = self.user
+        request.session = self.client.session
+        request.tenant = self.tenant
+
+        return request
+
+
+    def get_view(self, matrix_filter):
+
+        request = self.get_request(matrix_filter)
+
+        view = self.view_class()        
+        view.request = request
+        view.kwargs = self.get_url_kwargs(matrix_filter)
+
+        return view
+
+    # matrix filters that theoretically can become a restrictivee filter for a given filter
+    def get_restrictive_matrix_filters(self, restricted_matrix_filter):
+
+        restrictive_matrix_filters = MatrixFilter.objects.all().exclude(
+            pk=restricted_matrix_filter.pk).exclude(filter_type='TaxonFilter')
+
+        return restrictive_matrix_filters
+
+
+    @test_settings
+    def test_dispatch(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+            
+            role = TenantUserRole.objects.filter(user=self.user, tenant=self.tenant).first()
+            if role:
+                role.delete()
+
+            url = self.get_url(restricted_matrix_filter)
+            
+            url_kwargs = {
+                'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+            }
+
+            response = self.tenant_client.get(url, **url_kwargs)
+            self.assertEqual(response.status_code, 403)
+
+            # test with admin role
+            self.make_user_tenant_admin(self.user, self.tenant)
+            response = self.tenant_client.get(url, **url_kwargs)
+            self.assertEqual(response.status_code, 200)
+
+
+    @test_settings
+    def test_get(self):
+
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            url = self.get_url(restricted_matrix_filter)
+
+            get_kwargs = {
+                'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+            }
+
+            response = self.tenant_client.get(url, **get_kwargs)
+            self.assertEqual(response.status_code, 200)
+
+
+    @test_settings
+    def test_set_node(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+            self.assertEqual(view.meta_node, self.meta_node)
+            self.assertEqual(view.matrix_filter, restricted_matrix_filter)
+            
+
+    @test_settings
+    def test_get_form(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+            form = view.get_form()
+            self.assertEqual(form.__class__, ManageMatrixFilterRestrictionsForm)
+            
+
+    @test_settings
+    def test_get_form_kwargs(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            form_kwargs = view.get_form_kwargs()
+            self.assertEqual(form_kwargs['from_url'], view.request.path)
+            
+
+    @test_settings
+    def test_get_context_data(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+            
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            context = view.get_context_data(**view.kwargs)
+            self.assertEqual(context['meta_node'], self.meta_node)
+            self.assertEqual(context['matrix_filter'], restricted_matrix_filter)
+            self.assertFalse(context['success'])
+            
+
+    @test_settings
+    def test_get_existing_space_link(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+                space = view.get_existing_space_link(restrictive_matrix_filter)
+                self.assertEqual(space, None)
+            
+
+    @test_settings
+    def test_get_all_existing_space_links(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+                spaces = view.get_all_existing_space_links(restrictive_matrix_filter)
+                self.assertEqual(list(spaces), [])
+
+
+    @test_settings
+    def test_instantiate_new_space_link(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+                space = view.instantiate_new_space_link(restrictive_matrix_filter)
+                self.assertEqual(space.restricted_matrix_filter, restricted_matrix_filter)
+                self.assertEqual(space.restrictive_matrix_filter, restrictive_matrix_filter)
+
+
+    def check_restriction_existence(self, created_restriction):
+
+        self.assertFalse(created_restriction.exists())
+        
+
+    @test_settings
+    def test_form_valid(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+
+                created_restriction = MatrixFilterRestriction.objects.filter(
+                    restricted_matrix_filter=restricted_matrix_filter,
+                    restrictive_matrix_filter=restrictive_matrix_filter)
+
+                self.check_restriction_existence(created_restriction)
+
+                view = self.get_view(restricted_matrix_filter)
+                view.set_node(**view.kwargs)
+
+                post_data = {}
+                matrix_filter_post_data = self.get_matrix_filter_post_data(restrictive_matrix_filter)
+                post_data.update(matrix_filter_post_data)
+
+                form = view.form_class(restricted_matrix_filter, self.meta_node, data=post_data, from_url='/')
+
+                form.is_valid()
+                self.assertEqual(form.errors, {})
+
+                response = view.form_valid(form)
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context_data['success'])
+
+                # check if restrictoin exists, check cache
+                self.assertTrue(created_restriction.exists())
+
+                created_restriction = created_restriction.first()
+
+                if restrictive_matrix_filter.filter_type == 'RangeFilter':
+                    self.assertEqual(created_restriction.encoded_space, [0.5, 4])
+                    
+                elif restrictive_matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+                    self.assertEqual(created_restriction.values.count(), 1)
+
+                elif restrictive_matrix_filter.filter_type == 'ColorFilter':
+                    self.assertEqual(created_restriction.values.count(), 1)
+
+                elif restrictive_matrix_filter.filter_type == 'NumberFilter':
+                    self.assertEqual(created_restriction.encoded_space, [2.0, 3.0])
+
+                elif restrictive_matrix_filter.filter_type == 'TextOnlyFilter':
+                    self.assertEqual(created_restriction.values.count(), 1)
+
+                else:
+                    raise ValueError('Invalid filter: {0}'.format(matrix_filter.filter_type))
+
+                
+
+class TestManageMatrixFilterRestrictionsManage(TestManageMatrixFilterRestrictionsCreate):
+
+    url_name = 'manage_matrix_filter_restrictions'
+    view_class = ManageMatrixFilterRestrictions
+
+
+    def setUp(self):
+        super().setUp()
+
+        for matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = MatrixFilter.objects.all().exclude(pk=matrix_filter.pk).exclude(
+                filter_type='TaxonFilter')
+
+            for restrictive_filter in restrictive_matrix_filters:
+                restriction = MatrixFilterRestriction(
+                    restricted_matrix_filter = matrix_filter,
+                    restrictive_matrix_filter = restrictive_filter,
+                )
+
+                filter_type = restrictive_filter.filter_type
+
+                if filter_type == 'RangeFilter':
+                    restriction.encoded_space = [0.6, 3]
+                    restriction.save()
+                    
+                elif filter_type == 'NumberFilter':
+                    restriction.encoded_space = [3.0]
+                    restriction.save()
+
+                else:
+                    space = restrictive_filter.get_space().first()
+                    restriction.save()
+                    restriction.values.add(space)
+
+
+    def check_restriction_existence(self, created_restriction):
+        pass
+
+
+    @test_settings
+    def test_instantiate_new_space_link(self):
+        pass
+    
+
+    @test_settings
+    def test_get_existing_space_link(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+                space = view.get_existing_space_link(restrictive_matrix_filter)
+
+                filter_type = restrictive_matrix_filter.filter_type
+                
+                if filter_type == 'RangeFilter':
+                    self.assertEqual(space.encoded_space, [0.6, 3])
+                    
+                elif filter_type == 'NumberFilter':
+                    self.assertEqual(space.encoded_space, [3.0])
+                    
+                else:
+                    expected_space = restrictive_matrix_filter.get_space().first()
+                    self.assertEqual(space.values.all().first(), expected_space)
+            
+
+    @test_settings
+    def test_get_all_existing_space_links(self):
+
+        for restricted_matrix_filter in self.matrix_filters:
+
+            restrictive_matrix_filters = self.get_restrictive_matrix_filters(restricted_matrix_filter)
+
+            view = self.get_view(restricted_matrix_filter)
+            view.set_node(**view.kwargs)
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+                spaces = view.get_all_existing_space_links(restrictive_matrix_filter)
+
+                filter_type = restrictive_matrix_filter.filter_type
+
+                if filter_type == 'RangeFilter':
+                    self.assertEqual(spaces[0].encoded_space, [0.6, 3])
+                    
+                elif filter_type == 'NumberFilter':
+                    self.assertEqual(spaces[0].encoded_space, [3.0])
+                    
+                else:
+                    self.assertEqual(spaces.values().all().count(), 1)
+                    
+            

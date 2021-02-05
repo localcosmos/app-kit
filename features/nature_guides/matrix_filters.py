@@ -8,11 +8,15 @@ from django.contrib.contenttypes.models import ContentType
 from .fields import RangeSpaceField, ObjectLabelModelMultipleChoiceField
 
 from .widgets import (RangePropertyWidget, DefineRangeSpaceWidget, DefineDescriptionWidget, DefineColorsWidget,
+                      DefineNumbersWidget,
                       SliderSelectMultipleColors, SliderSelectMultipleDescriptors, SliderRadioSelectDescriptor,
                       SliderRadioSelectColor, SliderSelectMultipleNumbers, SliderRadioSelectNumber,
                       SliderRadioSelectTaxonfilter, SliderSelectMultipleTaxonfilters,
                       SliderSelectMultipleTextDescriptors, SliderRadioSelectTextDescriptor,
-                      DefineTextDescriptionWidget)
+                      DefineTextDescriptionWidget,
+                      SelectMultipleColors, RadioSelectColor, SelectMultipleDescriptors, RadioSelectDescriptor,
+                      SelectMultipleTextDescriptors, RadioSelectTextDescriptor, SelectMultipleNumbers,
+                      RadioSelectNumber, SelectMultipleTaxonfilters, RadioSelectTaxonfilter)
 
 from decimal import Decimal
 
@@ -178,9 +182,9 @@ class MatrixFilterType:
         return field
 
     # in the ChildrenJsonCache, the (child)node's matrix filter values are stored as a list of values
-    # receives a NodeFilterSpace instance
-    def get_node_filter_space_as_list(self, node_filter_space):
-        raise NotImplementedError('MatrixFilterType subclasses need a get_node_filter_space_as_list')
+    # receives a NodeFilterSpace instance or a MatrixFilterRestriction instance
+    def get_filter_space_as_list(self, filter_space):
+        raise NotImplementedError('MatrixFilterType subclasses need a get_filter_space_as_list')
     
     ### FORM DATA -> MatrixFilter instance
     # store definition and encoded_space
@@ -372,10 +376,10 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return space_initial
 
 
-    # node filter space as list
-    def get_node_filter_space_as_list(self, node_filter_space):
+    # node/restriction filter space as list
+    def get_filter_space_as_list(self, filter_space):
         # range filter stores [min,max] as encoded space
-        return node_filter_space.encoded_space
+        return filter_space.encoded_space
 
 
     def validate_encoded_space(self, space):
@@ -412,11 +416,11 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidgetClass = SliderRadioSelectNumber
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleNumbers
+    MatrixSingleChoiceWidgetClass = RadioSelectNumber
+    MatrixMultipleChoiceWidgetClass = SelectMultipleNumbers
     
     NodeSpaceDefinitionFormFieldClass = forms.MultipleChoiceField
-    NodeSpaceDefinitionWidgetClass = forms.CheckboxSelectMultiple
+    NodeSpaceDefinitionWidgetClass = DefineNumbersWidget
 
     def get_default_definition(self):
         definition = {
@@ -448,6 +452,7 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         widget = self.get_matrix_form_field_widget()
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
+    
 
     def get_node_space_field_kwargs(self, from_url, **kwargs):
 
@@ -480,10 +485,10 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return space_initial
 
 
-    # node filter space as list
-    def get_node_filter_space_as_list(self, node_filter_space):
+    # node/restriction filter space as list
+    def get_filter_space_as_list(self, filter_space):
         # number filter stores [x,y,z] as encoded space
-        return node_filter_space.encoded_space
+        return filter_space.encoded_space
 
 
     def validate_encoded_space(self, space):
@@ -520,8 +525,8 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidgetClass = SliderRadioSelectColor
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleColors
+    MatrixSingleChoiceWidgetClass = RadioSelectColor
+    MatrixMultipleChoiceWidgetClass = SelectMultipleColors
     
     NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeSpaceDefinitionWidgetClass = DefineColorsWidget
@@ -742,13 +747,13 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return space
 
 
-    # node filter space as list
-    def get_node_filter_space_as_list(self, node_filter_space):
+    # node/restriction filter space as list
+    def get_filter_space_as_list(self, filter_space):
         # return a list of 4-tuples
         space_list = []
 
-        for node_space in node_filter_space.values.all():
-            space_list.append(node_space.encoded_space)
+        for space in filter_space.values.all():
+            space_list.append(space.encoded_space)
             
         return space_list
 
@@ -836,8 +841,8 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidgetClass = SliderRadioSelectDescriptor
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleDescriptors
+    MatrixSingleChoiceWidgetClass = RadioSelectDescriptor
+    MatrixMultipleChoiceWidgetClass = SelectMultipleDescriptors
     
     NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeSpaceDefinitionWidgetClass = DefineDescriptionWidget
@@ -929,9 +934,9 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
 
     # node filter space as list
-    def get_node_filter_space_as_list(self, node_filter_space):
+    def get_filter_space_as_list(self, filter_space):
         space_list = []
-        for space in node_filter_space.values.all():
+        for space in filter_space.values.all():
             space_list.append(space.encoded_space)
         return space_list
 
@@ -960,8 +965,8 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidgetClass = SliderRadioSelectTextDescriptor
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTextDescriptors
+    MatrixSingleChoiceWidgetClass = RadioSelectTextDescriptor
+    MatrixMultipleChoiceWidgetClass = SelectMultipleTextDescriptors
     
     NodeSpaceDefinitionFormFieldClass = ObjectLabelModelMultipleChoiceField
     NodeSpaceDefinitionWidgetClass = DefineTextDescriptionWidget
@@ -991,13 +996,6 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
                                          choices=choices, required=False)
 
 
-    # in the ChildrenJsonCache, the (child)node's matrix filter values are stored as a list of values
-    # receives a NodeFilterSpace instance
-    def get_node_filter_space_as_list(self, node_filter_space):
-        space_list = []
-        for space in node_filter_space.values.all():
-            space_list.append(space.encoded_space)
-        return space_list
     
     ### FORM DATA -> MatrixFilter instance
     # store definition and encoded_space
@@ -1050,6 +1048,7 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
     def get_node_space_widget_args(self):
         return [self]
     
+    
     def get_node_space_definition_form_field(self, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
 
@@ -1059,9 +1058,9 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
 
     # node filter space as list
-    def get_node_filter_space_as_list(self, node_filter_space):
+    def get_filter_space_as_list(self, filter_space):
         space_list = []
-        for space in node_filter_space.values.all():
+        for space in filter_space.values.all():
             space_list.append(space.encoded_space)
         return space_list
     
@@ -1115,8 +1114,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
 
-    MatrixSingleChoiceWidgetClass = SliderRadioSelectTaxonfilter
-    MatrixMultipleChoiceWidgetClass = SliderSelectMultipleTaxonfilters
+    MatrixSingleChoiceWidgetClass = RadioSelectTaxonfilter
+    MatrixMultipleChoiceWidgetClass = SelectMultipleTaxonfilters
     
     NodeSpaceDefinitionFormFieldClass = None # works automatically, no definition required
     NodeSpaceDefinitionFormFieldWidget = None # works automatically, no definition required
@@ -1258,11 +1257,20 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         
         return initial
 
+    # no node space definition for taxon filter
     def get_node_space_definition_form_field(self, from_url, **kwargs):
         return None
 
+    def get_node_space_widget_kwargs(self, from_url, **kwargs):
+        return {}
 
-    def get_node_filter_space_as_list(self, node_filter_space):
+    def get_node_space_widget(self, from_url, **kwargs):
+        return None
+
+    def get_node_space_field_kwargs(self, from_url, **kwargs):
+        return {}
+
+    def get_filter_space_as_list(self, filter_space):
         raise NotImplementedError('TaxonFilter does not support encoded_space')
 
     # taxon json

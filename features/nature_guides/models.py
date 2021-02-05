@@ -217,6 +217,13 @@ class ChildrenCacheManager:
         matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
         for matrix_filter in matrix_filters:
             data = self.add_matrix_filter_to_cache(data, matrix_filter)
+
+            # add all restrictions
+            restrictions = MatrixFilterRestriction.objects.filter(restricted_matrix_filter=matrix_filter)
+
+            for restriction in restrictions:
+                data = self.add_matrix_filter_restriction_to_cache(data, restriction)
+            
         
         # get all children of this meta_node, including crosslinks
         children = NatureGuidesTaxonTree.objects.filter(parent__meta_node=self.meta_node)
@@ -244,7 +251,7 @@ class ChildrenCacheManager:
             
             data = {
                 'items' : [],
-                'matrix_filter_types' : {},
+                'matrix_filters' : {},
             }
         
         return data
@@ -268,7 +275,7 @@ class ChildrenCacheManager:
 
             # a list of spaces applicable for this entry/matrix_filter combination
             # is added to the cache
-            space[matrix_filter_uuid] = matrix_filter.matrix_filter_type.get_node_filter_space_as_list(
+            space[matrix_filter_uuid] = matrix_filter.matrix_filter_type.get_filter_space_as_list(
                 node_filter_space)
 
 
@@ -346,11 +353,14 @@ class ChildrenCacheManager:
 
     '''
     MATRIX FILTER MANAGEMENT
-    - MatrixFilterSpaces are not stored in the cache, it is only a uuid -> type map
+    - MatrixFilterSpaces are stored in the cache with minimal required information
     '''
     def add_matrix_filter_to_cache(self, data, matrix_filter):
 
-        data['matrix_filter_types'][str(matrix_filter.uuid)] = matrix_filter.filter_type
+
+        data['matrix_filters'][str(matrix_filter.uuid)] = {
+            'type' : matrix_filter.filter_type,
+        }
         
         return data
         
@@ -369,12 +379,58 @@ class ChildrenCacheManager:
 
         matrix_filter_uuid = str(matrix_filter.uuid)
 
-        if matrix_filter_uuid in data['matrix_filter_types']:
-            del data['matrix_filter_types'][matrix_filter_uuid]
+        if matrix_filter_uuid in data['matrix_filters']:
+            del data['matrix_filters'][matrix_filter_uuid]
 
         self.meta_node.children_cache = data
         self.meta_node.save()
+        
 
+    def add_matrix_filter_restriction_to_cache(self, data, matrix_filter_restriction):
+
+        restricted_matrix_filter = matrix_filter_restriction.restricted_matrix_filter
+        restrictive_matrix_filter = matrix_filter_restriction.restrictive_matrix_filter
+
+        restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
+        restricted_matrix_filter_uuid = str(restricted_matrix_filter.uuid)
+
+        space = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
+            matrix_filter_restriction)
+        
+        if restricted_matrix_filter_uuid not in data['matrix_filters']:
+            data = self.add_matrix_filter_to_cache(data, restricted_matrix_filter)
+
+        if 'restrictions' not in data['matrix_filters'][restricted_matrix_filter_uuid]:
+            data['matrix_filters'][restricted_matrix_filter_uuid]['restrictions'] = {}
+
+        data['matrix_filters'][restricted_matrix_filter_uuid]['restrictions'][restrictive_matrix_filter_uuid] = space
+    
+
+        return data
+    
+        
+    def update_matrix_filter_restrictions(self, matrix_filter):
+
+        data = self.get_data()
+        data = self.add_matrix_filter_to_cache(data, matrix_filter)
+
+        matrix_filter_uuid = str(matrix_filter.uuid)
+
+        restrictions = MatrixFilterRestriction.objects.filter(restricted_matrix_filter=matrix_filter)
+
+        '''
+        {
+            '<matrix_filter_uuid>' : <space>,
+        }
+        '''
+
+        for restriction in restrictions:
+            data = self.add_matrix_filter_restriction_to_cache(data, restriction)
+        
+        self.meta_node.children_cache = data
+        self.meta_node.save()
+            
+        
 
     '''
     MATRIX FILTER SPACE MANAGEMENT
@@ -1144,7 +1200,12 @@ class MatrixFilter(models.Model):
         cache.remove_matrix_filter(self)
         super().delete()
 
-
+    @property
+    def is_restricted(self):
+        if self.pk:
+            return MatrixFilterRestriction.objects.filter(restricted_matrix_filter=self).exists()
+        return False
+    
     def __str__(self):
         return '{0}'.format(self.name)
     
@@ -1316,20 +1377,15 @@ class NodeFilterSpace(models.Model):
     MatrixFilterRestrictions
     - a matrix filter may depend on a value
 '''
-MATRIX_FILTER_RESTRICTION_TYPES = (
-    ('selected', 'is selected'),
-)
 class MatrixFilterRestriction(models.Model):
 
-    matrix_filter = models.ForeignKey(MatrixFilter, on_delete=models.CASCADE)
+    # the matrix filter which is restricted
+    restricted_matrix_filter = models.ForeignKey(MatrixFilter, on_delete=models.CASCADE,
+                                                 related_name='restricted_matrix_filter')
 
-    # the space the matrix_filter is restricted to
-    matrix_filter_space = models.ForeignKey(MatrixFilterSpace, on_delete=models.CASCADE)
+    # the filter which restricts restricted_matrix_filter
+    restrictive_matrix_filter = models.ForeignKey(MatrixFilter, on_delete=models.CASCADE)
 
+    values = models.ManyToManyField(MatrixFilterSpace)
     encoded_space = models.JSONField(null=True) # for ranges [2,4] and numbers only
-    
-    restriction_type = models.CharField(max_length=50, choices=MATRIX_FILTER_RESTRICTION_TYPES)
-
-    class Meta:
-        unique_together = ('matrix_filter', 'matrix_filter_space')
     

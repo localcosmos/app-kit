@@ -41,4 +41,12 @@
 	{% include 'localcosmos_server/modals/footers/save_close.html' %}
 {% endblock %}
 
+{% block script %}
+	{% if success is True %}
+		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+		<script>
+			$("#LargeModal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}
 

@@ -584,13 +584,25 @@ a.xhr {
 	font-size: 1.5rem;
 }
 
-.natureguide-item > div:last-child{
+.natureguide-item > div:last-child {
 	padding-left: 0.5rem;
 }
 
 .natureguide-item .action-buttons img {
 	width: 4rem;
 	height: auto;
+}
+
+.nature-guide-node .node-name {
+	font-size: 1.2rem;
+}
+
+.nature-guide-node .node-content {
+	height: 100%;
+}
+
+.nature-guide-node .squareimage {
+	border-radius: .5em;
 }
 
 
@@ -610,7 +622,7 @@ input[type="range"] {
 	background: #F0F0F0;
 }
 
-input[type=range]::-moz-range-track {
+input[type="range"]::-moz-range-track {
 	background-color: black;
 }
 
@@ -640,6 +652,11 @@ input[type="color"] {
 
 .node-space-definition-item > label {
 	width: 100%;
+}
+
+.node-space-definition-item.numberfilter > label .square {
+	background: rgba(224,224,224,0.8);
+	border-radius: .5em;
 }
 
 /* MAPS */
@@ -693,6 +710,93 @@ input[type="color"] {
   fill: currentColor;
 }
 
+/* GRID CHOICES */
+.grid-choices {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.grid-choices input[type='checkbox'], .grid-choices input[type='radio'] {
+	opacity: 0;
+	position: absolute;
+}
+
+.grid-choices input[type='checkbox'] + label, .grid-choices input[type='radio'] + label {
+	display: block;
+	/*margin: 0.3rem;*/
+}
+
+.grid-choices input[type='checkbox']:checked + label, .grid-choices input[type='radio']:checked + label {
+	background-color: rgb(92,184,92);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.grid-choices label {
+	cursor: pointer;
+	white-space: normal;
+	font-size: 0.85rem;
+}
+
+
+.grid-choices > div {
+	position: relative;
+	margin-right: 1rem;
+}
+
+.grid-choice {
+	width: 7rem;
+	padding: 0.5rem;
+	background: rgba(220,220,220,1);
+	border-radius: .5em;
+}
+
+
+.grid-choices.small .grid-choice {
+	width: 6rem;
+}
+
+.grid-choices.large .grid-choice {
+	width: 9rem;
+}
+
+.grid-choices.xlarge .grid-choice {
+	width: 11rem;
+}
+
+.grid-choices .square {
+	width: 6rem;
+	height: 6rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: .5em;
+}
+
+.grid-choices .square .custom {
+	color: #ffffff;
+	font-size: 1.8rem;
+}
+
+.grid-choices.small .square {
+	width: 5rem;
+	height: 5rem;
+}
+
+.grid-choices.large .square {
+	width: 8rem;
+	height: 8rem;
+}
+
+
+.grid-choices .text-only {
+	background-color: #ffffff;
+	padding: .3rem;
+	border-radius: .5em;
+}
+
+
 /*
 #Modal {
     z-index: 1052 !important;
@@ -700,6 +804,11 @@ input[type="color"] {
 .modal-backdrop.show:nth-of-type(2n+1) {
     z-index: 1051 !important;
 }*/
+
+.node-arrow {
+	width: 100%;
+	height: auto;
+}
 
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
@@ -735,5 +844,7 @@ input[type="color"] {
 
 /* Extra large devices (large desktops, 1200px and up) */
 @media (min-width: 1200px) {
-
+	.node-arrow {
+		width: 70%;
+	}
 }

@@ -8,12 +8,13 @@ from app_kit.tests.mixins import WithMetaApp
 from app_kit.features.nature_guides.tests.common import WithMatrixFilters, WithNatureGuide
 
 from app_kit.features.nature_guides.forms import (IdentificationMatrixForm, SearchForNodeForm,
-        NatureGuideOptionsForm, ManageNodelinkForm, MoveNodeForm)
+        NatureGuideOptionsForm, ManageNodelinkForm, MoveNodeForm, MatrixFilterValueChoicesMixin,
+        ManageMatrixFilterRestrictionsForm)
 
 from app_kit.features.nature_guides.matrix_filter_space_forms import ColorFilterSpaceForm
 
 from app_kit.features.nature_guides.models import (MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
-                                                   NatureGuideCrosslinks)
+                                                   NatureGuideCrosslinks, MatrixFilterRestriction)
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles
 
@@ -312,3 +313,202 @@ class TestMoveNodeForm(WithNatureGuide, TenantTestCase):
         is_valid_2 = form_2.is_valid()
         self.assertFalse(is_valid_2)
         self.assertIn('new_parent_node_id', form_2.errors)
+
+
+class MockMatrixFilterValueChoicesMixin(MatrixFilterValueChoicesMixin):
+
+    def get_matrix_filter_field_initial(self, field):
+        return None
+    
+class TestMatrixFilterValueChoicesMixin(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+
+
+    @test_settings
+    def test_get_matrix_filters(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+
+        # for without node, but with all matrix filters
+        matrix_filters = self.create_all_matrix_filters(parent_node)
+
+        mixin = MatrixFilterValueChoicesMixin()
+        mixin.meta_node = meta_node
+
+        mixin_matrix_filters = mixin.get_matrix_filters()
+        self.assertEqual(list(mixin_matrix_filters), list(matrix_filters))
+        
+
+    @test_settings
+    def test_add_matrix_filter_value_choices(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+
+        # for without node, but with all matrix filters
+        matrix_filters = self.create_all_matrix_filters(parent_node)
+
+        mixin = MockMatrixFilterValueChoicesMixin()
+        mixin.meta_node = meta_node
+        mixin.fields = {}
+        mixin.from_url = '/'
+
+        mixin.add_matrix_filter_value_choices()
+
+        for matrix_filter in matrix_filters:
+
+            matrix_filter_uuid = str(matrix_filter.uuid)
+
+            if matrix_filter.filter_type == 'TaxonFilter':
+                self.assertFalse(matrix_filter_uuid in mixin.fields)
+            else:
+                self.assertIn(matrix_filter_uuid, mixin.fields)
+                field = mixin.fields[matrix_filter_uuid]
+
+                self.assertFalse(field.required)
+                self.assertTrue(field.is_matrix_filter)
+                self.assertEqual(field.label, matrix_filter.name)
+        
+    
+class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+
+    @test_settings
+    def test_init(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+
+        # for without node, but with all matrix filters
+        matrix_filters = self.create_all_matrix_filters(parent_node)
+
+        for matrix_filter in matrix_filters:
+            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url=('/'))
+
+            # the matrix filter itself may not occur in choices
+            self.assertEqual(form.meta_node, meta_node)
+            self.assertEqual(form.matrix_filter, matrix_filter)
+
+            for restrictive_matrix_filter in matrix_filters:
+
+                restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
+
+                if restrictive_matrix_filter == matrix_filter or restrictive_matrix_filter.filter_type == 'TaxonFilter':
+                    self.assertFalse(restrictive_matrix_filter_uuid in form.fields)
+
+                else:
+                    self.assertIn(restrictive_matrix_filter_uuid, form.fields)
+            
+
+    @test_settings
+    def test_get_matrix_filters(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+
+        # for without node, but with all matrix filters
+        matrix_filters = self.create_all_matrix_filters(parent_node)
+
+        for matrix_filter in matrix_filters:
+            
+            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url=('/'))
+
+            form_matrix_filters = form.get_matrix_filters()
+
+            for restrictive_matrix_filter in form_matrix_filters:
+
+                self.assertTrue(str(restrictive_matrix_filter.uuid) != str(matrix_filter.uuid))
+
+
+    @test_settings
+    def test_get_matrix_filter_field_initial(self):
+        
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+        meta_node = parent_node.meta_node
+        matrix_filters = self.create_all_matrix_filters(parent_node)
+
+        for matrix_filter in matrix_filters:
+            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url='/')
+
+            for field in form:
+                if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
+
+                    initial = form.get_matrix_filter_field_initial(field.field)
+                    self.assertEqual(initial, None)
+
+
+        color_filter = MatrixFilter.objects.get(filter_type='ColorFilter', meta_node=meta_node)
+        color_space = MatrixFilterSpace.objects.get(matrix_filter=color_filter)
+
+        dtai_filter = MatrixFilter.objects.get(filter_type='DescriptiveTextAndImagesFilter',
+                                               meta_node=meta_node)
+        
+        dtai_space = MatrixFilterSpace.objects.filter(matrix_filter=dtai_filter).first()
+
+        textonly_filter = MatrixFilter.objects.get(filter_type='TextOnlyFilter',
+                                               meta_node=meta_node)
+        textonly_space = MatrixFilterSpace.objects.filter(matrix_filter=textonly_filter).first()
+        
+        restriction_filter_spaces = {
+            'ColorFilter' : color_space,
+            'RangeFilter' : [5,6],
+            'NumberFilter' : [1,3],
+            'DescriptiveTextAndImagesFilter' : dtai_space,
+            'TextOnlyFilter' : textonly_space,
+        }
+
+        for restricted_filter in matrix_filters:
+
+            restrictive_matrix_filters = MatrixFilter.objects.all().exclude(pk=restricted_filter.pk).exclude(
+                filter_type='TaxonFilter')
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+
+                filter_type = restrictive_matrix_filter.filter_type
+                space = restriction_filter_spaces[filter_type]
+
+                restriction = MatrixFilterRestriction(
+                    restricted_matrix_filter=restricted_filter,
+                    restrictive_matrix_filter=restrictive_matrix_filter,
+                )
+
+                if filter_type in ['RangeFilter', 'NumberFilter']:
+                    restriction.encoded_space=space
+                    
+                restriction.save()
+
+                if filter_type not in ['RangeFilter', 'NumberFilter']:
+                    restriction.values.add(space)
+
+
+            
+            form = ManageMatrixFilterRestrictionsForm(restricted_filter, meta_node, from_url='/')
+
+            for field in form:
+                if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
+
+                    restrictive_matrix_filter = field.field.matrix_filter
+
+                    initial = form.get_matrix_filter_field_initial(field.field)
+
+                    if restrictive_matrix_filter.filter_type == 'RangeFilter':
+                        self.assertEqual(initial, restriction_filter_spaces[
+                            restrictive_matrix_filter.filter_type])
+                        
+                    elif restrictive_matrix_filter.filter_type == 'NumberFilter':
+                        expected = ['%g' %(float(i)) for i in restriction_filter_spaces[
+                            restrictive_matrix_filter.filter_type]]
+                        self.assertEqual(initial, expected)
+
+                    else:
+                        filter_space = MatrixFilterRestriction.objects.get(
+                            restricted_matrix_filter=restricted_filter,
+                            restrictive_matrix_filter=restrictive_matrix_filter)
+                        
+                        initial_values = [i.encoded_space for i in initial]
+                        expected_initial = [y.encoded_space for y in filter_space.values.all()]
+                        self.assertEqual(initial_values, expected_initial)

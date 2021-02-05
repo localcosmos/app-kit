@@ -62,12 +62,7 @@
 	<script>
 		{% if success is True %}
 
-			{# include either identification_node.html or identification_node_small.html #}
-			{% if nodelink.parent.children_json.items|length > 130 %}
-				var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node_small.html" %}{% endfilter %}';
-			{% else %}
-				var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node.html" %}{% endfilter %}';
-			{% endif %}		
+			var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node.html" %}{% endfilter %}';	
 
 			var node = $("#{{ node.name_uuid }}");
 

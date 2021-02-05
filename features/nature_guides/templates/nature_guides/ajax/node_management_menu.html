@@ -8,9 +8,9 @@
 <div class="dropdown-divider"></div>
 {% if is_analysis %}
 {% else %}
-	<a class="dropdown-item text-center moveforwardbutton" data-targetid="{{ node.name_uuid }}">&#9664; {% trans 'Move left' %}</a>
+	<a class="dropdown-item text-center moveforwardbutton" data-targetid="{{ node.name_uuid }}">&#9650; &nbsp; {% trans 'Move up' %}</a>
 	<div class="dropdown-divider"></div>
-	<a class="dropdown-item text-center movebackbutton" data-targetid="{{ node.name_uuid }}">{% trans 'Move right' %} &#9654;</a>
+	<a class="dropdown-item text-center movebackbutton" data-targetid="{{ node.name_uuid }}">&#9660; &nbsp; {% trans 'Move down' %}</a>
 	<div class="dropdown-divider"></div>
 	<a data-url="{% url 'move_natureguide_node' meta_app.id parent_node.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% blocktrans %}Move to different group{% endblocktrans %}</a>
 	<div class="dropdown-divider"></div>

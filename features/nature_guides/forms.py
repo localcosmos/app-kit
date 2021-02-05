@@ -88,6 +88,9 @@ class MatrixFilterValueChoicesMixin:
 
     show_add_button = True
 
+    def get_matrix_filter_field_initial(self, field):
+        raise NotImplementedError('MatrixFilterValueChoicesMixin subclasses require the method get_matrix_filter_field_initial')
+
     def get_matrix_filters(self):
         matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
         return matrix_filters
@@ -135,11 +138,13 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
     taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
                        taxon_search_url=get_appkit_taxon_search_url, required=False)
-    
+
+    # decision rule is currently hidden, might be deprecated in the future
     decision_rule = forms.CharField(required=False, label=_('Decision rule'),
+        widget=forms.HiddenInput,
         max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'],
         help_text=_("Will be shown below the image. Text that describes how to identify this entry or group, e.g. 'red feet, white body'."))
-
+    
     node_id = forms.IntegerField(widget=forms.HiddenInput, required=False) # create the node if empty
 
 
@@ -238,19 +243,24 @@ class ManageMatrixFilterRestrictionsForm(MatrixFilterValueChoicesMixin, forms.Fo
     # only called if field has a matrix filter assigned to field.matrix_filter
     def get_matrix_filter_field_initial(self, field):
 
-        restrictions = MatrixFilterRestriction.objects.filter(matrix_filter=field.matrix_filter)
-            
-        if restrictions:
+        restriction = MatrixFilterRestriction.objects.filter(restricted_matrix_filter=self.matrix_filter,
+                                                        restrictive_matrix_filter=field.matrix_filter).first()
+        
+        if restriction:
             
             if field.matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'ColorFilter',
                                                    'TextOnlyFilter']:
-                return restrictions.values('matrix_filter_space').all()
-            elif field.matrix_filter.filter_type in ['NumberFilter']:
+
+                space = restriction.values.filter(matrix_filter=field.matrix_filter)
+
+                if space:
+                    return space
                 
-                return ['%g' %(float(i)) for i in restrictions[0].encoded_space]
+            elif field.matrix_filter.filter_type in ['NumberFilter']:
+                return ['%g' %(float(i)) for i in restriction.encoded_space]
             else:
-                return restrictions[0].encoded_space
-        
+                return restriction.encoded_space
+
         return None
         
 

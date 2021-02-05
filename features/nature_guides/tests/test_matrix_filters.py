@@ -17,7 +17,11 @@ from app_kit.features.nature_guides.widgets import (RangePropertyWidget, DefineR
                     SliderSelectMultipleDescriptors, SliderRadioSelectDescriptor, SliderRadioSelectColor,
                     SliderSelectMultipleNumbers, SliderRadioSelectNumber, SliderRadioSelectTaxonfilter,
                     SliderSelectMultipleTaxonfilters, SliderSelectMultipleTextDescriptors,
-                    SliderRadioSelectTextDescriptor, DefineTextDescriptionWidget)
+                    SliderRadioSelectTextDescriptor, DefineTextDescriptionWidget,
+                    SelectMultipleColors, RadioSelectColor, DefineNumbersWidget,
+                    SelectMultipleDescriptors, RadioSelectDescriptor, SelectMultipleTextDescriptors,
+                    RadioSelectTextDescriptor, SelectMultipleNumbers, RadioSelectNumber,
+                    SelectMultipleTaxonfilters, RadioSelectTaxonfilter)
 
 from app_kit.features.nature_guides.matrix_filter_forms import (RangeFilterManagementForm,
                     NumberFilterManagementForm, ColorFilterManagementForm, TaxonFilterManagementForm)
@@ -67,15 +71,46 @@ class MatrixFilterTestCommon:
 
 
     @test_settings
-    def test_get_node_space_field_kwargs(self):
-        field_kwargs = self.matrix_filter.matrix_filter_type.get_node_space_field_kwargs()
-        self.assertEqual(field_kwargs, {})
-        
-
-    @test_settings
     def test_get_node_space_widget_attrs(self):
         widget_attrs = self.matrix_filter.matrix_filter_type.get_node_space_widget_attrs()
         self.assertEqual(widget_attrs, {})
+
+    @test_settings
+    def test_get_node_space_widget_args(self):
+        widget_args = self.matrix_filter.matrix_filter_type.get_node_space_widget_args()
+        self.assertEqual(widget_args, [])
+
+    @test_settings
+    def get_node_space_widget_kwargs(self):
+        from_url = '/'
+        show_add_button = True
+        
+        widget_kwargs = self.matrix_filter.matrix_filter_type.get_node_space_widget_kwargs(from_url)
+        
+        expected_widget_kwargs = {
+            'extra_context' : {
+                'from_url' : from_url,
+                'show_add_button' : show_add_button,
+            },
+            'attrs' : {},
+        }
+
+        self.assertEqual(widget_kwargs, expected_widget_kwargs)
+
+    @test_settings
+    def test_get_node_space_widget(self):
+        from_url = '/'
+
+        widget = self.matrix_filter.matrix_filter_type.get_node_space_widget(from_url)
+        self.assertTrue(isinstance(widget, self.matrix_filter.matrix_filter_type.NodeSpaceDefinitionWidgetClass))
+        
+
+    @test_settings
+    def test_get_node_space_field_kwargs(self):
+        from_url = '/'
+        field_kwargs = self.matrix_filter.matrix_filter_type.get_node_space_field_kwargs(from_url)
+        self.assertTrue(isinstance(field_kwargs['widget'],
+                                   self.matrix_filter.matrix_filter_type.NodeSpaceDefinitionWidgetClass))
 
 
     @test_settings
@@ -160,6 +195,20 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
 
     @test_settings
+    def test_get_default_definition(self):
+        range_filter = RangeFilter(self.matrix_filter)
+
+        definition = range_filter.get_default_definition()
+        expected_definition = {
+            'step' : 1,
+            'unit' : '',
+            'unit_verbose' : '',
+        }
+
+        self.assertEqual(definition, expected_definition)
+        
+
+    @test_settings
     def test_get_empty_encoded_space(self):
 
         range_filter = RangeFilter(self.matrix_filter)
@@ -201,8 +250,34 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
     def test_get_node_space_field_kwargs(self):
 
         range_filter = RangeFilter(self.matrix_filter)
-        kwargs = range_filter.get_node_space_field_kwargs()
+
+        from_url = '/'
+        
+        kwargs = range_filter.get_node_space_field_kwargs(from_url)
         self.assertEqual(kwargs['subfield_kwargs']['decimal_places'], None)
+
+
+    @test_settings
+    def test_get_node_space_widget_kwargs(self):
+
+        range_filter = RangeFilter(self.matrix_filter)
+        from_url = '/'
+
+        widget_kwargs = range_filter.get_node_space_widget_kwargs(from_url)
+
+        expected_widget_kwargs = {
+            'extra_context' : {
+                'from_url' : from_url,
+                'unit' : 'cm',
+                'show_add_button' : True,
+            },
+            'attrs' : {
+                'step' : 1,
+            },
+        }
+
+        self.assertEqual(widget_kwargs, expected_widget_kwargs)
+        
 
 
     @test_settings
@@ -217,9 +292,6 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         expected_attrs = {
             'step' : 1,
-            'extra_context' : {
-                'unit' : '',
-            }
         }
         self.assertEqual(widget_attrs, expected_attrs)
 
@@ -239,9 +311,6 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         expected_attrs = {
             'step' : 0.5,
-            'extra_context' : {
-                'unit' : 'cm',
-            }
         }
         self.assertEqual(widget_attrs, expected_attrs)
 
@@ -300,7 +369,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
 
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
         self.create_space()
 
         child = self.create_node(self.root_node, 'Child')
@@ -314,7 +383,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         node_filter_space.save()
 
         range_filter = RangeFilter(self.matrix_filter)
-        space_list = range_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = range_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [-2,2])
         
 
@@ -334,20 +403,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         is_valid = range_filter.validate_encoded_space(good_space)
         self.assertTrue(is_valid)
-            
 
-    @test_settings
-    def test_get_default_definition(self):
-        range_filter = RangeFilter(self.matrix_filter)
-
-        definition = range_filter.get_default_definition()
-        expected_definition = {
-            'step' : 1,
-            'unit' : '',
-            'unit_verbose' : '',
-        }
-
-        self.assertEqual(definition, expected_definition)
         
 
 class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters, TenantTestCase):
@@ -383,16 +439,16 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
         self.assertEqual(number_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
         self.assertEqual(number_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
 
-        self.assertEqual(number_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectNumber)
-        self.assertEqual(number_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleNumbers)
+        self.assertEqual(number_filter.MatrixSingleChoiceWidgetClass, RadioSelectNumber)
+        self.assertEqual(number_filter.MatrixMultipleChoiceWidgetClass, SelectMultipleNumbers)
 
         self.assertEqual(number_filter.NodeSpaceDefinitionFormFieldClass, forms.MultipleChoiceField)
-        self.assertEqual(number_filter.NodeSpaceDefinitionWidgetClass, forms.CheckboxSelectMultiple)
+        self.assertEqual(number_filter.NodeSpaceDefinitionWidgetClass, DefineNumbersWidget)
 
         self.assertEqual(number_filter.matrix_filter, self.matrix_filter)
 
         self.assertEqual(number_filter.MatrixFormFieldClass, forms.ChoiceField)
-        self.assertEqual(number_filter.MatrixFormFieldWidget, SliderRadioSelectNumber)
+        self.assertEqual(number_filter.MatrixFormFieldWidget, RadioSelectNumber)
 
 
     @test_settings
@@ -506,13 +562,16 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
         self.create_space()
         number_filter = NumberFilter(self.matrix_filter)
 
-        kwargs = number_filter.get_node_space_field_kwargs()
+        from_url = '/'
+
+        kwargs = number_filter.get_node_space_field_kwargs(from_url)
 
         expected_kwargs = {
             'choices' : [('1', '1'),('3', '3'),('5.5','5.5'),('10','10')],
         }
 
-        self.assertEqual(kwargs, expected_kwargs)
+        self.assertEqual(kwargs['choices'], expected_kwargs['choices'])
+        self.assertTrue(isinstance(kwargs['widget'], DefineNumbersWidget))
 
 
     @test_settings
@@ -561,7 +620,7 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
     
 
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
 
         self.create_space()
 
@@ -576,7 +635,7 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
         node_filter_space.save()
 
         number_filter = NumberFilter(self.matrix_filter)
-        space_list = number_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = number_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [1,3])
         
 
@@ -652,8 +711,8 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertEqual(color_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
         self.assertEqual(color_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
 
-        self.assertEqual(color_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectColor)
-        self.assertEqual(color_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleColors)
+        self.assertEqual(color_filter.MatrixSingleChoiceWidgetClass, RadioSelectColor)
+        self.assertEqual(color_filter.MatrixMultipleChoiceWidgetClass, SelectMultipleColors)
 
         self.assertEqual(color_filter.NodeSpaceDefinitionFormFieldClass, ObjectLabelModelMultipleChoiceField)
         self.assertEqual(color_filter.NodeSpaceDefinitionWidgetClass, DefineColorsWidget)
@@ -663,11 +722,11 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         if self.matrix_filter.definition and self.matrix_filter.definition.get('allow_multiple_values', False) == False:
             self.assertEqual(color_filter.MatrixFormFieldClass, forms.ChoiceField)
-            self.assertEqual(color_filter.MatrixFormFieldWidget, SliderRadioSelectColor)
+            self.assertEqual(color_filter.MatrixFormFieldWidget, RadioSelectColor)
 
         else:
             self.assertEqual(color_filter.MatrixFormFieldClass, forms.MultipleChoiceField)
-            self.assertEqual(color_filter.MatrixFormFieldWidget, SliderSelectMultipleColors)
+            self.assertEqual(color_filter.MatrixFormFieldWidget, SelectMultipleColors)
 
 
     # test both single space and multispace
@@ -890,7 +949,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         field = color_filter.get_matrix_form_field()
         self.assertEqual(field.choices, [])
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectColor))
+        self.assertTrue(isinstance(field.widget, RadioSelectColor))
         
         # with choices
         space_1 = self.create_space([111,222,255,1])
@@ -919,7 +978,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         
         self.assertEqual(field.choices, expected_choices)
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectColor))
+        self.assertTrue(isinstance(field.widget, RadioSelectColor))
 
         # with multiple values
         self.matrix_filter.definition = {
@@ -931,7 +990,15 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         field = color_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.MultipleChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderSelectMultipleColors))
+        self.assertTrue(isinstance(field.widget, SelectMultipleColors))
+
+
+    @test_settings
+    def test_get_node_space_widget_args(self):
+        color_filter = ColorFilter(self.matrix_filter)
+
+        args = color_filter.get_node_space_widget_args()
+        self.assertEqual(args, [color_filter])
         
 
     @test_settings
@@ -1046,7 +1113,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         
         
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
 
         child = self.create_node(self.root_node, 'Child')
 
@@ -1067,12 +1134,12 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         node_filter_space.values.add(space_1)
 
         
-        space_list = color_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = color_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [[111,222,255,1]])
 
         node_filter_space.values.add(space_2)
 
-        space_list = color_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = color_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [[111,222,255,1], [[0,0,0,1],[255,255,255,1]]])
         
 
@@ -1145,8 +1212,8 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
         self.assertEqual(dtai_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
         self.assertEqual(dtai_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
 
-        self.assertEqual(dtai_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectDescriptor)
-        self.assertEqual(dtai_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleDescriptors)
+        self.assertEqual(dtai_filter.MatrixSingleChoiceWidgetClass, RadioSelectDescriptor)
+        self.assertEqual(dtai_filter.MatrixMultipleChoiceWidgetClass, SelectMultipleDescriptors)
 
         self.assertEqual(dtai_filter.NodeSpaceDefinitionFormFieldClass, ObjectLabelModelMultipleChoiceField)
         self.assertEqual(dtai_filter.NodeSpaceDefinitionWidgetClass, DefineDescriptionWidget)
@@ -1156,11 +1223,11 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         if self.matrix_filter.definition and self.matrix_filter.definition.get('allow_multiple_values', False) == False:
             self.assertEqual(dtai_filter.MatrixFormFieldClass, forms.ChoiceField)
-            self.assertEqual(dtai_filter.MatrixFormFieldWidget, SliderRadioSelectDescriptor)
+            self.assertEqual(dtai_filter.MatrixFormFieldWidget, RadioSelectDescriptor)
 
         else:
             self.assertEqual(dtai_filter.MatrixFormFieldClass, forms.MultipleChoiceField)
-            self.assertEqual(dtai_filter.MatrixFormFieldWidget, SliderSelectMultipleDescriptors)
+            self.assertEqual(dtai_filter.MatrixFormFieldWidget, SelectMultipleDescriptors)
 
 
     # test both single space and multispace
@@ -1240,7 +1307,7 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         field = dtai_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectDescriptor))
+        self.assertTrue(isinstance(field.widget, RadioSelectDescriptor))
 
         # empty, multiple choices
         dtai_filter.matrix_filter.definition = {
@@ -1253,7 +1320,7 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         field = dtai_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.MultipleChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderSelectMultipleDescriptors))
+        self.assertTrue(isinstance(field.widget, SelectMultipleDescriptors))
         self.assertEqual(field.choices, [])
 
         # with choices
@@ -1274,7 +1341,7 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         field = dtai_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectDescriptor))
+        self.assertTrue(isinstance(field.widget, RadioSelectDescriptor))
         self.assertEqual(field.choices, expected_choices)
 
         # choices, multiple allowed
@@ -1288,9 +1355,17 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         field = dtai_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.MultipleChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderSelectMultipleDescriptors))
+        self.assertTrue(isinstance(field.widget, SelectMultipleDescriptors))
         
         self.assertEqual(field.choices, expected_choices)
+
+
+    @test_settings
+    def test_get_node_space_widget_args(self):
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+
+        widget_args = dtai_filter.get_node_space_widget_args()
+        self.assertEqual(widget_args, [dtai_filter])
 
 
     @test_settings
@@ -1386,7 +1461,7 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
         
 
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
 
         child = self.create_node(self.root_node, 'Child')
 
@@ -1405,12 +1480,12 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
         node_filter_space.values.add(space_1)
 
         
-        space_list = dtai_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = dtai_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, ['pattern 1'])
 
         node_filter_space.values.add(space_2)
 
-        space_list = dtai_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = dtai_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, ['pattern 1', 'pattern 2'])
 
 
@@ -1468,8 +1543,8 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         self.assertEqual(text_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
         self.assertEqual(text_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
 
-        self.assertEqual(text_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectTextDescriptor)
-        self.assertEqual(text_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleTextDescriptors)
+        self.assertEqual(text_filter.MatrixSingleChoiceWidgetClass, RadioSelectTextDescriptor)
+        self.assertEqual(text_filter.MatrixMultipleChoiceWidgetClass, SelectMultipleTextDescriptors)
 
         self.assertEqual(text_filter.NodeSpaceDefinitionFormFieldClass, ObjectLabelModelMultipleChoiceField)
         self.assertEqual(text_filter.NodeSpaceDefinitionWidgetClass, DefineTextDescriptionWidget)
@@ -1479,11 +1554,11 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
         if self.matrix_filter.definition and self.matrix_filter.definition.get('allow_multiple_values', False) == False:
             self.assertEqual(text_filter.MatrixFormFieldClass, forms.ChoiceField)
-            self.assertEqual(text_filter.MatrixFormFieldWidget, SliderRadioSelectTextDescriptor)
+            self.assertEqual(text_filter.MatrixFormFieldWidget, RadioSelectTextDescriptor)
 
         else:
             self.assertEqual(text_filter.MatrixFormFieldClass, forms.MultipleChoiceField)
-            self.assertEqual(text_filter.MatrixFormFieldWidget, SliderSelectMultipleTextDescriptors)
+            self.assertEqual(text_filter.MatrixFormFieldWidget, SelectMultipleTextDescriptors)
 
 
     # test both single space and multispace
@@ -1561,7 +1636,7 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
         field = text_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectTextDescriptor))
+        self.assertTrue(isinstance(field.widget, RadioSelectTextDescriptor))
 
         # empty, multiple choice
         text_filter.matrix_filter.definition = {
@@ -1574,7 +1649,7 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
         field = text_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.MultipleChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderSelectMultipleTextDescriptors))
+        self.assertTrue(isinstance(field.widget, SelectMultipleTextDescriptors))
 
         # choices
         text_1 = 'text 1. Can be long.'
@@ -1599,7 +1674,7 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
         field = text_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectTextDescriptor))
+        self.assertTrue(isinstance(field.widget, RadioSelectTextDescriptor))
         self.assertEqual(field.choices, expected_choices)
 
 
@@ -1614,12 +1689,12 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
         field = text_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.MultipleChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderSelectMultipleTextDescriptors))
+        self.assertTrue(isinstance(field.widget, SelectMultipleTextDescriptors))
         self.assertEqual(field.choices, expected_choices)
 
 
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
 
         child = self.create_node(self.root_node, 'Child')
 
@@ -1641,12 +1716,12 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         node_filter_space.values.add(space_1)
 
         
-        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = text_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [text_1])
 
         node_filter_space.values.add(space_2)
 
-        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = text_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [text_1, text_2])
 
 
@@ -1722,6 +1797,15 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         self.assertEqual(space, space_2)
 
 
+
+    @test_settings
+    def test_get_node_space_widget_args(self):
+        text_filter = TextOnlyFilter(self.matrix_filter)
+
+        widget_args = text_filter.get_node_space_widget_args()
+        self.assertEqual(widget_args, [text_filter])
+
+
     @test_settings
     def test_get_node_space_definition_form_field(self):
 
@@ -1744,7 +1828,7 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         
 
     @test_settings
-    def test_get_node_filter_space_as_list(self):
+    def test_get_filter_space_as_list(self):
 
         child = self.create_node(self.root_node, 'Child')
 
@@ -1766,12 +1850,12 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         node_filter_space.values.add(space_1)
 
         
-        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = text_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [text_1])
 
         node_filter_space.values.add(space_2)
 
-        space_list = text_filter.get_node_filter_space_as_list(node_filter_space)
+        space_list = text_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [text_1, text_2])
 
     
@@ -1827,8 +1911,8 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertEqual(taxon_filter.MatrixSingleChoiceFormFieldClass, forms.ChoiceField)
         self.assertEqual(taxon_filter.MatrixMultipleChoiceFormFieldClass, forms.MultipleChoiceField)
 
-        self.assertEqual(taxon_filter.MatrixSingleChoiceWidgetClass, SliderRadioSelectTaxonfilter)
-        self.assertEqual(taxon_filter.MatrixMultipleChoiceWidgetClass, SliderSelectMultipleTaxonfilters)
+        self.assertEqual(taxon_filter.MatrixSingleChoiceWidgetClass, RadioSelectTaxonfilter)
+        self.assertEqual(taxon_filter.MatrixMultipleChoiceWidgetClass, SelectMultipleTaxonfilters)
 
         self.assertEqual(taxon_filter.NodeSpaceDefinitionFormFieldClass, None)
         self.assertEqual(taxon_filter.NodeSpaceDefinitionWidgetClass, None)
@@ -1836,7 +1920,7 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertEqual(taxon_filter.matrix_filter, self.matrix_filter)
 
         self.assertEqual(taxon_filter.MatrixFormFieldClass, forms.ChoiceField)
-        self.assertEqual(taxon_filter.MatrixFormFieldWidget, SliderRadioSelectTaxonfilter)
+        self.assertEqual(taxon_filter.MatrixFormFieldWidget, RadioSelectTaxonfilter)
 
 
     def get_encoded_space(self, lazy_taxon=None):
@@ -1899,6 +1983,18 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
     @test_settings
     def test_get_node_space_definition_form_field(self):
+        pass
+
+    @test_settings
+    def test_get_node_space_widget_kwargs(self):
+        pass
+
+    @test_settings
+    def test_get_node_space_widget(self):
+        pass
+
+    @test_settings
+    def test_get_node_space_field_kwargs(self):
         pass
 
 
@@ -1971,7 +2067,7 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         # empty
         field = taxon_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectTaxonfilter))
+        self.assertTrue(isinstance(field.widget, RadioSelectTaxonfilter))
         self.assertEqual(field.choices, [])
 
         # with choice
@@ -1983,7 +2079,7 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         field = taxon_filter.get_matrix_form_field()
         self.assertTrue(isinstance(field, forms.ChoiceField))
-        self.assertTrue(isinstance(field.widget, SliderRadioSelectTaxonfilter))
+        self.assertTrue(isinstance(field.widget, RadioSelectTaxonfilter))
         self.assertEqual(len(field.choices), 1)
         
 

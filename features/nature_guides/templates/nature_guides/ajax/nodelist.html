@@ -4,6 +4,7 @@
 	{% for node in parent_node.children %}
 		{% include 'nature_guides/ajax/natureguide_node.html' %}
 	{% endfor %}
+	
 {% else %}
 <div id="key_nochildren" class="alert alert-info">
 	{% if parent_node.meta_node.node_type == 'root' %}

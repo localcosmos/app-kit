@@ -1192,7 +1192,7 @@ msgstr "Text mit Bild"
 
 #: features/nature_guides/matrix_filters.py:788
 msgid "text"
-msgstr "Text hinzufügen"
+msgstr "Text"
 
 #: features/nature_guides/matrix_filters.py:905
 msgid "Animals"

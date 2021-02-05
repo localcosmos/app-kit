@@ -3,72 +3,143 @@
 
 {% block extra_style %}{% endblock %}
 
+{% block container_class %}class="container-fluid"{% endblock %}
+
+{% block options_form_block %}
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-5">
+			{% include 'app_kit/ajax/options_form.html' %}
+		</div>
+	</div>
+{% endblock %}
+
 {% block generic_content_specific %}
 
 	<script type="text/javascript" src="{% static 'nature_guides/IdentificationMatrix.js' %}"></script>
 
+
 	<div class="row">
-		<div class="col-12 col-md-6 col-lg-4">
+		<div class="col-12 col-md-6 col-lg-5">
 		
 			{% render_bootstrap_form search_for_node_form %}
 		
 		</div>
 	</div>
 
-	<h3>
-		{% if parent_node.node_type == 'root' %}
-			
-		{% else %}
-			{{ parent_node }}
-		{% endif %}
-	</h3>
-	<div>
-		{% if parent_node.meta_node.node_type == 'root' %}
-		{% else %}
-			<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">&uarr; {{ parent_node.parent }}</a>
-			{% for crosslink in parent_crosslinks %}
-				&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
-			{% endfor %}
-		{% endif %}	
+	
+	<div class="row">
+		<div class="col-12 h5">
+
+			{% if parent_node.meta_node.node_type == 'root' %}
+			{% else %}
+				<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">{{ parent_node.parent }}</a>
+				{% for crosslink in parent_crosslinks %}
+					&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
+				{% endfor %}
+				&xrarr; {{ parent_node }}
+			{% endif %}	
+
+		</div>
 	</div>
+	
+	<div class="row">
+	
+		<div class="col-12 col-md-7 col-lg-8">
 
-
-	{% block identification_key %}
-		<div class="card">
-			<div class="card-header text-center">
-				<button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#matrix-filters-collapsible" aria-expanded="false" aria-controls="matrix-filters-collapsible">{% trans 'Filter by trait' %} <span class="badge badge-light"><span id="children-count">{{ parent_node.children_count }}</span> {% trans 'results' %}</span></button>
-				<button id="btn-reset-filters" type="button" class="btn btn-secondary">{% trans 'Show all' %}</button>
-				<div id="matrix-filters-collapsible" class="collapse"></div>
-			</div>
-			<div class="card-body">
-				<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
-				<hr>
-				<div>
-					<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+			<div class="card">
+				<div class="card-header">
+					<div class="row justify-content-center">
 					
-					<div id="sorted-out-container" class="collapse mt-4">
-						<h5>{% trans 'Sorted out:' %}</h5>
-						<div id="sorted-out-keynodes" class="row">
+						<div class="col-12 text-center">
+							<span class="h4 align-middle">{% trans 'Traits' %}</span>&nbsp;
+
+							<div class="btn-group dropdown">
+								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Add trait or filter' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu dropdown-menu-right">
+									{% for filter_type in matrix_filter_types %}
+										<a data-url="{% url 'create_matrix_filter' meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+									{% endfor %}
+								</div>
+							</div>
+
+						</div>
+					</div> 
+					
+				</div>
+				<div class="card-body">
+					<div id="matrix-filters-collapsible"></div>
+					
+					<div class="text-left">
+						<div class="btn-group dropup">
+							<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								{% trans 'Add trait or filter' %} <span class="caret"></span>
+							</button>
+							<div class="dropdown-menu">
+								{% for filter_type in matrix_filter_types %}
+									<a data-url="{% url 'create_matrix_filter' meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<br>
+
+		</div>
+		
+		<div class="col-12 col-md-5 col-lg-4">
+			<div class="card">
+				<div class="card-header">
+					<span class="h4 align-center">
+						{% if parent_node.node_type == 'root' %}
+							&nbsp;
+						{% else %}
+							{{ parent_node }}
+							<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
+						{% endif %}
+					</span>
+					<div class="btn-group dropdown">
+						<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'Add entry' %} <span class="caret"></span>
+						</button>
+						 <div class="dropdown-menu dropdown-menu-right">
+							<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
+							<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
+							<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
+						</div>
+					</div>
+				</div>
+				<div class="card-body">
+					<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
+					
+					<div>
+						<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
 						
-						</div>	
+						<div id="sorted-out-container" class="collapse mt-4">
+							<h5>{% trans 'Sorted out:' %}</h5>
+							<div id="sorted-out-keynodes" class="row"></div>	
+						</div>
+					</div>
+					
+					<hr>
+
+					<div class="btn-group dropup">
+						<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'Add entry' %} <span class="caret"></span>
+						</button>
+						 <div class="dropdown-menu">
+							<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
+							<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
+							<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-		<br>
-	{% endblock %}
 
-	<div class="btn-group dropup">
-		<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-			{% trans 'Add entry' %} <span class="caret"></span>
-		</button>
-		 <div class="dropdown-menu">
-			<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
-			<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
-			<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
-		</div>
 	</div>
-
 {% endblock %}
 {% block extra_script %}
 
@@ -80,10 +151,6 @@
 
 	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
 
-	{% if children_count > 130 %}
-		{% include 'nature_guides/nodemenu_loader.html' %}
-	{% else %}
-		{% include 'nature_guides/ajax/node_loader.html' %}
-	{% endif %}
+	{% include 'nature_guides/ajax/node_loader.html' %}
 
 {% endblock %}

@@ -6,7 +6,7 @@ from app_kit.tests.common import test_settings
 
 from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, CrosslinkManager,
             NatureGuidesTaxonTree, NatureGuidesTaxonSynonym, MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
-            NatureGuideCrosslinks, ChildrenCacheManager)
+            NatureGuideCrosslinks, ChildrenCacheManager, MatrixFilterRestriction)
 
 
 from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
@@ -1141,7 +1141,7 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
 
         meta_node.refresh_from_db()
         cache = meta_node.children_cache
-        self.assertEqual(cache['matrix_filter_types'], {})
+        self.assertEqual(cache['matrix_filters'], {})
 
         matrix_filter = MatrixFilter(
             meta_node = meta_node,
@@ -1153,7 +1153,7 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
 
         meta_node.refresh_from_db()
         cache = meta_node.children_cache
-        self.assertEqual(cache['matrix_filter_types'][str(matrix_filter.uuid)], filter_type)
+        self.assertEqual(cache['matrix_filters'][str(matrix_filter.uuid)]['type'], filter_type)
 
 
     @test_settings
@@ -1171,7 +1171,7 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
 
         parent_node.meta_node.refresh_from_db()
         cache = parent_node.meta_node.children_cache
-        self.assertEqual(cache['matrix_filter_types'], {})
+        self.assertEqual(cache['matrix_filters'], {})
 
         matrix_filter = MatrixFilter(
             meta_node = meta_node,
@@ -1183,13 +1183,13 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
 
         meta_node.refresh_from_db()
         cache = meta_node.children_cache
-        self.assertEqual(cache['matrix_filter_types'][str(matrix_filter.uuid)], filter_type)
+        self.assertEqual(cache['matrix_filters'][str(matrix_filter.uuid)]['type'], filter_type)
 
         matrix_filter.delete()
 
         meta_node.refresh_from_db()
         cache = meta_node.children_cache
-        self.assertEqual(cache['matrix_filter_types'], {})
+        self.assertEqual(cache['matrix_filters'], {})
 
 
     @test_settings
@@ -1655,6 +1655,21 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
 
         self.create_all_matrix_filters(parent_node)
 
+        # add one matrix filter restriction
+        restricted_filter = MatrixFilter.objects.all().first()
+        restrictive_filter = MatrixFilter.objects.all().exclude(pk=restricted_filter.pk).exclude(
+            filter_type__in=('TaxonFilter', 'RangeFilter', 'NumberFilter')).first()
+
+        restriction = MatrixFilterRestriction(
+            restricted_matrix_filter = restricted_filter,
+            restrictive_matrix_filter = restrictive_filter,
+            
+        )
+
+        restriction.save()
+        restrictive_value = restrictive_filter.get_space().first()
+        restriction.values.add(restrictive_value)
+
         children_cache_manager = ChildrenCacheManager(meta_node)
 
         empty_data = children_cache_manager.get_data(empty=True)
@@ -1662,20 +1677,28 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         meta_node.children_cache = empty_data
         meta_node.save()
 
+
         children_cache_manager.rebuild_cache()
 
         meta_node.refresh_from_db()
 
         data = meta_node.children_cache
-        self.assertEqual(len(data['matrix_filter_types']), len(MATRIX_FILTER_TYPES))
+        self.assertEqual(len(data['matrix_filters']), len(MATRIX_FILTER_TYPES))
 
         matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
 
         for matrix_filter in matrix_filters:
-            self.assertEqual(data['matrix_filter_types'][str(matrix_filter.uuid)], matrix_filter.filter_type)
+            self.assertEqual(data['matrix_filters'][str(matrix_filter.uuid)]['type'], matrix_filter.filter_type)
 
         self.assertEqual(len(data['items']), 1)
         self.assertEqual(data['items'][0]['id'], node.id)
+
+        # restriction
+        space = restrictive_filter.matrix_filter_type.get_filter_space_as_list(restriction)
+        expected_space = {}
+        expected_space[str(restrictive_filter.uuid)] = space
+        self.assertEqual(data['matrix_filters'][str(restricted_filter.uuid)]['restrictions'], expected_space)
+
         
     @test_settings
     def test_get_empty_data(self):
@@ -1689,7 +1712,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         data = children_cache_manager.get_data(empty=True)
         empty_data = {
             'items' : [],
-            'matrix_filter_types' : {},
+            'matrix_filters' : {},
         }
 
         self.assertEqual(data, empty_data)
@@ -1719,7 +1742,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                     'uuid': str(node.name_uuid)
                 }
             ],
-            'matrix_filter_types': {}
+            'matrix_filters': {}
         }
 
 
@@ -1802,7 +1825,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             if filter_type != 'TaxonFilter':
                 matrix_filter_uuid = str(matrix_filter.uuid)
                 matrix_filter_type = matrix_filter.matrix_filter_type
-                expected_space[matrix_filter_uuid] = matrix_filter_type.get_node_filter_space_as_list(
+                expected_space[matrix_filter_uuid] = matrix_filter_type.get_filter_space_as_list(
                     node_space)
             
 
@@ -1870,7 +1893,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         parent_node.refresh_from_db()
 
         self.assertIn('items', meta_node.children_cache)
-        self.assertIn('matrix_filter_types', meta_node.children_cache)
+        self.assertIn('matrix_filters', meta_node.children_cache)
         self.assertEqual(len(meta_node.children_cache['items']), 1)
 
         # 'items' is a list - check if the child is not added twice
@@ -1893,7 +1916,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         children_cache_manager.remove_child(node)
         
         self.assertIn('items', meta_node.children_cache)
-        self.assertIn('matrix_filter_types', meta_node.children_cache)
+        self.assertIn('matrix_filters', meta_node.children_cache)
         self.assertEqual(len(meta_node.children_cache['items']), 0)
 
 
@@ -1926,8 +1949,9 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             children_cache_manager.add_matrix_filter(matrix_filter)
 
             meta_node.refresh_from_db()
-            self.assertIn(matrix_filter_uuid, meta_node.children_cache['matrix_filter_types'])
-            self.assertEqual(meta_node.children_cache['matrix_filter_types'][matrix_filter_uuid], filter_type)
+            self.assertIn(matrix_filter_uuid, meta_node.children_cache['matrix_filters'])
+            self.assertEqual(meta_node.children_cache['matrix_filters'][matrix_filter_uuid]['type'],
+                             filter_type)
 
 
     @test_settings
@@ -1955,17 +1979,16 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             matrix_filter_uuid = str(matrix_filter.uuid)
 
             meta_node.refresh_from_db()
-            self.assertIn(matrix_filter_uuid, meta_node.children_cache['matrix_filter_types'])
+            self.assertIn(matrix_filter_uuid, meta_node.children_cache['matrix_filters'])
 
             # remove
             children_cache_manager.remove_matrix_filter(matrix_filter)
             meta_node.refresh_from_db()
-            self.assertFalse(matrix_filter_uuid in meta_node.children_cache['matrix_filter_types'])
+            self.assertFalse(matrix_filter_uuid in meta_node.children_cache['matrix_filters'])
 
 
     @test_settings
     def test_add_matrix_filter_space(self):
-
         pass
 
 
@@ -2135,3 +2158,117 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                     item = cache['items'][0]
 
                     self.assertFalse(old_value in item['space'][matrix_filter_uuid])
+
+    @test_settings
+    def test_update_matrix_filter_restrictions_and_add_matrix_filter_restriction_to_cache(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+
+        meta_node = parent_node.meta_node
+
+        self.create_all_matrix_filters(parent_node)
+
+        children_cache_manager = ChildrenCacheManager(meta_node)
+        children_cache_manager.rebuild_cache()
+
+        meta_node.refresh_from_db()
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
+
+        for restricted_matrix_filter in matrix_filters:
+
+            restricted_matrix_filter_uuid = str(restricted_matrix_filter.uuid)
+            self.assertIn(restricted_matrix_filter_uuid, meta_node.children_cache['matrix_filters'])
+
+            restrictive_matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node).exclude(
+                pk=restricted_matrix_filter.pk).exclude(filter_type='TaxonFilter')
+
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+
+                restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
+
+                restriction = MatrixFilterRestriction(
+                    restricted_matrix_filter = restricted_matrix_filter,
+                    restrictive_matrix_filter = restrictive_matrix_filter,
+                )
+
+                restriction.save()
+
+
+                if restrictive_matrix_filter.filter_type in ['ColorFilter', 'DescriptiveTextAndImagesFilter',
+                                                 'TextOnlyFilter']:
+
+                    spaces = restrictive_matrix_filter.get_space()
+
+                    for space in spaces: 
+                        restriction.values.add(space)
+
+                        cache = meta_node.children_cache
+                        new_cache = children_cache_manager.add_matrix_filter_restriction_to_cache(cache,
+                                                                                                  restriction)
+
+                        space_as_list = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
+                            restriction)
+                        
+                        self.assertEqual(space_as_list,
+                            new_cache['matrix_filters'][restricted_matrix_filter_uuid]['restrictions'][restrictive_matrix_filter_uuid])
+                        
+
+                        children_cache_manager.update_matrix_filter_restrictions(restricted_matrix_filter)
+                        meta_node.refresh_from_db()
+
+                        self.assertEqual(space_as_list,
+                            meta_node.children_cache['matrix_filters'][restricted_matrix_filter_uuid]['restrictions'][restrictive_matrix_filter_uuid])
+                                     
+
+
+class TestMatrixFilterRestriction(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+
+    @test_settings
+    def test_save(self):
+
+        nature_guide = self.create_nature_guide()
+        parent_node = nature_guide.root_node
+
+        meta_node = parent_node.meta_node
+
+        self.create_all_matrix_filters(parent_node)
+
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
+
+        for restricted_matrix_filter in matrix_filters:
+
+            restrictive_matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node).exclude(
+                pk=restricted_matrix_filter.pk).exclude(filter_type='TaxonFilter')
+
+
+            for restrictive_matrix_filter in restrictive_matrix_filters:
+
+                restriction = MatrixFilterRestriction(
+                    restricted_matrix_filter = restricted_matrix_filter,
+                    restrictive_matrix_filter = restrictive_matrix_filter,
+                )
+
+                restriction.save()
+
+
+                if restrictive_matrix_filter.filter_type in ['ColorFilter', 'DescriptiveTextAndImagesFilter',
+                                                 'TextOnlyFilter']:
+
+                    spaces = restrictive_matrix_filter.get_space()
+
+                    for space in spaces: 
+                        restriction.values.add(space)
+
+                        restriction.refresh_from_db()
+
+                        restriction_value_pks = restriction.values.all().values_list('pk', flat=True)
+
+                        self.assertIn(space.pk, restriction_value_pks)
+
+                    restriction.refresh_from_db()
+                    self.assertEqual(restriction.encoded_space, None)
+                    
