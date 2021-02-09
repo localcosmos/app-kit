@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-20 11:05+0200\n"
+"POT-Creation-Date: 2021-02-09 10:09+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -145,12 +145,12 @@ msgstr ""
 "Steckbriefe von %(count)s Taxa fehlen. Es werden stattdessen Generische "
 "Steckbriefe benutzt."
 
-#: appbuilders/v1/AppReleaseBuilder.py:744
+#: appbuilders/v1/AppReleaseBuilder.py:753
 #, python-format
 msgid "%(field_class)s needs at least 2 choices"
 msgstr "%(field_class)s benötigt mindestens 2 Wahlmöglichkeiten"
 
-#: appbuilders/v1/AppReleaseBuilder.py:761
+#: appbuilders/v1/AppReleaseBuilder.py:770
 #, python-format
 msgid "%(role)s field is missing"
 msgstr "%(role)s Feld fehlt"
@@ -159,13 +159,19 @@ msgstr "%(role)s Feld fehlt"
 msgid "Read more"
 msgstr "Mehr lesen"
 
+#: appbuilders/v1/app/themes/Flat/online_content/templates/page/factsheet.html:43
+msgid "Images:"
+msgstr "Bilder:"
+
 #: features/backbonetaxonomy/forms.py:21
 msgid "Search app taxa"
 msgstr "Durchsuche Taxa der App"
 
 #: features/backbonetaxonomy/forms.py:27
 msgid "Enter your taxa below. Only scientific names, separated by commas:"
-msgstr "Geben Sie unten die Taxa ein. Nur wissenschaftliche Namen, durch Kommat getrennt:"
+msgstr ""
+"Geben Sie unten die Taxa ein. Nur wissenschaftliche Namen, durch Kommat "
+"getrennt:"
 
 #: features/backbonetaxonomy/forms.py:37
 msgid "Select taxonomic systems"
@@ -191,9 +197,10 @@ msgid "Successfully added %(name)s."
 msgstr "%(name)s erfolgreich hinzugefügt."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/add_taxon_form.html:34
+#: features/fact_sheets/templates/fact_sheets/create_fact_sheet.html:16
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:56
 #: features/glossary/templates/glossary/ajax/add_glossary_entry_form.html:7
-#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:27
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:29
 #: templates/app_kit/ajax/add_existing_generic_content.html:32
 #: templates/app_kit/ajax/manage_feature.html:29
 msgid "Add"
@@ -290,9 +297,10 @@ msgstr ""
 "Beobachtungsformularen verfügbar."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/manage_fulltree_form.html:10
+#: features/nature_guides/templates/nature_guides/ajax/manage_color_filter_space.html:103
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:58
 #: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:55
-#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:27
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:29
 #: multi_tenancy/templates/localcosmos/edit_account.html:26
 #: templates/app_kit/ajax/content_image_form.html:24
 #: templates/app_kit/ajax/manage_app_theme_image.html:24
@@ -301,7 +309,7 @@ msgid "Save"
 msgstr "Speichern"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/remove_backbone_taxon.html:14
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:20
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:34
 #, python-format
 msgid "Remove %(name)s"
 msgstr "%(name)s entfernen"
@@ -325,13 +333,15 @@ msgstr "mit Abkömmlingen"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxonlist.html:48
 #: features/buttonmatrix/templates/buttonmatrix/buttonmatrix_button.html:15
+#: features/fact_sheets/templates/fact_sheets/widgets/filecontent_field.html:14
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:13
 #: features/generic_forms/templates/generic_forms/generic_field_modify.html:11
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:17
-#: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:22
+#: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:17
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node_small.html:26
+#: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:26
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:24
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:27
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:38
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:17
 #: templates/app_kit/ajax/manage_app_languages.html:16
 #: templates/app_kit/manage_generic_content.html:38
@@ -340,7 +350,9 @@ msgstr "ändern"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxonlist.html:51
 #: features/buttonmatrix/templates/buttonmatrix/buttonmatrix_button.html:19
+#: features/fact_sheets/templates/fact_sheets/manage_fact_sheets.html:25
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:20
+#: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:29
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:27
 #: templates/app_kit/ajax/app_card.html:19
 #: templates/app_kit/ajax/component_card.html:20
@@ -350,6 +362,7 @@ msgstr "bearbeiten"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxonlist.html:54
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxonlist.html:62
+#: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:30
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:28
 msgid "Remove"
 msgstr "entfernen"
@@ -503,12 +516,14 @@ msgstr ""
 "Beobachtung."
 
 #: features/buttonmatrix/templates/buttonmatrix/buttonmatrix_button.html:21
+#: features/fact_sheets/templates/fact_sheets/manage_fact_sheets.html:17
+#: features/fact_sheets/templates/fact_sheets/widgets/filecontent_field.html:19
 #: features/generic_forms/templates/generic_forms/ajax/delete_generic_value.html:16
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:16
 #: features/generic_forms/templates/generic_forms/generic_field_modify.html:16
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:21
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:18
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:33
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:44
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:23
 #: templates/app_kit/ajax/component_card.html:11
 #: templates/app_kit/ajax/content_image_form.html:22
@@ -549,6 +564,135 @@ msgid ""
 msgstr ""
 "Sie können verhindern, dass der in das angzeigt Feld eingegebene Wert "
 "zurückgesetzt wird, indem Sie den Sperren-Button aktivieren."
+
+#: features/fact_sheets/forms.py:19
+msgid "Title"
+msgstr ""
+
+#: features/fact_sheets/forms.py:20
+msgid "Name for links in navigation menus"
+msgstr ""
+
+#: features/fact_sheets/forms.py:22
+#, python-format
+msgid ""
+"Max %(characters)s characters. If this content shows up in a navigation "
+"menu, this name will be shown as the link."
+msgstr ""
+"Höchstens %(characters)s Zeichen. Falls dieser Inhalt in einem Menu "
+"auftaucht, wird dieser Name angezeigt."
+
+#: features/fact_sheets/forms.py:35
+msgid "Template"
+msgstr "Vorlage"
+
+#: features/fact_sheets/forms.py:151
+msgid ""
+"This template already exists. Did you want to overwrite the existing one?"
+msgstr ""
+"Diese Vorlage existiert bereits. Wollen Sie die vorhandene Vorlage überschreiben?"
+
+#: features/fact_sheets/models.py:90 features/fact_sheets/models.py:91
+#: features/fact_sheets/models.py:167
+msgid "Fact sheets"
+msgstr ""
+
+#: features/fact_sheets/models.py:166
+msgid "Fact sheet"
+msgstr ""
+
+#: features/fact_sheets/templates/fact_sheets/ajax/upload_factsheet_template.html:10
+#: features/fact_sheets/templates/fact_sheets/create_fact_sheet.html:28
+msgid "Upload custom template"
+msgstr "Vorlage hochladen"
+
+#: features/fact_sheets/templates/fact_sheets/ajax/upload_factsheet_template.html:17
+msgid "Your template has been uploaded successfully."
+msgstr "Ihre Vorlage wurde erfolgreich hochgeladen."
+
+#: features/fact_sheets/templates/fact_sheets/ajax/upload_factsheet_template.html:27
+#: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:54
+#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:28
+#: templates/app_kit/ajax/app_limit_reached.html:15
+#: templates/app_kit/ajax/create_generic_content.html:50
+#: templates/app_kit/ajax/manage_feature.html:28
+#: templates/app_kit/ajax/mockbutton.html:14
+#: templates/app_kit/ajax/zip_import.html:62
+msgid "Close"
+msgstr "Schließen"
+
+#: features/fact_sheets/templates/fact_sheets/ajax/upload_factsheet_template.html:29
+#: features/nature_guides/templates/nature_guides/ajax/manage_color_filter_space.html:102
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:57
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:28
+#: templates/app_kit/ajax/content_image_form.html:20
+#: templates/app_kit/ajax/manage_app_theme_image.html:20
+msgid "Cancel"
+msgstr "abbrechen"
+
+#: features/fact_sheets/templates/fact_sheets/ajax/upload_factsheet_template.html:30
+msgid "Upload"
+msgstr "Hochladen"
+
+#: features/fact_sheets/templates/fact_sheets/create_fact_sheet.html:12
+msgid "Create new fact sheet"
+msgstr "Neues Fact Sheet erstellen"
+
+#: features/fact_sheets/templates/fact_sheets/create_fact_sheet.html:24
+msgid "Custom templates"
+msgstr "Selbsterstellte Vorlagen"
+
+#: features/fact_sheets/templates/fact_sheets/create_fact_sheet.html:26
+msgid "You can create and upload your own custom templates."
+msgstr ""
+
+#: features/fact_sheets/templates/fact_sheets/factsheet_image_form.html:9
+#: templates/app_kit/ajax/content_image_form.html:10
+msgid "Manage image"
+msgstr "Bild bearbeiten"
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:20
+msgid "Successfully saved your content."
+msgstr "Ihr Inhalt wurde erfolgreich gespeichert."
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:45
+#: templates/app_kit/base.html:152
+msgid "Components"
+msgstr "Komponenten"
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:76
+#, fuzzy, python-format
+#| msgid "Add %(name)s"
+msgid "add %(name)s"
+msgstr "%(name)s hinzufügen"
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:108
+msgid "save fact sheet"
+msgstr "Fact Sheet speichern"
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:113
+msgid "Preview"
+msgstr "Vorschau"
+
+#: features/fact_sheets/templates/fact_sheets/manage_atomic_fact_sheet.html:113
+msgid "Show in separate window"
+msgstr "In separatem Fenster öffnen"
+
+#: features/fact_sheets/templates/fact_sheets/manage_fact_sheets.html:35
+msgid "You have no fact sheets yet."
+msgstr "Sie haben noch keine Fact Sheets."
+
+#: features/fact_sheets/templates/fact_sheets/manage_fact_sheets.html:41
+msgid "create new fact sheet"
+msgstr "Neues Fact Sheet erstellen"
+
+#: features/fact_sheets/templates/fact_sheets/widgets/filecontent_field.html:17
+msgid "Change image"
+msgstr "Bild ändern"
+
+#: features/fact_sheets/templates/fact_sheets/widgets/filecontent_field.html:17
+msgid "Add image"
+msgstr "Bild hinzufügen"
 
 #: features/generic_forms/forms.py:138
 msgid "Date"
@@ -715,7 +859,7 @@ msgid "Temporal Reference"
 msgstr "Zeitliche Referenz"
 
 #: features/generic_forms/models.py:192
-#: features/nature_guides/matrix_filters.py:932
+#: features/nature_guides/matrix_filters.py:1112
 msgid "Taxon"
 msgstr "Taxon"
 
@@ -768,13 +912,15 @@ msgstr "Wahlmöglichkeiten"
 
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:18
 #: features/generic_forms/templates/generic_forms/generic_field_modify.html:19
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:23
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:37
+#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:11
 msgid "Move up"
 msgstr "nach oben"
 
 #: features/generic_forms/templates/generic_forms/ajax/manage_generic_field_choices.html:20
 #: features/generic_forms/templates/generic_forms/generic_field_modify.html:21
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:25
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:39
+#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:13
 msgid "Move down"
 msgstr "nach unten"
 
@@ -912,30 +1058,36 @@ msgid "Edit glossary entry"
 msgstr "Glossareintrag bearbeiten"
 
 #: features/glossary/templates/glossary/manage_glossary.html:7
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:52
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:105
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:130
 msgid "Add entry"
 msgstr "Eintrag hinzufügen"
 
-#: features/glossary/zip_import.py:56
+#: features/glossary/zip_import.py:58
 #, python-brace-format
 msgid "Cell content has to be \"Term\", not {0}"
 msgstr "Zellinhalt muss \"Term\" sein, nicht {0}"
 
-#: features/glossary/zip_import.py:62
+#: features/glossary/zip_import.py:64
 #, python-brace-format
 msgid "Cell content has to be \"Synonyms\", not {0}"
 msgstr "Zellinhalt muss \"Synonyms\" sein, nicht {0}"
 
-#: features/glossary/zip_import.py:68
+#: features/glossary/zip_import.py:70
 #, python-brace-format
 msgid "Cell content has to be \"Definition\", not {0}"
 msgstr "Zellinhalt muss \"Definition\" sein, nicht {0}"
 
-#: features/glossary/zip_import.py:84
+#: features/glossary/zip_import.py:92
+#, python-brace-format
+msgid "Unambiguous synonym: {0} is mapped to {1} and {2}"
+msgstr ""
+
+#: features/glossary/zip_import.py:101
 msgid "No term found."
 msgstr "Kein Begriff gefunden."
 
-#: features/glossary/zip_import.py:88
+#: features/glossary/zip_import.py:105
 msgid "No definition found."
 msgstr "Keine Definition gefunden."
 
@@ -1000,11 +1152,11 @@ msgstr ""
 "Sie können optional ihr Projekt auf ein Gebiet begrenzen. Dies hat nur "
 "Auswirkungen wen Sie Beobachtungen sammeln."
 
-#: features/nature_guides/fields.py:45 features/nature_guides/fields.py:52
+#: features/nature_guides/fields.py:44 features/nature_guides/fields.py:51
 msgid "Both min and max value are required."
 msgstr "Sowohl Minimal- als auch Maximalwert werden benötigt."
 
-#: features/nature_guides/fields.py:58
+#: features/nature_guides/fields.py:57
 msgid "Min needs to be smaller than max,"
 msgstr "Minimum muss kleiner als Maximum sein"
 
@@ -1028,31 +1180,31 @@ msgstr ""
 "Legen Sie fest, was passiert, wenn der Nutzer auf einen Eintrag (nicht "
 "Gruppe) dieses Naturführers tippt."
 
-#: features/nature_guides/forms.py:90 features/nature_guides/models.py:448
+#: features/nature_guides/forms.py:127 features/nature_guides/models.py:504
 msgid "Node"
 msgstr "Knoten"
 
-#: features/nature_guides/forms.py:91 features/nature_guides/models.py:449
+#: features/nature_guides/forms.py:128 features/nature_guides/models.py:505
 msgid "Identification result"
 msgstr "Bestimmungsergebnis"
 
-#: features/nature_guides/forms.py:97
+#: features/nature_guides/forms.py:134
 msgid "Type of node"
 msgstr "Typ des Knotens"
 
-#: features/nature_guides/forms.py:99
+#: features/nature_guides/forms.py:136
 msgid "Name of the taxon or group."
 msgstr "Name des Taxons oder der Gruppe"
 
-#: features/nature_guides/forms.py:102
+#: features/nature_guides/forms.py:139
 msgid "Taxon (makes taxonomic filters work)"
 msgstr "Taxon (macht Taxonomische Filter funktionsfähig)"
 
-#: features/nature_guides/forms.py:105
+#: features/nature_guides/forms.py:143
 msgid "Decision rule"
-msgstr ""
+msgstr "Entscheidungsregel"
 
-#: features/nature_guides/forms.py:107
+#: features/nature_guides/forms.py:146
 msgid ""
 "Will be shown below the image. Text that describes how to identify this "
 "entry or group, e.g. 'red feet, white body'."
@@ -1061,26 +1213,27 @@ msgstr ""
 "Eintrag oder diese Gruppe identifizieren kann, z.B. 'rote Füße, weißer "
 "Körper'."
 
-#: features/nature_guides/forms.py:170
-msgid "You have to enter at least a name or a decision rule."
-msgstr "Sie müssen entweder einen Namen oder eine Entscheidungsregel angeben"
+#: features/nature_guides/forms.py:205
+msgid "A node with the name {0} already exists"
+msgstr "Ein Knoten mit dem Namen {0} existiert bereits."
 
-#: features/nature_guides/forms.py:179
+#: features/nature_guides/forms.py:271
 msgid "Name of new group"
 msgstr "Name der neuen Gruppe"
 
-#: features/nature_guides/forms.py:180
+#: features/nature_guides/forms.py:272
 msgid "Search whole tree for a group."
 msgstr "Ganzen Baum nach einem Eintrag durchsuchen."
 
-#: features/nature_guides/forms.py:182
+#: features/nature_guides/forms.py:274
 msgid "New group"
 msgstr "Neue Gruppe"
 
-#: features/nature_guides/forms.py:204
+#: features/nature_guides/forms.py:296
 #, python-brace-format
 msgid "Moving {0} to {1} would result in an invalid tree."
-msgstr "Die Verschiebung von {0} nach {1} würde die Baumstruktur kompromittieren."
+msgstr ""
+"Die Verschiebung von {0} nach {1} würde die Baumstruktur kompromittieren."
 
 #: features/nature_guides/matrix_filter_forms.py:13
 msgid "Name of filter or trait"
@@ -1110,155 +1263,175 @@ msgstr "Name der Einheit"
 msgid "Full name of the unit, like meters or centimeters."
 msgstr "Vollständiger name der Einheit, wie Meter oder Zentimeter"
 
-#: features/nature_guides/matrix_filter_forms.py:68
+#: features/nature_guides/matrix_filter_forms.py:51
+msgid "allow the selection of multiple values"
+msgstr "Auswahl mehrere Werte erlauben"
+
+#: features/nature_guides/matrix_filter_forms.py:52
+msgid ""
+"The end user will be able to select more than one value. The selected values "
+"will be treated as \"OR\"."
+msgstr ""
+"Der Endnutzer kann mehr als nur einen Wert auswählen. Die gewählten "
+"Werte werden als \"UND\" Verknüpfung verstanden."
+
+#: features/nature_guides/matrix_filter_forms.py:71
 msgid "Min"
 msgstr "Min"
 
-#: features/nature_guides/matrix_filter_forms.py:69
+#: features/nature_guides/matrix_filter_forms.py:72
 msgid "Max"
 msgstr "Max"
 
-#: features/nature_guides/matrix_filter_forms.py:70
+#: features/nature_guides/matrix_filter_forms.py:73
 msgid ""
 "Range will be rendered as a slider. Step defines the step of this slider."
 msgstr ""
 "Intervall wird als Slider dargestellt. Schrittweite definiert die "
 "Schrittweite dieses Sliders."
 
-#: features/nature_guides/matrix_filter_forms.py:83
+#: features/nature_guides/matrix_filter_forms.py:86
 msgid "Max needs to be higher than min."
 msgstr "max muss höher als min sein"
 
-#: features/nature_guides/matrix_filter_forms.py:96
+#: features/nature_guides/matrix_filter_forms.py:99
 msgid "Selectable Numbers"
 msgstr "Wählbare Zahlen"
 
-#: features/nature_guides/matrix_filter_forms.py:96
+#: features/nature_guides/matrix_filter_forms.py:99
 msgid "Comma-separated list, e.g. 1,2,3.1,5"
 msgstr "Kommagetrennte Liste, z.B. 1,2,3.1,5"
 
-#: features/nature_guides/matrix_filter_forms.py:115
+#: features/nature_guides/matrix_filter_forms.py:118
 #, python-format
 msgid "Only comma separated numbers are allowed. Incorrect character: %s"
 msgstr "Nur kommagetrennte Zahlen sind erlaubt. Falsches Zeichen: %s"
 
 #: features/nature_guides/matrix_filter_space_forms.py:25
-#: features/nature_guides/matrix_filter_space_forms.py:36
+#: features/nature_guides/matrix_filter_space_forms.py:37
 msgid "Text"
 msgstr "Text"
 
-#: features/nature_guides/matrix_filters.py:39
-#: features/nature_guides/matrix_filters.py:447
+#: features/nature_guides/matrix_filter_space_forms.py:50
+msgid "gradient"
+msgstr "Gradient"
+
+#: features/nature_guides/matrix_filter_space_forms.py:67
+msgid "You have to define a second color if you want to create a gradient."
+msgstr "Sie müssen eine zweite Farbe festlegen, um einen Gradienten zu erzeugen."
+
+#: features/nature_guides/matrix_filters.py:43
+#: features/nature_guides/matrix_filters.py:522
 msgid "Color filter"
 msgstr "Farbfilter"
 
-#: features/nature_guides/matrix_filters.py:40
-#: features/nature_guides/matrix_filters.py:229
+#: features/nature_guides/matrix_filters.py:44
+#: features/nature_guides/matrix_filters.py:275
 msgid "Range filter"
 msgstr "Zahlenintervall-Filter"
 
-#: features/nature_guides/matrix_filters.py:41
+#: features/nature_guides/matrix_filters.py:45
 msgid "Numbers filter"
 msgstr "Zahlenfilter"
 
-#: features/nature_guides/matrix_filters.py:42
+#: features/nature_guides/matrix_filters.py:46
 msgid "Descriptive text and images"
 msgstr "Beschreibender Text mit Bildern"
 
-#: features/nature_guides/matrix_filters.py:43
+#: features/nature_guides/matrix_filters.py:47
 msgid "Taxonomic filter"
 msgstr "Taxonomischer Filter"
 
-#: features/nature_guides/matrix_filters.py:44
-#: features/nature_guides/matrix_filters.py:787
+#: features/nature_guides/matrix_filters.py:48
+#: features/nature_guides/matrix_filters.py:962
 msgid "Text only filter"
 msgstr "Textbasierter Filter"
 
-#: features/nature_guides/matrix_filters.py:343
+#: features/nature_guides/matrix_filters.py:412
 msgid "Number filter"
 msgstr "Zahlenfilter"
 
-#: features/nature_guides/matrix_filters.py:448
+#: features/nature_guides/matrix_filters.py:523
 msgid "color"
 msgstr "Farbe"
 
-#: features/nature_guides/matrix_filters.py:666
+#: features/nature_guides/matrix_filters.py:838
 msgid "Text/Images filter"
 msgstr "Text/Bilder Filter"
 
-#: features/nature_guides/matrix_filters.py:667
+#: features/nature_guides/matrix_filters.py:839
 msgid "text with image"
 msgstr "Text mit Bild"
 
-#: features/nature_guides/matrix_filters.py:788
+#: features/nature_guides/matrix_filters.py:963
 msgid "text"
 msgstr "Text"
 
-#: features/nature_guides/matrix_filters.py:905
+#: features/nature_guides/matrix_filters.py:1085
 msgid "Animals"
 msgstr "Tiere"
 
-#: features/nature_guides/matrix_filters.py:906
+#: features/nature_guides/matrix_filters.py:1086
 msgid "Plants"
 msgstr "Pflanzen"
 
-#: features/nature_guides/matrix_filters.py:907
+#: features/nature_guides/matrix_filters.py:1087
 msgid "Mushrooms"
 msgstr "Pilze"
 
-#: features/nature_guides/matrix_filters.py:908
+#: features/nature_guides/matrix_filters.py:1088
 msgid "Chordates"
 msgstr "Wirbeltiere"
 
-#: features/nature_guides/matrix_filters.py:909
+#: features/nature_guides/matrix_filters.py:1089
 msgid "Mammals"
 msgstr "Säugetiere"
 
-#: features/nature_guides/matrix_filters.py:910
+#: features/nature_guides/matrix_filters.py:1090
 msgid "Birds"
 msgstr "Vögel"
 
-#: features/nature_guides/matrix_filters.py:911
+#: features/nature_guides/matrix_filters.py:1091
 msgid "Amphibians"
 msgstr "Amphibien"
 
-#: features/nature_guides/matrix_filters.py:912
+#: features/nature_guides/matrix_filters.py:1092
 msgid "Frogs"
 msgstr "Frösche"
 
-#: features/nature_guides/matrix_filters.py:913
+#: features/nature_guides/matrix_filters.py:1093
 msgid "Fish"
 msgstr "Fische"
 
-#: features/nature_guides/matrix_filters.py:914
+#: features/nature_guides/matrix_filters.py:1094
 msgid "Arthropods"
 msgstr "Gliederfüßer"
 
-#: features/nature_guides/matrix_filters.py:915
+#: features/nature_guides/matrix_filters.py:1095
 msgid "Insects"
 msgstr "Insekten"
 
-#: features/nature_guides/matrix_filters.py:916
+#: features/nature_guides/matrix_filters.py:1096
 msgid "Butterflies"
 msgstr "Schmetterlinge"
 
-#: features/nature_guides/matrix_filters.py:917
+#: features/nature_guides/matrix_filters.py:1097
 msgid "Bugs"
 msgstr "Käfer"
 
-#: features/nature_guides/matrix_filters.py:918
+#: features/nature_guides/matrix_filters.py:1098
 msgid "Dragonflies and damselflies"
 msgstr "Libellen"
 
-#: features/nature_guides/matrix_filters.py:919
+#: features/nature_guides/matrix_filters.py:1099
 msgid "Spiders"
 msgstr "Spinnen"
 
-#: features/nature_guides/matrix_filters.py:920
+#: features/nature_guides/matrix_filters.py:1100
 msgid "Molluscs"
 msgstr "Weichtiere"
 
-#: features/nature_guides/matrix_filters.py:931
+#: features/nature_guides/matrix_filters.py:1111
 msgid "Taxonomic Filter"
 msgstr "Taxonomischer Filter"
 
@@ -1274,7 +1447,7 @@ msgstr "Naturführer"
 msgid "Nature guides"
 msgstr "Naturführer"
 
-#: features/nature_guides/models.py:447
+#: features/nature_guides/models.py:503
 msgid "Start"
 msgstr "Anfangsknoten"
 
@@ -1304,6 +1477,12 @@ msgstr ""
 msgid "Ok"
 msgstr "Ok"
 
+#: features/nature_guides/templates/nature_guides/ajax/manage_color_filter_space.html:45
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:50
+#, python-format
+msgid "Successfully saved %(name)s."
+msgstr "%(name)s erfolgreich gespeichert."
+
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter.html:9
 #, python-format
 msgid "Manage %(matrix_filter)s"
@@ -1318,13 +1497,30 @@ msgstr "Neuen %(verbose_filter_name)s erstellen"
 msgid "Successfully saved matrix filter."
 msgstr "Matrix Filter erfolgreich gespeichert."
 
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_restrictions.html:7
+msgid "Manage visibility of %(name)s"
+msgstr "Sichtbarkeit von %(name)s bearbeiten"
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_restrictions.html:12
+#, python-format
+msgid ""
+"Select the trait values which trigger the display of %(name)s. If nothing is "
+"selected, %(name)s will always be visible."
+msgstr ""
+"Sie können diejenigen Merkmalsausprägungen auswählen, die %(name)s sichtbar machen."
+"Falls keine Ausprägungen gewählt sind, ist %(name)s immer sichtbar."
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_restrictions.html:35
+msgid "Successfully saved matrix filter restrictions."
+msgstr "Restriktion erfolgreich gespeichert."
+
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:11
 #, python-format
 msgid "Manage %(matrix_filter_space)s"
 msgstr "%(matrix_filter_space)s bearbeiten"
 
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:11
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:28
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:42
 #: templates/app_kit/ajax/create_generic_content.html:10
 #, python-format
 msgid "Add %(name)s"
@@ -1341,18 +1537,6 @@ msgstr "Text eingeben um vorhandene Bilder zu suchen"
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:29
 msgid "Image"
 msgstr "Bild"
-
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:50
-#, python-format
-msgid "Successfully saved %(name)s."
-msgstr "%(name)s erfolgreich gespeichert."
-
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:57
-#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:26
-#: templates/app_kit/ajax/content_image_form.html:20
-#: templates/app_kit/ajax/manage_app_theme_image.html:20
-msgid "Cancel"
-msgstr "abbrechen"
 
 #: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:8
 #: templates/app_kit/ajax/create_generic_content.html:37
@@ -1381,43 +1565,49 @@ msgstr "Merkmale dieses Eintrags"
 msgid "Successfully saved node."
 msgstr "Knoten erfolgreich gespeichert."
 
-#: features/nature_guides/templates/nature_guides/ajax/manage_nodelink_form.html:54
-#: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:28
-#: templates/app_kit/ajax/app_limit_reached.html:15
-#: templates/app_kit/ajax/create_generic_content.html:50
-#: templates/app_kit/ajax/manage_feature.html:28
-#: templates/app_kit/ajax/mockbutton.html:14
-#: templates/app_kit/ajax/zip_import.html:62
-msgid "Close"
-msgstr "Schließen"
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:7
+msgid "reset selection"
+msgstr "Auswahl zurücksetzen"
 
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:13
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:20
 msgid "multiple choices"
 msgstr "Multiple Choices"
 
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:16
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:23
+msgid "visibility"
+msgstr "Sichtbarkeit"
+
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:24
+msgid ""
+"in your app, this filter will be initially invisible. It will become visible "
+"as soon as the conditions you defined are met."
+msgstr ""
+"Dieses Merkmal wird in ihrer App zuerst unsichtbar sein. Es wird sichtbar, "
+"sobald die von Ihnen festgelegten Bedingungen erfüllt sind."
+
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:29
 msgid "modify"
 msgstr "ändern"
 
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:19
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:32
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:2
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:21
-#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:15
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:17
 #, python-format
 msgid "Edit %(name)s"
 msgstr "%(name)s bearbeiten"
 
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:39
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:33
+msgid "Manage visibility"
+msgstr "Sichtbarkeit bearbeiten"
+
+#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:53
 msgid ""
 "You have not defined traits for this part of your nature guide yet. You can "
 "add traits below."
 msgstr ""
 "Sie haben noch keine Merkmale für diesen Bereich ihres Naturführers "
 "definiert. Siekönnen unten Merkmale hinzufügen."
-
-#: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:49
-msgid "Add trait or filter"
-msgstr "Merkmal oder Filter hinzufügen"
 
 #: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:9
 msgid "Move tree entry"
@@ -1429,10 +1619,12 @@ msgid "%(child_node)s has successfully been moved to %(new_parent_node)s"
 msgstr "%(child_node)s wurde in die Gruppe %(new_parent_node)s verschoben"
 
 #: features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:19
+#, python-format
 msgid "Go to %(new_parent_node)s"
 msgstr "Gehe zu %(new_parent_node)s"
 
-#: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:12
+#: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:7
+#: features/nature_guides/templates/nature_guides/ajax/natureguide_node.html:29
 msgid ""
 "Tapping on an entry in your app will result a taxon profile or observation "
 "form being opened - according to your settings."
@@ -1455,7 +1647,7 @@ msgid "Loading"
 msgstr "lade"
 
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:3
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:31
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:42
 msgid "Edit image"
 msgstr "Bild bearbeiten"
 
@@ -1464,25 +1656,15 @@ msgstr "Bild bearbeiten"
 msgid "Enter group %(name)s"
 msgstr "Gruppe %(name)s betrachten"
 
-#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:11
-#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:30
-msgid "Move left"
-msgstr "nach links schieben"
-
-#: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:13
-#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:32
-msgid "Move right"
-msgstr "nach rechts schieben"
-
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:15
 msgid "Move to different group"
 msgstr "In andere Gruppe verschieben"
 
-#: features/nature_guides/templates/nature_guides/ajax/nodelist.html:10
+#: features/nature_guides/templates/nature_guides/ajax/nodelist.html:11
 msgid "This nature guide is empty. You can add entries below."
 msgstr "Dieser Naturführer ist leer. Sie können unten Einträge hinzufügen."
 
-#: features/nature_guides/templates/nature_guides/ajax/nodelist.html:12
+#: features/nature_guides/templates/nature_guides/ajax/nodelist.html:13
 #, python-format
 msgid ""
 "The group <strong>%(name)s</strong> has no entries yet. You can add entries "
@@ -1491,31 +1673,41 @@ msgstr ""
 "Die Gruppe <strong>%(name)s</strong> hat noch keine Einträge. Sie können "
 "Einträge unten hinzufügen."
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:39
-msgid "Filter by trait"
-msgstr "Nach Merkmal filtern"
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:54
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:48
+msgid "Traits"
+msgstr "Merkmale"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:39
-msgid "results"
-msgstr "Ergebnisse"
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:58
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:77
+msgid "Add trait or filter"
+msgstr "Merkmal oder Filter hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:40
-msgid "Show all"
-msgstr "Zeige alle"
-
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:55
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:108
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:133
 msgid "Add existing result or group"
 msgstr "Bestehenden Eintrag oder Gruppe hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:56
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:109
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:134
 msgid "Add new group"
 msgstr "Neue Gruppe hinzufügen"
 
-#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:57
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:110
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:135
 msgid "Add new identification result"
 msgstr "Neues Bestimmungsergebnis hinzufügen"
 
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:118
+msgid "Show sorted out"
+msgstr "Aussortierte anzeigen"
+
+#: features/nature_guides/templates/nature_guides/manage_nature_guide.html:121
+msgid "Sorted out:"
+msgstr "Aussortiert:"
+
 #: features/nature_guides/templates/nature_guides/node_analysis.html:20
+#, python-format
 msgid "%(meta_node)s appears in %(length)s locations:"
 msgstr "%(meta_node)s befindet kommt an %(length)s Orten vor:"
 
@@ -1523,11 +1715,11 @@ msgstr "%(meta_node)s befindet kommt an %(length)s Orten vor:"
 msgid "Start node"
 msgstr "Anfangsknoten"
 
-#: features/nature_guides/templates/nature_guides/node_analysis.html:42
+#: features/nature_guides/templates/nature_guides/node_analysis.html:39
 msgid "Go to start node"
 msgstr "Gehe zum Anfangsknoten"
 
-#: features/nature_guides/templates/nature_guides/node_analysis.html:42
+#: features/nature_guides/templates/nature_guides/node_analysis.html:39
 #, python-format
 msgid "Go to %(name)s"
 msgstr "Gehe zu %(name)s"
@@ -1540,16 +1732,28 @@ msgstr "min"
 msgid "max"
 msgstr "max"
 
+#: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:32
+#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:30
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:46
+msgid "Move left"
+msgstr "nach links schieben"
+
+#: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:34
+#: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:32
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:48
+msgid "Move right"
+msgstr "nach rechts schieben"
+
 #: features/nature_guides/templates/nature_guides/widgets/range.html:14
 msgid "Clear"
 msgstr "zurücksetzen"
 
-#: features/nature_guides/views.py:328
+#: features/nature_guides/views.py:358
 #, python-brace-format
 msgid "Do you really want to remove the crosslink to {0}?"
 msgstr "Wollen Sie die Querverbindung zu {0} wirklich entfernen?"
 
-#: features/nature_guides/views.py:330 views.py:910
+#: features/nature_guides/views.py:360 views.py:910
 #, python-brace-format
 msgid "Do you really want to remove {0}?"
 msgstr "Wollen Sie {0} wirklich entfernen?"
@@ -1688,12 +1892,12 @@ msgstr "z.B. Lebensraum. WICHTIG: Änderung betrifft alle Texte dieses Typs."
 msgid "Taxon profiles"
 msgstr "Artensteckbriefe"
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:41
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:57
 #: templates/app_kit/ajax/get_content_image_suggestions.html:27
 msgid "No images found."
 msgstr "Keine Bilder gefunden."
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_traits.html:41
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_traits.html:56
 msgid "No traits found."
 msgstr "Keine Merkmale gefunden."
 
@@ -1728,8 +1932,8 @@ msgstr "zurück zu %(name)s"
 msgid "Save texts"
 msgstr "Texte speichern"
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:15
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:68
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:17
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:71
 msgid "Add new text type"
 msgstr "Neuen Texttyp hinzufügen"
 
@@ -1737,31 +1941,27 @@ msgstr "Neuen Texttyp hinzufügen"
 msgid "no profile"
 msgstr "Kein Artensteckbrief vorhanden"
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:26
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:29
 msgid "In your app this button opens a wikipedia page."
 msgstr "In ihrer App öffnet dieser Button eine Seite auf Wikipedia."
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:31
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:34
 msgid "In your app this button opens an observation form for this taxon."
 msgstr ""
 "In ihrer App öffnet dieser Button ein Beobachtungsformular für dieses Taxon."
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:36
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:39
 msgid "In your app this button opens a GBIF occurrence map for this taxon."
 msgstr ""
 "In ihrer App öffnet dieser Button eine GBIF Verbreitungskarte für dieses "
 "Taxon."
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:45
-msgid "Traits"
-msgstr "Merkmale"
-
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:52
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:55
 #: templates/app_kit/content_images.html:3
 msgid "Images"
 msgstr "Bilder"
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:56
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:59
 msgid "Add image with text"
 msgstr "Bild mit Text hinzufügen"
 
@@ -2007,11 +2207,11 @@ msgstr "Warnungen"
 msgid "errors"
 msgstr "Fehler"
 
-#: models.py:842
+#: models.py:869
 msgid "App"
 msgstr "App"
 
-#: models.py:843
+#: models.py:870
 msgid "Meta apps"
 msgstr "Meta Apps"
 
@@ -2235,10 +2435,6 @@ msgstr "App Limit erreicht"
 msgid "You are not allowed to create any more apps."
 msgstr "Sie können keine weiteren Apps erstellen."
 
-#: templates/app_kit/ajax/content_image_form.html:10
-msgid "Manage image"
-msgstr "Bild bearbeiten"
-
 #: templates/app_kit/ajax/create_generic_content.html:30
 #, python-format
 msgid "Your app may only have one %(name)s feature."
@@ -2362,10 +2558,6 @@ msgstr "Ihre App wird gerade gebaut!"
 #: templates/app_kit/build_app.html:264 templates/app_kit/build_app.html:298
 msgid "Build"
 msgstr "Bauen"
-
-#: templates/app_kit/base.html:152
-msgid "Components"
-msgstr "Komponenten"
 
 #: templates/app_kit/base.html:210
 msgid ""
@@ -2759,7 +2951,11 @@ msgstr "Beschreigen Sie die Arten ihrer App mit Artensteckbriefen."
 msgid "An observation form is used to collect data."
 msgstr "Ein Beobachtungsformular dient der Datensammlung."
 
-#: templatetags/app_tags.py:255
+#: templatetags/app_tags.py:244
+msgid "Create pages for certain groups of species."
+msgstr ""
+
+#: templatetags/app_tags.py:256
 msgid "No help text available."
 msgstr "Kein Hilfetext verfügbar"
 
@@ -2772,6 +2968,19 @@ msgstr "Datei zu groß. Die Größe sollte %(size)s MiB nicht überschreiten."
 #, python-format
 msgid "Do you really want to delete %s?"
 msgstr "Wollen Sie %s wirklich löschen?"
+
+msgid "You have to enter at least a name or a decision rule."
+msgstr ""
+"Sie müssen entweder einen Namen oder eine Entscheidungsregel angeben"
+
+msgid "Filter by trait"
+msgstr "Nach Merkmal filtern"
+
+msgid "results"
+msgstr "Ergebnisse"
+
+msgid "Show all"
+msgstr "Zeige alle"
 
 msgid "Do you really want to delete %(verbose_name)s?"
 msgstr "Wollen Sie wirklich %(verbose_name)s löschen ?"

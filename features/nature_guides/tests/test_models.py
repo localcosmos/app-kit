@@ -2271,4 +2271,15 @@ class TestMatrixFilterRestriction(WithNatureGuide, WithMatrixFilters, TenantTest
 
                     restriction.refresh_from_db()
                     self.assertEqual(restriction.encoded_space, None)
+
+                elif restrictive_matrix_filter.filter_type in ['NumberFilter', 'RangeFilter']:
+
+                    space = [2.3, 3.0]
+
+                    restriction.encoded_space = space
+                    restriction.save()
+
+                    restriction.refresh_from_db()
+                    self.assertEqual(restriction.encoded_space, space)
+                    
                     

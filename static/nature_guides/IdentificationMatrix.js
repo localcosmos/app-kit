@@ -176,7 +176,7 @@ var IdentificationMatrix = {
 
 				// slide to the beginning
 				var _slider_container = event.currentTarget.parentElement.parentElement;
-				_slider_container.style.transform = 'translate3d(0px, 0px, 0px)';
+				//_slider_container.style.transform = 'translate3d(0px, 0px, 0px)';
 
 			});
 
