@@ -738,6 +738,7 @@ input[type="color"] {
 .grid-choices > div {
 	position: relative;
 	margin-right: 1rem;
+	margin-bottom: 3rem;
 }
 
 .grid-choice {
