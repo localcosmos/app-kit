@@ -175,7 +175,19 @@ var IdentificationMatrix = {
 				self.apply_filters(event);
 
 				// slide to the beginning
-				var _slider_container = event.currentTarget.parentElement.parentElement;
+				var space_wrap_id = event.currentTarget.getAttribute("data-container-id");
+				var space_wrap = document.getElementById(space_wrap_id);
+				
+				var space_container = space_wrap.firstElementChild;
+				
+				if (space_container.classList.contains("is-active")){
+					space_container.classList.remove("is-active");
+				}
+				else {
+					space_container.classList.add("is-active");
+				}
+				
+				//var _slider_container = event.currentTarget.parentElement.parentElement;
 				//_slider_container.style.transform = 'translate3d(0px, 0px, 0px)';
 
 			});

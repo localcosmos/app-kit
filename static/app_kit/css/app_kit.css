@@ -725,20 +725,13 @@ input[type="color"] {
 .grid-choices input[type='checkbox'] + label, .grid-choices input[type='radio'] + label {
 	display: block;
 	/*margin: 0.3rem;*/
-	padding: 0.5rem;
-	background: rgba(220,220,220,1);
-	border-radius: .5em;
-}
-
-.grid-choices input[type='checkbox']:checked + label, .grid-choices input[type='radio']:checked + label {
-	background-color: rgb(92,184,92);
-	border-radius: 0.5rem;
 }
 
 .grid-choices label {
 	cursor: pointer;
 	white-space: normal;
 	font-size: 0.85rem;
+	margin-bottom: 0px !important;
 }
 
 
@@ -749,6 +742,17 @@ input[type="color"] {
 
 .grid-choice {
 	width: 7rem;
+	padding: 0.5rem;
+	background: rgba(220,220,220,1);
+	border-radius: .5em;
+}
+
+.grid-choice.is-active {
+	background-color: rgb(92,184,92);
+}
+
+.grid-choice > div {
+	height: 100%;
 }
 
 
@@ -789,13 +793,29 @@ input[type="color"] {
 }
 
 
-.grid-choices .text-only, .grid-choices .text-only .slide-element-text {
+.grid-choices .text-only {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	
+}
+
+.grid-choices .text-only .slide-element-text {
 	background: rgba(220,220,220,1);
 	padding: 0.5rem;
 	border-radius: 0.5em;
 }
 .grid-choices .text-only .slide-element-text {
-	background: #ffffff;
+	background: rgb(250, 250, 250);
+	flex-grow: 2;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.grid-choices .text-only .slide-element-text > div {
+	text-align: center;
 }
 
 

@@ -4,6 +4,10 @@
 {% block size %}small{% endblock %}
 {% block image %}{% if option.is_custom %}{% static 'app_kit/buttons/taxonfilters/Customfilter.svg' %}{% else %}{% if option.image %}{{ option.image }}{% else %}{% static 'noimage.png' %}{% endif %}{% endif %}{% endblock %}
 
+{% block input %}
+<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="taxonfilterspace_{{ widget.name }}_{{ option.value }}" />
+{% endblock %}
+
 {% block in_label %}{% if option.is_custom %}<div class="custom"><div>{{ option.label|slice:":3" }}</div></div>{% endif %}{% endblock %}
 
-{% block space_id %}{% endblock %}
+{% block space_id %}id="taxonfilterspace_{{ widget.name }}_{{ option.value }}"{% endblock %}

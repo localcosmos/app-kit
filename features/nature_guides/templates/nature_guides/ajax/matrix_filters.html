@@ -16,7 +16,7 @@
 
 				{% for field in form %}
 					<div id="matrix_filter_{{ field.field.matrix_filter.id }}" {% if field.field.matrix_filter.is_restricted %}class="restricted-matrix-filter"{% endif %} data-object-id="{{ field.field.matrix_filter.id }}">
-						<div>
+						<div class="mb-2">
 							<strong>{{ field.label }}</strong>{% if field.field.matrix_filter.definition.unit %} ({{ field.field.matrix_filter.definition.unit }}){% endif %} {% if field.field.matrix_filter.definition.allow_multiple_values %}({% trans 'multiple choices' %}){% endif %}
 							
 							{% if field.field.matrix_filter.is_restricted %}
@@ -42,7 +42,7 @@
 									&nbsp;<a href="#" data-url="{% url 'create_matrix_filter_space' field.field.matrix_filter.id %}" class="btn btn-outline-primary btn-xs xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.field.matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}</a>
 								{% endif %}
 							</div>
-						</div><br>
+						</div>
 						{{ field }}
 						<hr>
 					</div>

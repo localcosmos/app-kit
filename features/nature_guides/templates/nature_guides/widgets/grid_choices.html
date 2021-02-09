@@ -6,10 +6,10 @@
 		{% for option in options %}
 			<div {% block space_id %}id="space_{{ option.space_id }}" data-object-id="{{ option.space_id }}"{% endblock %}>
 
-				<div class="grid-choice">
+				<div {% block grid_choice_class %}class="grid-choice"{% endblock %}>
 					<div>
 						{% block input %}
-							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} />
+							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="space_{{ option.space_id }}" />
 						{% endblock %}
 						{% block label %}
 							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
