@@ -6,10 +6,11 @@ from django.template import Context
 from django.template import Template, TemplateDoesNotExist
 from django.template.backends.django import DjangoTemplates
 
-from app_kit.generic import GenericContentManager, GenericContent
+from app_kit.generic import GenericContentManager, GenericContent, LocalizeableImage
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from content_licencing.models import ContentLicenceRegistry
 
@@ -17,15 +18,94 @@ from taxonomy.lazy import LazyTaxonList
 
 from django.template.defaultfilters import slugify
 
+from .parser import FactSheetTemplateParser
+
 import os
 
-class FactSheets(GenericContent):
 
-    def get_primary_localization(self):
+class FactSheets(GenericContent):        
 
-        locale = {}
+    '''
+    Fact Sheets uses different kinds of layoutability wich have to be represented in the translation
+    interface. thetefore, the values of the keys have to be {}, which holds the necesssary information
+    _meta{} stores layoutability options and image information
+    keys in _meta aree the same as in the localization
+    '''
+    def get_primary_localization(self, meta_app):
+
+        locale = {
+            '_meta' : {}, # layoutability options are stored in meta
+        }
 
         locale[self.name] = self.name
+
+        all_fact_sheets = FactSheet.objects.filter(fact_sheets=self)
+
+        fact_sheet_images_content_type = ContentType.objects.get_for_model(FactSheetImages)
+
+        # due to layoutability, the underlying template has to be read
+        for fact_sheet in all_fact_sheets:
+
+            # get cms tags out of template and create a layoutability map
+            parser = FactSheetTemplateParser(meta_app, fact_sheet)
+            cms_tags = parser.parse()
+
+            layoutability_map = {}
+
+            for tag in cms_tags:
+                # only text/html content supports layoutability
+                if tag.microcontent_category in ['microcontent', 'microcontents']:
+
+                    if 'layoutable-simple' in tag.args:
+                        layoutability_map[tag.microcontent_type] = 'layoutable-simple'
+                    elif 'layoutable-full' in tag.args:
+                        layoutability_map[tag.microcontent_type] = 'layoutable-full'
+                    else:
+                        layoutability_map[tag.microcontent_type] = None
+                    
+            
+            locale[fact_sheet.title] = fact_sheet.title
+            locale[fact_sheet.navigation_link_name] = fact_sheet.navigation_link_name
+
+            # contents
+            for microcontent_type, html_content in fact_sheet.contents.items():
+                locale_key = fact_sheet.get_locale_key(microcontent_type)
+
+                locale[locale_key] = html_content
+
+                if microcontent_type in layoutability_map:
+                    locale['_meta'][locale_key] = {
+                        'layoutability' : layoutability_map[microcontent_type],
+                        'type' : 'html',
+                    }                    
+
+            # fact sheet images which require translation
+            fact_sheet_images = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
+                                                               requires_translation=True)
+
+            fact_sheet_images_content_type = ContentType.objects.get_for_model(FactSheetImages)
+
+            for fact_sheet_image in fact_sheet_images:
+
+                # add image to locale if it needs translation
+                if fact_sheet_image.requires_translation == True:
+
+                    fact_sheet_image.build = True
+                    fact_sheet_image.language_code = self.primary_language
+
+                    localizeable_image = LocalizeableImage(fact_sheet_image)
+                    
+                    locale_key = localizeable_image.get_language_independant_filename()
+
+                    # this has to be a url relative to the apps www folder, and the image has to exist there
+                    locale[locale_key] = fact_sheet_image.url
+
+                    locale['_meta'][locale_key] = {
+                        'type' : 'image',
+                        'media_url' : fact_sheet_image.image.url,
+                        'content_type_id' : fact_sheet_images_content_type.id,
+                        'object_id' : fact_sheet_image.id,
+                    }                    
 
         return locale
 
@@ -123,6 +203,11 @@ class FactSheet(models.Model):
 
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
 
+    def get_locale_key(self, microcontent_type):
+
+        locale_key = '{0}_{1}'.format(self.id, microcontent_type)
+        return locale_key
+
 
     def get_template(self, meta_app):
 
@@ -178,8 +263,19 @@ def factsheet_images_upload_path(instance, filename):
 
     return path
 
-
+'''
+    primary language
+    - maybe mark an image as translatable
+'''
 class FactSheetImages(models.Model):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # flag if the image is called during the build process of the app
+        self.build = False
+        # no language
+        self.language_code = self.fact_sheet.fact_sheets.primary_language
 
     fact_sheet = models.ForeignKey(FactSheet, on_delete=models.CASCADE)
     
@@ -189,7 +285,36 @@ class FactSheetImages(models.Model):
     image = models.ImageField(upload_to=factsheet_images_upload_path)
     text = models.CharField(max_length=355, null=True)
     
+    # mark an image as translatable
+    requires_translation = models.BooleanField(default=False)
+    
     licences = GenericRelation(ContentLicenceRegistry)
+
+    # during build, url has to be different from preview
+    # the html rendering during build fetches the url using this method
+    # the translated images require the path accordingly
+    @property
+    def url(self):
+
+        if self.build == False:
+            return self.image.url
+
+        # during build, the url has to be according to the app file/folder layout
+        # also called By AppReleaseBuilder and FactSheetsJSONBuilder
+        filename = os.path.basename(self.image.name)
+
+        if self.requires_translation == True:
+
+            localizeable_image = LocalizeableImage(self)
+            url = localizeable_image.get_relative_localized_image_path(self.language_code)
+            
+        else:
+            # no language_code required
+            url = 'features/FactSheets/{0}/{1}-{2}/images/{3}'.format(
+                str(self.fact_sheet.fact_sheets.uuid), str(self.fact_sheet.pk), slugify(self.fact_sheet.title),
+                filename)
+
+        return url
 
 
 def get_user_uploaded_templates_base_dir(fact_sheets):

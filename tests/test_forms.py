@@ -1,9 +1,13 @@
 from django.test import TestCase
 from django_tenants.test.cases import TenantTestCase
 from django import forms
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+from django.contrib.contenttypes.models import ContentType
 
 from app_kit.tests.common import test_settings, powersetdic
-from app_kit.tests.mixins import WithMetaApp, WithFormTest, WithZipFile
+from app_kit.tests.mixins import (WithMetaApp, WithFormTest, WithZipFile, WithImageStore, WithMedia, WithUser,
+                                  WithPublicDomain)
 
 from app_kit.forms import (CleanAppSubdomainMixin, CreateAppForm, CreateGenericContentForm, AddLanguageForm,
                     ManageContentImageForm, ManageContentImageWithTextForm, OptionalContentImageForm,
@@ -12,9 +16,13 @@ from app_kit.forms import (CleanAppSubdomainMixin, CreateAppForm, CreateGenericC
                     BuildAppForm, ZipImportForm, RESERVED_SUBDOMAINS, AddExistingGenericContentForm)
 
 from app_kit.multi_tenancy.models import Domain
-from app_kit.models import MetaAppGenericContent
+from app_kit.models import MetaAppGenericContent, ContentImage
 
-import uuid, json, hashlib, base64
+from app_kit.generic import LocalizeableImage
+
+from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
+
+import uuid, json, hashlib, base64, os
 
 
 class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
@@ -657,7 +665,13 @@ class TestAppThemeImageForm(WithFormTest, WithMetaApp, TenantTestCase):
     - secondary languages are needed
     - test if empty translations appear on top
 '''
-class TestTranslateAppForm(WithFormTest, WithMetaApp, TenantTestCase):
+class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp, WithUser, WithPublicDomain,
+                           TenantTestCase):
+
+
+    def setUp(self):
+        super().setUp()
+        self.create_public_domain()
 
 
     def create_locale_entries(self, count=10):
@@ -676,6 +690,23 @@ class TestTranslateAppForm(WithFormTest, WithMetaApp, TenantTestCase):
         appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
 
         return locale_entries
+
+
+    def create_content_image(self):
+
+        image_store = self.create_image_store()
+
+        content_type = ContentType.objects.get_for_model(self.meta_app)
+
+        content_image = ContentImage(
+            image_store=image_store,
+            content_type=content_type,
+            object_id=self.meta_app.id,
+        )
+
+        content_image.save()
+
+        return content_image
     
 
     @test_settings
@@ -702,6 +733,79 @@ class TestTranslateAppForm(WithFormTest, WithMetaApp, TenantTestCase):
 
                 form_field = form.fields[field_key_b64]
                 self.assertFalse(form_field.required)
+
+
+    @test_settings
+    def test_init_with_image(self):
+
+        languages = ['de', 'fr']
+
+        self.create_secondary_languages(languages)
+
+        content_image = self.create_content_image()
+        content_type = ContentType.objects.get_for_model(ContentImage)
+
+        image_url = content_image.image_url()
+
+        locale_entries = {
+            '_meta' : {
+            },
+        }
+
+        filename = 'localized_image_{0}_{1}.jpg'.format(content_type.id, content_image.id)
+
+        locale_entries[filename] = image_url
+        
+        locale_entries['_meta'][filename] = {
+            'type' : 'image',
+            'media_url' : image_url,
+            'content_type_id' : content_type.id,
+            'object_id' : content_image.id,
+        }
+
+        appbuilder = self.meta_app.get_preview_builder()
+        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
+
+        primary_locale = appbuilder.get_primary_locale(self.meta_app)
+
+        language_code = 'de'
+        field_name_utf8 = '{0}-{1}'.format(language_code, filename)
+        field_name = base64.b64encode(field_name_utf8.encode()).decode()
+
+        # init without existing translated image
+        form = TranslateAppForm(self.meta_app)
+
+        field = form.fields[field_name]
+        
+        self.assertTrue(isinstance(field, forms.ImageField))
+        self.assertEqual(field.preview_url, None)
+        self.assertTrue(field.is_image)
+        self.assertEqual(field.primary_language_image_url, image_url)
+
+        # init with existing translated image
+        # store the locale
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+        app_www_folder = appbuilder._app_www_folder(self.meta_app)
+        
+        image = SimpleUploadedFile(name='test_image.jpg', content=open(TEST_IMAGE_PATH, 'rb').read(),
+                                        content_type='image/jpeg')
+
+        localizeable_image.save_locale(app_www_folder, image, language_code)
+
+        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
+        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
+
+        self.assertTrue(os.path.isfile(full_localized_image_path))
+
+        form = TranslateAppForm(self.meta_app)
+        field = form.fields[field_name]
+
+        self.assertTrue(isinstance(field, forms.ImageField))
+
+        expected_preview_url = 'test.org/apps/testmetaapp/preview/www/locales/de/images/localized_image_46_1_de.jpg'
+        self.assertEqual(field.preview_url, expected_preview_url)
+        self.assertTrue(field.is_image)
+        self.assertEqual(field.primary_language_image_url, image_url)
         
 
     @test_settings

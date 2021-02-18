@@ -31,7 +31,7 @@ class Glossary(GenericContent):
         taxonlist = LazyTaxonList()
         return taxonlist
 
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
 
         translation = {}
 

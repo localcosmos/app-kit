@@ -20,12 +20,12 @@
 
 		<h4>An Image:</h4>
 		{% cms_get_image 'test_image' as image %}
-		<img src="{{ image.image.url }}" class="img-thumbnail" />
+		<img src="{{ image.url }}" class="img-thumbnail" />
 
 		<h4>Multiple images:</h4>
 		{% cms_get_images 'multi_image' as mimages %}
 		{% for mimage in mimages %}
-			<img src="{{ mimage.image.url }}" class="img-thumbnail"/>
+			<img src="{{ mimage.url }}" class="img-thumbnail"/>
 		{% endfor %}
 
 	</div>

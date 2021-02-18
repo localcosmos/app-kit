@@ -148,6 +148,8 @@ class ManageFactSheet(MetaAppMixin, FormView):
         if not self.fact_sheet.contents:
             self.fact_sheet.contents = {}
 
+        old_keys = list(self.fact_sheet.contents.keys())
+
         for field_ in form:
 
             field = field_.field
@@ -159,7 +161,15 @@ class ManageFactSheet(MetaAppMixin, FormView):
 
                     microcontent_type = field.cms_tag.microcontent_type
 
+                    
+                    old_keys.remove(microcontent_type)
+
                     self.fact_sheet.contents[microcontent_type] = data
+
+
+        # remove keys/data that do not occur anymore in the template
+        for old_key in old_keys:
+            del self.fact_sheet.contents[old_key]
 
         self.fact_sheet.save()
 
@@ -167,6 +177,16 @@ class ManageFactSheet(MetaAppMixin, FormView):
         return self.render_to_response(context)
 
 
+
+class DeleteFactSheet(AjaxDeleteView):
+    
+    model = FactSheet
+
+    def get_verbose_name(self):
+        name = self.object.title
+        return name
+
+    
 # primary language only
 # CSRF exempt ?
 # mapped in app_kit.urls to be accessible from the apps settings.API_URL
@@ -241,6 +261,7 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
 
         if self.image:
             initial['source_image'] = self.image.image
+            initial['requires_translation'] = self.image.requires_translation
             licencing_initial = self.get_licencing_initial()
             initial.update(licencing_initial)
 
@@ -265,6 +286,7 @@ class UploadFactSheetImage(LicencingFormViewMixin, FormView):
             )
 
         self.image.image = image_file
+        self.image.requires_translation = form.cleaned_data.get('requires_translation', False)
 
         self.image.save()
 

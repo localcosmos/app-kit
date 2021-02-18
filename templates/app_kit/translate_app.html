@@ -1,7 +1,7 @@
 {% extends 'app_kit/base.html' %}
 {% load i18n static app_tags %}
 {% block content %}
-<form method="POST" action="{% url 'translate_app' meta_app.id %}?page={{ form.page }}">{% csrf_token %}
+<form method="POST" action="{% url 'translate_app' meta_app.id %}?page={{ form.page }}" enctype="multipart/form-data">{% csrf_token %}
 
 	<div class="container">
 
@@ -42,7 +42,11 @@
 										{{ meta_app.primary_language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ meta_app.primary_language }}.gif" />
 									</div>
 									<div class="col-10 col-md-11 text-left">
-										<strong>{{ field.label }}</strong>
+										{% if field.field.is_image %}
+											<img class="img-fluid translation-image" src="{{ field.field.primary_language_image_url }}" />
+										{% else %}
+											{{ field.label|safe }}
+										{% endif %}
 									</div>
 								</div>
 								<br>
@@ -52,6 +56,13 @@
 							{{ field.field.language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" />
 						</div>
 						<div class="col-10 col-md-11 text-left">
+							{% if field.field.is_image %}
+								{% if field.field.preview_url %}
+									<div>
+										<img class="img-fluid translation-image" src="{{ request.scheme }}://{{ field.field.preview_url }}" />
+									</div>
+								{% endif %}
+							{% endif %}
 							{{ field }}
 						</div>
 					</div>
@@ -88,4 +99,19 @@
 		</div>
 	</div>
 </form>
+{% endblock %}
+
+{% block extra_script %}
+	<script src="{% static 'online_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
+	<script>
+		{% for field in form %}
+			{% if field.field.layoutability == 'layoutable-full' %}
+				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-complex.js' %});
+			{% else %}
+				{% if field.field.layoutability == 'layoutable-simple' %}
+					ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-simple.js' %});
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+	</script>
 {% endblock %}

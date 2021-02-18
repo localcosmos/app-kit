@@ -72,7 +72,7 @@ class NatureGuide(GenericContent):
         return NatureGuidesTaxonTree.objects.get(nature_guide=self, meta_node__node_type='root')
 
 
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
         locale = {}
 
         locale[self.name] = self.name

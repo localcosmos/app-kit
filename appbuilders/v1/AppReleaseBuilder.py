@@ -15,6 +15,9 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 
+from django.template.defaultfilters import slugify
+
+
 from localcosmos_appkit_utils.MetaAppDefinition import MetaAppDefinition
 
 ### CHECK LC PRIVATE API
@@ -29,6 +32,8 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
 
 from app_kit.features.glossary.models import Glossary
 from app_kit.features.taxon_profiles.models import TaxonProfile
+
+from app_kit.features.fact_sheets.models import FactSheet
 
 
 # TAXONOMY
@@ -442,11 +447,18 @@ class AppReleaseBuilder(AppBuilder):
         return result
 
 
+    '''
+        text translations: check if all keys of primary locale are present in secondary locales
+        image translations: check if files exist
+    '''
     def validate_translations(self, meta_app):
 
         app_preview_builder = meta_app.get_preview_builder()
 
+        # this writes translations into files
         app_preview_builder.update_translation_files(meta_app)
+        preview_app_www_folder = app_preview_builder._app_www_folder(meta_app)
+        
 
         result = {
             'errors' : [],
@@ -457,6 +469,10 @@ class AppReleaseBuilder(AppBuilder):
         primary_locale = app_preview_builder.get_translation(meta_app, meta_app.primary_language)
         
         required_keys = list(primary_locale.keys())
+
+        # remove '_meta' from keys, which is not translatable
+        if '_meta' in required_keys:
+            required_keys.remove('_meta')
         
         # add keys for design and texts
         # AND check if the required texts are present in the primary language
@@ -480,11 +496,24 @@ class AppReleaseBuilder(AppBuilder):
             error_message = _('Translation for the language %(language)s is incomplete.') %{'language': language_code}
             
             translations = app_preview_builder.get_translation(meta_app, language_code)
+            
 
             
             for key in required_keys:
                     
                 if key in translations:
+
+                    # if it is a translated image: check its presence
+                    if key.startswith('localized_image_'):
+                        relative_image_path = translations[key]
+
+                        full_image_path = os.path.join(preview_app_www_folder, relative_image_path)
+                        if not os.path.isfile(full_image_path):
+                            error = ValidationError(meta_app, meta_app, [error_message])
+                            result['errors'].append(error)
+                            break
+                            
+                    
                     if len(translations[key]) == 0:
                         error = ValidationError(meta_app, meta_app, [error_message])
                         result['errors'].append(error)
@@ -708,6 +737,7 @@ class AppReleaseBuilder(AppBuilder):
 
 
     def validate_FactSheets(self, meta_app, fact_sheets):
+        
         result = {
             'warnings' : [],
             'errors' : [],
@@ -921,7 +951,7 @@ class AppReleaseBuilder(AppBuilder):
             # send email! only if app validation succeeded
             if app_is_valid == True:
                 self.send_bugreport_email(meta_app, e)
-
+  
 
         # LOCK app an features
         meta_app.is_locked = False
@@ -1543,12 +1573,82 @@ class AppReleaseBuilder(AppBuilder):
 
 
     ###############################################################################################################
-    # TAXON PROFILES
-    # - one file per taxon profile which includes all languages
+    # FACT SHEETS
+    # - one file per fact sheet and locale
+
+    def _build_relative_fact_sheet_locale_filepath(self, fact_sheet, language_code):
+
+        filename = '{0}.html'.format(language_code)
+        folder = '{0}-{1}'.format(str(fact_sheet.pk), slugify(fact_sheet.title))
+
+        path = os.path.join(folder, filename)
+
+        return path
+    
     
     def _build_FactSheets(self, app_generic_content):
-        pass
-    
+
+        fact_sheets = app_generic_content.generic_content
+
+        JSONBuilderClass = self._get_json_builder_class(fact_sheets)
+        jsonbuilder = JSONBuilderClass(self, app_generic_content)
+
+        fact_sheets_json = jsonbuilder.build()
+
+        linked_fact_sheets = FactSheet.objects.filter(fact_sheets=fact_sheets)
+
+        # path for storing fact sheets
+        # features/fact_sheets/str(fact_sheets.uuid)/
+        app_absolute_fact_sheets_folder = self._build_absolute_generic_content_path( self.meta_app,
+                                                                    self.app_version, fact_sheets)
+
+        # create the content folder
+        if not os.path.isdir(app_absolute_fact_sheets_folder):
+            os.makedirs(app_absolute_fact_sheets_folder)
+
+        for fact_sheet in linked_fact_sheets:
+
+            fact_sheets_json['fact_sheets'][str(fact_sheet.pk)] = {}
+            
+            for language_code in self.meta_app.languages():
+
+                # there are two locale files: plain.json and glossarized.json
+                locales_root = self._app_locales_folder(self.meta_app, self.app_version)
+                locale_root = os.path.join(locales_root, language_code)
+
+                plain_locale_path = os.path.join(locale_root, 'plain.json')
+                glossarized_locale_path = os.path.join(locale_root, 'glossarized.json')
+
+                with open(plain_locale_path, 'r') as f:
+                    plain_locale = json.loads(f.read())
+
+                if os.path.isfile(glossarized_locale_path):
+                    with open(glossarized_locale_path, 'r') as f:
+                        glossarized_locale = json.loads(f.read())
+                else:
+                    glossarized_locale = None
+
+                fact_sheet_relative_path = self._build_relative_fact_sheet_locale_filepath(fact_sheet,
+                                                                                               language_code)
+
+                html = jsonbuilder.render_localized_fact_sheet(fact_sheet, language_code,
+                                                               plain_locale, glossarized_locale)
+
+                fact_sheets_json['fact_sheets'][str(fact_sheet.pk)][language_code] = fact_sheet_relative_path
+
+                absolute_fact_sheet_path = os.path.join(app_absolute_fact_sheets_folder,
+                                                        fact_sheet_relative_path)
+
+                fact_sheet_folder = os.path.dirname(absolute_fact_sheet_path)
+                if not os.path.isdir(fact_sheet_folder):
+                    os.makedirs(fact_sheet_folder)
+
+                # store the fact sheet
+                with  open(absolute_fact_sheet_path, 'w') as fact_sheet_file:
+                    fact_sheet_file.write(html)
+
+        
+        self._add_generic_content_to_app(fact_sheets, fact_sheets_json)
         
     ###############################################################################################################
     # GENERIC FORMS
@@ -1587,7 +1687,7 @@ class AppReleaseBuilder(AppBuilder):
 
     ###############################################################################################################
     # GLOSSARY
-    # - there is only one glossary with keys for translation
+    # - there is only one glossary, with keys for translation
 
     def _build_Glossary(self, app_generic_content):
 
@@ -1686,7 +1786,7 @@ class AppReleaseBuilder(AppBuilder):
                 output_width = image_width * (size[1]/image_height)
 
             output_size = (output_width, output_height)
-            cropped.thumbnail(output_size, Image.ANTIALIAS)
+            cropped.thumbnail(output_size, Image.BICUBIC)
 
         filename = '{0}.{1}'.format(hashlib.md5(cropped.tobytes()).hexdigest(), original.format)
 

@@ -113,6 +113,7 @@ class AppBuilderBase:
     TaxonProfiles_builder_version = 1
     Glossary_builder_version = 1
     Map_builder_version = 1
+    FactSheets_builder_version = 1
 
     # set self._builder_version_root_folder and load the config
     def __init__(self):

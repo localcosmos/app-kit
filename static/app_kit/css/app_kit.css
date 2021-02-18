@@ -852,6 +852,11 @@ input[type="color"] {
 	height: auto;
 }
 
+.translation-image {
+	width: 20rem;
+	height: auto;
+}
+
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
 	.app-review.phone {

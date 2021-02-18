@@ -436,7 +436,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             link.generic_content.save()
 
 
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
         locale = {}
 
         locale[self.name] = self.name
@@ -952,6 +952,9 @@ class ImageStore(ModelWithTaxon):
     Multiple images per content are possible
 '''
 class ContentImage(models.Model):
+
+    # make it compatible with LocalizeableImage
+    image_field = 'image_store.source_image'
 
     image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
     

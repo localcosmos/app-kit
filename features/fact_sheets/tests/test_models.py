@@ -8,6 +8,8 @@ from django.conf import settings
 
 from django_tenants.test.cases import TenantTestCase
 
+from django.contrib.contenttypes.models import ContentType
+
 from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH, TEST_TEMPLATE_PATH)
 from app_kit.tests.mixins import WithMetaApp, WithUser
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -18,8 +20,91 @@ from app_kit.features.fact_sheets.models import (FactSheet, FactSheetImages, Fac
 
 from app_kit.features.fact_sheets.tests.common import WithFactSheets
 
+from app_kit.generic import LocalizeableImage
 
 import os, shutil
+
+
+
+class TestFactSheets(WithFactSheets, WithMetaApp, TenantTestCase):
+
+    @test_settings
+    def test_get_primary_localization(self):
+        fact_sheet = FactSheet(
+            fact_sheets = self.fact_sheets,
+            template_name = self.template_name,
+            title = self.title,
+            navigation_link_name = self.navigation_link_name,
+            contents = {
+                'test_type' : '<a href="#">test</a>',
+            },
+        )
+
+        fact_sheet.save()
+
+        # fact sheet image
+
+        filename = 'test.jpg'
+        
+        fact_sheet_image = FactSheetImages(
+            fact_sheet = fact_sheet,
+            microcontent_type = 'test_image',
+            image = self.get_image(filename),
+        )
+
+        fact_sheet_image.save()
+
+        localizeable_image = LocalizeableImage(fact_sheet_image)
+        image_locale_key = localizeable_image.get_language_independant_filename()
+
+        locale = self.fact_sheets.get_primary_localization(self.meta_app)
+
+        self.assertFalse(image_locale_key in locale)
+
+        self.assertEqual(locale[self.fact_sheets.name], self.fact_sheets.name)
+        
+        self.assertEqual(locale[fact_sheet.navigation_link_name], fact_sheet.navigation_link_name)
+        self.assertEqual(locale[fact_sheet.title], fact_sheet.title)
+
+        self.assertEqual(locale['{0}_test_type'.format(fact_sheet.id)], fact_sheet.contents['test_type'])
+
+        # mark the image translatable
+        fact_sheet_image.requires_translation = True
+        fact_sheet_image.save()
+
+        locale = self.fact_sheets.get_primary_localization(self.meta_app)
+
+        '''
+            {
+                '_meta': {
+                    'localized_image_77_1.jpg': {
+                        'type': 'image',
+                        'media_url': '/media/fact_sheets/content/1/1/images/test_image/test.jpg',
+                        'content_type_id': 77,
+                        'object_id': 1
+                    }
+                },
+                'Test Fact Sheets': 'Test Fact Sheets',
+                'Neobiota': 'Neobiota',
+                'Neobiota link': 'Neobiota link',
+                '1_test_type': '<a href="#">test</a>',
+                'localized_image_77_1.jpg': 'locales/en/images/localized_image_77_1_en.jpg'
+            }
+        '''
+
+        content_type = ContentType.objects.get_for_model(fact_sheet_image)
+
+        self.assertIn(image_locale_key, locale)
+        self.assertIn(image_locale_key, locale['_meta'])
+        self.assertEqual(locale['_meta'][image_locale_key]['type'], 'image')
+        self.assertEqual(locale['_meta'][image_locale_key]['media_url'], fact_sheet_image.image.url)
+        self.assertEqual(locale['_meta'][image_locale_key]['content_type_id'], content_type.id)
+        self.assertEqual(locale['_meta'][image_locale_key]['object_id'], fact_sheet_image.id)
+
+        fact_sheet_image.build = True
+        fact_sheet_image.language_code = self.primary_language
+        self.assertEqual(locale[image_locale_key], fact_sheet_image.url)
+        
 
 
 class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):

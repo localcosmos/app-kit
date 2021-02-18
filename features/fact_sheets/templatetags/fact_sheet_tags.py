@@ -19,7 +19,11 @@ from app_kit.features.fact_sheets.models import FactSheetImages
 '''
 def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
 
+    build = context.get('build', False)
+
     fact_sheet = context['fact_sheet']
+    language_code = context.get('language_code', fact_sheet.fact_sheets.primary_language)
+    
 
     if microcontent_category == 'microcontent':
 
@@ -35,6 +39,11 @@ def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
         content = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
                                                  microcontent_type=microcontent_type).first()
 
+        if content:
+
+            content.build = build
+            content.language_code = language_code
+
         return content
 
     return ''
@@ -47,7 +56,10 @@ def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
 @register.simple_tag(takes_context=True)
 def cms_get_multiple(context, microcontent_category, microcontent_type, *args, **kwargs):
 
+    build = context.get('build', False)
+
     fact_sheet = context['fact_sheet']
+    language_code = context.get('language_code', fact_sheet.fact_sheets.primary_language)
     
     if microcontent_category == 'microcontent':
 
@@ -55,8 +67,18 @@ def cms_get_multiple(context, microcontent_category, microcontent_type, *args, *
             contents =  fact_sheet.contents.get(microcontent_type, [])
 
     elif microcontent_category in ['image', 'images']:
-        images = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
+
+        images = []
+        
+        images_qry = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
                                                  microcontent_type=microcontent_type)
+
+        for image in images_qry:
+            image.build = build
+            image.language_code = language_code
+
+            images.append(image)
+            
         return images
 
     return []

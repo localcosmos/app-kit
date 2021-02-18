@@ -32,6 +32,8 @@ from app_kit.features.generic_forms.models import GenericForm, GenericField, Gen
 from app_kit.AppThemeImage import AppThemeImage
 from app_kit.AppThemeText import AppThemeText
 
+from app_kit.generic import LocalizeableImage
+
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
 
@@ -780,8 +782,8 @@ class TestEditGenericContentName(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInU
 
     
 
-class TestTranslateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,
-                                 WithMetaApp, TenantTestCase):
+class TestTranslateApp(ViewTestMixin, WithImageStore, WithMedia, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                       WithFormTest, WithTenantClient, WithMetaApp, TenantTestCase):
 
     url_name = 'translate_app'
     view_class = TranslateApp
@@ -790,6 +792,8 @@ class TestTranslateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithU
         super().setUp()
         languages = ['de', 'fr']
         self.create_secondary_languages(languages)
+
+        self.create_public_domain()
 
     def get_url_kwargs(self):
         url_kwargs = {
@@ -863,6 +867,74 @@ class TestTranslateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithU
         appbuilder = self.meta_app.get_preview_builder()
         de_locale = appbuilder.get_locale(self.meta_app, 'de')
         self.assertEqual(de_locale[self.meta_app.name], app_name_de)
+
+
+    @test_settings
+    def test_form_valid_with_image(self):
+
+        view = self.get_view()
+
+        content_image = self.create_content_image(self.meta_app, self.user)
+        content_type = ContentType.objects.get_for_model(ContentImage)
+
+        image_url = content_image.image_url()
+
+        locale_entries = {
+            '_meta' : {
+            },
+        }
+
+        filename = 'localized_image_{0}_{1}.jpg'.format(content_type.id, content_image.id)
+
+        locale_entries[filename] = image_url
+        
+        locale_entries['_meta'][filename] = {
+            'type' : 'image',
+            'media_url' : image_url,
+            'content_type_id' : content_type.id,
+            'object_id' : content_image.id,
+        }
+
+
+        appbuilder = self.meta_app.get_preview_builder()
+        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
+
+        image = self.get_image()
+
+        language_code = 'de'
+        field_name_utf8 = '{0}-{1}'.format(language_code, filename)
+        field_name = base64.b64encode(field_name_utf8.encode()).decode()
+
+        file_data = {}
+
+        file_data[field_name] = image
+        form = TranslateAppForm(self.meta_app, data={}, files=file_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context_data['form'].__class__, TranslateAppForm)
+
+        appbuilder = self.meta_app.get_preview_builder()
+        de_locale = appbuilder.get_locale(self.meta_app, 'de')
+
+        expected_value = 'locales/de/images/localized_image_{0}_{1}_de.jpg'.format(content_type.id,
+                                                                                   content_image.id)
+        self.assertEqual(de_locale[filename], expected_value)
+
+        # file present ?
+        localizeable_image = LocalizeableImage(content_image)
+        app_www_folder = appbuilder._app_www_folder(self.meta_app)
+        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
+        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
+
+        self.assertTrue(os.path.isfile(full_localized_image_path))
+        
 
 
 class TestBuildApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,

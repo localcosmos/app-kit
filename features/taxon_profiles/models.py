@@ -63,7 +63,7 @@ class TaxonProfiles(GenericContent):
     '''
     - we have to collect taxa first and then add their specific profiles
     '''
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
         locale = {}
 
         locale[self.name] = self.name

@@ -104,6 +104,8 @@ from localcosmos_server.widgets import ImageInputWithPreview
 from localcosmos_server.forms import ManageContentImageFormCommon
 class UploadFactSheetImageForm(ManageContentImageFormCommon, LicencingFormMixin, forms.Form):
 
+    requires_translation = forms.BooleanField(required=False)
+
     def get_source_image_field(self):
         # unfortunately, a file field cannot be prepoluated due to html5 restrictions
         # therefore, source_image has to be optional. Otherwise, editing would be impossible

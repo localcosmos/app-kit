@@ -13,7 +13,6 @@ from app_kit.models import MetaAppGenericContent
 from .AppBuilder import AppBuilder
 
 
-
 class PreviewExists(Exception):
     pass
 
@@ -252,7 +251,9 @@ class AppPreviewBuilder(AppBuilder):
         # all langfiles are created now
 
         # this will later be compared with the stored json
-        new_primary_locale_translations = {}
+        new_primary_locale_translations = {
+            '_meta' : {}, # meta information like layoutability
+        }
 
         # read all app contents and add the texts to the langfiles
         # first, get the app texts
@@ -267,11 +268,19 @@ class AppPreviewBuilder(AppBuilder):
         generic_content_links = MetaAppGenericContent.objects.filter(meta_app=meta_app)
         for link in generic_content_links:
 
-            generic_content_texts = link.generic_content.get_primary_localization()
+            generic_content = link.generic_content
+            generic_content_texts = link.generic_content.get_primary_localization(meta_app=meta_app)
+            
             for key, locale in generic_content_texts.items():
-                if len(locale) > 0:
-                    new_primary_locale_translations[key] = locale
 
+                if key == '_meta':
+
+                    for meta_key, meta_value in generic_content_texts['_meta'].items():
+                        new_primary_locale_translations['_meta'][meta_key] = meta_value
+
+                # simple string locale, html or plain text
+                elif len(locale) > 0:
+                    new_primary_locale_translations[key] = locale
 
         # update the primary language file
         # the primary language key-value pairs are fully in the database, no comparison needed

@@ -31,10 +31,13 @@ from app_kit.features.generic_forms.models import GenericForm, GenericField, Gen
 from app_kit.features.glossary. models import Glossary
 from app_kit.features.maps.models import Map
 from app_kit.features.nature_guides.models import NatureGuide, MetaNode, NatureGuidesTaxonTree
+from app_kit.features.fact_sheets.models import FactSheets
 
-from app_kit.generic import AppContentTaxonomicRestriction
+from app_kit.generic import AppContentTaxonomicRestriction, LocalizeableImage
 
-feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide]
+from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
+
+feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, FactSheets]
 
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from taxonomy.models import TaxonomyModelRouter
@@ -1391,3 +1394,192 @@ class TestUpdateContentImageTaxonMixin(WithImageStore, WithMedia, WithUser, Tena
         self.assertEqual(image_store.taxon.name_uuid, lazy_taxon.name_uuid)
 
         
+
+class TestLocalizeableImage(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantTestCase):
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.content_type = ContentType.objects.get_for_model(ContentImage)
+
+
+    def create_content_image(self):
+
+        image_store = self.create_image_store()
+
+        content_type = ContentType.objects.get_for_model(self.meta_app)
+
+        content_image = ContentImage(
+            image_store=image_store,
+            content_type=content_type,
+            object_id=self.meta_app.id,
+        )
+
+        content_image.save()
+
+        return content_image
+    
+
+    @test_settings
+    def test_init(self):
+
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        self.assertEqual(localizeable_image.image_instance, content_image)
+        self.assertEqual(localizeable_image.image_file, content_image.image_store.source_image)
+        
+
+    @test_settings
+    def test_get_relative_localized_image_folder(self):
+
+        language_code = 'en'
+
+        folder = LocalizeableImage.get_relative_localized_image_folder(language_code)
+        self.assertEqual(folder, 'locales/en/images/')
+
+
+    @test_settings
+    def test_get_localized_filename(self):
+
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        filename = localizeable_image.get_localized_filename('en')
+
+        # localized_image_46_1_en.jpg
+        self.assertEqual(filename, 'localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
+                                                                              content_image.id))
+
+
+    @test_settings
+    def test_localize_language_independant_filename(self):
+
+        content_image = self.create_content_image()
+
+        filename = 'localized_image_{0}_{1}.jpg'.format(self.content_type.id, content_image.id)
+        language_code = 'en'
+        
+        localized_filename = LocalizeableImage.localize_language_independant_filename(filename, language_code)
+
+
+        expected_filename = 'localized_image_{0}_{1}_en.jpg'.format(self.content_type.id, content_image.id)
+
+        self.assertEqual(localized_filename, expected_filename)
+
+
+    @test_settings
+    def test_get_language_independant_filename(self):
+        
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        filename = localizeable_image.get_language_independant_filename()
+
+        # localized_image_46_1_en.jpg
+        self.assertEqual(filename, 'localized_image_{0}_{1}.jpg'.format(self.content_type.id,
+                                                                              content_image.id))
+        
+    
+    @test_settings
+    def test_get_relative_localized_image_path(self):
+
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        language_code = 'en'
+        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
+
+        # locales/en/images/localized_image_46_2_en.jpg
+        expected_path = 'locales/en/images/localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
+                                                                                  content_image.id)
+        self.assertEqual(relative_image_path, expected_path)
+
+    
+    @test_settings
+    def test_get_locale(self):
+
+        # the media root is not uses in the real, for testing purposes this is irrelevant
+        app_www_folder = TEST_MEDIA_ROOT
+
+        language_code = 'en'
+
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        locale = localizeable_image.get_locale(app_www_folder, language_code)
+        self.assertEqual(locale, None)
+
+        # store the locale
+        relative_locale_folder = localizeable_image.get_relative_localized_image_folder(language_code)
+        absolute_locale_folder = os.path.join(app_www_folder, relative_locale_folder) 
+        
+        if not os.path.isdir(absolute_locale_folder):
+            os.makedirs(absolute_locale_folder)
+
+
+        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
+        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
+
+        img = Image.new("RGB", (800, 1280), (255, 255, 255))
+        img.save(full_localized_image_path, "PNG")
+
+        
+
+        locale = localizeable_image.get_locale(app_www_folder, language_code)
+        self.assertEqual(locale, full_localized_image_path)
+
+
+    @test_settings
+    def test_save_locale(self):
+
+        # the media root is not uses in the real, for testing purposes this is irrelevant
+        app_www_folder = TEST_MEDIA_ROOT
+
+        language_code = 'en'
+
+        image = SimpleUploadedFile(name='test_image.jpg', content=open(TEST_IMAGE_PATH, 'rb').read(),
+                                        content_type='image/jpeg')
+
+        content_image = self.create_content_image()
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        localizeable_image.save_locale(app_www_folder, image, language_code)
+
+        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
+        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
+
+        self.assertTrue(os.path.isfile(full_localized_image_path))
+        
+
+    @test_settings
+    def test_url(self):
+
+        content_image = self.create_content_image()
+        language_code = 'en'
+
+        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
+
+        url = localizeable_image.url(language_code)
+
+        expected_path = 'locales/en/images/localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
+                                                                                  content_image.id)
+        self.assertEqual(url, expected_path)
+
+
+    @test_settings
+    def test_preview_url(self):
+
+        language_code = 'en'
+        localized_filename = 'localized_image.jpg'
+
+        preview_url = LocalizeableImage.preview_url(localized_filename, language_code)
+
+        self.assertEqual('locales/en/images/localized_image.jpg', preview_url)

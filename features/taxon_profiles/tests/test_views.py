@@ -759,10 +759,14 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         
         traits = view.get_taxon_traits()
 
-        self.assertEqual(len(traits), 4)
+        self.assertEqual(len(traits), 5)
 
-        trait_types = traits.values_list('matrix_filter__filter_type', flat=True)
-        expected_types = set(['ColorFilter', 'DescriptiveTextAndImagesFilter', 'NumberFilter', 'RangeFilter'])
+        trait_types = []
+        for trait in traits:
+            trait_types.append(trait.matrix_filter.filter_type)
+            
+        expected_types = set(['ColorFilter', 'DescriptiveTextAndImagesFilter', 'NumberFilter', 'RangeFilter',
+                              'TextOnlyFilter'])
         self.assertEqual(set(trait_types), expected_types)
 
 

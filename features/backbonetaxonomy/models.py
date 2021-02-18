@@ -89,7 +89,7 @@ class BackboneTaxonomy(GenericContent):
         return lazy_taxonlist
 
 
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
 
         # avoid circular import
         from app_kit.models import MetaAppGenericContent

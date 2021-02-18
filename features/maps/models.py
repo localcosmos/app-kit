@@ -16,7 +16,7 @@ class Map(GenericContent):
     map_type = models.CharField(max_length=255, choices=MAP_TYPES, default='observations')
 
 
-    def get_primary_localization(self):
+    def get_primary_localization(self, meta_app=None):
 
         locale = {}
 

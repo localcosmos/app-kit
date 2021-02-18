@@ -21,6 +21,8 @@ Domain = get_tenant_domain_model()
 
 from app_kit.app_kit_api.models import AppKitJobs, AppKitStatus
 
+from app_kit.generic import LocalizeableImage
+
 from .view_mixins import ViewClassMixin, MetaAppMixin, MetaAppFormLanguageMixin
 
 from localcosmos_server.decorators import ajax_required
@@ -571,8 +573,39 @@ class TranslateApp(MetaAppMixin, FormView):
     def form_valid(self, form):
 
         appbuilder = self.meta_app.get_preview_builder()
-        for language, translation_dict in form.translations.items():
-            appbuilder.update_translation(self.meta_app, language, translation_dict)
+
+        app_www_folder = appbuilder._app_www_folder(self.meta_app)
+        
+        for language_code, translation_dict in form.translations.items():
+
+            locale = {}
+
+            # value can be a file/image
+            for key, value in translation_dict.items():
+
+                if key in form.meta and form.meta[key].get('type', None) == 'image':
+
+                    content_type_id = form.meta[key]['content_type_id']
+                    object_id = form.meta[key]['object_id']
+                    content_type = ContentType.objects.get(pk=content_type_id)
+
+                    image_instance = content_type.get_object_for_this_type(pk=object_id)
+
+                    localized_image = LocalizeableImage(image_instance)
+                    
+                    # save locale of image
+                    image_file = value
+                    localized_image.save_locale(app_www_folder, image_file, language_code)
+
+                    relative_path = localized_image.get_relative_localized_image_path(language_code)
+
+                    locale[key] = relative_path
+                    
+
+                else:
+                    locale[key] = value
+                
+            appbuilder.update_translation(self.meta_app, language_code, locale)
             
         context = self.get_context_data(**self.kwargs)
         context['form'] = form

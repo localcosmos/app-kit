@@ -442,7 +442,29 @@ class WithAdminOnly:
         self.assertEqual(response.status_code, 200)
 
 
-class ViewTestMixin:
+
+class WithPublicDomain:
+    
+    def create_public_domain(self):
+        
+        connection.set_schema_to_public()
+
+        public_schema = Tenant(
+            schema_name = 'public',
+        )
+        public_schema.save()
+
+        domain = Domain(
+            domain='test.org',
+            tenant=public_schema,
+        )
+
+        domain.save()
+
+        connection.set_tenant(self.tenant)
+        
+        
+class ViewTestMixin(WithPublicDomain):
 
     def get_url_kwargs(self):
         return {}
@@ -480,21 +502,3 @@ class ViewTestMixin:
         return view
 
 
-
-    def create_public_domain(self):
-        
-        connection.set_schema_to_public()
-
-        public_schema = Tenant(
-            schema_name = 'public',
-        )
-        public_schema.save()
-
-        domain = Domain(
-            domain='test.org',
-            tenant=public_schema,
-        )
-
-        domain.save()
-
-        connection.set_tenant(self.tenant)

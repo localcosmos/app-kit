@@ -12,6 +12,8 @@ from localcosmos_server.slugifier import create_unique_slug
 
 from .models import MetaAppGenericContent
 
+from .generic import LocalizeableImage
+
 from localcosmos_server.widgets import (CropImageInput, ImageInputWithPreview, AjaxFileInput,
                                         TwoStepDiskFileInput)
 from localcosmos_server.forms import LocalizeableForm
@@ -20,6 +22,8 @@ from localcosmos_server.models import App
 import hashlib, base64, math
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
+
+import os
 
 from django_tenants.utils import get_tenant_model, get_tenant_domain_model
 Domain = get_tenant_domain_model()
@@ -506,9 +510,11 @@ class TranslateAppForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         appbuilder = meta_app.get_preview_builder()
+        app_www_folder = appbuilder._app_www_folder(meta_app)
+        app_preview_url = self.meta_app.app.get_preview_url()
         
-        primary_locale = appbuilder.get_primary_locale(meta_app)
-        all_items = list(primary_locale.items())
+        self.primary_locale = appbuilder.get_primary_locale(meta_app)
+        all_items = list(self.primary_locale.items())
         all_items_count = len(all_items)
 
         self.total_pages = math.ceil(all_items_count / self.page_size)
@@ -519,9 +525,14 @@ class TranslateAppForm(forms.Form):
         if end > all_items_count:
             end = all_items_count
 
-        page_items = list(primary_locale.items())[start:end]
+        page_items = list(self.primary_locale.items())[start:end]
 
-        for key, value in page_items:
+        self.meta = self.primary_locale['_meta']
+
+        for key, primary_language_value in page_items:
+
+            if key == '_meta':
+                continue
 
             languages = meta_app.secondary_languages()
 
@@ -540,19 +551,47 @@ class TranslateAppForm(forms.Form):
 
                 field_name = base64.b64encode(field_name_utf8.encode()).decode()
 
-                initial = to_locale.get(key, None)
-                if initial == None:
-                    translation_complete = False
-                    
-                widget = forms.TextInput
+                if key in self.meta and self.meta[key].get('type', None) == 'image':
 
-                if len(value) > 50:
-                    widget = forms.Textarea            
-            
-                field = forms.CharField(widget=widget, label=value, initial=initial, required=False)
+                    # get initial
+                    preview_url = None
+
+                    localized_filename = LocalizeableImage.localize_language_independant_filename(key, language)
+                                     
+                    relative_image_url = LocalizeableImage.preview_url(localized_filename, language)
+                    
+                    full_preview_path = os.path.join(app_www_folder, relative_image_url)
+                    
+                    if os.path.isfile(full_preview_path):
+                        preview_url = os.path.join(app_preview_url, relative_image_url)
+
+                    field = forms.ImageField(label=primary_language_value, required=False)
+                    field.primary_language_image_url = self.meta[key]['media_url']
+                    field.is_image = True
+                    field.preview_url = preview_url
+
+                else:
+
+                    initial = to_locale.get(key, None)
+                    if initial == None:
+                        translation_complete = False
+                    
+                    widget = forms.TextInput
+
+                    if len(primary_language_value) > 50:
+                        widget = forms.Textarea            
+                
+                    field = forms.CharField(widget=widget, label=primary_language_value, initial=initial,
+                                            required=False)
+
+                    field.is_image = False
+                    
                 field.language = language
                 field.is_first = False
                 field.is_last = False
+
+                if key in self.meta and 'layoutability' in self.meta[key]:
+                    field.layoutability = self.meta[key]['layoutability']
 
                 if counter == 1:
                     field.is_first = True
@@ -586,15 +625,16 @@ class TranslateAppForm(forms.Form):
     def clean(self):
         # make decoded translations available
         self.translations = {}
-        
+
+        # value can be a file/image
         for b64_key, value in self.cleaned_data.items():
 
-            if len(value) > 0:
+            if value is not None and len(value) > 0:
                 field_name = base64.b64decode(b64_key).decode()
 
                 parts = field_name.split('-')
                 language = parts[0]
-                key = '-'.join(parts[1:])
+                key = '-'.join(parts[1:])                
 
                 if language not in self.translations:
                     self.translations[language] = {}

@@ -43,17 +43,6 @@ class JSONBuilder:
             'name' : self.generic_content.name, #{}, translated in-app
         }
 
-        '''
-        # add the name for all languages
-        for language_code in self.meta_app.languages():
-
-            localized_name = self.app_release_builder.get_localized(self.meta_app, self.generic_content.name,
-                                                                    language_code)
-            
-            # add the name for the given language_code
-            generic_content_json['name'][language_code] = localized_name
-        ''' 
-
         return generic_content_json
 
 
@@ -99,6 +88,3 @@ class JSONBuilder:
             taxonomic_restriction.append(taxon_dic)
 
         return taxonomic_restriction
-        
-        
-        
