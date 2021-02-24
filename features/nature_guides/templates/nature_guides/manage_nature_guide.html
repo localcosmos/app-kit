@@ -101,7 +101,9 @@
 						{% endif %}
 					</span>
 					<div class="btn-group dropdown">
-						{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+						{% with menualign='alignright' %}
+							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+						{% endwith %}
 					</div>
 
 				</div>
