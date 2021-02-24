@@ -370,30 +370,54 @@ class GenericContentZipImporter:
                             licence.short_name, licence.version, **licence_kwargs)
 
 
-    def validate_taxon(self, taxon_latname, taxon_source, workbook_filename, sheet_name, row_number,
-                       taxon_latname_column_index, taxon_source_column_index):
+    def validate_taxon(self, taxon_latname, taxon_author, taxon_source, workbook_filename, sheet_name,
+                       row_number, taxon_latname_column_index, taxon_source_column_index):
 
         if taxon_source in TAXON_SOURCES:
 
             # check if the taxon exists
             models = TaxonomyModelRouter(taxon_source)
 
-            taxon_count = models.TaxonTreeModel.objects.filter(taxon_latname=taxon_latname).count()
+            search_kwargs = {
+                'taxon_latname' : taxon_latname
+            }
+
+            if taxon_author:
+                search_kwargs['taxon_author'] = taxon_author
+
+            taxon_count = models.TaxonTreeModel.objects.filter(**search_kwargs).count()
             
             if taxon_count == 0:
-                message = _('%(taxon_latname)s not found in %(taxon_source)s' % {
-                    'taxon_latname' : taxon_latname,
-                    'taxon_source' : taxon_source,
-                })
+                if taxon_author:
+                    message = _('%(taxon_latname)s %(taxon_author)s not found in %(taxon_source)s' % {
+                        'taxon_latname' : taxon_latname,
+                        'taxon_author' : taxon_author,
+                        'taxon_source' : taxon_source,
+                    })
+
+                else:
+                    message = _('%(taxon_latname)s not found in %(taxon_source)s' % {
+                        'taxon_latname' : taxon_latname,
+                        'taxon_source' : taxon_source,
+                    })
+                    
 
                 self.add_row_error(workbook_filename, sheet_name, row_number, message)
 
             elif taxon_count > 1:
 
-                message = _('Multiple results found for %(taxon_latname)s in %(taxon_source)s' % {
-                    'taxon_latname' : taxon_latname,
-                    'taxon_source': taxon_source,
-                })
+                if taxon_author:
+                    message = _('Multiple results found for %(taxon_latname)s %(taxon_author)s in %(taxon_source)s' % {
+                        'taxon_latname' : taxon_latname,
+                        'taxon_author' : taxon_author,
+                        'taxon_source': taxon_source,
+                    })
+
+                else:
+                    message = _('Multiple results found for %(taxon_latname)s in %(taxon_source)s' % {
+                        'taxon_latname' : taxon_latname,
+                        'taxon_source': taxon_source,
+                    })
 
                 self.add_row_error(workbook_filename, sheet_name, row_number, message)
 
@@ -405,11 +429,18 @@ class GenericContentZipImporter:
             self.add_cell_error(workbook_filename, sheet_name, taxon_source_column_index, row_number, message)
 
 
-    def get_lazy_taxon(self, taxon_latname, taxon_source):
+    def get_lazy_taxon(self, taxon_latname, taxon_source, taxon_author=None):
 
         models = TaxonomyModelRouter(taxon_source)
 
-        taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname)
+        field_kwargs = {
+            'taxon_latname' : taxon_latname,
+        }
+
+        if taxon_author:
+            field_kwargs['taxon_author'] = taxon_author
+
+        taxon = models.TaxonTreeModel.objects.get(**field_kwargs)
 
         lazy_taxon = LazyTaxon(instance=taxon)
         return lazy_taxon

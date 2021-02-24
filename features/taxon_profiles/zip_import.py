@@ -59,20 +59,24 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     message = _('Cell content has to be "Scientific name", not {0}'.format(row[0].value))
                     self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
 
+                if row[1].value.lower() != 'author (optional)':
+                    message = _('Cell content has to be "Author (optional)", not {0}'.format(row[1].value))
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
 
-                if row[1].value.lower() != 'taxonomic source':
+                if row[2].value.lower() != 'taxonomic source':
 
-                    message = _('Cell content has to be "Taxonomic source", not {0}'.format(row[1].value))
+                    message = _('Cell content has to be "Taxonomic source", not {0}'.format(row[2].value))
                     self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
 
 
             else:
 
                 taxon_latname = row[0].value
-                taxon_source = row[1].value
+                taxon_author = row[1].value
+                taxon_source = row[2].value
 
-                self.validate_taxon(taxon_latname, taxon_source, self.workbook_filename, taxon_profiles_sheet.name,
-                                    row_index, 0, 1)
+                self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename,
+                                    taxon_profiles_sheet.name, row_index, 0, 1)
 
         
 
@@ -107,9 +111,10 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             if row_index > 0:
 
                 taxon_latname = row[0].value
-                taxon_source = row[1].value
+                taxon_author = row[1].value
+                taxon_source = row[2].value
 
-                lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source)
+                lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
 
                 taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
                         taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author).first()
@@ -138,8 +143,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
                         text_type_name = value
                         
-                        # skip the first two cells (Scientific name, Taxonomic Spource)
-                        if column_index >= 2:
+                        # skip the first 3 cells (Scientific name, Author, Taxonomic Source)
+                        if column_index >= 3:
 
                             position = column_index - 1
 
@@ -170,15 +175,15 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     else:
 
                         taxon_text_content = value
-                        # column indexes 0 and 1 define the taxon, index 2 onward is taxon text content
-                        # column 0(scientific name), 1 (source) + len(text_types) = number of columns
-                        columns_with_content = len(text_types) + 2
+                        # column indexes 0, 1 and 2 define the taxon, index 3 onward is taxon text content
+                        # column 0(scientific name), 1 (author), 2 (source) + len(text_types) =number of columns
+                        max_column_index_with_content = len(text_types) + 3
                         
-                        if column_index > 1 and column_index <= columns_with_content:
+                        if column_index > 2 and column_index <= max_column_index_with_content:
 
-                            # column_index is the column index in the spreadsheet, which is 2 more than
+                            # column_index is the column index in the spreadsheet, which is 3 more than
                             # the index in the list text_types[]
-                            text_type = text_types[column_index - 2]
+                            text_type = text_types[column_index - 3]
 
                             # try to preserve translations
                             taxon_text = TaxonText.objects.filter(taxon_profile=taxon_profile,

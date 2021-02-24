@@ -101,15 +101,9 @@
 						{% endif %}
 					</span>
 					<div class="btn-group dropdown">
-						<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							{% trans 'Add entry' %} <span class="caret"></span>
-						</button>
-						 <div class="dropdown-menu dropdown-menu-right">
-							<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
-							<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
-							<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
-						</div>
+						{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
 					</div>
+
 				</div>
 				<div class="card-body">
 					<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
@@ -126,14 +120,7 @@
 					<hr>
 
 					<div class="btn-group dropup">
-						<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-							{% trans 'Add entry' %} <span class="caret"></span>
-						</button>
-						 <div class="dropdown-menu">
-							<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
-							<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
-							<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
-						</div>
+						{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
 					</div>
 				</div>
 			</div>
@@ -147,10 +134,18 @@
 	<script>
 		var url = "{% url 'search_for_node' meta_app.id parent_node.nature_guide.id %}";
 		$('#id_search_node_name').searchfornodeautocomplete(url);
+		
+		$("#sort-alpha").on("click", function(event){
+			positionmanager.sort_alphabetically("keynodes", function(item){
+				var node_name = item.getElementsByClassName("node-name")[0];
+				return node_name.textContent;
+			});
+		});
 	</script>
 
 	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
 
 	{% include 'nature_guides/ajax/node_loader.html' %}
-
+	
+	
 {% endblock %}

@@ -154,7 +154,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     self.add_row_error(self.workbook_filename, self.tree_sheet_name, row_number, message)
 
 
-                decision_rule = row[4].value
+                decision_rule = row[5].value
 
                 if decision_rule and len(decision_rule) > TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule']:
                     
@@ -172,9 +172,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     if row[2].value:
 
                         taxon_latname = row[3].value
+                        taxon_author = row[4].value
                         taxon_source = row[2].value
 
-                        self.validate_taxon(taxon_latname, taxon_source, self.workbook_filename,
+                        self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename,
                                             self.tree_sheet_name, row_number, 3, 2)
                     else:
 

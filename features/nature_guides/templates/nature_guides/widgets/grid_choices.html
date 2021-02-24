@@ -70,6 +70,14 @@
 					}
 				});
 			}
+			
+			// enable drag and drop
+			var sortable = Sortable.create(container, {
+				onEnd: function (evt) {
+					var itemEl = evt.item;  // dragged HTMLElement
+					positionmanager.store_positions($(itemEl));
+				}
+			});
 		})()
 	{% endif %}
 	
