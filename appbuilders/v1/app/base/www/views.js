@@ -4523,7 +4523,8 @@ var glossary = function(self, request, args, kwargs){
 
 	else {
 
-		var term = currentTarget.getAttribute("data-term");
+		var term_b64 = currentTarget.getAttribute("data-term");
+		var term = atob(term_b64);
 
 		var glossary_path = app_features["Glossary"]["path"];
 
