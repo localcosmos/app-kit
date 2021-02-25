@@ -2,7 +2,7 @@ from app_kit.appbuilders.JSONBuilders.JSONBuilder import JSONBuilder
 
 from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
 
-import re
+import re, base64
 
 
 class GlossaryJSONBuilder(JSONBuilder):
@@ -29,7 +29,8 @@ class GlossaryJSONBuilder(JSONBuilder):
     #
     # glossarized.json language files
     # - contain links to the glossary terms
-    # - glossary_json contians only the primary language 
+    # - glossary_json contians only the primary language
+    # - b64encode glossary terms in data-term
     ##########################################################################################################
     def glossarize_language_file(self, glossary, glossary_json, language_code):
 
@@ -165,8 +166,10 @@ class GlossaryJSONBuilder(JSONBuilder):
                                 data_term = tas_entry['real_term']
                             else:
                                 data_term = tas_entry['term']
+
+                            data_term_b64 = base64.b64encode(data_term)
                                 
-                            glossarized_term = '<span class="glossary_link tap" action="glossary" data-term="{1}">{0} </span>'.format(match_text, data_term)
+                            glossarized_term = '<span class="glossary_link tap" action="glossary" data-term="{1}">{0} </span>'.format(match_text, data_term_b64)
 
                             # the match is replaced in the list, so the first occurrence of the match is the correct one
                             match_index = text_parts.index(match_text)
