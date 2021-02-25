@@ -167,7 +167,7 @@ class GlossaryJSONBuilder(JSONBuilder):
                             else:
                                 data_term = tas_entry['term']
 
-                            data_term_b64 = base64.b64encode(data_term)
+                            data_term_b64 = base64.b64encode(data_term.encode('utf-8')).decode('utf-8')
                                 
                             glossarized_term = '<span class="glossary_link tap" action="glossary" data-term="{1}">{0} </span>'.format(match_text, data_term_b64)
 
