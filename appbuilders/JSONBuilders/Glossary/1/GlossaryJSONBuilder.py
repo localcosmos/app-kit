@@ -88,6 +88,9 @@ class GlossaryJSONBuilder(JSONBuilder):
 
         for key, text in locale.items():
 
+            if key == '_meta':
+                continue
+
             # original_text ist for referencing already glossarized text parts by start index and end index
             original_text = text
             # [[0,3]]
