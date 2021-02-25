@@ -10,12 +10,12 @@
 					</div>
 
 					{{#each node.matrix_filters}}
-						<div id="{{uuid}}" class="matrix-filter mt-2" current-selection="">
+						<div id="{{uuid}}" class="matrix-filter mt-2 {{#if is_restricted}}is-restricted restriction-active{{/if}}" current-selection="">
 							<div class="matrix-filter-name">
 								<strong>{{t name }}</strong>
 								{{#if definition.allow_multiple_values }}<small>({{t 'multiple choice'}})</small>{{/if}}
 							</div>
-							{{#ifequal filter_type 'DescriptiveTextAndImagesFilter'}}
+							{{#ifequal type 'DescriptiveTextAndImagesFilter'}}
 								<div class="horizontal-slide large">
 									<div>
 										{{#each space}}
@@ -30,7 +30,7 @@
 									</div>
 								</div>
 							{{/ifequal}}
-							{{#ifequal filter_type 'TextOnlyFilter'}}
+							{{#ifequal type 'TextOnlyFilter'}}
 								<div class="horizontal-slide xlarge">
 									<div class="stretch">
 										{{#each space}}
@@ -49,7 +49,7 @@
 									</div>
 								</div>
 							{{/ifequal}}
-							{{#ifequal filter_type 'ColorFilter'}}
+							{{#ifequal type 'ColorFilter'}}
 								<div class="horizontal-slide large">
 									<div>
 										{{#each space}}
@@ -68,7 +68,7 @@
 									</div>
 								</div>
 							{{/ifequal}}
-							{{#ifequal filter_type 'RangeFilter'}}
+							{{#ifequal type 'RangeFilter'}}
 								<div class="range-container mb-4">
 
 									<div class="range-output mb-2">
@@ -88,7 +88,7 @@
 
 								</div>
 							{{/ifequal}}
-							{{#ifequal filter_type 'NumberFilter'}}
+							{{#ifequal type 'NumberFilter'}}
 								<div class="horizontal-slide">
 									<div>
 										{{#each space}}
@@ -104,7 +104,7 @@
 									</div>
 								</div>
 							{{/ifequal}}
-							{{#ifequal filter_type 'TaxonFilter'}}
+							{{#ifequal type 'TaxonFilter'}}
 								<div class="horizontal-slide medium">
 									<div>
 										{{#each space}}
@@ -129,7 +129,7 @@
 	{{/if}}
 
 	<div class="page">
-		<div id="nodes" class="row no-gutters justify-content-center">
+		<div id="keynodes" class="row no-gutters justify-content-center">
 
 			<div class="text-loader">...{{tp 'Loading'}}...</div>
 		</div>
@@ -139,7 +139,7 @@
 				<button class="btn btn-sm btn-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{{tp 'show sorted out'}}</button>
 				<div id="sorted-out-container" class="collapse">
 					<h5 class="mt-2 text-light">{{tp 'Sorted out:'}}</h5>
-					<div id="sorted-out-nodes" class="row no-gutters"></div>
+					<div id="sorted-out-keynodes" class="row no-gutters"></div>
 				</div>
 			</div>
 		</div>

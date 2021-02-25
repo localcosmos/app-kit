@@ -6,6 +6,7 @@
 * - multiple inputs/radios with the same name(uuid) together form the MatrixFilter
 */
 var MatrixFilterValue = {
+
 	create : function(input, matrix_filter_type){
 		var self = Object.create(this);
 
@@ -42,6 +43,7 @@ var MatrixFilterValue = {
 
 		return self;
 	},
+	
 	hide : function(){
 		var self = this;
 		
@@ -49,6 +51,7 @@ var MatrixFilterValue = {
 		
 		return self;
 	},
+	
 	show : function(){
 		var self = this;
 		
@@ -210,7 +213,6 @@ var IdentificationMatrix = {
 
 		}
 	},
-	
 	
 	// compare two spaces
 	// always check if subset_space is a subset of superset_spave  (subset_space, superset_space)
@@ -632,6 +634,7 @@ var IdentificationMatrix = {
 	},
 
 	_update_item_visibility : function(item){
+	
 		var self = this;
 	
 		// only manipulate the DOM of visibility has changed

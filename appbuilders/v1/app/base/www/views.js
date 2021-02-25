@@ -4029,7 +4029,7 @@ var NatureGuideView = View(TemplateView, {
 
 				var template_html = Handlebars.compile(template)(context);
 
-				var container = document.getElementById("nodes");
+				var container = document.getElementById("keynodes");
 				
 				Pagemanager._insert(container, template_html, args, kwargs);
 				
@@ -4175,17 +4175,16 @@ var NatureGuideView = View(TemplateView, {
 			var node_uuid = kwargs["node_uuid"] || nature_guide.start_node_uuid;
 			self.current_node = nature_guide.tree[node_uuid];
 
-			if (self.current_node.matrix_filters.length > 0){
+			if (Object.keys(self.current_node.matrix_filters).length > 0){
 
 				self._attach_matrix_filter_listeners();
 
 				var data = {
 					"items" : self.current_node.children,
-					"matrix_filter_types" : self.current_node.matrix_filter_types
+					"matrix_filters" : self.current_node.matrix_filters
 				};
 
 				function get_items(callback){
-					var items = self.current_node.children;
 					callback(data);
 				}
 

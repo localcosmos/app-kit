@@ -1132,38 +1132,41 @@ class AppReleaseBuilder(AppBuilder):
 
                     locale_filepath = os.path.join(dir_entry_path, locale_dir_entry)
 
-                    with open(locale_filepath, 'r', encoding='utf-8') as f:
-                        locale = json.load(f)
+                    # localized images are in directories
+                    if os.path.isfile(locale_filepath):
 
-                    # add theme locale
-                    # in the app, locales have their own dir, in themes, locales are files like "en.json"
-                    language_code = dir_entry
-                    
-                    app_theme = self.meta_app.get_theme()
-                    app_theme_locale = app_theme.get_locale(language_code)
+                        with open(locale_filepath, 'r', encoding='utf-8') as f:
+                            locale = json.load(f)
 
-                    for key, value in app_theme_locale.items():
-                        locale[key] = value
+                        # add theme locale
+                        # in the app, locales have their own dir, in themes, locales are files like "en.json"
+                        language_code = dir_entry
+                        
+                        app_theme = self.meta_app.get_theme()
+                        app_theme_locale = app_theme.get_locale(language_code)
+
+                        for key, value in app_theme_locale.items():
+                            locale[key] = value
 
 
-                    # add vernacular names to translation
-                    vernacular_names = self._collect_vernacular_names_from_nature_guides(language_code)
+                        # add vernacular names to translation
+                        vernacular_names = self._collect_vernacular_names_from_nature_guides(language_code)
 
-                    for key, taxon_dic in vernacular_names.items():
+                        for key, taxon_dic in vernacular_names.items():
 
-                        if key not in locale:
-                            locale[key] = taxon_dic['name']
+                            if key not in locale:
+                                locale[key] = taxon_dic['name']
 
-                    # store the language file
-                    destination_folder = os.path.join(build_locales_folder, dir_entry)
+                        # store the language file
+                        destination_folder = os.path.join(build_locales_folder, dir_entry)
 
-                    if not os.path.exists(destination_folder):
-                        os.makedirs(destination_folder)
+                        if not os.path.exists(destination_folder):
+                            os.makedirs(destination_folder)
 
-                    destination_filepath = os.path.join(destination_folder, locale_dir_entry)
+                        destination_filepath = os.path.join(destination_folder, locale_dir_entry)
 
-                    with open(destination_filepath, 'w', encoding='utf-8') as f:
-                        json.dump(locale, f, indent=4, ensure_ascii=False)
+                        with open(destination_filepath, 'w', encoding='utf-8') as f:
+                            json.dump(locale, f, indent=4, ensure_ascii=False)
 
 
     def _create_taxon_dic_from_lazy_taxon(self, lazy_taxon, use_gbif):

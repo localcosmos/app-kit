@@ -1,6 +1,7 @@
 from app_kit.appbuilders.JSONBuilders.JSONBuilder import JSONBuilder
 
-from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace)
+from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
+                                                   MatrixFilterRestriction)
 
 import base64, json
 
@@ -32,8 +33,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             parent_node_json = {
                 'children' : [],
-                'matrix_filters' : [],
-                'matrix_filter_types' : {},
+                'matrix_filters' : {},
             }
 
             
@@ -43,9 +43,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             for matrix_filter in matrix_filters:
                 matrix_filter_json = self._get_matrix_filter_json(matrix_filter)
 
-                parent_node_json['matrix_filters'].append(matrix_filter_json)
-
-                parent_node_json['matrix_filter_types'][str(matrix_filter.uuid)] = matrix_filter.filter_type
+                parent_node_json['matrix_filters'][str(matrix_filter.uuid)] = matrix_filter_json
 
             for child in parent_node.children:
 
@@ -102,10 +100,12 @@ class NatureGuideJSONBuilder(JSONBuilder):
         matrix_filter_json = {
             'uuid' : str(matrix_filter.uuid),
             'name' : matrix_filter.name,
-            'filter_type' : matrix_filter.filter_type,
+            'type' : matrix_filter.filter_type,
             'description' : matrix_filter.description,
             'definition' : matrix_filter.definition,
             'weight' : matrix_filter.weight,
+            'restrictions' : {},
+            'is_restricted' : False,
         }
 
         space = matrix_filter.get_space()
@@ -195,6 +195,26 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         else:
             raise ValueError('Unsupported filter_type: {0}'.format(matrix_filter.filter_type))
+
+
+        # get restrictions
+        matrix_filter_restrictions = MatrixFilterRestriction.objects.filter(
+            restricted_matrix_filter=matrix_filter)
+
+        for matrix_filter_restriction in matrix_filter_restrictions:
+
+            # handlebars {{#if restrictions }} returns always True, even if the object is empty
+            if matrix_filter_json['is_restricted'] != True:
+                matrix_filter_json['is_restricted'] = True
+
+            restrictive_matrix_filter = matrix_filter_restriction.restrictive_matrix_filter
+            restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
+
+            restrictive_space = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
+                matrix_filter_restriction)
+
+            matrix_filter_json['restrictions'][restrictive_matrix_filter_uuid] = restrictive_space
+            
 
         return matrix_filter_json
         

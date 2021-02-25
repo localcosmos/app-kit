@@ -1031,6 +1031,10 @@ input[type="range"] {
 	opacity: .3;
 }
 
+.matrix-filter.is-restricted.restriction-active {
+	display: none;
+}
+
 /* fix slider */
 input[type=range]::-moz-range-track {
 	background-color: black;
