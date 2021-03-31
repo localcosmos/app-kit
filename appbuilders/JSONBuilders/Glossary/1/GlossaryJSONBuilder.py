@@ -62,11 +62,21 @@ class GlossaryJSONBuilder(JSONBuilder):
             # first, create a list of glossary terms, synonyms included
 
             # get the synonyms
+            # the following case is possible:
+            # term a - definition a, synonym:b, but b exists as term b definition b
+            # in this case, do not use the synonym, because a separate definition exists
 
             synonyms = TermSynonym.objects.filter(glossary_entry__glossary=glossary,
                                                   glossary_entry__term=term)
 
             for synonym in synonyms:
+                
+                # check if the syonym term has its own entry. if so, skip it
+                exists_as_glossary_entry = GlossaryEntry.objects.filter(glossary=glossary,
+                                                                        term=synonym.term).exists()
+
+                if exists_as_glossary_entry == True:
+                    continue
 
                 localized_term_synonym = locale.get(synonym.term, synonym.term)
 

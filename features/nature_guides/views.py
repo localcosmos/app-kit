@@ -390,12 +390,13 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
         self.parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
+        self.nature_guide = self.parent_node.nature_guide
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         # exclude is_root_node and all uplinks
-        nodes = NatureGuidesTaxonTree.objects.all().exclude(meta_node__node_type='root').exclude(
-            taxon_nuid__startswith=self.parent_node.taxon_nuid)
+        nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide).exclude(
+            meta_node__node_type='root').exclude(taxon_nuid__startswith=self.parent_node.taxon_nuid)
         
         return nodes
 
@@ -450,6 +451,9 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
         if not is_circular:
 
             for node in nodelist_db:
+
+                # if it is a dangling node: add it directly to the parent
+                
 
                 crosslink = NatureGuideCrosslinks(
                     parent=self.parent_node,

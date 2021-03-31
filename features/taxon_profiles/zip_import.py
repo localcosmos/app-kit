@@ -71,9 +71,9 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
             else:
 
-                taxon_latname = row[0].value
-                taxon_author = row[1].value
-                taxon_source = row[2].value
+                taxon_latname = row[0].value.strip()
+                taxon_author = row[1].value.strip()
+                taxon_source = row[2].value.strip()
 
                 self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename,
                                     taxon_profiles_sheet.name, row_index, 0, 1)

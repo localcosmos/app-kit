@@ -10,7 +10,7 @@
 		<link href="{% static 'fonts/fonts.css' %}" rel="stylesheet">
 
 		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-		<title>Local Cosmos {% block title %}{% endblock %}</title>
+		<title>{{ app_kit_short_name }} {% block title %}{% endblock %}</title>
 
 		<script type="text/javascript" src="{% static 'app_kit/js/polyfills.js' %}"></script>
 
@@ -54,7 +54,7 @@
 				<nav class="appbar navbar navbar-expand-lg navbar-light bg-light">
 					<a class="navbar-brand" href="{% url 'list_app_kits' %}">
 						<img src="{% static 'app_kit/images/lclogo32.png' %}" height="32" width="auto"/>
-						<span class="align-middle text-secondary">Local Cosmos</span>
+						<span class="align-middle text-secondary">{{ app_kit_short_name }}</span>
 					</a>
 					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 						<span class="navbar-toggler-icon"></span>
