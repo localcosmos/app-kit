@@ -53,8 +53,8 @@
 
 				<nav class="appbar navbar navbar-expand-lg navbar-light bg-light">
 					<a class="navbar-brand" href="{% url 'list_app_kits' %}">
-						<img src="{% static 'app_kit/images/lclogo32.png' %}" height="32" width="auto"/>
-						<span class="align-middle text-secondary">{{ app_kit_short_name }}</span>
+						{% block logo %}<img src="{% static 'app_kit/images/lclogo32.png' %}" height="32" width="auto"/>{% endblock %}
+						{% block logo_name %}<span class="align-middle text-secondary">{{ app_kit_short_name }}</span>{% endblock %}
 					</a>
 					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
 						<span class="navbar-toggler-icon"></span>
@@ -102,7 +102,7 @@
 					<div class="container-fluid">
 						<div class="row mt-3">
 							<div class="col-12 text-center">
-								<h2>{% trans 'Departments and projects' %}</h2>
+								<h2>{% trans 'Projects' %}</h2>
 							</div>
 						</div>
 						
