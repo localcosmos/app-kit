@@ -6,8 +6,8 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
 
-    # provide loggedout view for the tenants
-    path('server/loggedout/', RedirectView.as_view(pattern_name='loggedout')),
+    # provide loggedout view for the tenants, results in redirect loop
+    #path('server/loggedout/', RedirectView.as_view(pattern_name='loggedout')),
    
     # LC SERVER
     path('', include('localcosmos_server.urls')),
