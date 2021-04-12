@@ -288,15 +288,16 @@ var IdentificationMatrix = {
 					var superset_gradient = superset_space[c];
 					
 					if (superset_gradient[0] instanceof Array){
-						
-						var equals = self.compare_gradients(superset_color, subset_color);
+
+						var equals = self.compare_gradients(superset_gradient, subset_gradient);
 						if (equals == true){
 							subset_gradient_occurs_in_superset = true;
 							break;
 						}
 					}
-				}
 				
+				}
+
 				if (subset_gradient_occurs_in_superset == false){
 					is_subset = false;
 					break;
@@ -304,7 +305,9 @@ var IdentificationMatrix = {
 			}
 			
 			else {
-			
+
+				// a color has been compared to a gradient
+				
 				let subset_rgb = [0, 0, 0, 0];
 				
 				for (let cp=0; cp<subset_color.length; cp++){
@@ -331,6 +334,7 @@ var IdentificationMatrix = {
 					is_subset = false;
 					break;
 				}
+				
 			}
 			
 		}
@@ -604,6 +608,7 @@ var IdentificationMatrix = {
 		}
 		else {
 			
+			// self.matrix_filter_values are all matrix filter values of the current matrix
 			for (let v=0; v<self.matrix_filter_values.length; v++){
 
 				let matrix_filter_value = self.matrix_filter_values[v];
@@ -617,8 +622,32 @@ var IdentificationMatrix = {
 				if (selected_filters.hasOwnProperty(matrix_filter_value.uuid)){
 					selected = selected_filters[matrix_filter_value.uuid];
 				}
-	
-				if (self.possible_values.indexOf(matrix_filter_value_id) != -1 || selected.indexOf(matrix_filter_value.value) >= 0){
+
+				let is_visible = false;
+
+				// check if matrix_filter_value.value occurs in self.possible_values OR in selected
+				if ( self.possible_values.indexOf(matrix_filter_value_id) != -1 ){
+					is_visible = true;
+				}
+				else if (matrix_filter_type == "ColorFilter"){
+
+					// check if matrix_filter_value.value equals selected_value
+					for (let s=0; s<selected.length; s++){
+						let selected_value_as_space = [selected[s]];
+						let matrix_filter_value_as_space = [matrix_filter_value.value];
+						let colors_are_equal = self.compare_ColorFilter(selected_value_as_space, matrix_filter_value_as_space);
+
+						if (colors_are_equal == true){
+							is_visible = true;
+							break;
+						}
+					}
+				}
+				else if (selected.indexOf(matrix_filter_value.value) >= 0) {
+					is_visible = true;
+				}
+				
+				if (is_visible == true){
 					matrix_filter_value.show();
 				}
 				else {
