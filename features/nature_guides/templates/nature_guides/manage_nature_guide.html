@@ -32,11 +32,14 @@
 
 			{% if parent_node.meta_node.node_type == 'root' %}
 			{% else %}
-				<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">{{ parent_node.parent }}</a>
+				{% for tree_node in tree_path %}
+					<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">{{ tree_node }}</a> &xrarr; 
+				{%	endfor %}
+				
 				{% for crosslink in parent_crosslinks %}
 					&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
 				{% endfor %}
-				&xrarr; {{ parent_node }}
+				{{ parent_node }}
 			{% endif %}	
 
 		</div>
@@ -51,7 +54,7 @@
 					<div class="row justify-content-center">
 					
 						<div class="col-12 text-center">
-							<span class="h4 align-middle">{% trans 'Traits' %}</span>&nbsp;
+							<span class="h4 align-middle">{% blocktrans %}Traits of {{ parent_node }}{% endblocktrans %}</span>&nbsp;
 
 							<div class="btn-group dropdown">
 								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -93,10 +96,10 @@
 			<div class="card">
 				<div class="card-header">
 					<span class="h4 align-center">
-						{% if parent_node.node_type == 'root' %}
-							&nbsp;
+						{% if parent_node.meta_node.node_type == 'root' %}
+							{{ parent_node.nature_guide.name }}
 						{% else %}
-							{{ parent_node }}
+							{{ parent_node.meta_node }}
 							<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
 						{% endif %}
 					</span>

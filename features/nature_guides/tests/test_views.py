@@ -809,6 +809,7 @@ class TestAddExistingNodes(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly
         view = super().get_view(ajax=True)
         view.meta_app = self.meta_app
         view.parent_node = self.view_node
+        view.nature_guide = self.generic_content
 
         return view
 

@@ -8,6 +8,8 @@ from localcosmos_server.forms import LocalizeableForm
 from .models import MatrixFilter
 from .matrix_filters import MATRIX_FILTER_TYPES
 
+
+
 class MatrixFilterManagementForm(LocalizeableForm):
     
     name = forms.CharField(label=_('Name of filter or trait'),
@@ -18,6 +20,16 @@ class MatrixFilterManagementForm(LocalizeableForm):
     #                            help_text=_('0-100. Defines how important this property is.'))
 
     localizeable_fields = ['name'] #, 'description']
+
+
+    def __init__(self, meta_node, matrix_filter, *args, **kwargs):
+        self.matrix_filter = matrix_filter
+        self.meta_node = meta_node
+        super().__init__(*args, **kwargs)
+
+        if self.matrix_filter:
+            self.fields['name'].help_text = self.matrix_filter.matrix_filter_type.help_text
+        
 
     def clean_name(self):
         name = self.cleaned_data.get('name', None)
@@ -30,11 +42,6 @@ class MatrixFilterManagementForm(LocalizeableForm):
                 raise forms.ValidationError(_('A matrix filter with this name already exists.'))
 
         return name
-
-    def __init__(self, meta_node, matrix_filter, *args, **kwargs):
-        self.matrix_filter = matrix_filter
-        self.meta_node = meta_node
-        super().__init__(*args, **kwargs)
 
 
 class MatrixFilterManagementFormWithUnit(MatrixFilterManagementForm):

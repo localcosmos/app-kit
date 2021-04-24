@@ -55,6 +55,24 @@ class ManageNatureGuide(ManageGenericContent):
                                                             meta_node__node_type='root')
 
         return parent_node
+
+
+    def get_tree_path(self):
+
+        path = []
+        
+        parent_node = self.parent_node
+        
+        while parent_node.meta_node.node_type != 'root':
+
+            if parent_node != self.parent_node:
+                path.insert(0, parent_node)
+
+            parent_node = parent_node.parent
+
+        path.insert(0, parent_node)
+
+        return path
         
 
     def get_context_data(self, **kwargs):
@@ -76,6 +94,8 @@ class ManageNatureGuide(ManageGenericContent):
 
         # add filters button
         context['matrix_filter_types'] = MATRIX_FILTER_TYPES
+
+        context['tree_path'] = self.get_tree_path()
 
         return context
 

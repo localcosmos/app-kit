@@ -48,6 +48,8 @@ MATRIX_FILTER_TYPES = (
     ('TextOnlyFilter', _('Text only filter')),
 )
 
+
+
 # MetaClass, extends a MatrixFilter class with FilterType-specific methods
 class MatrixFilterType:
 
@@ -71,6 +73,8 @@ class MatrixFilterType:
 
     # these will be saved in the db automatically
     definition_parameters = []
+
+    help_text = _("What is described by the filter, e.g. 'length of nose'")
 
     # filters are instantiated by passing in a MatrixFilter model instance: matrix_filter
     def __init__(self, matrix_filter):
@@ -275,6 +279,8 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
     verbose_name = _('Range filter')
     definition_parameters = ['step', 'unit', 'unit_verbose']
 
+    help_text = _("What is described by this trait, e.g. 'length of nose'")
+
     MatrixSingleChoiceFormFieldClass = forms.DecimalField
     MatrixMultipleChoiceFormFieldClass = forms.DecimalField
 
@@ -410,8 +416,9 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Number filter')
-
     definition_parameters = ['unit', 'unit_verbose']
+
+    help_text = _("What is described by this trait, e.g. 'number of legs'")
     
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
@@ -521,6 +528,8 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Color filter')
     verbose_space_name = _('color')
+
+    help_text = _("What is described by this trait, e.g. 'fur color'")
 
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
@@ -837,6 +846,8 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Text/Images filter')
     verbose_space_name = _('text with image')
+
+    help_text = _("What is described by this trait, e.g. 'leaf shape'")
     
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
@@ -961,6 +972,8 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Text only filter')
     verbose_space_name = _('text')
+
+    help_text = _("What is described by this trait, e.g. 'leaf shape'")
     
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField
@@ -1110,6 +1123,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Taxonomic Filter')
     verbose_space_name = _('Taxon')
+
+    help_text = _("Something like 'tree genus' or 'taxonomic classification' ")
     
     MatrixSingleChoiceFormFieldClass = forms.ChoiceField
     MatrixMultipleChoiceFormFieldClass = forms.MultipleChoiceField

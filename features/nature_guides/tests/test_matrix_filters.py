@@ -319,7 +319,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
     def test_get_encoded_space_from_form(self):
 
         data = {
-            'name' : 'Range Filter',
+            'name' : 'Range Filter test',
             'filter_type' : 'RangeFilter',
             'input_language' : 'en',
             'min_value' : '-10',
@@ -327,7 +327,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
             'step' : '0.5',
         }
 
-        form = RangeFilterManagementForm(self.root_meta_node, self.root_node, data=data)
+        form = RangeFilterManagementForm(self.root_meta_node, None, data=data)
         is_valid = form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -578,13 +578,13 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
     def test_get_encoded_space_from_form(self):
 
         data = {
-            'name' : 'Number Filter',
+            'name' : 'Number Filter test',
             'filter_type' : 'NumberFilter',
             'input_language' : 'en',
             'numbers' : '2,5,1,10,1.010',
         }
 
-        form = NumberFilterManagementForm(self.root_meta_node, self.root_node, data=data)
+        form = NumberFilterManagementForm(self.root_meta_node, None, data=data)
         is_valid = form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -1028,7 +1028,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         color_filter = ColorFilter(self.matrix_filter)
 
-        form = ColorFilterManagementForm(self.root_meta_node, self.root_node, data={})
+        form = ColorFilterManagementForm(self.root_meta_node, None, data={})
         encoded_space = color_filter.get_encoded_space_from_form(form)
         self.assertEqual(encoded_space, [])
         

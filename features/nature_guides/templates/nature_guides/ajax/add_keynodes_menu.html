@@ -3,8 +3,8 @@
 	{% trans 'Add entry' %} <span class="caret"></span>
 </button>
  <div class="dropdown-menu {% if menualign == 'alignright' %}dropdown-menu-right{% endif %}">
-	<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or group' %}</a>
-	<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new group' %}</a>
+	<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or step' %}</a>
+	<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification step' %}</a>
 	<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
 	<div class="dropdown-divider"></div>
 	<a id="sort-alpha" class="dropdown-item">{% trans 'Sort alphabetically' %}</a>

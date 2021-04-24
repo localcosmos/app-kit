@@ -199,7 +199,7 @@ class RadioSelectColor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
 
 
 class SelectMultipleDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
-    template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
+    template_name = 'nature_guides/widgets/select_multiple_patterns.html'
 
 class RadioSelectDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_patterns.html'
