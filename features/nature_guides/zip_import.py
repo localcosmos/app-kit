@@ -885,6 +885,8 @@ class NatureGuideZipImporter(GenericContentZipImporter):
     # support the sheet Matrix Definitions
     def import_matrix_filters(self, parent_node_db):
 
+        nature_guide = self.generic_content
+
         sheet_names = self.workbook.sheet_names()
         matrix_sheet_name = 'Matrix_{0}'.format(parent_node_db.name)
 
@@ -962,7 +964,9 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
                 node_name = row[0].value
 
-                node = NatureGuidesTaxonTree.objects.get(meta_node__name=node_name)
+                node = NatureGuidesTaxonTree.objects.get(
+                    nature_guide=nature_guide,
+                    meta_node__name=node_name)
 
                 # iterate over all matrix filter values
                 for c in range(1, matrix_sheet.ncols):

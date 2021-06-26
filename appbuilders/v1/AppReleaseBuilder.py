@@ -1228,8 +1228,8 @@ class AppReleaseBuilder(AppBuilder):
 
                 nature_guide = feature_link.generic_content
 
-                nodes_with_taxon = NatureGuidesTaxonTree.objects.filter(meta_node__name__isnull=False,
-                                            nature_guide=nature_guide, meta_node__taxon_latname__isnull=False)
+                nodes_with_taxon = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide,
+                                        meta_node__name__isnull=False, meta_node__taxon_latname__isnull=False)
 
                 for node in nodes_with_taxon:
 

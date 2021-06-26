@@ -642,12 +642,13 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
             return None
         
         parent_nuid = self.taxon_nuid[:-3]
-        return NatureGuidesTaxonTree.objects.get(taxon_nuid=parent_nuid)
+        return NatureGuidesTaxonTree.objects.get(nature_guide=self.nature_guide, taxon_nuid=parent_nuid)
     '''
 
     @property
     def has_children(self):
-        return NatureGuidesTaxonTree.objects.filter(taxon_nuid__startswith=self.taxon_nuid).exclude(
+        return NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide,
+                                                    taxon_nuid__startswith=self.taxon_nuid).exclude(
             pk=self.pk)
 
 
@@ -790,7 +791,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     # delete() also triggers the deletion of crosslinks
     def delete_branch(self):
 
-        descendants = list(self.tree_descendants)
+        descendants = list(self.tree_descendants.order_by('taxon_nuid'))
         descendants.reverse()
 
         for descendant in descendants:
@@ -924,7 +925,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         self.save(new_parent)
 
         # update all nuids, parent stays the same
-        descendants_and_self = NatureGuidesTaxonTree.objects.filter(
+        descendants_and_self = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide,
             taxon_nuid__startswith=old_self_nuid).order_by('taxon_nuid')
         
         for descendant in descendants_and_self:

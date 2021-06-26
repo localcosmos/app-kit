@@ -621,16 +621,18 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
         
         if len(searchtext) > 2:
 
-            nodes = NatureGuidesTaxonTree.objects.filter(meta_node__name__istartswith=searchtext).exclude(
+            nodes = NatureGuidesTaxonTree.objects.filter(
+                nature_guide=self.nature_guide,
+                meta_node__name__istartswith=searchtext).exclude(
                 meta_node__node_type='root')[:15]
 
         return nodes
         
-
+        
     @method_decorator(ajax_required)
     def get(self, request, *args, **kwargs):
 
-        nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
+        self.nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
 
         results = []
 
