@@ -1198,6 +1198,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         # look up copies if their source is given
         self.copy_map = {
             'nodes' : {},
+            'matrix_filters' : {},
             'matrix_filter_space' : {},
         }
 
@@ -1282,7 +1283,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
                 copied_parent_matrix_filter = parent_matrix_filter
 
             else:
-                copied_parent_matrix_filter_pk = self.copy_map['nodes'][str(node.parent.pk)]
+                copied_parent_matrix_filter_pk = self.copy_map['matrix_filters'][str(parent_matrix_filter.pk)]
                 copied_parent_matrix_filter = MatrixFilter.objects.get(pk=copied_parent_matrix_filter_pk)
 
             node_filter_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=parent_matrix_filter)
@@ -1304,6 +1305,8 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         }
         
         copied_matrix_filter = copy_model_instance(matrix_filter, copy_fields, overwrite_values)
+
+        self.copy_map['matrix_filters'][str(matrix_filter.pk)] = str(copied_matrix_filter.pk)
 
         spaces = matrix_filter.get_space()
 

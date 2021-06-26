@@ -3075,6 +3075,9 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
             copied_matrix_filter = view.copy_matrix_filter(matrix_filter, copied_node.meta_node)
 
+            self.assertIn(str(matrix_filter.pk), view.copy_map['matrix_filters'])
+            self.assertEqual(view.copy_map['matrix_filters'][str(matrix_filter.pk)],
+                             str(copied_matrix_filter.pk))
 
             copy_fields = ['name', 'description', 'filter_type', 'definition', 'position', 'weight']
 
