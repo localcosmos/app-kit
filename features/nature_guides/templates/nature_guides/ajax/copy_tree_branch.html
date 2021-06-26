@@ -66,12 +66,15 @@
 		});
 		
 		{% if success is True %}
+		
+			var node_element = $("#{{ node.name_uuid }}");
 
 			{% with node=node_copy %}
 				var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node.html" %}{% endfilter %}';	
 			{% endwith %}
 					
-			$("#keynodes").append(html);
+			/*$("#keynodes").append(html);*/
+			$(html).insertAfter(node_element);
 			
 			ajaxify('{{ node_copy.name_uuid }}');
 			
