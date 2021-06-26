@@ -1539,7 +1539,7 @@ msgstr "Kopie von %(name)s erstellen"
 
 #: features/nature_guides/templates/nature_guides/ajax/copy_tree_branch.html:36
 msgid "This may take a while."
-msgstr ""
+msgstr "Dies kann etwas dauern."
 
 #: features/nature_guides/templates/nature_guides/ajax/copy_tree_branch.html:42
 msgid "Successfully created copy."
