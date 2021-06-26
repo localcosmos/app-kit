@@ -1256,7 +1256,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         copied_node = NatureGuidesTaxonTree(
             nature_guide = new_parent_node.nature_guide,
             meta_node = new_meta_node,
-            position = new_parent_node.children_count,
+            position = node.position,
         )
 
         copied_node.save(new_parent_node, taxon_tree_fields=taxon_tree_fields)
@@ -1265,7 +1265,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         images = node.meta_node.images()
 
         for image in images:
-            copied_image = self.copy_content_image(image, copied_node)
+            copied_image = self.copy_content_image(image, copied_node.meta_node)
 
 
         # copy matrix filters
