@@ -654,6 +654,14 @@ class AppReleaseBuilder(AppBuilder):
         
         for parent in nodes:
 
+            is_active = True
+
+            if parent.additional_data:
+                is_active = parent.additional_data.get('is_active', True)
+
+            if is_active == False:
+                continue
+
             # check for image, except for the start node
             if not parent.meta_node.node_type == 'root':
                 image = parent.meta_node.image()
@@ -700,6 +708,15 @@ class AppReleaseBuilder(AppBuilder):
                                                           meta_node__node_type='result')
         
         for ng_result in ng_results:
+
+            is_active = True
+
+            if ng_result.additional_data:
+                is_active = ng_result.additional_data.get('is_active', True)
+
+            if is_active == False:
+                continue
+            
             image = ng_result.meta_node.image()
             if not image:
                 warning_message = _('Image is missing.')

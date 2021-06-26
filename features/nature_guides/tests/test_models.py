@@ -2,7 +2,7 @@ from django_tenants.test.cases import TenantTestCase
 
 from django.contrib.contenttypes.models import ContentType
 
-from app_kit.tests.common import test_settings
+from app_kit.tests.common import test_settings, powersetdic
 
 from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, CrosslinkManager,
             NatureGuidesTaxonTree, NatureGuidesTaxonSynonym, MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
@@ -467,8 +467,84 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
         # saving with decision rule and without name should work
         node_3.decision_rule = 'test rule'
         node_3.save(root_node)
-        
 
+        
+    def test_save_with_taxon_tree_fields(self):
+
+        nature_guide = NatureGuide(
+            primary_language = 'en',
+            name='Test NG',
+        )
+
+        nature_guide.save()
+
+        nuidmanager = NuidManager()
+        nature_guide_nuid = nuidmanager.decimal_to_nuid(nature_guide.id)
+
+        meta_node = MetaNode(
+            nature_guide=nature_guide,
+            name=nature_guide.name,
+            node_type = 'root',
+        )
+
+        meta_node.save()
+
+        root_node = NatureGuidesTaxonTree(
+            nature_guide=nature_guide,
+            meta_node=meta_node,
+        )
+
+        root_node.save(None)
+
+        # check with passed parent != None
+        meta_node_2 = MetaNode(
+            nature_guide=nature_guide,
+            name='First',
+            node_type = 'result',
+        )
+
+        meta_node_2.save()
+
+        taxon_nuid = '{0}001'.format(root_node.taxon_nuid)
+
+        taxon_tree_fields = {
+            'taxon_nuid' : taxon_nuid,
+            'taxon_latname' : 'test_taxon_latname',
+            'is_root_taxon' : False,
+            'rank' : None, # no ranks for NG TaxonTree entries
+            'slug' : 'slug',
+            'author' : None, # no author for NG TaxonTree entries
+            'source_id' : taxon_nuid,
+        }
+
+        all_tree_field_variations = powersetdic(taxon_tree_fields)
+        
+        required_keys = set(['taxon_nuid', 'taxon_latname', 'is_root_taxon', 'rank', 'slug', 'author',
+                             'source_id'])
+
+        for tree_fields in all_tree_field_variations:
+
+            node = NatureGuidesTaxonTree(
+                nature_guide=nature_guide,
+                meta_node=meta_node_2,
+            )
+
+            if set(tree_fields) == required_keys or tree_fields == {}:
+                node.save(root_node, taxon_tree_fields=tree_fields)
+
+                if tree_fields != {}:
+                    for key in required_keys:
+                        self.assertEqual(taxon_tree_fields[key], getattr(node, key))
+
+                node.delete_branch()
+                meta_node_2.save()
+
+            else:
+                
+                with self.assertRaises(ValueError):
+                    node.save(root_node, taxon_tree_fields=tree_fields)
+
+    
     @test_settings
     def test_delete(self):
 

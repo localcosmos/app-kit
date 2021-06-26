@@ -11,6 +11,9 @@ urlpatterns = [
         views.ManageNodelink.as_view(), name='create_nodelink'), # create
     path('manage-natureguide-node/<int:meta_app_id>/<int:node_id>/',
         views.ManageNodelink.as_view(), name='manage_nodelink'), # manage
+    # create branch copies
+    path('copy-tree-branch/<int:meta_app_id>/<int:node_id>/',
+        views.CopyTreeBranch.as_view(), name='copy_tree_branch'),
     # node loading
     path('load-keynodes/<int:meta_app_id>/<int:parent_node_id>/',
         views.LoadKeyNodes.as_view(), name='load_keynodes'),

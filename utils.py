@@ -15,3 +15,42 @@ def import_class(cl):
 from django.urls import reverse
 def get_appkit_taxon_search_url():
     return reverse('search_taxon')
+
+
+from django.forms.models import model_to_dict
+from django.db.models import ForeignKey, ManyToManyField
+def copy_model_instance(instance, copy_fields, overwrite_values={}):
+
+    Model = type(instance)
+
+    instance_dict = model_to_dict(instance, fields=copy_fields)
+
+    regular_fields = {}
+    m2m_fields = {}
+
+    for field_name, value in instance_dict.items():
+
+        model_field = instance._meta.get_field(field_name)
+
+        if isinstance(model_field, ForeignKey):
+            regular_fields[field_name] = getattr(instance, field_name)
+
+        elif isinstance(model_field, ManyToManyField):
+            # m2m fields have to be populated after save
+            old_field_value = getattr(instance, field_name)
+            m2m_fields[field_name] = old_field_value.all()
+
+        else:
+            regular_fields[field_name] = value
+
+
+    regular_fields.update(overwrite_values)
+    
+    instance_copy = Model(**regular_fields)
+    instance_copy.save()
+
+    for m2m_field, m2m_query in m2m_fields.items():
+        field = getattr(instance_copy, m2m_field)
+        field.set(m2m_query)
+
+    return instance_copy

@@ -10,7 +10,7 @@ from .models import (NatureGuide, MetaNode, MatrixFilter, MatrixFilterSpace, Nod
                      MatrixFilterRestriction)
 
 from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm,
-                    MoveNodeForm, ManageMatrixFilterRestrictionsForm)
+                    MoveNodeForm, ManageMatrixFilterRestrictionsForm, CopyTreeBranchForm)
 
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
                             RangeFilterManagementForm, ColorFilterManagementForm, NumberFilterManagementForm,
@@ -21,6 +21,9 @@ from .matrix_filter_space_forms import (DescriptiveTextAndImagesFilterSpaceForm,
 
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin, FormLanguageMixin, MetaAppFormLanguageMixin
+
+
+from app_kit.utils import copy_model_instance
 
 from localcosmos_server.decorators import ajax_required
 from django.utils.decorators import method_decorator
@@ -214,9 +217,11 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
             initial['decision_rule'] = self.node.decision_rule
             initial['node_id'] = self.node.id
             initial['taxon'] = self.node.meta_node.taxon
+            initial['is_active'] = self.node.is_active
 
         else:
             initial['node_type'] = self.node_type
+            initial['is_active'] = True
         
         return initial
     
@@ -271,6 +276,13 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
         else:
             self.node = NatureGuidesTaxonTree.objects.get(pk=node_id)
             meta_node = self.node.meta_node
+
+        is_active = form.cleaned_data['is_active']
+
+        if not self.node.additional_data:
+            self.node.additional_data = {}
+            
+        self.node.additional_data['is_active'] = is_active
 
         
         if 'taxon' in form.cleaned_data and form.cleaned_data['taxon']:
@@ -1158,3 +1170,348 @@ class ManageMatrixFilterRestrictions(MultipleTraitValuesIterator, FormView):
         restriction_space = MatrixFilterRestriction(restricted_matrix_filter=self.matrix_filter,
                                                     restrictive_matrix_filter=restrictive_matrix_filter)
         return restriction_space
+
+
+'''
+    Add the ability to copy a tree branch as a copy to work on without making changes to the existing one
+    - ask the user to add a name
+    - copy all descendants
+    - also copy all matrix filter data
+    - always copies in place, same parent node
+'''
+from localcosmos_server.slugifier import create_unique_slug
+
+class CopyTreeBranch(MetaAppMixin, FormView):
+
+    template_name = 'nature_guides/ajax/copy_tree_branch.html'
+    form_class = CopyTreeBranchForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_node(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_node(self, **kwargs):
+        self.node = NatureGuidesTaxonTree.objects.get(pk=kwargs['node_id'])
+        self.parent_node = self.node.parent
+
+        # look up copies if their source is given
+        self.copy_map = {
+            'nodes' : {},
+            'matrix_filter_space' : {},
+        }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['node'] = self.node
+        context['success'] = False
+        return context
+
+
+    def copy_content_image(self, content_image, new_object):
+
+        copy_fields = ['image_store', 'crop_parameters', 'content_type', 'image_type', 'position',
+                       'is_primary', 'text']
+
+        overwrite_values = {
+            'object_id' : new_object.id,
+        }
+
+        copied_content_image = copy_model_instance(content_image, copy_fields, overwrite_values)
+
+        return copied_content_image
+
+
+    def copy_meta_node(self, meta_node, new_name=None):
+
+        copy_fields = ['nature_guide', 'node_type', 'name']
+        overwrite_values = {}
+
+        if new_name:
+            overwrite_values['name'] = new_name
+
+        copied_meta_node = copy_model_instance(meta_node, copy_fields, overwrite_values)
+
+        if meta_node.taxon:
+
+            copied_meta_node.set_taxon(meta_node.taxon)
+            copied_meta_node.save()
+
+        return copied_meta_node
+
+
+    def copy_node(self, node, new_parent_node, taxon_tree_fields={}, copied_node_name=None):
+
+        if copied_node_name == None:
+            copied_node_name = node.meta_node.name
+
+        # for MetaNode and NatureGuidesTaxonTree do not use meta_node.pk = None meta_node.save()
+        # due to inhertance this does not work
+        # create a copy of meta node
+        new_meta_node = self.copy_meta_node(node.meta_node, copied_node_name)
+
+        # taxon tree nodes are more complex, create a new one instead of setting pk to None
+        # eg trigger
+        copied_node = NatureGuidesTaxonTree(
+            nature_guide = new_parent_node.nature_guide,
+            meta_node = new_meta_node,
+            position = new_parent_node.children_count,
+        )
+
+        copied_node.save(new_parent_node, taxon_tree_fields=taxon_tree_fields)
+
+        # copy node images
+        images = node.meta_node.images()
+
+        for image in images:
+            copied_image = self.copy_content_image(image, copied_node)
+
+
+        # copy matrix filters
+        matrix_filters = MatrixFilter.objects.filter(meta_node=node.meta_node)
+        for matrix_filter in matrix_filters:
+            copied_matrix_filter = self.copy_matrix_filter(matrix_filter, new_meta_node)
+
+
+        # copy node filter space - the space of node in relation to node.parent
+        parent_matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
+
+        for parent_matrix_filter in parent_matrix_filters:
+
+            if node == self.node:
+                copied_parent_matrix_filter = parent_matrix_filter
+
+            else:
+                copied_parent_matrix_filter = self.copy_map['nodes'][str(node.parent.pk)]
+
+            node_filter_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=parent_matrix_filter)
+
+            for node_filter_space in node_filter_spaces:
+                copied_node_filter_space = self.copy_node_filter_space(node_filter_space, copied_node,
+                                                                       copied_parent_matrix_filter)
+
+        self.copy_map['nodes'][str(node.pk)] = str(copied_node.pk) 
+        return copied_node
+
+
+    def copy_matrix_filter(self, matrix_filter, new_meta_node):
+
+        copy_fields = ['name', 'description', 'filter_type', 'definition', 'position', 'weight']
+        
+        overwrite_values = {
+            'meta_node' : new_meta_node,
+        }
+        
+        copied_matrix_filter = copy_model_instance(matrix_filter, copy_fields, overwrite_values)
+
+        spaces = matrix_filter.get_space()
+
+        for space in spaces:
+
+            space_copy_fields = ['encoded_space', 'additional_information', 'position']
+            space_overwrite_values = {
+                'matrix_filter' : copied_matrix_filter,
+            }
+
+            copied_space = copy_model_instance(space, space_copy_fields, space_overwrite_values)
+
+            self.copy_map['matrix_filter_space'][str(space.pk)] = str(copied_space.pk)
+
+            if space.images().exists():
+
+                for content_image in space.images():
+                    self.copy_content_image(content_image, copied_space)
+
+        return copied_matrix_filter
+
+
+    def copy_node_filter_space(self, node_filter_space, new_node, new_matrix_filter):
+
+        copy_fields = ['encoded_space', 'weight']
+
+        '''
+        for the copy of self.node simply copy all values of NodeFilterSpace
+        '''
+        if node_filter_space.node == self.node:
+            copy_fields.append('values')
+
+        overwrite_values = {
+            'node' : new_node,
+            'matrix_filter' : new_matrix_filter,
+        }
+
+        copied_node_filter_space = copy_model_instance(node_filter_space, copy_fields, overwrite_values)
+
+        '''
+        the copy of self.node uses the matrix filters of self.node.parent - which have not been copied
+        '''
+        if node_filter_space.node != self.node:
+
+            # set the new values of copied_node_filter_space - these are the copies of the old values
+            old_values = node_filter_space.values.all().values_list('pk', flat=True)
+
+            if old_values:
+                new_values_pks = []
+                for matrix_filter_space_pk in old_values:
+                    new_values_pks.append(self.copy_map['matrix_filter_space'][str(matrix_filter_space_pk)])
+
+                new_values_qry = MatrixFilterSpace.objects.filter(pk__in=new_values_pks)
+
+                copied_node_filter_space.values.set(new_values_qry)
+
+        return copied_node_filter_space
+
+
+    def copy_crosslinks(self, old_node, new_node):
+
+        created_crosslinks = []
+
+        # get all crosslinks where old_node appears as a child AND where the parent of the crosslink
+        # lies INSIDE the copied branch
+        inside_crosslinks_with_old_node_as_child = NatureGuideCrosslinks.objects.filter(
+            child=old_node, parent__taxon_nuid__startswith=self.node.taxon_nuid)
+
+        for inside_crosslink in inside_crosslinks_with_old_node_as_child:
+
+            new_child = new_node
+            new_parent_pk = self.copy_map['nodes'][str(inside_crosslink.parent.pk)]
+            new_parent = NatureGuidesTaxonTree.objects.get(pk=new_parent_pk)
+
+            new_crosslink = NatureGuideCrosslinks(
+                parent = new_parent,
+                child = new_child,
+                position = inside_crosslink.position,
+            )
+            new_crosslink.save()
+
+            created_crosslinks.append(new_crosslink)
+            
+
+        # get all crosslinks where old_node appears as a child AND where the parent of the crosslink
+        # lies OUTSIDE the copied branch
+        outside_crosslinks_with_old_node_as_child = NatureGuideCrosslinks.objects.filter(
+            child=old_node).exclude(parent__taxon_nuid__startswith=self.node.taxon_nuid)
+
+        for outside_crosslink in outside_crosslinks_with_old_node_as_child:
+            new_outside_parent = outside_crosslink.parent
+            new_inside_child = new_node
+
+            new_outside_crosslink = NatureGuideCrosslinks(
+                parent = new_outside_parent,
+                child = new_inside_child,
+                position = outside_crosslink.position,
+            )
+            new_outside_crosslink.save()
+
+            created_crosslinks.append(new_outside_crosslink)
+
+
+        outside_crosslinks_with_old_node_as_parent = NatureGuideCrosslinks.objects.filter(
+            parent=old_node).exclude(child__taxon_nuid__startswith=self.node.taxon_nuid)
+
+
+        for outside_parent_crosslink in outside_crosslinks_with_old_node_as_parent:
+
+            new_inside_parent = new_node
+            new_outside_child = outside_parent_crosslink.child
+
+            new_outside_parent_crosslink = NatureGuideCrosslinks(
+                parent = new_inside_parent,
+                child = new_outside_child,
+                position = outside_parent_crosslink.position,
+            )
+            new_outside_parent_crosslink.save()
+
+            created_crosslinks.append(new_outside_parent_crosslink)
+
+
+        return created_crosslinks
+        
+
+    def get_new_taxon_nuid(self, old_root_nuid, new_root_nuid, old_node):
+
+        new_taxon_nuid_tail = old_node.taxon_nuid[len(old_root_nuid):]
+        new_taxon_nuid = '{0}{1}'.format(new_root_nuid, new_taxon_nuid_tail)
+
+        return new_taxon_nuid
+        
+
+    def form_valid(self, form):
+
+        # copy the node
+        copied_node_name = form.cleaned_data['branch_name']
+
+        # the new root node has the new root nuid
+        new_root_node = self.copy_node(self.node, self.parent_node, taxon_tree_fields={},
+                                       copied_node_name=copied_node_name)
+
+        created_root_crosslinks = self.copy_crosslinks(self.node, new_root_node)
+
+        old_root_nuid = self.node.taxon_nuid
+        new_root_nuid = new_root_node.taxon_nuid
+        
+        # copy all descendants, travelling down the tree
+        descendants = self.node.tree_descendants
+
+        # it is sufficient to replace the old_root_nuid with new_root_nuid for each taxon
+        for descendant in descendants:
+
+            copy_node = True
+
+            # the taxon_nuid field is calculated here and not using the .save() method of
+            # NatureGuidesTaxonTree
+            new_taxon_nuid = self.get_new_taxon_nuid(old_root_nuid, new_root_nuid, descendant)
+            new_parent_nuid = new_taxon_nuid[:-3]
+
+            new_parent_node = NatureGuidesTaxonTree.objects.get(taxon_nuid=new_parent_nuid)
+
+            if descendant.meta_node.node_type == 'result':
+                # if the result is backed by a taxonomic database, copy it
+                # if the result is NOT backed by a taxonomic database, create a crosslink
+                if not descendant.meta_node.taxon_latname:
+                    copy_node = False
+            
+            else:
+                copy_node = True
+
+
+            if copy_node == True:
+
+                # create the taxon tree fields
+                slug = create_unique_slug(descendant.taxon_latname, 'slug', NatureGuidesTaxonTree)            
+
+                taxon_tree_fields = {
+                    'taxon_nuid' : new_taxon_nuid,
+                    'taxon_latname' : descendant.taxon_latname,
+                    'is_root_taxon' : False,
+                    'rank' : None, # no ranks for NG TaxonTree entries
+                    'slug' : slug,
+                    'author' : None, # no author for NG TaxonTree entries
+                    'source_id' : new_taxon_nuid, # obsolete in this case, only necessary for taxonomies like col
+                }
+                
+                copied_node = self.copy_node(descendant, new_parent_node, taxon_tree_fields=taxon_tree_fields)
+
+                created_crosslinks = self.copy_crosslinks(descendant, copied_node)
+
+            else:
+                # create a crosslink instead of a copy
+                crosslink = NatureGuideCrosslinks(
+                    parent = new_parent_node,
+                    child = descendant,
+                    position = descendant.position,
+                )
+
+                crosslink.save()
+            
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['node_copy'] = new_root_node
+        context['success'] = True
+
+        # add required context for rendering a node
+        context['content_type'] = ContentType.objects.get_for_model(self.node.nature_guide)
+        context['parent_node'] = self.node.parent
+
+        return self.render_to_response(context)

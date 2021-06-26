@@ -13,6 +13,9 @@
 	<a class="dropdown-item text-center movebackbutton" data-targetid="{{ node.name_uuid }}">&#9660; &nbsp; {% trans 'Move down' %}</a>
 	<div class="dropdown-divider"></div>
 	<a data-url="{% url 'move_natureguide_node' meta_app.id parent_node.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% blocktrans %}Move to different group{% endblocktrans %}</a>
+	{% if node.meta_node.node_type == 'node' %}
+		<a data-url="{% url 'copy_tree_branch' meta_app.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% blocktrans %}Copy this branch{% endblocktrans %}</a>
+	{% endif %}
 	<div class="dropdown-divider"></div>
 {% endif %}
 <a data-url="{% url 'delete_nodelink' parent_node.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>

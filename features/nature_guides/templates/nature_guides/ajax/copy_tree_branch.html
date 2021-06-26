@@ -1,0 +1,63 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% url 'copy_tree_branch' meta_app.id node.id %}{% endblock %}
+
+{% block title %}
+
+	{% blocktrans with name=node.name %}Create a copy of {{ name }}{% endblocktrans %}
+
+{% endblock %}
+
+{% block body %}
+		<p>
+			{% block form %}
+				
+				{% for field in form %}
+					{% include 'localcosmos_server/bootstrap_field.html' %}
+				{% endfor %}
+
+				{% if success is True %}
+					<script>
+						if (typeof identification != 'undefined' && identification != null){
+							identification.update();
+						}
+					</script>
+				{% endif %}
+
+			{% endblock %}
+		</p>
+		{% if success is True %}
+			<div class="alert alert-success">
+				{% trans 'Successfully created copy.' %}
+			</div>
+		{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if success is True %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}
+
+{% block open_modal %}
+	<script>
+		{% if success is True %}
+
+			{% with node=node_copy %}
+				var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node.html" %}{% endfilter %}';	
+			{% endwith %}
+					
+			$("#keynodes").append(html);
+			
+			ajaxify('{{ node_copy.name_uuid }}');
+			
+			$("#Modal").modal("hide");
+			
+		{% else %}
+			$("#Modal").modal("show");
+		{% endif %}
+	</script>
+{% endblock %}

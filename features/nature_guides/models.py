@@ -236,7 +236,7 @@ class ChildrenCacheManager:
 
         crosslink_children = NatureGuideCrosslinks.objects.filter(parent__meta_node=self.meta_node)
         for crosslink in crosslink_children:
-            child_json = self.child_as_json(child, crosslink=crosslink)
+            child_json = self.child_as_json(crosslink.child, crosslink=crosslink)
             data['items'].insert(crosslink.position, child_json)
 
         self.meta_node.children_cache = data
@@ -525,8 +525,9 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     def __str__(self):
         return '{0}'.format(self.name)
 
-    class Meta:
-        unique_together=('nature_guide', 'name')
+    # the requirement of copying tree branches makes unique met anode names impossible
+    #class Meta:
+    #    unique_together=('nature_guide', 'name')
 
 '''
     NatureGuide as a TaxonTree
@@ -538,7 +539,6 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
 '''
 from taxonomy.utils import NuidManager
 from localcosmos_server.slugifier import create_unique_slug
-from django.template.defaultfilters import slugify
 
 # activate Length lookup
 from django.db.models import CharField
@@ -655,6 +655,15 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     def lazy_taxon(self):
         return LazyTaxon(instance=self)
 
+    # nodes are active unless they have been actively set to inactive
+    @property
+    def is_active(self):
+
+        if self.additional_data:
+            return self.additional_data.get('is_active', True)
+        
+        return True
+
     # in the future, a nature guide might appear in more than one app
     def get_taxon_profile(self, meta_app):
 
@@ -720,7 +729,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         return taxon_tree_fields
 
     # parent is only used on create, not on update
-    def save(self, parent, *args, **kwargs):
+    # during copyin of a node, taxon_tree_fields are partially supplied
+    def save(self, parent, taxon_tree_fields={}, *args, **kwargs):
 
         self.parent = parent
 
@@ -730,11 +740,21 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if not self.meta_node.name and not self.decision_rule:
             raise ValueError('A tree node either needs a name or a decision rule')
 
+        if taxon_tree_fields:
+            required_keys = set(['taxon_nuid', 'taxon_latname', 'is_root_taxon', 'rank', 'slug', 'author',
+                             'source_id'])
+
+            for key in required_keys:
+                if key not in taxon_tree_fields:
+                    raise ValueError('You supplied invalid taxon_tree_fields. The key {0} is required.'.format(
+                        key))
+
         if self.pk:
             self.taxon_latname = self.meta_node.name
         else:
             # create nuid etc on first save
-            taxon_tree_fields = self.get_taxon_tree_fields(parent)
+            if not taxon_tree_fields:
+                taxon_tree_fields = self.get_taxon_tree_fields(parent)
 
             for key, value in taxon_tree_fields.items():
                 setattr(self, key, value)
@@ -774,7 +794,25 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         descendants.reverse()
 
         for descendant in descendants:
-            descendant.delete(from_delete_branch=True)
+
+            '''
+            if the deleted node is a result, and is references as a crosslink child,
+            preserve it by moving it to the first crosslink.parent
+            '''
+
+            delete_node = True
+            
+            if descendant.meta_node.node_type == 'result':
+
+                crosslink = NatureGuideCrosslinks.objects.filter(child=descendant).first()
+
+                if crosslink:
+                    descendant.move_to(crosslink.parent)
+                    crosslink.delete()
+                    delete_node = False
+
+            if delete_node == True:
+                descendant.delete(from_delete_branch=True)
 
         self.delete(from_delete_branch=True)
 

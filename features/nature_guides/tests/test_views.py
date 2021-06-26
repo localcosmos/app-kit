@@ -17,14 +17,15 @@ from app_kit.features.nature_guides.views import (ManageNatureGuide, ManageNodel
         AddExistingNodes, LoadKeyNodes, StoreNodeOrder, LoadNodeManagementMenu, DeleteMatrixFilter,
         SearchForNode, LoadMatrixFilters, ManageMatrixFilter, ManageMatrixFilterSpace, DeleteMatrixFilterSpace,
         NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup,
-        ManageMatrixFilterRestrictions)
+        ManageMatrixFilterRestrictions, CopyTreeBranch)
 
 
 from app_kit.features.nature_guides.models import (NatureGuide, NatureGuidesTaxonTree, NatureGuideCrosslinks,
                 MetaNode, MatrixFilter, NodeFilterSpace, MatrixFilterSpace, MatrixFilterRestriction)
 
 from app_kit.features.nature_guides.forms import (NatureGuideOptionsForm, SearchForNodeForm, MoveNodeForm,
-                        IdentificationMatrixForm, ManageNodelinkForm, ManageMatrixFilterRestrictionsForm)
+                        IdentificationMatrixForm, ManageNodelinkForm, ManageMatrixFilterRestrictionsForm,
+                        CopyTreeBranchForm)
 
 
 from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
@@ -2833,3 +2834,610 @@ class TestManageMatrixFilterRestrictionsManage(TestManageMatrixFilterRestriction
                     self.assertEqual(spaces.values().all().count(), 1)
                     
             
+
+
+class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMatrixFilters, WithAjaxAdminOnly,
+                    ViewTestMixin, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'copy_tree_branch'
+    view_class = CopyTreeBranch
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'node_id' : self.copy_node.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+
+    def set_content_image(self, node):
+
+        content_image = ContentImage(
+            content_type = ContentType.objects.get_for_model(MetaNode),
+            object_id = node.meta_node.id,
+            image_store = self.image_store,
+        )
+
+        content_image.save()
+
+        return content_image
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.image_store = self.create_image_store()
+
+        self.tree = {
+            'node 1' : {
+                'node 1.1' : {
+                    '1.1.1' : 'result 1.1.1',
+                    '1.1.2' : 'result 1.1.2',
+                },
+                'node 1.2' : {
+                    '1.2.1' : 'result 1.2.1',
+                    'node 1.2.2' : {
+                        '1.2.2' : 'result 1.2.2',
+                    }
+                },
+            },
+            'node 2' : {
+                'node 2.1' : 'result 2'
+            },
+        }
+
+
+        self.crosslinks = {
+            'node 2' : 'node 1.1', # parent outside, child inside
+            'node 1.1' : 'node 1.2.2', # parent inside, child inside
+            'node 1.2' : 'node 2', # parent inside, child outside            
+        }
+
+        # for accessing specific nodes on tests
+        self.nodes = self.create_tree(self.start_node, self.tree)
+        self.copy_node = self.nodes['node 1']
+        
+
+        self.node_1_matrix_filters = self.create_all_matrix_filters(self.copy_node)
+        self.fill_matrix_filters_nodes(self.copy_node, [self.nodes['node 1'], self.nodes['node 2']])
+        
+        self.node_1_parent_matrix_filters = self.create_all_matrix_filters(self.copy_node.parent)
+        self.fill_matrix_filters_nodes(self.copy_node.parent, [self.copy_node])
+
+        # create filters a for non root nodes
+        self.node_1_1_matrix_filters = self.create_all_matrix_filters(self.nodes['node 1.1'])
+        self.fill_matrix_filters_nodes(self.nodes['node 1.1'], [self.nodes['1.1.1'], self.nodes['1.1.2']])
+
+        self.create_crosslinks(self.crosslinks)
+        
+
+    def create_crosslinks(self, crosslinks):
+        
+        for parent_name, child_name in self.crosslinks.items():
+            
+            parent = self.nodes[parent_name]
+            child = self.nodes[child_name]
+            
+            crosslink = NatureGuideCrosslinks(
+                parent=parent,
+                child=child,
+            )
+
+            crosslink.save()
+
+
+    def create_tree(self, parent_node, tree):
+
+        node_dict = {}
+
+        for level_1_node_name, level_1_children in tree.items():
+
+            # no result on the first level
+            level_1_node = self.create_node(parent_node, level_1_node_name)
+
+            node_dict[level_1_node_name] = level_1_node
+
+            for level_2_node_name, level_2_children in level_1_children.items():
+
+                if type(level_2_children) == dict:
+
+                    level_2_node = self.create_node(level_1_node, level_2_node_name)
+
+                    node_dict[level_2_node_name] = level_2_node
+
+
+                    for level_3_node_name, level_3_children in level_2_children.items():
+
+                        if type(level_3_children) == dict:
+
+                            level_3_node = self.create_node(level_2_node, level_3_node_name)
+
+                            node_dict[level_3_node_name] = level_3_node
+
+                        else:
+                            level_3_result_name = level_3_children
+                            level_3_result = self.create_node(level_2_node, level_3_result_name,
+                                                              node_type='result')
+                            
+                            node_dict[level_3_node_name] = level_3_result
+                        
+                else:
+                    level_2_result_name = level_2_children
+                    level_2_node = self.create_node(level_1_node, level_2_result_name, node_type='result')
+
+                    node_dict[level_2_node_name] = level_2_node
+
+        return node_dict
+            
+        
+    def test_set_node(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        self.assertEqual(view.node, self.copy_node)
+        self.assertEqual(view.parent_node, self.copy_node.parent)
+
+
+    def test_get_new_taxon_nuid(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        old_parent_nuid = self.copy_node.parent.taxon_nuid
+        new_parent_nuid = '00a00a'
+        new_taxon_nuid = view.get_new_taxon_nuid(old_parent_nuid, new_parent_nuid, self.copy_node)
+        
+        expected_nuid = self.copy_node.taxon_nuid.replace(old_parent_nuid,new_parent_nuid)
+        
+        self.assertEqual(new_taxon_nuid, expected_nuid)
+
+
+    def test_copy_meta_node(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        meta_node = self.copy_node.meta_node
+
+        copied_meta_node = view.copy_meta_node(meta_node)
+
+        self.assertEqual(meta_node.nature_guide, copied_meta_node.nature_guide)
+        self.assertEqual(meta_node.node_type, copied_meta_node.node_type)
+        self.assertEqual(meta_node.name, copied_meta_node.name)
+
+
+    def test_copy_meta_node_with_taxon(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        meta_node = self.copy_node.meta_node
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+        
+        meta_node.set_taxon(lazy_taxon)
+
+        copied_meta_node = view.copy_meta_node(meta_node)
+
+        self.assertEqual(meta_node.nature_guide, copied_meta_node.nature_guide)
+        self.assertEqual(meta_node.node_type, copied_meta_node.node_type)
+        self.assertEqual(meta_node.name, copied_meta_node.name)
+        self.assertEqual(meta_node.taxon, copied_meta_node.taxon)
+
+        self.assertEqual(lazy_taxon, copied_meta_node.taxon)
+
+
+    def test_copy_content_image(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        content_image = self.set_content_image(self.copy_node)
+
+        # mock a copied node
+        copied_node = self.nodes['node 2']
+
+        copied_image = view.copy_content_image(content_image, copied_node)
+
+        content_image.refresh_from_db()
+        copied_image.refresh_from_db()
+        
+        self.assertTrue(copied_image.pk != content_image.pk)
+
+        self.assertEqual(copied_image.image_store, content_image.image_store)
+        self.assertEqual(copied_image.crop_parameters, content_image.crop_parameters)
+        self.assertEqual(copied_image.content_type, content_image.content_type)
+        self.assertEqual(copied_image.image_type, content_image.image_type)
+        self.assertEqual(copied_image.position, content_image.position)
+        self.assertEqual(copied_image.is_primary, content_image.is_primary)
+        self.assertEqual(copied_image.text, content_image.text)
+
+
+    def test_copy_matrix_filter(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        copied_node = self.nodes['node 2']
+
+        for matrix_filter in self.node_1_matrix_filters:
+
+            copied_matrix_filter = view.copy_matrix_filter(matrix_filter, copied_node.meta_node)
+
+
+            copy_fields = ['name', 'description', 'filter_type', 'definition', 'position', 'weight']
+
+            for field in copy_fields:
+                self.assertEqual(getattr(matrix_filter, field), getattr(copied_matrix_filter, field))
+
+            self.assertEqual(matrix_filter.meta_node, self.copy_node.meta_node)
+            self.assertEqual(copied_matrix_filter.meta_node, copied_node.meta_node)
+
+            space = matrix_filter.get_space()
+            space.order_by('pk')
+
+            copied_space = copied_matrix_filter.get_space()
+            copied_space.order_by('pk')
+
+            self.assertEqual(len(space), len(copied_space))
+
+            for counter, mfs in enumerate(space, 0):
+
+                copied_mfs = copied_space[counter]
+
+                self.assertEqual(len(mfs.images()), len(copied_mfs.images()))
+
+                self.assertEqual(mfs.matrix_filter, matrix_filter)
+                self.assertEqual(copied_mfs.matrix_filter, copied_matrix_filter)
+
+                space_copy_fields = ['encoded_space', 'additional_information', 'position']
+
+                for space_field in space_copy_fields:
+                    self.assertEqual(getattr(mfs, space_field), getattr(copied_mfs, space_field))
+                
+        
+    # does NOT create new values/ matrix filters
+    def test_copy_node_filter_space_root_node(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        copied_node = self.nodes['node 2']
+
+        original_filter_count = len(self.node_1_parent_matrix_filters)
+
+        self.assertTrue(original_filter_count >0)
+
+        for matrix_filter in self.node_1_parent_matrix_filters:
+
+            if matrix_filter.filter_type != 'TaxonFilter':
+
+                spaces = NodeFilterSpace.objects.filter(matrix_filter=matrix_filter, node=self.copy_node)
+
+                self.assertTrue(spaces.count() > 0)
+
+                for node_filter_space in spaces:
+                    copied_node_filter_space = view.copy_node_filter_space(node_filter_space, copied_node,
+                                                                           matrix_filter)
+
+                    self.assertEqual(copied_node_filter_space.matrix_filter, matrix_filter)
+
+                    self.assertEqual(copied_node_filter_space.encoded_space, node_filter_space.encoded_space)
+                    self.assertEqual(set(copied_node_filter_space.values.all().values_list('pk', flat=True)),
+                                     set(node_filter_space.values.all().values_list('pk', flat=True)))
+        
+        new_filter_count = MatrixFilter.objects.filter(meta_node=self.copy_node.parent.meta_node).count()
+        self.assertEqual(original_filter_count, new_filter_count)
+        
+    # does create new values/ matrix filters
+    def test_copy_node_filter_space_subnode(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        copy_node = self.nodes['1.1.1']
+        copied_node = self.nodes['node 2.1']
+
+        for matrix_filter in self.node_1_1_matrix_filters:
+
+            matrix_filter_copy = view.copy_matrix_filter(matrix_filter, copied_node.meta_node)
+
+            if matrix_filter.filter_type != 'TaxonFilter':
+
+                spaces = NodeFilterSpace.objects.filter(matrix_filter=matrix_filter, node=copy_node)
+
+                self.assertTrue(spaces.count() > 0)
+
+                for space in matrix_filter.get_space():
+                    self.assertTrue(str(space.pk) in view.copy_map['matrix_filter_space'])
+
+                for node_filter_space in spaces:
+                    copied_node_filter_space = view.copy_node_filter_space(node_filter_space, copied_node,
+                                                                           matrix_filter_copy)
+
+                    self.assertEqual(copied_node_filter_space.matrix_filter, matrix_filter_copy)
+
+                    self.assertEqual(copied_node_filter_space.encoded_space, node_filter_space.encoded_space)
+
+                    # there shpuld be new pks
+                    copied_values = []
+                    for mfs in node_filter_space.values.all():
+                        mfs_copy_pk = view.copy_map['matrix_filter_space'][str(mfs.pk)]
+                        mfs_copy = MatrixFilterSpace.objects.get(pk=mfs_copy_pk)
+
+                        self.assertEqual(mfs_copy.matrix_filter, matrix_filter_copy)
+                        self.assertEqual(mfs.matrix_filter, matrix_filter)
+
+                        self.assertEqual(mfs.encoded_space, mfs_copy.encoded_space)
+
+                    original_values = node_filter_space.values.all()
+                    original_values_pks = original_values.values_list('pk', flat=True)
+
+                    new_values = copied_node_filter_space.values.all()
+                    new_values_pks = new_values.values_list('pk', flat=True)
+                    
+                    for value_pk in original_values_pks:
+                        self.assertFalse(value_pk in new_values_pks)
+
+                    for original_value in original_values:
+                        new_value = new_values.get(
+                            pk=view.copy_map['matrix_filter_space'][str(original_value.pk)])
+
+                        self.assertEqual(new_value.encoded_space, original_value.encoded_space)
+                        self.assertEqual(new_value.additional_information,
+                                         original_value.additional_information)
+                        self.assertEqual(new_value.position, original_value.position)
+
+    
+    # copy the root node of the brancht which should be copied
+    # toplevel copy does not pass taxon_tree_fields
+    # also check conten images
+    def test_copy_toplevel_node(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        new_parent_node = self.copy_node.parent
+
+        copied_node = view.copy_node(self.copy_node, new_parent_node, taxon_tree_fields={})
+
+        self.assertFalse(copied_node.meta_node.pk == self.copy_node.meta_node.pk)
+
+        self.assertTrue(copied_node.taxon_nuid.startswith(new_parent_node.taxon_nuid))
+        self.assertEqual(copied_node.parent, new_parent_node)
+        self.assertEqual(copied_node.meta_node.name, self.copy_node.meta_node.name)
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.copy_node.meta_node)
+        copied_matrix_filters = MatrixFilter.objects.filter(meta_node=copied_node.meta_node)
+
+        self.assertEqual(matrix_filters.count(), copied_matrix_filters.count())
+
+
+    def test_copy_subnode_with_taxontree_fields(self):
+
+        # copy single node
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        # self.copy_node == node 1
+        new_root = view.copy_node(self.copy_node, self.copy_node.parent, taxon_tree_fields={})
+
+        # copy a subnode of self.copy_node: node 1.1
+        copy_node = self.nodes['node 1.1']
+        new_taxon_nuid = view.get_new_taxon_nuid(self.copy_node.taxon_nuid, new_root.taxon_nuid,
+                                                 copy_node)
+
+        #print(self.copy_node.taxon_nuid)
+        #print(new_root.taxon_nuid)
+        #print(copy_node.taxon_nuid)
+        #print(new_taxon_nuid)
+
+        self.assertTrue(new_taxon_nuid.startswith(new_root.taxon_nuid))
+
+        taxon_tree_fields = {
+            'taxon_nuid' : new_taxon_nuid,
+            'taxon_latname' : copy_node.taxon_latname,
+            'is_root_taxon' : False,
+            'rank' : None,
+            'slug' : 'test slug {0}'.format(copy_node.id),
+            'author' : None,
+            'source_id' : new_taxon_nuid,
+        }
+
+        copied_node = view.copy_node(copy_node, new_root, taxon_tree_fields=taxon_tree_fields)
+
+
+        for key, value in taxon_tree_fields.items():
+            self.assertEqual(getattr(copied_node, key), taxon_tree_fields[key])
+
+        self.assertEqual(copied_node.parent, new_root)
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.copy_node.meta_node)
+        copied_matrix_filters = MatrixFilter.objects.filter(meta_node=new_root.meta_node)
+
+        self.assertEqual(matrix_filters.count(), copied_matrix_filters.count())
+
+
+    def test_copy_crosslinks(self):
+
+        # 3 cases :
+        # (a) parent and child within copied branch
+        # (b) parent outside, child inside
+        # (c) parent inside, child outside
+        '''
+        self.crosslinks = {
+            'node 2' : 'node 1.1', # parent outside, child inside
+            'node 1.1' : 'node 1.2.2', # parent inside, child inside
+            'node 1.2' : 'node 2', # parent inside, child outside            
+        }
+        '''
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        # create the copied tree
+        copied_tree = {
+            'node 1 copy' : {
+                'node 1.1 copy' : {
+                    '1.1.1 copy' : 'result 1.1.1 copy',
+                    '1.1.2 copy' : 'result 1.1.2 copy',
+                },
+                'node 1.2 copy' : {
+                    '1.2.1 copy' : 'result 1.2.1 copy',
+                    'node 1.2.2 copy' : {
+                        '1.2.2 copy' : 'result 1.2.2 copy',
+                    }
+                },
+            },
+        }
+
+        copied_nodes = self.create_tree(self.start_node, copied_tree)
+
+        # case 1: node 2 --> node 1.1.
+        old_node = self.nodes['node 1.1']
+        new_node = copied_nodes['node 1.1 copy']
+
+        created_case_1_crosslinks = view.copy_crosslinks(old_node, new_node)
+        self.assertEqual(len(created_case_1_crosslinks), 1)
+
+        # expected new crosslink: node 2 --> node 1.1 copy
+        case_1_parent = self.nodes['node 2']
+        case_1_child = new_node
+
+        case_1_qry = NatureGuideCrosslinks.objects.filter(parent=case_1_parent, child=case_1_child)
+        self.assertTrue(case_1_qry.exists())
+        self.assertEqual(case_1_qry.count(), 1)
+        self.assertEqual(created_case_1_crosslinks[0], case_1_qry.first())
+
+        # case 2 node 1.1 --> node 1.2.2
+        case_2_old_node = self.nodes['node 1.2.2']
+        case_2_new_node = copied_nodes['node 1.2.2 copy']
+
+        # mock copy map
+        old_crosslink_parent = self.nodes['node 1.1']
+        view.copy_map['nodes'][str(old_crosslink_parent.pk)] = str(new_node.pk) 
+
+        created_case_2_crosslinks = view.copy_crosslinks(case_2_old_node, case_2_new_node)
+
+        self.assertEqual(len(created_case_2_crosslinks), 1)
+
+        case_2_parent = copied_nodes['node 1.1 copy']
+        case_2_child = copied_nodes['node 1.2.2 copy']
+
+        # parent should not create a crosslink
+        case_2_qry = NatureGuideCrosslinks.objects.filter(parent=case_2_parent, child=case_2_child)
+        self.assertTrue(case_2_qry.exists())
+        self.assertEqual(case_2_qry.count(), 1)
+        self.assertEqual(case_2_qry.first(), created_case_2_crosslinks[0])
+
+
+        # case 3: 'node 1.2' --> 'node 2'
+        case_3_old_node = self.nodes['node 1.2']
+        case_3_new_node = copied_nodes['node 1.2 copy']
+
+        # mock copy map
+        
+        view.copy_map['nodes'][str(case_3_old_node.pk)] = str(case_3_new_node.pk) 
+
+        created_case_3_crosslinks = view.copy_crosslinks(case_3_old_node, case_3_new_node)
+
+        self.assertEqual(len(created_case_3_crosslinks), 1)
+
+        case_3_parent = copied_nodes['node 1.2 copy']
+        case_3_child = self.nodes['node 2']
+
+        # parent should not create a crosslink
+        case_3_qry = NatureGuideCrosslinks.objects.filter(parent=case_3_parent, child=case_3_child)
+        self.assertTrue(case_3_qry.exists())
+        self.assertEqual(case_3_qry.count(), 1)
+        self.assertEqual(case_3_qry.first(), created_case_3_crosslinks[0])
+
+    
+    # copy branch
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        data = {
+            'branch_name' : 'node 1 copy',
+        }
+        
+        form = CopyTreeBranchForm(data=data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+
+        matrix_filters = MatrixFilter.objects.filter(
+            meta_node=response.context_data['node'].meta_node)
+        copied_matrix_filters = MatrixFilter.objects.filter(
+            meta_node=response.context_data['node_copy'].meta_node)
+
+        self.assertEqual(matrix_filters.count(), copied_matrix_filters.count())
+
+        self.assertEqual(response.status_code, 200)
+
+        # check copies
+        root_copy = NatureGuidesTaxonTree.objects.get(meta_node__name=data['branch_name'])
+        orig_root = view.node
+
+        self.assertEqual(root_copy.parent, orig_root.parent)
+
+        for level_2_node_name, level_2_children in self.tree['node 1'].items():
+
+            if type(level_2_children) == str:
+                level_2_node_name = level_2_children
+
+            orig_level_2_node = NatureGuidesTaxonTree.objects.get(parent=orig_root,
+                                                                meta_node__name=level_2_node_name)
+
+
+            if type(level_2_children) == dict:
+
+                copied_level_2_node = NatureGuidesTaxonTree.objects.get(parent=root_copy,
+                                                                  meta_node__name=level_2_node_name)
+
+                for level_3_node_name, level_3_children in self.tree['node 1'][level_2_node_name].items():
+
+                    if type(level_3_children) == str:
+                        level_3_node_name = level_3_children
+                        
+
+                    orig_level_3_node = NatureGuidesTaxonTree.objects.get(parent=orig_level_2_node,
+                                                                meta_node__name=level_3_node_name)
+
+                    if type(level_3_children) == dict:
+                        
+                        copied_level_3_node = NatureGuidesTaxonTree.objects.get(parent=copied_level_2_node,
+                                                                  meta_node__name=level_3_node_name)
+
+                    else:
+
+                        result_node = NatureGuidesTaxonTree.objects.get(parent=orig_level_2_node,
+                                                                        meta_node__name=level_3_node_name)
+
+                        result_link = NatureGuideCrosslinks.objects.get(parent=copied_level_2_node,
+                                                                        child=result_node)
+
+            else:
+
+                result_link = NatureGuideCrosslinks.objects.get(parent=root_copy, child=orig_child_node)
+
+            
+    def test_copy_and_delete_old(self):
+        pass
+        

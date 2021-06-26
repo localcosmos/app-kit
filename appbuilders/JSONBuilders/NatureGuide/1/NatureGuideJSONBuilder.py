@@ -31,6 +31,14 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         for parent_node in parent_nodes:
 
+            is_active = True
+
+            if parent_node.additional_data:
+                is_active = parent_node.additional_data.get('is_active', True)
+
+            if is_active == False:
+                continue
+
             parent_node_json = {
                 'children' : [],
                 'matrix_filters' : {},

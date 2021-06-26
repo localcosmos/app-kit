@@ -81,8 +81,13 @@ class ContentImageMixin:
 
         for image in content_images:
             # delete model db entries
-            image.image_store.delete()
+            image_store = image.image_store
             image.delete()
+
+            image_is_used = ContentImage.objects.filter(image_store=image_store).exists()
+
+            if not image_is_used:
+                image_store.delete()
         
 '''
     Scenario:

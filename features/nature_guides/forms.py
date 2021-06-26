@@ -139,6 +139,9 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
                        taxon_search_url=get_appkit_taxon_search_url, required=False)
 
+    is_active = forms.BooleanField(required=False, label=_('included in app'),
+                    help_text=_('Marks if this node is included in your app.'))
+
     # decision rule is currently hidden, might be deprecated in the future
     decision_rule = forms.CharField(required=False, label=_('Decision rule'),
         widget=forms.HiddenInput,
@@ -298,3 +301,9 @@ class MoveNodeForm(LocalizeableForm):
 
         return cleaned_data
         
+
+
+class CopyTreeBranchForm(forms.Form):
+
+    branch_name = forms.CharField(label=_('Name of copy'), help_text=_('Name of the copy.'),
+                                  max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'])
