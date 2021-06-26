@@ -1283,7 +1283,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
 
             else:
                 copied_parent_matrix_filter_pk = self.copy_map['nodes'][str(node.parent.pk)]
-                copied_parent_matrix_filter = MatrixFilter.objects.get(pk=copied_matrix_filter_pk)
+                copied_parent_matrix_filter = MatrixFilter.objects.get(pk=copied_parent_matrix_filter_pk)
 
             node_filter_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=parent_matrix_filter)
 
