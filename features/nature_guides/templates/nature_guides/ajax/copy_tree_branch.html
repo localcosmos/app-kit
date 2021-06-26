@@ -1,5 +1,5 @@
 {% extends 'localcosmos_server/modals/modal_form.html' %}
-{% load i18n localcosmos_tags %}
+{% load i18n static localcosmos_tags %}
 
 {% block action %}{% url 'copy_tree_branch' meta_app.id node.id %}{% endblock %}
 
@@ -27,6 +27,16 @@
 
 			{% endblock %}
 		</p>
+		
+		<div id="copy-takes-a-while" class="my-3 text-center d-none">
+			<div class="text-center">
+				<img src="{% static 'app_kit/images/spinner.gif' %}" />
+			</div>
+			<div class="mt-2 text-center">
+				{% trans 'This may take a while.' %}
+			</div>
+		</div>
+		
 		{% if success is True %}
 			<div class="alert alert-success">
 				{% trans 'Successfully created copy.' %}
@@ -44,6 +54,17 @@
 
 {% block open_modal %}
 	<script>
+	
+		var submit_button = $("#Modal").find("button[type=submit]");
+		
+		submit_button.on('click', function(event){
+			var branch_name_field = document.getElementById("id_branch_name");
+			
+			if (branch_name_field.value){
+				document.getElementById("copy-takes-a-while").classList.remove("d-none");
+			}
+		});
+		
 		{% if success is True %}
 
 			{% with node=node_copy %}
