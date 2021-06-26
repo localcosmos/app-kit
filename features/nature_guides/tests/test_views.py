@@ -3212,6 +3212,8 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         copied_node = view.copy_node(self.copy_node, new_parent_node, taxon_tree_fields={})
 
+        self.assertEqual(len(copied_node.taxon_nuid), len(self.copy_node.taxon_nuid))
+
         self.assertFalse(copied_node.meta_node.pk == self.copy_node.meta_node.pk)
 
         self.assertTrue(copied_node.taxon_nuid.startswith(new_parent_node.taxon_nuid))
@@ -3257,6 +3259,9 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         copied_node = view.copy_node(copy_node, new_root, taxon_tree_fields=taxon_tree_fields)
 
+        self.assertEqual(len(copied_node.taxon_nuid), len(copy_node.taxon_nuid))
+        self.assertEqual(len(copied_node.taxon_nuid) -3, len(new_root.taxon_nuid))
+        self.assertEqual(len(copied_node.taxon_nuid) -3, len(self.copy_node.taxon_nuid))
 
         for key, value in taxon_tree_fields.items():
             self.assertEqual(getattr(copied_node, key), taxon_tree_fields[key])

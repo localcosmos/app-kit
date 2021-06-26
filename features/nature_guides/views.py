@@ -1451,7 +1451,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         new_root_nuid = new_root_node.taxon_nuid
         
         # copy all descendants, travelling down the tree
-        descendants = self.node.tree_descendants
+        descendants = self.node.tree_descendants.order_by('taxon_nuid')
 
         # it is sufficient to replace the old_root_nuid with new_root_nuid for each taxon
         for descendant in descendants:
