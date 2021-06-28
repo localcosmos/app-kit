@@ -428,7 +428,8 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
     def get_queryset(self):
         # exclude is_root_node and all uplinks
         nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide).exclude(
-            meta_node__node_type='root').exclude(taxon_nuid__startswith=self.parent_node.taxon_nuid)
+            meta_node__node_type='root').exclude(taxon_nuid__startswith=self.parent_node.taxon_nuid).order_by(
+                'meta_node__name')
         
         return nodes
 

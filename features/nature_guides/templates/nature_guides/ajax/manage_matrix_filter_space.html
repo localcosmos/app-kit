@@ -135,5 +135,31 @@
 			}
 		{% endif %}
 	{% endif %}
+	
+
+	(function(){
+		{% for field_name in form.layoutable_simple_fields %}
+			var field = document.getElementById('id_{{ field_name }}');
+
+			ClassicEditor.create( field, { 
+				toolbar: ['bold', 'italic', 'underline', '|', 'undo', 'redo']
+			});
+		{% endfor %}
+	})();
+	
 </script>
+
+{% if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
+	<style>
+		.ck-editor__editable {
+			min-height: 50px;
+		}
+	</style>
+{% else %}
+	<style>
+		.ck-editor__editable {
+			min-height: 300px;
+		}
+	</style>
+{% endif %}
 {% endblock %}

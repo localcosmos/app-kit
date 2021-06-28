@@ -14,7 +14,7 @@
 						{% block label %}
 							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
 								<span class="square responsiveback" style="background-image:url('{% block image %}{% if option.image %}{{ option.image.image_url }}{% else %}{% static 'noimage.png' %}{% endif %}{% endblock %}')">{% block in_label %}{% endblock %}</span>
-								<span>{{ option.label }}</span>
+								<span>{{ option.label|safe }}</span>
 							</label>
 						{% endblock %}
 					</div>

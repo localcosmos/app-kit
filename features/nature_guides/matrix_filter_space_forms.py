@@ -12,6 +12,8 @@ class MatrixFilterSpaceForm(LocalizeableForm):
     # edit space id id is given
     matrix_filter_space_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
 
+    layoutable_simple_fields = []
+
     def save(self, form):
         raise NotImplementedError('MatrixFilterSpaceForm subclasses need a save method')
     
@@ -22,10 +24,11 @@ class MatrixFilterSpaceForm(LocalizeableForm):
 from app_kit.forms import OptionalContentImageForm
 class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFilterSpaceForm):
 
-    text = forms.CharField(label=_('Text'),
+    text = forms.CharField(label=_('Text'), widget=forms.Textarea,
                            max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'])
     
     localizeable_fields = ['text']
+    layoutable_simple_fields = ['text']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,6 +41,8 @@ class TextOnlyFilterSpaceForm(MatrixFilterSpaceForm):
                            max_length=TEXT_LENGTH_RESTRICTIONS['TextOnlyFilter']['text'])
     
     localizeable_fields = ['text']
+
+    layoutable_simple_fields = ['text']
 
 
 '''
