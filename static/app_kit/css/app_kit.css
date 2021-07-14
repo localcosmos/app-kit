@@ -861,6 +861,12 @@ input[type="color"] {
 	height: auto;
 }
 
+/* ckeditor errors */
+
+.ck.ck-editor.has-error .ck-content {
+	border: 2px solid #ff0000 !important;
+}
+
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
 	.app-review.phone {
