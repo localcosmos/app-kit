@@ -5,7 +5,7 @@
 			<div class="col-4 col-md-3 col-lg-2 text-center node-space-definition-item">
 				<label class="checkbox">
 					<div class="square responsiveback" style="background-image:url('{{ option.label.image_url }}')"></div>
-					<span style="font-weight:normal;">{{ option.label.encoded_space }}</span><br>
+					<span style="font-weight:normal;">{{ option.label.encoded_space|safe }}</span><br>
 					<input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %}>
 				</label>
 			</div>

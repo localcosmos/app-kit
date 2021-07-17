@@ -193,9 +193,12 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
         name = cleaned_data.get('name', None)
 
-        if name:
+        node_type = cleaned_data.get('node_type', None)
+
+        if name and node_type == 'result':
             exists_qry = NatureGuidesTaxonTree.objects.filter(nature_guide=self.parent_node.nature_guide,
-                                                         meta_node__name__iexact=name)
+                                                        meta_node__name__iexact=name,
+                                                        meta_node__node_type='result')
 
             node_id = cleaned_data.get('node_id', None)
 
@@ -203,6 +206,13 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
                 exists_qry = exists_qry.exclude(pk=node_id)
 
             exists = exists_qry.first()
+
+            if not exists:
+                sibling_exists_qry = NatureGuidesTaxonTree.objects.filter(
+                    nature_guide=self.parent_node.nature_guide, meta_node__name__iexact=name,
+                    parent=self.parent_node)
+
+                exists = sibling_exists_qry.first()
             
             if exists:
                 self.add_error('name',_('A node with the name {0} already exists'.format(

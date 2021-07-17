@@ -4,7 +4,7 @@
 		{% for option in options %}
 			<div class="col-6 col-md-5 col-lg-4 text-center node-space-definition-item">
 				<label class="checkbox">
-					<div class="textonlyselector">{{ option.label.encoded_space }}</div>
+					<div class="textonlyselector">{{ option.label.encoded_space|safe }}</div>
 					<input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %}>
 				</label>
 				
