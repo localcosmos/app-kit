@@ -9,7 +9,7 @@ urlpatterns = [
     # node creation
     path('create-natureguide-node/<str:node_type>/<int:meta_app_id>/<int:parent_node_id>/',
         views.ManageNodelink.as_view(), name='create_nodelink'), # create
-    path('manage-natureguide-node/<int:meta_app_id>/<int:node_id>/',
+    path('manage-natureguide-node/<int:meta_app_id>/<int:parent_node_id>/<int:node_id>/',
         views.ManageNodelink.as_view(), name='manage_nodelink'), # manage
     # create branch copies
     path('copy-tree-branch/<int:meta_app_id>/<int:node_id>/',

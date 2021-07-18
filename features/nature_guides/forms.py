@@ -155,10 +155,17 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     field_order = ['node_type', 'name', 'taxon', 'image', 'decision_rule', 'node_id']
 
 
-    def __init__(self, parent_node, *args, **kwargs):
+    def __init__(self, tree_parent_node, submitted_parent_node, *args, **kwargs):
 
-        self.parent_node = parent_node
-        self.meta_node = self.parent_node.meta_node
+        # the node this node is attached to in the tree, no crosslinks
+        self.tree_parent_node = tree_parent_node
+
+        self.nature_guide = self.tree_parent_node.nature_guide
+
+        # the parent_node the editor is currently editing, it might be the crosslink parent
+        # the submitted parent node defines the matrix filters and the meta node
+        self.submitted_parent_node = submitted_parent_node
+        self.meta_node = self.submitted_parent_node.meta_node
         
         self.node = kwargs.pop('node', None)
         self.from_url = kwargs.pop('from_url')
@@ -196,7 +203,7 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
         node_type = cleaned_data.get('node_type', None)
 
         if name and node_type == 'result':
-            exists_qry = NatureGuidesTaxonTree.objects.filter(nature_guide=self.parent_node.nature_guide,
+            exists_qry = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide,
                                                         meta_node__name__iexact=name,
                                                         meta_node__node_type='result')
 
@@ -207,10 +214,11 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
             exists = exists_qry.first()
 
+            # crosslink has its own view without form, only check Tree here
             if not exists:
                 sibling_exists_qry = NatureGuidesTaxonTree.objects.filter(
-                    nature_guide=self.parent_node.nature_guide, meta_node__name__iexact=name,
-                    parent=self.parent_node)
+                    nature_guide=self.nature_guide, meta_node__name__iexact=name,
+                    parent=self.submitted_parent_node)
 
                 exists = sibling_exists_qry.first()
             

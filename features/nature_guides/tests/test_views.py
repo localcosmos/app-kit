@@ -265,7 +265,8 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
         view = self.get_view()
         view.set_node(**view.kwargs)
         self.assertEqual(view.node, None)
-        self.assertEqual(view.parent_node, self.start_node)
+        self.assertEqual(view.submitted_parent_node, self.start_node)
+        self.assertEqual(view.tree_parent_node, self.start_node)
         self.assertEqual(view.node_type, 'node')
 
 
@@ -326,7 +327,8 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
 
         data = self.get_nodelink_form_data()
 
-        form = ManageNodelinkForm(view.parent_node, data=data, from_url=view.request.path)
+        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
 
         form.is_valid()
         self.assertEqual(form.errors, {})
@@ -350,7 +352,8 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
 
         data = self.get_nodelink_form_data()
 
-        form = ManageNodelinkForm(view.parent_node, data=data, from_url=view.request.path)
+        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
 
         form.is_valid()
         self.assertEqual(form.errors, {})
@@ -399,6 +402,7 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
     def get_url_kwargs(self):
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
+            'parent_node_id' : self.view_node.parent.id,
             'node_id' : self.view_node.id,
         }
         return url_kwargs
@@ -411,7 +415,8 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
         view.set_node(**view.kwargs)
 
         self.assertEqual(view.node, self.view_node)
-        self.assertEqual(view.parent_node, self.start_node)
+        self.assertEqual(view.submitted_parent_node, self.start_node)
+        self.assertEqual(view.tree_parent_node, self.start_node)
         self.assertEqual(view.node_type, 'node')
 
 
@@ -482,7 +487,8 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data.update(taxon_post_data)
 
-        form = ManageNodelinkForm(view.parent_node, data=data, from_url=view.request.path)
+        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
 
         form.is_valid()
         self.assertEqual(form.errors, {})
@@ -521,7 +527,8 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data.update(matrix_filters_data)
 
-        form = ManageNodelinkForm(view.parent_node, data=data, from_url=view.request.path)
+        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
 
         form.is_valid()
         self.assertEqual(form.errors, {})
@@ -577,7 +584,8 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data_2.update(matrix_filter_post_data_2)
 
-        form_2 = ManageNodelinkForm(view.parent_node, data=data_2, from_url=view.request.path)
+        form_2 = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data_2,
+                                    from_url=view.request.path)
 
         form_2.is_valid()
         self.assertEqual(form_2.errors, {})
@@ -601,6 +609,264 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
                 else:
                     self.assertFalse(node_space.exists())
 
+
+class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMatrixFilters, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_nodelink'
+    view_class = ManageNodelink
+    
+
+    def setUp(self):
+        super().setUp()
+
+        self.nodes = []
+        
+        self.create_nodes()
+        # crosslink:
+        # parent=self.child_node,
+        # child=self.nodes[1],
+        self.matrix_filters = self.create_all_matrix_filters(self.child_node)
+
+        self.view_node = self.nodes[1]
+        self.submitted_parent_node = self.child_node
+        self.tree_parent_node = self.view_node.parent
+
+        self.assertTrue(self.submitted_parent_node != self.tree_parent_node)
+        self.assertTrue(self.view_node.parent != self.submitted_parent_node)
+        self.assertEqual(self.view_node.parent, self.tree_parent_node)
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+
+        return view
+    
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'parent_node_id' : self.submitted_parent_node.id,
+            'node_id' : self.view_node.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_node_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        self.assertEqual(view.node, self.view_node)
+        self.assertEqual(view.node_type, 'node')
+        self.assertEqual(view.submitted_parent_node, self.submitted_parent_node)
+        self.assertEqual(view.tree_parent_node, self.tree_parent_node)
+        self.assertEqual(view.nature_guide, self.generic_content)
+
+        
+    @test_settings
+    def test_get_initial_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        initial = view.get_initial()
+
+        self.assertEqual(initial['node_type'], 'node')
+        self.assertEqual(initial['name'], 'node 2')
+        self.assertEqual(initial['decision_rule'], 'node 2 decision rule')
+        self.assertEqual(initial['node_id'], self.view_node.id)
+        self.assertEqual(initial['taxon'], None)
+        self.assertEqual(initial['is_active'], True)
+        
+
+    @test_settings
+    def test_get_context_data_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+
+        self.assertEqual(context['node_type'], 'node')
+        self.assertEqual(context['parent_node'], self.submitted_parent_node)
+        self.assertEqual(context['node'], self.view_node)
+        self.assertEqual(context['content_type'], ContentType.objects.get_for_model(self.generic_content))
+        
+    @test_settings
+    def test_get_form_kwargs_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        form_kwargs = view.get_form_kwargs()
+        self.assertEqual(form_kwargs['node'], self.view_node)
+        self.assertIn('/app-kit/nature-guides/manage-natureguide-node/', form_kwargs['from_url'])
+        
+    @test_settings
+    def test_get_form_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        form = view.get_form()
+        self.assertEqual(form.submitted_parent_node, self.submitted_parent_node)
+        self.assertEqual(form.tree_parent_node, self.tree_parent_node)
+        
+    @test_settings
+    def test_save_nodelink_with_crosslink_parent(self):
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        # does not contain matrix filters
+        data = self.get_nodelink_form_data(**view.get_initial())
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        taxon_post_data = {
+            'taxon_0' : lazy_taxon.taxon_source, # source
+            'taxon_1' : lazy_taxon.taxon_latname, # latname
+            'taxon_2' : lazy_taxon.taxon_author, # author
+            'taxon_3' : str(lazy_taxon.name_uuid), # uuid
+            'taxon_4' : lazy_taxon.taxon_nuid, # nuid
+        }
+
+        data.update(taxon_post_data)
+
+        form = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        view.save_nodelink(form)
+
+        node = self.view_node
+        node.refresh_from_db()
+        self.assertEqual(node.decision_rule, data['decision_rule'])
+        self.assertEqual(node.parent, self.start_node)
+        self.assertEqual(node.meta_node.node_type, 'node')
+        self.assertEqual(node.meta_node.name, data['name'])
+        self.assertEqual(node.nature_guide, self.generic_content)
+        self.assertEqual(node.meta_node.nature_guide, self.generic_content)
+        self.assertEqual(node.meta_node.taxon, lazy_taxon)
+        
+    # also covers matrix filters
+    @test_settings
+    def test_form_valid_with_crosslink_parent(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        data = self.get_nodelink_form_data(**view.get_initial())
+        
+        # update data with matrixfilter data
+        matrix_filters_data = {}
+
+        matrix_filters = MatrixFilter.objects.filter(meta_node=self.submitted_parent_node.meta_node)
+
+        for matrix_filter in matrix_filters:
+
+            matrix_filter_post_data = self.get_matrix_filter_post_data(matrix_filter)
+            matrix_filters_data.update(matrix_filter_post_data)
+
+
+        data.update(matrix_filters_data)
+
+        form = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
+
+        matrix_filter_field_count = 0
+        for field in form:
+            if getattr(field.field, 'matrix_filter', None) != None:
+                matrix_filter_field_count += 1
+                self.assertEqual(field.field.matrix_filter.meta_node, self.submitted_parent_node.meta_node)
+
+        # -1, TaxonFilter is skipped
+        self.assertEqual(matrix_filter_field_count, len(self.matrix_filters) - 1)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        # check if all nodefilterspaces have been created
+        for matrix_filter in matrix_filters:
+
+            if matrix_filter.filter_type != 'TaxonFilter':
+                
+                node_space = NodeFilterSpace.objects.get(matrix_filter=matrix_filter, node=self.view_node)
+
+                if matrix_filter.filter_type == 'RangeFilter':
+                    self.assertEqual(node_space.encoded_space, [0.5, 4])
+                    
+                elif matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+                    self.assertEqual(node_space.values.count(), 1)
+
+                elif matrix_filter.filter_type == 'ColorFilter':
+                    self.assertEqual(node_space.values.count(), 1)
+
+                elif matrix_filter.filter_type == 'NumberFilter':
+                    self.assertEqual(node_space.encoded_space, [2.0, 3.0])
+
+                elif matrix_filter.filter_type == 'TextOnlyFilter':
+                    self.assertEqual(node_space.values.count(), 1)
+
+                else:
+                    raise ValueError('Invalid filter: {0}'.format(matrix_filter.filter_type))
+
+        
+        # test removal of spaces
+        view_2 = self.get_view()
+        view_2.set_node(**view_2.kwargs)
+        
+        data_2 = self.get_nodelink_form_data(**view_2.get_initial())
+
+        dtai_filter = MatrixFilter.objects.get(meta_node=self.submitted_parent_node.meta_node,
+                                                  filter_type='DescriptiveTextAndImagesFilter')
+
+        old_space = NodeFilterSpace.objects.get(matrix_filter=dtai_filter, node=self.view_node)
+
+        matrix_filter_post_data_2 = {}
+        new_space = dtai_filter.get_space()[1]
+
+        old_encoded_space = old_space.values.first().encoded_space
+        new_encoded_space = new_space.encoded_space
+        self.assertTrue(old_encoded_space != new_encoded_space)
+        
+        matrix_filter_post_data_2[str(dtai_filter.uuid)] = [new_space.id]
+
+        data_2.update(matrix_filter_post_data_2)
+
+        form_2 = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data_2,
+                                    from_url=view.request.path)
+
+        form_2.is_valid()
+        self.assertEqual(form_2.errors, {})
+
+        response_2 = view_2.form_valid(form_2)
+        self.assertEqual(response_2.status_code, 200)
+
+        for matrix_filter in matrix_filters:
+
+            if matrix_filter.filter_type != 'TaxonFilter':
+                
+                node_space = NodeFilterSpace.objects.filter(matrix_filter=matrix_filter, node=self.view_node)
+
+
+                if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+
+                    space = node_space.first()
+                    self.assertEqual(space.values.first(), new_space)
+                    self.assertEqual(space.values.count(), 1)
+
+                else:
+                    self.assertFalse(node_space.exists())
 
 
 class TestDeleteNodelink(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly, WithUser, WithLoggedInUser,

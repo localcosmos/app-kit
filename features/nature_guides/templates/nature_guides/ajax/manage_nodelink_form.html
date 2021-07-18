@@ -1,11 +1,11 @@
 {% extends 'localcosmos_server/modals/large_modal_form.html' %}
 {% load i18n localcosmos_tags %}
 
-{% block action %}{% if nodelink %}{% url 'manage_nodelink' meta_app.id nodelink.id %}{% else %}{% url 'create_nodelink' node_type meta_app.id parent_node.id %}{% endif %}{% endblock %}
+{% block action %}{% if node %}{% url 'manage_nodelink' meta_app.id parent_node.id node.id %}{% else %}{% url 'create_nodelink' node_type meta_app.id parent_node.id %}{% endif %}{% endblock %}
 
 {% block title %}
-	{% if nodelink %}
-		{% blocktrans with name=nodelink.child.name %}Manage {{ name }}{% endblocktrans %}
+	{% if node %}
+		{% blocktrans with name=node.meta_node.name %}Manage {{ name }}{% endblocktrans %}
 	{% else %}
 		{% if node_type == 'result' %}
 			{% trans 'Create entry' %}

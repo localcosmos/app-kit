@@ -52,7 +52,7 @@ class TestNatureGuideOptionsForm(WithNatureGuide, WithMetaApp, TenantTestCase):
 
         nature_guide = self.create_nature_guide()
 
-        # add an observatoin form and test if both TaxonProfiles and ObservationForm appear in choices
+        # add an observation form and test if both TaxonProfiles and ObservationForm appear in choices
         observation_form = GenericForm.objects.create('Test observation form', 'en')
         content_type = ContentType.objects.get_for_model(observation_form)
         app_link = MetaAppGenericContent(
@@ -89,7 +89,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         from_url = '/'
 
         # form without node (-> create new link) and without matrix filters
-        form = ManageNodelinkForm(parent_node, from_url=from_url)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url)
 
         self.assertEqual(len(form.fields), 7)
         self.assertEqual(form.from_url, from_url)
@@ -98,7 +98,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         # for without node, but with all matrix filters
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
-        form = ManageNodelinkForm(parent_node, from_url=from_url)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url)
         # taxon filter does not return a form field
         self.assertEqual(len(form.fields), 12)
         self.assertEqual(form.from_url, from_url)
@@ -122,11 +122,48 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
 
         # test with node (child)
         node = self.create_node(parent_node, 'First')
-        form = ManageNodelinkForm(parent_node, from_url=from_url, node=node)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, node=node)
         # taxon filter does not return a form field
         self.assertEqual(len(form.fields), 12)
         self.assertEqual(form.node, node)
         self.assertEqual(form.from_url, from_url)
+
+
+    @test_settings
+    def test_init_with_crosslink_parent(self):
+
+        nature_guide = self.create_nature_guide()
+        child_1 = self.create_node(nature_guide.root_node, 'child 1')
+        child_2 = self.create_node(nature_guide.root_node, 'child 2')
+        grandchild_1 = self.create_node(child_1, 'child 1 1')
+
+        # assumed crosslink: grandchild_1 = parent, child_2 = child
+        matrix_filters = self.create_all_matrix_filters(grandchild_1)
+
+        submitted_parent_node = grandchild_1
+        tree_parent_node = nature_guide.root_node
+
+        
+        from_url = '/'
+
+        # form without node (-> create new link) and without matrix filters
+        form = ManageNodelinkForm(tree_parent_node, tree_parent_node, from_url=from_url)
+
+        for field in form:
+            self.assertFalse(getattr(field, 'is_matrix_filter', False))
+
+        form = ManageNodelinkForm(tree_parent_node, submitted_parent_node, from_url=from_url)
+
+        matrix_filter_field_count = 0
+        matrix_filter_uuids = [str(m.uuid) for m in matrix_filters]
+        
+        for field in form:
+            if getattr(field.field, 'is_matrix_filter', None) != None:
+                self.assertIn(str(field.field.matrix_filter.uuid), matrix_filter_uuids)
+                matrix_filter_field_count += 1
+
+        # -1, TaxonFilter is skipped
+        self.assertEqual(matrix_filter_field_count, len(matrix_filters) - 1)
 
 
     @test_settings
@@ -136,7 +173,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         parent_node = nature_guide.root_node
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
-        form = ManageNodelinkForm(parent_node, from_url='/')
+        form = ManageNodelinkForm(parent_node, parent_node, from_url='/')
 
         for field in form:
             if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
@@ -185,7 +222,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
                 node_space.values.add(space)
 
 
-        form = ManageNodelinkForm(parent_node, from_url='/', node=node)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url='/', node=node)
 
         for field in form:
             if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
@@ -215,7 +252,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         from_url = '/'
 
         # form without node (-> create new link) and without matrix filters
-        form = ManageNodelinkForm(parent_node, from_url=from_url, data={})
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data={})
         self.assertTrue(form.is_bound)
 
         self.assertFalse(form.is_valid())
@@ -225,7 +262,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
             'node_type' : 'node',
             'name' : 'name',
         }
-        form = ManageNodelinkForm(parent_node, from_url=from_url, data=data)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
 
         form.is_valid()
@@ -237,7 +274,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
             'node_type' : 'node',
             'decision_rule' : 'name',
         }
-        form = ManageNodelinkForm(parent_node, from_url=from_url, data=data)
+        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
 
         form.is_valid()

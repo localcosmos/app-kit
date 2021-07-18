@@ -179,6 +179,9 @@ class MultipleTraitValuesIterator:
     Manage a Node(link)
     - also define which filters apply for an entry
     - if a taxon is added to a NatureGuideTaxonTree, the TaxonProfile referring taxon has to be updated
+    - the submitted parent can be a crosslink parent or a tree parent
+    - the NatureGuidestaxonTree.save() method always requires the tree parent
+    - matrix filters always require the submitted parent
 '''
 class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, FormView):
 
@@ -196,16 +199,30 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
 
     def set_node(self, **kwargs):
-        
+
+        # it might be a crosslink
         if 'node_id' in kwargs:
             self.node = NatureGuidesTaxonTree.objects.get(pk=kwargs['node_id'])
-            self.parent_node = self.node.parent
             self.node_type = self.node.meta_node.node_type
+
+            # the parent node from the url, might be the crosslink parent
+            self.submitted_parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
+
+            # the parent of the node in the tree, no crosslink
+            self.tree_parent_node = self.node.parent            
             
         else:
             self.node = None
-            self.parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
             self.node_type = kwargs['node_type']
+
+            # the parent node from the url, might be the crosslink parent
+            self.submitted_parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
+
+            # the parent of the node in the tree, no crosslink
+            self.tree_parent_node = self.submitted_parent_node
+
+
+        self.nature_guide = self.submitted_parent_node.nature_guide
         
 
     def get_initial(self):
@@ -230,9 +247,9 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
         context = super().get_context_data(**kwargs)
 
         context['node_type'] = self.node_type
-        context['parent_node'] = self.parent_node
+        context['parent_node'] = self.submitted_parent_node
         context['node'] = self.node
-        context['content_type'] = ContentType.objects.get_for_model(self.parent_node.nature_guide)
+        context['content_type'] = ContentType.objects.get_for_model(self.nature_guide)
 
         return context
 
@@ -250,7 +267,9 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
         if form_class is None:
             form_class = self.get_form_class()
-        return form_class(self.parent_node, **self.get_form_kwargs())
+
+        # submitted parent node is for matrix filters
+        return form_class(self.tree_parent_node, self.submitted_parent_node, **self.get_form_kwargs())
     
     # if a taxon is added to a meta_node without taxon, there could have been a taxon profile referencing
     # app_kit.features.nature_guides as taxon_source. this taxon profile has to be updated to reference
@@ -260,7 +279,7 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
         if not node_id:
             meta_node = MetaNode(
-                nature_guide=self.parent_node.nature_guide,
+                nature_guide=self.nature_guide,
                 node_type = form.cleaned_data['node_type'],
                 name = form.cleaned_data['name']
             )
@@ -268,9 +287,9 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
             meta_node.save()
             
             self.node = NatureGuidesTaxonTree(
-                nature_guide = self.parent_node.nature_guide,
+                nature_guide = self.nature_guide,
                 meta_node = meta_node,
-                position=self.parent_node.children_count,
+                position=self.submitted_parent_node.children_count,
             )
             
         else:
@@ -307,7 +326,7 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
         self.node.meta_node.save()
 
         self.node.decision_rule = form.cleaned_data['decision_rule']
-        self.node.save(self.parent_node)
+        self.node.save(self.tree_parent_node)
 
 
     def form_valid(self, form):
@@ -318,7 +337,7 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
         self.iterate_matrix_form_fields(form)
         
         # update cache, cannot be done in .models because the node is saved BEFORE the spaces are added
-        cache = ChildrenCacheManager(self.node.parent.meta_node)
+        cache = ChildrenCacheManager(self.submitted_parent_node.meta_node)
         cache.add_or_update_child(self.node)
         
         context = self.get_context_data(**self.kwargs)
