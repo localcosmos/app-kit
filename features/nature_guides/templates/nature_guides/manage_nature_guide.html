@@ -143,7 +143,7 @@
 		var url = "{% url 'search_for_node' meta_app.id parent_node.nature_guide.id %}";
 		$('#id_search_node_name').searchfornodeautocomplete(url);
 		
-		$("#sort-alpha").on("click", function(event){
+		$("a.sort-alpha").on("click", function(event){
 			positionmanager.sort_alphabetically("keynodes", function(item){
 				var node_name = item.getElementsByClassName("node-name")[0];
 				return node_name.textContent;

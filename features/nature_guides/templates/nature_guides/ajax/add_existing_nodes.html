@@ -66,6 +66,88 @@
 
 {% block script %}
 	<script>
-		$("#existing_nodes_list").endlessPaginate();
+		/*$("#existing_nodes_list").endlessPaginate();*/
+		
+		function activate_pagination(){
+			$("#existing_nodes_list .endless_page_link").on("click", function(event){
+				event.preventDefault();
+				
+				let link = $(this).attr("href");
+				
+				let selected = [];
+				
+				let node_list = document.getElementById("existing_nodes_list");
+				
+				if (node_list != null){
+					let checkboxes = node_list.querySelectorAll("input[name='node']");
+					for (let c=0; c<checkboxes.length; c++){
+						let checkbox = checkboxes[c];
+						if (checkbox.checked == true){
+							if (selected.indexOf(checkbox.value) < 0 ){
+								selected.push(checkbox.value);
+							}
+						}
+						else {
+							let querystring = "selected=" + checkbox.value;
+							if (link.indexOf(querystring) >= 0){
+								let prepended_querystring = "&" + querystring;
+								let single_querystring = "?" + querystring;
+								
+								if (link.indexOf(prepended_querystring) >= 0){
+									querystring = prepended_querystring;
+								}
+								else if (link.endsWith(single_querystring)){
+									querystring = single_querystring;
+								}
+								
+								link = link.replaceAll(querystring, "");
+								
+								
+							}
+						}
+					}
+					
+					if (selected.length > 0){
+						for (let s=0; s<selected.length; s++){
+							
+							let selected_id = selected[s];
+							
+							let querystring = "selected=" + selected_id;
+							
+							if (link.indexOf(querystring) < 0){
+							
+								if (link.indexOf("?") < 0){
+									link = link + "?";
+								}
+								else {
+									link = link + "&";
+								}
+								
+								link = link + querystring;
+							}
+						}
+					}
+					
+					let ajax_target = $("#existing_nodes_list");
+					if (link.indexOf("page=") < 0 ){
+						ajax_target = $("#ModalContent");
+					}
+					
+					$.get(link, function(html){
+						ajax_target.html(html);
+						if (link.indexOf("page=") >= 0){
+							activate_pagination();
+						}
+						else {
+							ajaxify("ModalContent");
+						}
+					});
+				}
+				
+				
+			});
+		}
+		
+		activate_pagination();
 	</script>
 {% endblock %}

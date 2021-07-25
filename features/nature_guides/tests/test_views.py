@@ -1075,10 +1075,18 @@ class TestAddExistingNodes(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly
     def get_view(self):
         view = super().get_view(ajax=True)
         view.meta_app = self.meta_app
-        view.parent_node = self.view_node
-        view.nature_guide = self.generic_content
+        view.set_node(**view.kwargs)
 
         return view
+
+    @test_settings
+    def test_set_node(self):
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        self.assertEqual(view.parent_node, self.view_node)
+        self.assertEqual(view.nature_guide, self.generic_content)
+        self.assertEqual(view.selected_node_ids, [])
 
 
     @test_settings

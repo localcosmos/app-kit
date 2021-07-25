@@ -440,9 +440,13 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.set_node(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_node(self, **kwargs):
         self.parent_node = NatureGuidesTaxonTree.objects.get(pk=kwargs['parent_node_id'])
         self.nature_guide = self.parent_node.nature_guide
-        return super().dispatch(request, *args, **kwargs)
+        self.selected_node_ids = []
 
     def get_queryset(self):
         # exclude is_root_node and all uplinks
@@ -459,11 +463,19 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
         
         nodes = self.get_queryset()
         context['nodes'] = nodes
+
+        parsed_selected_node_ids = [int(i) for i in self.selected_node_ids]
+        context['selected_node_ids'] = parsed_selected_node_ids
+        context['selected_nodes'] = NatureGuidesTaxonTree.objects.filter(pk__in=parsed_selected_node_ids)
         
         return context
 
 
     def get(self, request, *args, **kwargs):
+
+        if 'selected' in request.GET:
+            self.selected_node_ids = request.GET.getlist('selected')
+        
         context = self.get_context_data(**kwargs)
 
         if request.is_ajax() and 'page' in request.GET:
