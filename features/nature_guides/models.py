@@ -616,6 +616,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         tree_entries = NatureGuidesTaxonTree.objects.filter(pk__in=children_ids)
         for entry in tree_entries:
             entry.position = position_map[entry.id]
+            entry.is_crosslink = True
             children.append(entry)
             
         return children

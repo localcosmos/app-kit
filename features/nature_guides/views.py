@@ -57,6 +57,9 @@ class ManageNatureGuide(ManageGenericContent):
             parent_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide,
                                                             meta_node__node_type='root')
 
+        # EXPERIMENTAL: if service gets too slow, do not rebuild cache
+        parent_node.meta_node.rebuild_cache()
+
         return parent_node
 
 
@@ -200,6 +203,8 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
     def set_node(self, **kwargs):
 
+        self.is_crosslink = False
+
         # it might be a crosslink
         if 'node_id' in kwargs:
             self.node = NatureGuidesTaxonTree.objects.get(pk=kwargs['node_id'])
@@ -220,6 +225,16 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
             # the parent of the node in the tree, no crosslink
             self.tree_parent_node = self.submitted_parent_node
+
+
+        if self.node:
+
+            if self.submitted_parent_node != self.tree_parent_node:
+                exists = NatureGuideCrosslinks.objects.filter(parent=self.submitted_parent_node,
+                                                              child=self.node).exists()
+
+                if exists:
+                    self.is_crosslink = True
 
 
         self.nature_guide = self.submitted_parent_node.nature_guide
@@ -245,6 +260,9 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        if self.node != None:
+            self.node.is_crosslink = self.is_crosslink
 
         context['node_type'] = self.node_type
         context['parent_node'] = self.submitted_parent_node
@@ -327,6 +345,8 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
 
         self.node.decision_rule = form.cleaned_data['decision_rule']
         self.node.save(self.tree_parent_node)
+
+        self.node.is_crosslink = self.is_crosslink
 
 
     def form_valid(self, form):
@@ -1399,69 +1419,29 @@ class CopyTreeBranch(MetaAppMixin, FormView):
 
         return copied_node_filter_space
 
-
-    def copy_crosslinks(self, old_node, new_node):
+    # old_node is a descendant of the original node. new_node is th copied node
+    # search crosslinks using the parent
+    # only crosslinks that point from the original branch to an outside node are copied
+    def copy_crosslinks(self, old_parent_node, copied_node):
 
         created_crosslinks = []
 
-        # get all crosslinks where old_node appears as a child AND where the parent of the crosslink
-        # lies INSIDE the copied branch
-        inside_crosslinks_with_old_node_as_child = NatureGuideCrosslinks.objects.filter(
-            child=old_node, parent__taxon_nuid__startswith=self.node.taxon_nuid)
+        old_crosslinks = NatureGuideCrosslinks.objects.filter(parent=old_parent_node)
 
-        for inside_crosslink in inside_crosslinks_with_old_node_as_child:
+        for old_crosslink in old_crosslinks:
 
-            new_child = new_node
-            new_parent_pk = self.copy_map['nodes'][str(inside_crosslink.parent.pk)]
-            new_parent = NatureGuidesTaxonTree.objects.get(pk=new_parent_pk)
+            new_child = old_crosslink.child
+
+            new_parent = copied_node
 
             new_crosslink = NatureGuideCrosslinks(
                 parent = new_parent,
                 child = new_child,
-                position = inside_crosslink.position,
+                position = old_crosslink.position,
             )
             new_crosslink.save()
 
             created_crosslinks.append(new_crosslink)
-            
-
-        # get all crosslinks where old_node appears as a child AND where the parent of the crosslink
-        # lies OUTSIDE the copied branch
-        outside_crosslinks_with_old_node_as_child = NatureGuideCrosslinks.objects.filter(
-            child=old_node).exclude(parent__taxon_nuid__startswith=self.node.taxon_nuid)
-
-        for outside_crosslink in outside_crosslinks_with_old_node_as_child:
-            new_outside_parent = outside_crosslink.parent
-            new_inside_child = new_node
-
-            new_outside_crosslink = NatureGuideCrosslinks(
-                parent = new_outside_parent,
-                child = new_inside_child,
-                position = outside_crosslink.position,
-            )
-            new_outside_crosslink.save()
-
-            created_crosslinks.append(new_outside_crosslink)
-
-
-        outside_crosslinks_with_old_node_as_parent = NatureGuideCrosslinks.objects.filter(
-            parent=old_node).exclude(child__taxon_nuid__startswith=self.node.taxon_nuid)
-
-
-        for outside_parent_crosslink in outside_crosslinks_with_old_node_as_parent:
-
-            new_inside_parent = new_node
-            new_outside_child = outside_parent_crosslink.child
-
-            new_outside_parent_crosslink = NatureGuideCrosslinks(
-                parent = new_inside_parent,
-                child = new_outside_child,
-                position = outside_parent_crosslink.position,
-            )
-            new_outside_parent_crosslink.save()
-
-            created_crosslinks.append(new_outside_parent_crosslink)
-
 
         return created_crosslinks
         
@@ -1478,6 +1458,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
 
         # copy the node
         copied_node_name = form.cleaned_data['branch_name']
+        prevent_crosslinks = form.cleaned_data['prevent_crosslinks']
 
         # the new root node has the new root nuid
         new_root_node = self.copy_node(self.node, self.parent_node, taxon_tree_fields={},
@@ -1503,7 +1484,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
 
             new_parent_node = NatureGuidesTaxonTree.objects.get(taxon_nuid=new_parent_nuid)
 
-            if descendant.meta_node.node_type == 'result':
+            if descendant.meta_node.node_type == 'result' and prevent_crosslinks == False:
                 # if the result is backed by a taxonomic database, copy it
                 # if the result is NOT backed by a taxonomic database, create a crosslink
                 if not descendant.meta_node.taxon_latname:
@@ -1541,8 +1522,10 @@ class CopyTreeBranch(MetaAppMixin, FormView):
                 )
 
                 crosslink.save()
-            
 
+        # rebuild cache
+        self.parent_node.meta_node.rebuild_cache()
+        
         context = self.get_context_data(**self.kwargs)
         context['form'] = form
         context['node_copy'] = new_root_node

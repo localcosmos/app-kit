@@ -9,7 +9,8 @@
 		<div class="col-7 pl-0">
 			<div class="row align-items-center node-content">
 				<div class="col-12 node-name">
-					<strong>{{ node.meta_node.name }}</strong> {% if not node.is_active %}&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>{% endif %}
+					<strong>{{ node.meta_node.name }}</strong> {% if node.is_crosslink is True %}&nbsp; <span class="badge badge-xs badge-info">{% trans 'crosslink' %}</span>
+					{% endif %} {% if not node.is_active %}&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>{% endif %}
 				</div>
 				<div class="col-12">
 					<div class="btn-group dropup">

@@ -3586,11 +3586,61 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         copied_nodes = self.create_tree(self.start_node, copied_tree)
 
+        '''
+        self.crosslinks = {
+            'node 2' : 'node 1.1', # parent outside, child inside
+            'node 1.1' : 'node 1.2.2', # parent inside, child inside
+            'node 1.2' : 'node 2', # parent inside, child outside            
+        }
+        '''
+
+        # node 1 copy as parent. crosslink points to node 1.1
         # case 1: node 2 --> node 1.1.
+        case_1_old_parent = self.nodes['node 1']
+        case_1_new_parent = copied_nodes['node 1 copy']
+
+        created_case_1_crosslinks = view.copy_crosslinks(case_1_old_parent, case_1_new_parent)
+
+        self.assertEqual(created_case_1_crosslinks, [])
+
+        # case 2 node 1.1 --> node 1.2.2
+        old_case_2_parent = self.nodes['node 1.1']
+        new_case_2_parent = copied_nodes['node 1.1 copy']
+
+        case_2_child = self.nodes['node 1.2.2']
+
+        created_case_2_crosslinks = view.copy_crosslinks(old_case_2_parent, new_case_2_parent)
+        case_2_qry = NatureGuideCrosslinks.objects.filter(parent=new_case_2_parent, child=case_2_child)
+
+        self.assertTrue(case_2_qry.exists())
+        self.assertEqual(created_case_2_crosslinks, [case_2_qry.first()])
+
+
+        # case 3: 'node 1.2' --> 'node 2'
+        case_3_old_parent = self.nodes['node 1.2']
+        case_3_new_parent = copied_nodes['node 1.2 copy']
+
+        # mock copy map
+        view.copy_map['nodes'][str(case_3_old_parent.pk)] = str(case_3_new_parent.pk) 
+
+        created_case_3_crosslinks = view.copy_crosslinks(case_3_old_parent, case_3_new_parent)
+
+        self.assertEqual(len(created_case_3_crosslinks), 1)
+
+        case_3_child = self.nodes['node 2']
+
+        # parent should not create a crosslink
+        case_3_qry = NatureGuideCrosslinks.objects.filter(parent=case_3_new_parent, child=case_3_child)
+        self.assertTrue(case_3_qry.exists())
+        self.assertEqual(case_3_qry.count(), 1)
+        self.assertEqual(case_3_qry.first(), created_case_3_crosslinks[0])
+        
+        
+        '''
         old_node = self.nodes['node 1.1']
         new_node = copied_nodes['node 1.1 copy']
 
-        created_case_1_crosslinks = view.copy_crosslinks(old_node, new_node)
+        
         self.assertEqual(len(created_case_1_crosslinks), 1)
 
         # expected new crosslink: node 2 --> node 1.1 copy
@@ -3623,7 +3673,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(case_2_qry.count(), 1)
         self.assertEqual(case_2_qry.first(), created_case_2_crosslinks[0])
 
-
+        
         # case 3: 'node 1.2' --> 'node 2'
         case_3_old_node = self.nodes['node 1.2']
         case_3_new_node = copied_nodes['node 1.2 copy']
@@ -3644,6 +3694,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertTrue(case_3_qry.exists())
         self.assertEqual(case_3_qry.count(), 1)
         self.assertEqual(case_3_qry.first(), created_case_3_crosslinks[0])
+        '''
 
     
     # copy branch

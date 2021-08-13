@@ -55,6 +55,14 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             for child in parent_node.children:
 
+                child_is_active = True
+
+                if child.additional_data:
+                    child_is_active = child.additional_data.get('is_active', True)
+
+                if child_is_active == False:
+                    continue
+
                 # fill the space
                 # there is only one NodeFilterSpace per matrix_filter/node combination
                 space_query = NodeFilterSpace.objects.filter(node=child, matrix_filter__in=matrix_filters)

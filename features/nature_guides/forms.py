@@ -221,11 +221,12 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
                     parent=self.submitted_parent_node)
 
                 exists = sibling_exists_qry.first()
-            
+
+            ''' currently, duplicates are allowed
             if exists:
                 self.add_error('name',_('A node with the name {0} already exists'.format(
                     exists.meta_node.name)))
-
+            '''
         ''' currently, 'name' is required
         decision_rule = cleaned_data.get('decision_rule', None)
 
@@ -325,3 +326,6 @@ class CopyTreeBranchForm(forms.Form):
 
     branch_name = forms.CharField(label=_('Name of copy'), help_text=_('Name of the copy.'),
                                   max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'])
+
+    prevent_crosslinks = forms.BooleanField(required=False,
+        help_text=_('Creates a copy of each identification result instead of a crosslink. This results in 2 separate entities for each result. Only use this function if you know what you are doing.'))
