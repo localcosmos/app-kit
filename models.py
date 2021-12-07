@@ -37,7 +37,8 @@ from app_kit.app_kit_api.models import AppKitJobs
 from localcosmos_server.models import App, SecondaryAppLanguages
 
 from datetime import datetime
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 '''--------------------------------------------------------------------------------------------------------------
