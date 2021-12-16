@@ -219,6 +219,61 @@ class AppReleaseBuilder(AppBuilder):
         return os.path.join(self._app_locale_folder(meta_app, language_code, app_version=app_version), filename)
 
 
+    # absolute glossary paths
+
+    def _build_localized_glossaries_folder(self, meta_app, glossary, language_code, app_version=None):
+
+        glossary_path = self._build_absolute_generic_content_path(meta_app, app_version, glossary)
+
+        return os.path.join(glossary_path, language_code)
+
+
+    def _build_localized_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
+        localized_glossaries_folder = self._build_localized_glossaries_folder(meta_app, glossary, language_code,
+                                                                              app_version=app_version)
+
+        filename = 'glossary.json'
+
+        return os.path.join(localized_glossaries_folder, filename)
+
+
+    def _build_used_terms_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
+
+        localized_glossaries_folder = self._build_localized_glossaries_folder(meta_app, glossary, language_code,
+                                                                              app_version=app_version)
+
+        filename = 'used_terms_glossary.json'
+        
+        used_terms_glossary_filepath = os.path.join(localized_glossaries_folder, filename)
+
+        return used_terms_glossary_filepath
+
+    # relative glossary paths
+    def _build_relative_localized_glossaries_folder(self, meta_app, glossary, language_code, app_version=None):
+        relative_glossary_path = self._build_relative_generic_content_path(glossary)
+
+        return os.path.join(relative_glossary_path, language_code)
+
+    def _build_relative_localized_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app, glossary,
+                                                                        language_code, app_version=app_version)
+
+        filename = 'glossary.json'
+
+        return os.path.join(localized_glossaries_relative_folder, filename)
+
+
+    def _build_relative_used_terms_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
+
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app, glossary,
+                                                                    language_code, app_version=app_version)
+
+        filename = 'used_terms_glossary.json'
+        
+        used_terms_glossary_filepath = os.path.join(localized_glossaries_relative_folder, filename)
+
+        return used_terms_glossary_filepath
+
 
     ###############################################################################################################
     # VALIDATION
@@ -1720,11 +1775,18 @@ class AppReleaseBuilder(AppBuilder):
         glossary_json = jsonbuilder.build()
 
         self._add_generic_content_to_app(glossary, glossary_json, only_one_allowed=True)
+
+        generic_content_type = glossary.__class__.__name__
+        self.build_features[generic_content_type]['localized'] = {}
         
 
         for language_code in self.meta_app.languages():
+
+            self.build_features[generic_content_type]['localized'][language_code] = {}
+            
             # create a glossarized version of te language file and save it as {language}_glossarized.json
-            glossarized_locale = jsonbuilder.glossarize_language_file(glossary, glossary_json, language_code)
+            glossarized_locale, used_terms_glossary = jsonbuilder.glossarize_language_file(glossary,
+                                                                                glossary_json, language_code)
 
             # store localized glossary file in the same folder as the language file
             glossarized_locale_filepath = self._build_glossarized_locale_filepath(self.meta_app, language_code,
@@ -1733,6 +1795,40 @@ class AppReleaseBuilder(AppBuilder):
 
             with open(glossarized_locale_filepath, 'w', encoding='utf-8') as f:
                 json.dump(glossarized_locale, f, indent=4, ensure_ascii=False)
+
+
+            # localized glossary
+            localized_glossary_folder = self._build_localized_glossaries_folder(self.meta_app, glossary,
+                                                                language_code, app_version=self.app_version)
+
+            if not os.path.isdir(localized_glossary_folder):
+                os.makedirs(localized_glossary_folder)
+
+            # store localized glossary which only contains used terms
+            used_terms_glossary_filepath = self._build_used_terms_glossary_filepath(self.meta_app, glossary,
+                                                                language_code, app_version=self.app_version)
+
+            with open(used_terms_glossary_filepath, 'w', encoding='utf-8') as f:
+                json.dump(used_terms_glossary, f, indent=4, ensure_ascii=False, sort_keys=True)
+
+
+            used_terms_glossary_relative_path = self._build_relative_used_terms_glossary_filepath(self.meta_app, glossary,
+                                                                        language_code, app_version=self.app_version)
+            self.build_features[generic_content_type]['localized'][language_code]['used_terms'] = used_terms_glossary_relative_path
+
+
+            localized_glossary = jsonbuilder.build_localized_glossary(glossary_json, language_code)
+            localized_glossary_filepath = self._build_localized_glossary_filepath(self.meta_app, glossary,
+                                                                language_code, app_version=self.app_version)
+            
+            with open(localized_glossary_filepath, 'w', encoding='utf-8') as f:
+                json.dump(localized_glossary, f, indent=4, ensure_ascii=False, sort_keys=True)
+
+
+            localized_glossary_relative_path = self._build_relative_localized_glossary_filepath(self.meta_app,
+                                                        glossary, language_code, app_version=self.app_version)
+            
+            self.build_features[generic_content_type]['localized'][language_code]['all_terms'] = localized_glossary_relative_path
 
 
     ###############################################################################################################

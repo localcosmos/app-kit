@@ -1553,6 +1553,23 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	outline: none !important;
 }
 
+.bg-grey {
+	background-color: #bfbfbf !important;
+}
+
+.glossary-link {
+	cursor: pointer;
+	border-radius: .5em;
+}
+
+.glossary-link:hover {
+	color: #17a2b8 !important;
+}
+
+#glossary-page {
+	padding-top: 25px;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 	.natureguide-item .taxonimage {
@@ -1610,6 +1627,10 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	.natureguide-item .taxonimage {
 		height: auto;
 		width: 10vw;
+	}
+	
+	#glossary-page {
+		padding-top: 75px;
 	}
 
 }

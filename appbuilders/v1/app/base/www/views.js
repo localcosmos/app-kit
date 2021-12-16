@@ -94,6 +94,24 @@ function _get_categories(){
 	
 		categories.push(category);
 	}
+	
+	
+	if ("Glossary" in app_features){
+	
+		var glossary = app_features.Glossary;
+	
+		var glossary_button = MainMenuButton.create(glossary.name[app.language], "glossary/" + glossary.uuid + "/", null);
+	
+		var glossary_category = {
+			"submenu_id" : "glossary",
+			"category_name" : _("Glossary"),
+			"buttons" : [glossary_button],
+			"has_submenu" : has_submenu
+		};
+		
+		categories.push(glossary_category)
+	
+	}
 
 	return categories;
 };
@@ -4506,6 +4524,82 @@ var Toggle = View(TemplateView, {
 
 });
 
+
+
+
+var GlossaryView = View(TemplateView, {
+
+	"identifier" : "GlossaryView",
+	"template_name" : "themes/" + settings.THEME + "/templates/glossary.html",
+	async_context : true,
+	
+	get_context_data : function(self, kwargs, callback){
+	
+		var show_used_terms_only = self.request.GET.used_terms == "1";
+		var url = self.get_glossary_url(self);
+
+		GlossaryView.super().get_context_data(self, kwargs, function(context){
+		
+			// load language specific glossary
+			ajax.GET(url, {}, function(content){
+
+				context["glossary"] = JSON.parse(content);
+				context["show_used_terms_only"] = show_used_terms_only;
+
+				callback(context);			
+
+			});
+		
+		});
+	},
+	
+	get_glossary_url : function(self){
+	
+		var show_used_terms_only = self.request.GET.used_terms == "1";
+		
+		if (app_features.Glossary.localized.hasOwnProperty(app.language)){
+			
+			if (show_used_terms_only == true){
+				var url = app_features.Glossary.localized[app.language]["used_terms"];
+			}
+			else {
+				var url = app_features.Glossary.localized[app.language]["all_terms"];
+			}
+		}
+		else {
+			var url = app_features.Glossary.path;
+		}
+		return url;
+	},
+	
+	post_render : function(self, args, kwargs){
+	
+		var glossary_links = document.getElementsByClassName("glossary-link");
+		
+		function scrollToTargetAdjusted(element){
+			var headerOffset = 150;
+			var elementPosition = element.getBoundingClientRect().top;
+			var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+		  
+			window.scrollTo({
+				 top: offsetPosition,
+				 behavior: "smooth"
+			});
+		}
+
+		for (let g=0; g<glossary_links.length; g++){
+			let glossary_link= glossary_links[g];
+			var hammertime = new Hammer(glossary_link, {});
+			hammertime.on("tap", function(event) {
+				let element_id = event.target.getAttribute("jumpto");
+				let element = document.getElementById(element_id);
+				scrollToTargetAdjusted(element);
+			});
+		}
+	
+	}
+	
+});
 
 
 var glossary = function(self, request, args, kwargs){

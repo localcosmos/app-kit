@@ -5,6 +5,13 @@ from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
 import re, base64
 
 
+##############################################################################################################
+#
+#   The displayed glossary in the app should be sorted alphabetically
+#   -> additionally build localized, sorted glossary json files
+#
+##############################################################################################################
+
 class GlossaryJSONBuilder(JSONBuilder):
     
 
@@ -16,10 +23,16 @@ class GlossaryJSONBuilder(JSONBuilder):
 
         glossary = self.generic_content
 
-        entries = GlossaryEntry.objects.filter(glossary=glossary)
+        glossary_entries = GlossaryEntry.objects.filter(glossary=glossary)
 
-        for entry in entries:            
-            glossary_json['glossary'][entry.term] = entry.definition
+        for glossary_entry in glossary_entries:
+
+            synonyms = list(glossary_entry.synonyms.values_list('term', flat=True))
+            
+            glossary_json['glossary'][glossary_entry.term] = {
+                'definition' : glossary_entry.definition,
+                'synonyms' : synonyms,
+            }
             
             
         return glossary_json
@@ -34,6 +47,9 @@ class GlossaryJSONBuilder(JSONBuilder):
     ##########################################################################################################
     def glossarize_language_file(self, glossary, glossary_json, language_code):
 
+        # provide the possibility to only browse used glossary items
+        used_terms_glossary = {}
+
         glossarized_language_file = {}
 
         locale = self.app_release_builder.get_locale(self.meta_app, language_code,
@@ -45,7 +61,9 @@ class GlossaryJSONBuilder(JSONBuilder):
         
         # the glossary entry (term) can consist of multiple words with spaces
         # iterate over all glossary entries and find them in the text
-        for term, definition in glossary_json['glossary'].items():
+        for term, glossary_entry in glossary_json['glossary'].items():
+
+            definition = glossary_entry['definition']
 
             localized_term = locale.get(term, term)
 
@@ -85,7 +103,8 @@ class GlossaryJSONBuilder(JSONBuilder):
                 synonym_entry = {
                     'term' : synonym.term,
                     'localized_term' : localized_term_synonym,
-                    'real_term' : localized_term,
+                    'real_term' : localized_term, # localized term which this word is synonym of
+                    'unlocalized_real_term' : term,
                     'is_synonym' : True,
                     'word_count' : synonym_word_count,
                 }
@@ -152,6 +171,10 @@ class GlossaryJSONBuilder(JSONBuilder):
 
                 if matches:
 
+                    # add to used_glossary_terms
+                    used_terms_glossary = self.update_used_terms_glossary(used_terms_glossary, tas_entry,
+                                                                          glossary_json, language_code)
+
                     # the glossarized_text will be split into a list
                     # eg if the glossary term is 'distribution':
                     # ['The beginning of the text ', 'distribution', ' the end of the text']
@@ -192,7 +215,80 @@ class GlossaryJSONBuilder(JSONBuilder):
 
             glossarized_language_file[key] = glossarized_text
                 
-        return glossarized_language_file
+        return glossarized_language_file, used_terms_glossary
+
+
+    def get_localized_glossary_entry(self, glossary_entry, language_code):
+
+        locale = self.app_release_builder.get_locale(self.meta_app, language_code,
+                                                     app_version=self.app_release_builder.app_version)
+
+        definition = glossary_entry['definition']
+
+        localized_definition = locale.get(definition, definition)
+
+        localized_glossary_entry = {
+            'definition' : definition,
+            'synonyms' : [],
+        }
+
+        for synonym in glossary_entry['synonyms']:
+            localized_synonym = locale.get(synonym, synonym)
+            localized_glossary_entry['synonyms'].append(localized_synonym)
+
+        return localized_glossary_entry
+
+    # sort by begining letters { 'A' : {}}
+    def build_localized_glossary(self, glossary_json, language_code):
+
+        localized_glossary = {}
+
+        locale = self.app_release_builder.get_locale(self.meta_app, language_code,
+                                                     app_version=self.app_release_builder.app_version)
+
+        for term, glossary_entry in glossary_json['glossary'].items():
+
+            localized_term = locale.get(term, term)
+
+            localized_glossary_entry = self.get_localized_glossary_entry(glossary_entry, language_code)
+
+            start_letter = localized_term[0].upper()
+
+            if start_letter not in localized_glossary:
+                localized_glossary[start_letter] = {}
+
+            localized_glossary[start_letter][localized_term] = localized_glossary_entry
+
+        return localized_glossary
+            
+
+
+    def update_used_terms_glossary(self, used_terms_glossary, tas_entry, glossary_json, language_code):
+
+        localized_term = tas_entry['localized_term']
+        glossary_lookup_term = tas_entry['term']
+
+        if tas_entry['is_synonym'] == True:
+            localized_term = tas_entry['real_term']
+            glossary_lookup_term = tas_entry['unlocalized_real_term']
+
+
+        start_letter = localized_term[0].upper()
+
+        
+        if start_letter not in used_terms_glossary or localized_term not in used_terms_glossary[start_letter]:
+
+            glossary_entry = glossary_json['glossary'][glossary_lookup_term]
+
+            localized_glossary_entry = self.get_localized_glossary_entry(glossary_entry, language_code)
+
+            if start_letter not in used_terms_glossary:
+                used_terms_glossary[start_letter] = {}
+            
+            used_terms_glossary[start_letter][localized_term] = localized_glossary_entry
+
+        return used_terms_glossary
+        
         
 
         

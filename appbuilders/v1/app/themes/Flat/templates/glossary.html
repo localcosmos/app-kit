@@ -1,0 +1,84 @@
+<div class="fixed-top bg-grey d-none d-md-block" style="top:55px">
+	<div class="container">
+		<div class="row py-3">
+			<div class="col-12">
+				<div class="d-flex">
+					{{#each glossary }}
+						<div class="glossary-link py-1 px-3 mx-1 bg-white text-primary" jumpto="glossary-{{@key}}">
+							{{@key}}
+						</div>
+					{{/each}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="glossary-page" class="page d-flex solid">
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				{{#if show_used_terms_only}}
+					<button class="tap btn btn-xs btn-secondary" link="glossary/2309626d-5894-4c18-9b99-bfeb5275eb39/">{{t 'show unused'}}</button>
+				{{else}}
+					<button class="tap btn btn-xs btn-secondary" link="glossary/2309626d-5894-4c18-9b99-bfeb5275eb39/?used_terms=1">{{t 'hide unused'}}</button>
+				{{/if}}
+			</div>
+		</div>
+		<div class="row pb-5">
+			<div class="col-12">
+				{{#each glossary }}
+				
+					{{#with this as | glossaryEntry |}}
+
+						
+						<div class="row mt-4">
+							<div class="col-12 bg-light pt-2">
+								<h3 id="glossary-{{@key}}">{{@key}}</h3>
+							</div>
+							{{#each glossaryEntry}}
+								<div class="col-12 mt-3">
+									<div>
+										<div class="h5">
+											<strong>{{@key}}</strong><br>
+											{{#if this.synonyms}}
+											<div class="text-muted h6">
+												{{tp 'Synonyms'}}: 
+												{{#each this.synonyms }}
+													{{ this }}{{#if @last}}{{else}},{{/if}}
+												{{/each}}
+											</div>
+										{{/if}}
+										</div>
+										
+									</div>
+									<div>
+										{{ this.definition }}
+									</div>
+									<hr>
+								</div>
+								
+							{{/each}}
+						</div>
+					{{/with}}
+					
+				{{/each}}
+			</div>
+		</div>
+		
+	</div>
+</div>
+<div class="fixed-bottom bg-grey d-md-none">
+	<div class="container">
+		<div class="row py-3">
+			<div class="col-12">
+				<div class="d-flex">
+					{{#each glossary }}
+						<div class="glossary-link py-1 px-3 mx-1 bg-white text-primary" jumpto="glossary-{{@key}}">
+							{{@key}}
+						</div>
+					{{/each}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

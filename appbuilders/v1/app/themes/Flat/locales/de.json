@@ -71,5 +71,6 @@
 	"No time set" : "Kein Zeitpunkt gesetzt",
 	"optional" : "optional",
 	"position error" : "Positionsfehler",
-	"Position is not within the project area of this app." : "Ort befindet sich außerhalb des Projektgebietes."
+	"Position is not within the project area of this app." : "Ort befindet sich außerhalb des Projektgebietes.",
+	"Synonyms" : "Synonyme"
 }

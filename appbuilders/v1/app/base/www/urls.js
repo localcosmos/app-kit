@@ -33,6 +33,7 @@ var urlpatterns = urlpatterns.concat([
 	path("online-content/<str:slug>/<str:preview_token>/", OnlineContentView.as_view(), {"name" : "online_content_preview"}),
 	path("fact-sheet/<str:slug>/", FactSheetView.as_view(), {"name" : "fact_sheet"}),
 	path("map/<uuid:map_uuid>/", MapView.as_view(), {"name" : "map"}),
+	path("glossary/<uuid:glossary_uuid>/", GlossaryView.as_view(), {"name" : "glossary"}),
 	path("theme-text/<str:key>/", ThemeTextView.as_view(), {"name" : "theme_text"}),
 	path("funding-partners/", FundingPartners.as_view(), {"name" : "funding_partners"}),
 	path("legal-notice/", LegalNotice.as_view(), {"name" : "legal_notice"}),
