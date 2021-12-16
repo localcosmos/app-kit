@@ -2,9 +2,9 @@
 	<div class="container">
 		<div class="row py-3">
 			<div class="col-12">
-				<div class="d-flex">
+				<div class="glossary-alphabet">
 					{{#each glossary }}
-						<div class="glossary-link py-1 px-3 mx-1 bg-white text-primary" jumpto="glossary-{{@key}}">
+						<div class="glossary-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="glossary-{{@key}}">
 							{{@key}}
 						</div>
 					{{/each}}
@@ -70,14 +70,12 @@
 <div class="fixed-bottom bg-grey d-md-none">
 	<div class="container">
 		<div class="row py-3">
-			<div class="col-12">
-				<div class="d-flex">
+			<div class="col-12 text-center">
+				<select id="glossary-select" class="custom-select">
 					{{#each glossary }}
-						<div class="glossary-link py-1 px-3 mx-1 bg-white text-primary" jumpto="glossary-{{@key}}">
-							{{@key}}
-						</div>
+						<option value="glossary-{{@key}}">{{@key}}</option>
 					{{/each}}
-				</div>
+				</select>
 			</div>
 		</div>
 	</div>

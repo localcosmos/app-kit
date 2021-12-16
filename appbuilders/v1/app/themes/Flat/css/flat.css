@@ -1570,6 +1570,12 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	padding-top: 25px;
 }
 
+.glossary-alphabet {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 	.natureguide-item .taxonimage {
@@ -1630,7 +1636,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	}
 	
 	#glossary-page {
-		padding-top: 75px;
+		padding-top: 125px;
 	}
 
 }

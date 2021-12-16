@@ -4596,6 +4596,13 @@ var GlossaryView = View(TemplateView, {
 				scrollToTargetAdjusted(element);
 			});
 		}
+		
+		var glossary_select = document.getElementById("glossary-select");
+		glossary_select.addEventListener("change", function(event){
+			let element_id = glossary_select.value;
+			let element = document.getElementById(element_id);
+			scrollToTargetAdjusted(element);
+		});
 	
 	}
 	
