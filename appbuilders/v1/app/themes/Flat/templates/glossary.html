@@ -32,7 +32,7 @@
 		<div class="row">
 			<div class="col-12">
 				{{#if show_used_terms_only}}
-					<button class="tap btn btn-xs btn-secondary" link="glossary/{{ glossary_uuid }}/">{{t 'show unused'}}</button>
+					<button class="tap btn btn-xs btn-secondary" action="BackButtonManager.back">{{t 'show unused'}}</button>
 				{{else}}
 					<button class="tap btn btn-xs btn-secondary" link="glossary/{{ glossary_uuid }}/?used_terms=1">{{t 'hide unused'}}</button>
 				{{/if}}
