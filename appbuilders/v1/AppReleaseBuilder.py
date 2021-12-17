@@ -1809,7 +1809,7 @@ class AppReleaseBuilder(AppBuilder):
                                                                 language_code, app_version=self.app_version)
 
             with open(used_terms_glossary_filepath, 'w', encoding='utf-8') as f:
-                json.dump(used_terms_glossary, f, indent=4, ensure_ascii=False, sort_keys=True)
+                json.dump(used_terms_glossary, f, indent=4, ensure_ascii=False)
 
 
             used_terms_glossary_relative_path = self._build_relative_used_terms_glossary_filepath(self.meta_app, glossary,
@@ -1822,7 +1822,7 @@ class AppReleaseBuilder(AppBuilder):
                                                                 language_code, app_version=self.app_version)
             
             with open(localized_glossary_filepath, 'w', encoding='utf-8') as f:
-                json.dump(localized_glossary, f, indent=4, ensure_ascii=False, sort_keys=True)
+                json.dump(localized_glossary, f, indent=4, ensure_ascii=False)
 
 
             localized_glossary_relative_path = self._build_relative_localized_glossary_filepath(self.meta_app,

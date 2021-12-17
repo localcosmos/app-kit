@@ -4,6 +4,8 @@ from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
 
 import re, base64
 
+from collections import OrderedDict
+
 
 ##############################################################################################################
 #
@@ -214,8 +216,11 @@ class GlossaryJSONBuilder(JSONBuilder):
                         
 
             glossarized_language_file[key] = glossarized_text
+
+
+        sorted_used_terms_glossary = self.sort_glossary(used_terms_glossary)
                 
-        return glossarized_language_file, used_terms_glossary
+        return glossarized_language_file, sorted_used_terms_glossary
 
 
     def get_localized_glossary_entry(self, glossary_entry, language_code):
@@ -259,9 +264,27 @@ class GlossaryJSONBuilder(JSONBuilder):
 
             localized_glossary[start_letter][localized_term] = localized_glossary_entry
 
-        return localized_glossary
+        localized_glossary_sorted = self.sort_glossary(localized_glossary)
+        
+        return localized_glossary_sorted
             
 
+    # convert glossary to sorted OrderedDict instance
+    def sort_glossary(self, glossary):
+
+        # first, sort by start letter
+        glossary_sorted_startletters = OrderedDict(sorted(glossary.items(), key=lambda x: x[0].lower()))
+
+        glossary_sorted = OrderedDict()
+        
+        # second, fill glossary_sorted
+        for start_letter, lettered_dict in glossary_sorted_startletters.items():
+
+            ordered_glossary_entries = OrderedDict(sorted(lettered_dict.items(), key=lambda y: y[0].lower()))
+            glossary_sorted[start_letter] = ordered_glossary_entries
+
+        return glossary_sorted
+        
 
     def update_used_terms_glossary(self, used_terms_glossary, tas_entry, glossary_json, language_code):
 

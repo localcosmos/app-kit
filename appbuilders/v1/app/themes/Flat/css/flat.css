@@ -1576,6 +1576,28 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	flex-wrap: wrap;
 }
 
+.glossary-search-results {
+	min-width: 80%;
+	position: absolute;
+	background-color: rgba(255,255,255,0.95);
+	border-radius: .5em;
+	z-index: 500;
+}
+
+.glossary-search-results.lg {
+	left: 15px;
+	top: 45px;
+}
+
+.glossary-search-results.sm {
+	bottom: 45px;
+}
+
+.glossary-search-results.hidden {
+	opacity: 0;
+	z-index: -1;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 	.natureguide-item .taxonimage {
@@ -1636,7 +1658,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	}
 	
 	#glossary-page {
-		padding-top: 125px;
+		padding-top: 180px;
 	}
 
 }

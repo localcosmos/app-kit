@@ -1,5 +1,18 @@
-<div class="fixed-top bg-grey d-none d-md-block" style="top:55px">
+<div id="glossary-bar" class="fixed-top bg-grey d-none d-md-block" style="top:55px">
 	<div class="container">
+		<div class="row pt-3">
+			<div class="col-12 col-md-7 col-lg-5">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="glossary-search" type="text" class="glossary-search form-control" results-container="glossary-search-results" placeholder="Chromista">
+				</div>
+				<div id="glossary-search-results" class="p-3 glossary-search-results lg hidden" data-input-id="glossary-search">results</div>
+			</div>
+		</div>
 		<div class="row py-3">
 			<div class="col-12">
 				<div class="glossary-alphabet">
@@ -14,6 +27,7 @@
 	</div>
 </div>
 <div id="glossary-page" class="page d-flex solid">
+
 	<div class="container">
 		<div class="row">
 			<div class="col-12">
@@ -36,7 +50,7 @@
 								<h3 id="glossary-{{@key}}">{{@key}}</h3>
 							</div>
 							{{#each glossaryEntry}}
-								<div class="col-12 mt-3">
+								<div id="glossary-entry-{{@key}}" class="col-12 mt-3">
 									<div>
 										<div class="h5">
 											<strong>{{@key}}</strong><br>
@@ -70,12 +84,23 @@
 <div class="fixed-bottom bg-grey d-md-none">
 	<div class="container">
 		<div class="row py-3">
-			<div class="col-12 text-center">
+			<div class="col-3 text-center">
 				<select id="glossary-select" class="custom-select">
 					{{#each glossary }}
 						<option value="glossary-{{@key}}">{{@key}}</option>
 					{{/each}}
 				</select>
+			</div>
+			<div class="col-8">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="glossary-search-sm" type="text" class="glossary-search form-control" results-container="glossary-search-results-sm" placeholder="Chromista">
+				</div>
+				<div id="glossary-search-results-sm" class="p-3 glossary-search-results sm hidden" data-input-id="glossary-search-sm">results</div>
 			</div>
 		</div>
 	</div>

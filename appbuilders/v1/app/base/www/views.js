@@ -4526,12 +4526,19 @@ var Toggle = View(TemplateView, {
 
 
 
+function jumpTo(){
+	alert("ujmp")
+}
 
 var GlossaryView = View(TemplateView, {
 
 	"identifier" : "GlossaryView",
 	"template_name" : "themes/" + settings.THEME + "/templates/glossary.html",
 	async_context : true,
+	
+	glossary: null,
+	
+	search_results_template : '{{#if results}}{{#each results}}<div class="tap" action="GlossaryView.jumpTo" data-term="{{ term }}">{{ matched_text }}</div>{{/each}}{{else}}<div>{{t "No results found"}}</div>{{/if}}',
 	
 	get_context_data : function(self, kwargs, callback){
 	
@@ -4542,8 +4549,10 @@ var GlossaryView = View(TemplateView, {
 		
 			// load language specific glossary
 			ajax.GET(url, {}, function(content){
+			
+				self.glossary = JSON.parse(content);
 
-				context["glossary"] = JSON.parse(content);
+				context["glossary"] = self.glossary;
 				context["show_used_terms_only"] = show_used_terms_only;
 
 				callback(context);			
@@ -4572,28 +4581,53 @@ var GlossaryView = View(TemplateView, {
 		return url;
 	},
 	
+	// called from template
+	jumpTo : function(self, request, args, kwargs){
+
+		var target = kwargs.currentTarget;
+		var term = target.getAttribute("data-term");
+		var element_id = "glossary-entry-" + term;
+		var element = document.getElementById(element_id);
+		
+		GlossaryView.scrollToTargetAdjusted(self, element);
+		
+		target.parentElement.classList.add("hidden");
+		var input_id = target.parentElement.getAttribute("data-input-id");
+		var input = document.getElementById(input_id);
+		input.value = "";
+		
+	},
+
+	scrollToTargetAdjusted : function(self, element){
+	
+		var subheader = document.getElementById("glossary-bar");
+		
+		var headerOffset = 220;
+		
+		if (subheader.offsetParent == null){
+			headerOffset = 50;
+		}
+	
+		var elementPosition = element.getBoundingClientRect().top;
+		var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+	  
+		window.scrollTo({
+			 top: offsetPosition,
+			 behavior: "smooth"
+		});
+	},
+	
 	post_render : function(self, args, kwargs){
 	
-		var glossary_links = document.getElementsByClassName("glossary-link");
+		var glossary_links = document.getElementsByClassName("glossary-link");	
 		
-		function scrollToTargetAdjusted(element){
-			var headerOffset = 150;
-			var elementPosition = element.getBoundingClientRect().top;
-			var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-		  
-			window.scrollTo({
-				 top: offsetPosition,
-				 behavior: "smooth"
-			});
-		}
-
 		for (let g=0; g<glossary_links.length; g++){
 			let glossary_link= glossary_links[g];
 			var hammertime = new Hammer(glossary_link, {});
 			hammertime.on("tap", function(event) {
 				let element_id = event.target.getAttribute("jumpto");
 				let element = document.getElementById(element_id);
-				scrollToTargetAdjusted(element);
+				self.scrollToTargetAdjusted(self, element);
 			});
 		}
 		
@@ -4601,9 +4635,107 @@ var GlossaryView = View(TemplateView, {
 		glossary_select.addEventListener("change", function(event){
 			let element_id = glossary_select.value;
 			let element = document.getElementById(element_id);
-			scrollToTargetAdjusted(element);
+			self.scrollToTargetAdjusted(self, element);
 		});
+		
+		var glossary_search_inputs = document.getElementsByClassName("glossary-search");
+		for (let i=0; i<glossary_search_inputs.length; i++){
+		
+			let glossary_search_input = glossary_search_inputs[i];
+			let results_container_id = glossary_search_input.getAttribute("results-container");
+			let results_container = document.getElementById(results_container_id);
+			
+			glossary_search_input.addEventListener("keyup", function(event){
+				self.search_glossary(self, event);
+			});
+			
+			glossary_search_input.addEventListener("blur", function(event){
+				var input = event.target;
+
+				var results_container_id = input.getAttribute("results-container");
+				var results_container = document.getElementById(results_container_id);
+				
+				// wait for mouseup to be able to click on a search result
+				results_container.classList.add("hidden");
+				input.value = "";
+
+			});
+			
+			results_container.addEventListener('mousedown', function(event) {
+			   event.preventDefault();
+			   event.stopPropagation();
+			});
+			
+		}
 	
+	},
+	
+	search_glossary : function(self, event){
+		// search glossary and return x results
+		var max_results = 7;
+
+		var input = event.target;
+		var searchtext = input.value;
+		var results_container_id = input.getAttribute("results-container");
+		var results_container = document.getElementById(results_container_id);
+		
+		if (searchtext.length < 3){
+			results_container.classList.add("hidden");
+			results_container.textContent = "";
+		}
+		else {
+		
+			var results = [];
+			var result_count = 0;
+		
+			var start_letter = searchtext[0].toUpperCase();
+			
+			if (self.glossary.hasOwnProperty(start_letter)){
+				var glossary_entries = self.glossary[start_letter];
+				
+				for (let term in glossary_entries){
+				
+					if (result_count > max_results){
+						break;
+					}
+					
+					let glossary_entry = glossary_entries[term];
+					
+					let result = {
+						"matched_text" : null,
+						"term" : term,
+						"glossary_entry" : glossary_entry
+					};
+					
+					if (term.toLowerCase().startsWith(searchtext.toLowerCase())){
+						result["matched_text"] = term;
+						results.push(result);
+						result_count++;
+					}
+					else {
+						let synonyms = glossary_entry["synonyms"];
+						for (let s=0; s<synonyms.length; s++){
+							let synonym = synonyms[s];
+							if (synonym.toLowerCase().startsWith(searchtext.toLowerCase())){
+								result["matched_text"] = synonym;
+								results.push(glossary_entry);
+								result_count++;
+							}
+						}
+					}
+				}
+			}
+			
+			var context = {
+				"results" : results
+			};
+
+			var template_html = Handlebars.compile( self.search_results_template )(context);
+
+			results_container.innerHTML = template_html;
+		
+			results_container.classList.remove("hidden");
+		}
 	}
 	
 });

@@ -152,7 +152,7 @@ forms["BackboneTaxonAutocompleteWidget"] = Widget(forms.JSONWidget, {
 
 				var template_html = Handlebars.compile( search_result_template )(context);
 
-				results_container.innerHTML = template_html;				
+				results_container.innerHTML = template_html;			
 
 			});
 		}
