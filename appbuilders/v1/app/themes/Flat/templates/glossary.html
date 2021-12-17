@@ -32,9 +32,9 @@
 		<div class="row">
 			<div class="col-12">
 				{{#if show_used_terms_only}}
-					<button class="tap btn btn-xs btn-secondary" link="glossary/2309626d-5894-4c18-9b99-bfeb5275eb39/">{{t 'show unused'}}</button>
+					<button class="tap btn btn-xs btn-secondary" link="glossary/{{ glossary_uuid }}/">{{t 'show unused'}}</button>
 				{{else}}
-					<button class="tap btn btn-xs btn-secondary" link="glossary/2309626d-5894-4c18-9b99-bfeb5275eb39/?used_terms=1">{{t 'hide unused'}}</button>
+					<button class="tap btn btn-xs btn-secondary" link="glossary/{{ glossary_uuid }}/?used_terms=1">{{t 'hide unused'}}</button>
 				{{/if}}
 			</div>
 		</div>
@@ -84,7 +84,7 @@
 <div class="fixed-bottom bg-grey d-md-none">
 	<div class="container">
 		<div class="row py-3">
-			<div class="col-3 text-center">
+			<div class="col-4 text-center">
 				<select id="glossary-select" class="custom-select">
 					{{#each glossary }}
 						<option value="glossary-{{@key}}">{{@key}}</option>

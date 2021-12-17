@@ -4525,11 +4525,6 @@ var Toggle = View(TemplateView, {
 });
 
 
-
-function jumpTo(){
-	alert("ujmp")
-}
-
 var GlossaryView = View(TemplateView, {
 
 	"identifier" : "GlossaryView",
@@ -4553,6 +4548,7 @@ var GlossaryView = View(TemplateView, {
 				self.glossary = JSON.parse(content);
 
 				context["glossary"] = self.glossary;
+				context["glossary_uuid"] = kwargs["glossary_uuid"]
 				context["show_used_terms_only"] = show_used_terms_only;
 
 				callback(context);			
