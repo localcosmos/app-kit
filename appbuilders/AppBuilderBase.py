@@ -437,6 +437,38 @@ class AppBuilderBase:
         return os.path.join(self._app_locale_folder(meta_app, language_code, app_version=app_version), filename)
 
 
+    # currently only fo a  used terms list
+    def _app_glossary_locale_folder(self, meta_app, language_code, app_version=None):
+
+        locale_folder = self._app_locale_folder(meta_app, language_code, app_version=app_version)
+
+        return os.path.join(locale_folder, 'glossary')
+    
+        
+    def _app_glossary_only_terms_filepath(self, meta_app, language_code, app_version=None):
+
+        filename = 'glossary_only_terms.json'
+        
+        return os.path.join(self._app_glossary_locale_folder(meta_app, language_code, app_version=app_version),
+                            filename)
+
+
+    def get_glossary_only_terms(self, meta_app, app_version=None):
+
+        glossary_only_terms = []
+
+        glossary_only_terms_path = self._app_glossary_only_terms_filepath(meta_app, meta_app.primary_language,
+                                                                     app_version=app_version)
+        
+        if os.path.isfile(glossary_only_terms_path):
+
+            with open(glossary_only_terms_path, 'r', encoding='utf-8') as terms_file:
+                glossary_only_terms = json.load(terms_file)
+
+        return glossary_only_terms
+        
+
+
     # return the locale file of the primary translation
     def get_primary_locale(self, meta_app, app_version=None):
         return self.get_locale(meta_app, meta_app.primary_language, app_version)

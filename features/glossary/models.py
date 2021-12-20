@@ -40,8 +40,27 @@ class Glossary(GenericContent):
         for entry in GlossaryEntry.objects.filter(glossary=self):
             translation[entry.term] = entry.term
             translation[entry.definition] = entry.definition
+
+            for synonym in entry.synonyms:
+                translation[synonym.term] = synonym.term
             
         return translation
+
+
+    def get_primary_localization_terms_and_synonyms(self, meta_app=None):
+
+        all_entries = GlossaryEntry.objects.filter(glossary=self)
+            
+        terms_and_synonyms = []
+
+        for entry in all_entries:
+
+            terms_and_synonyms.append(entry.term)
+
+            for synonym in entry.synonyms:
+                terms_and_synonyms.append(synonym.term)
+
+        return terms_and_synonyms
 
 
     class Meta:

@@ -248,9 +248,6 @@ class AppPreviewBuilder(AppBuilder):
             if not os.path.isfile(secondary_language_path):
                 self.create_initial_translation_file(meta_app, language_code)
 
-        # all langfiles are created now
-
-        # this will later be compared with the stored json
         new_primary_locale_translations = {
             '_meta' : {}, # meta information like layoutability
         }
@@ -265,33 +262,90 @@ class AppPreviewBuilder(AppBuilder):
                 new_primary_locale_translations[key] = locale
 
         # second, get the texts of the app's generic_contents
+        # glossary has to be last
+        glossary = None
+        
         generic_content_links = MetaAppGenericContent.objects.filter(meta_app=meta_app)
         for link in generic_content_links:
 
             generic_content = link.generic_content
-            generic_content_texts = link.generic_content.get_primary_localization(meta_app=meta_app)
+
+            if generic_content.__class__.__name__ == 'Glossary':
+                glossary = generic_content
+                continue
+
+            new_primary_locale_translations = self._update_new_primary_locale_translations(meta_app,
+                                                            generic_content, new_primary_locale_translations)
+
+        if glossary is not None:
+
+            # first, check which glossary terms DO NOT occur in the texts
+            glossary_only_terms = set([])        
+            terms_and_synonyms = glossary.get_primary_localization_terms_and_synonyms()
+
+            for term in terms_and_synonyms:
+
+                # check if the glossary term occurs in any of the texts
+                found_occurrence = False
+
+                for text_key, localized_text in new_primary_locale_translations.items():
+
+                    if text_key == '_meta':
+                        continue
+                    
+                    # some features produce keys liek taxon_text_1
+                    if term.lower() in localized_text.lower():
+                        found_occurrence = True
+                        break
+                    
+                if found_occurrence == False:
+                    glossary_only_terms.add(term)
+
+            # store the glossary_only_terms
+            glossary_locale_folder = self._app_glossary_locale_folder(meta_app, meta_app.primary_language)
+            if not os.path.isdir(glossary_locale_folder):
+                os.makedirs(glossary_locale_folder)
+
             
-            for key, locale in generic_content_texts.items():
-
-                if key == '_meta':
-
-                    for meta_key, meta_value in generic_content_texts['_meta'].items():
-                        new_primary_locale_translations['_meta'][meta_key] = meta_value
-
-                # simple string locale, html or plain text
-                elif len(locale) > 0:
-                    new_primary_locale_translations[key] = locale
-
+            glossary_only_terms_filepath = self._app_glossary_only_terms_filepath(meta_app,
+                                                                                  meta_app.primary_language)
+            
+            with open(glossary_only_terms_filepath, 'w', encoding='utf-8') as glossary_only_terms_file:
+                glossary_only_terms_as_list = list(glossary_only_terms)
+                json.dump(glossary_only_terms_as_list, glossary_only_terms_file, indent=4, ensure_ascii=False)
+            
+            new_primary_locale_translations = self._update_new_primary_locale_translations(meta_app,
+                                                            glossary, new_primary_locale_translations)
+            
         # update the primary language file
         # the primary language key-value pairs are fully in the database, no comparison needed
         # simply overwrite the existing primary language file
         with open(primary_language_path, 'w', encoding='utf-8') as primary_language_file:
             primary_locale_filecontent = new_primary_locale_translations
             json.dump(primary_locale_filecontent, primary_language_file, indent=4, ensure_ascii=False)
-
         
         # the secondary languages are updated using the translation tool, when the user actually translates            
 
+
+    def _update_new_primary_locale_translations(self, meta_app, generic_content,
+                                                new_primary_locale_translations):
+                
+
+        generic_content_texts = generic_content.get_primary_localization(meta_app=meta_app)
+   
+        for key, locale in generic_content_texts.items():
+
+            if key == '_meta':
+
+                for meta_key, meta_value in generic_content_texts['_meta'].items():
+                    new_primary_locale_translations['_meta'][meta_key] = meta_value
+
+            # simple string locale, html or plain text
+            elif len(locale) > 0:
+                new_primary_locale_translations[key] = locale
+
+
+        return new_primary_locale_translations
 
     # the initial translation file can be of two types:
     #- an empty translation file, if no translation exists yet

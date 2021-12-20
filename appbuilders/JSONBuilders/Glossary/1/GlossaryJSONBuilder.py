@@ -44,10 +44,15 @@ class GlossaryJSONBuilder(JSONBuilder):
     #
     # glossarized.json language files
     # - contain links to the glossary terms
-    # - glossary_json contians only the primary language
+    # - glossary_json contains only the primary language
     # - b64encode glossary terms in data-term
     ##########################################################################################################
     def glossarize_language_file(self, glossary, glossary_json, language_code):
+
+        # preview_builder is required for terms that only occur in the glossary
+        preview_builder = self.meta_app.get_preview_builder()
+        glossary_only_terms = preview_builder.get_glossary_only_terms(self.meta_app,
+                                                            app_version=self.app_release_builder.app_version)
 
         # provide the possibility to only browse used glossary items
         used_terms_glossary = {}
@@ -211,7 +216,11 @@ class GlossaryJSONBuilder(JSONBuilder):
                             text_parts[match_index] = glossarized_term
 
                             # add to used_glossary_terms
-                            used_terms_glossary = self.update_used_terms_glossary(used_terms_glossary,
+                            # only add terms that occur outside the glossary
+                            # only primary language is supported in glossary_used_terms, so use
+                            # tas_entry['term']
+                            if tas_entry['term'] not in glossary_only_terms:
+                                used_terms_glossary = self.update_used_terms_glossary(used_terms_glossary,
                                                                     tas_entry, glossary_json, language_code)
                             
 
