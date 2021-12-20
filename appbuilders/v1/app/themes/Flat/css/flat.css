@@ -1,7 +1,7 @@
 * {
 	font-family: Roboto, serif;
     -webkit-tap-highlight-color: rgba(0,0,0,0); /* make transparent link selection, adjust last value opacity 0 to 1.0 */
-	scrollbar-width: none !important;
+	/*scrollbar-width: none !important;*/
 	-webkit-overflow-scrolling: touch; /* enable smooth scrolling */
 }
 
@@ -1620,7 +1620,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	}
 
 	.nature-guide > div {
-		width: 50%;
+		width: 48%; /* ugly solution for hiding horizontal scrollbars */
 	}
 
 	#nodes {

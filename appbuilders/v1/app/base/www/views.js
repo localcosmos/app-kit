@@ -4537,6 +4537,20 @@ var GlossaryView = View(TemplateView, {
 	
 	get_context_data : function(self, kwargs, callback){
 	
+		var glossary_uuid = kwargs["glossary_uuid"];
+		var csv_path = null;
+		
+		if (app_features.Glossary.localized.hasOwnProperty(app.language)){
+			var show_used_terms_only = self.request.GET.used_terms == "1";
+			
+			if (show_used_terms_only == true){
+				csv_path = app_features.Glossary.localized[app.language]["used_terms_csv"];
+			}
+			else {
+				csv_path = app_features.Glossary.localized[app.language]["all_terms_csv"];
+			}
+		}
+	
 		var show_used_terms_only = self.request.GET.used_terms == "1";
 		var url = self.get_glossary_url(self);
 
@@ -4548,8 +4562,9 @@ var GlossaryView = View(TemplateView, {
 				self.glossary = JSON.parse(content);
 
 				context["glossary"] = self.glossary;
-				context["glossary_uuid"] = kwargs["glossary_uuid"]
+				context["glossary_uuid"] = glossary_uuid;
 				context["show_used_terms_only"] = show_used_terms_only;
+				context["csv_path"] = csv_path;
 
 				callback(context);			
 

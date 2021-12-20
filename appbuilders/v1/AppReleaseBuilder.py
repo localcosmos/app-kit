@@ -57,7 +57,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 # jobs
 from app_kit.app_kit_api.models import AppKitJobs
 from django.db import connection
-    
+
+import csv
 
 class AppBuildFailed(Exception):
     pass
@@ -237,6 +238,15 @@ class AppReleaseBuilder(AppBuilder):
         return os.path.join(localized_glossaries_folder, filename)
 
 
+    def _build_localized_glossary_csv_filepath(self, meta_app, glossary, language_code, app_version=None):
+        localized_glossaries_folder = self._build_localized_glossaries_folder(meta_app, glossary, language_code,
+                                                                              app_version=app_version)
+
+        filename = 'glossary.csv'
+
+        return os.path.join(localized_glossaries_folder, filename)
+
+
     def _build_used_terms_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
 
         localized_glossaries_folder = self._build_localized_glossaries_folder(meta_app, glossary, language_code,
@@ -244,9 +254,18 @@ class AppReleaseBuilder(AppBuilder):
 
         filename = 'used_terms_glossary.json'
         
-        used_terms_glossary_filepath = os.path.join(localized_glossaries_folder, filename)
+        return os.path.join(localized_glossaries_folder, filename)
 
-        return used_terms_glossary_filepath
+
+    def _build_used_terms_glossary_csv_filepath(self, meta_app, glossary, language_code, app_version=None):
+
+        localized_glossaries_folder = self._build_localized_glossaries_folder(meta_app, glossary, language_code,
+                                                                              app_version=app_version)
+
+        filename = 'used_terms_glossary.csv'
+        
+        return os.path.join(localized_glossaries_folder, filename)
+
 
     # relative glossary paths
     def _build_relative_localized_glossaries_folder(self, meta_app, glossary, language_code, app_version=None):
@@ -254,25 +273,47 @@ class AppReleaseBuilder(AppBuilder):
 
         return os.path.join(relative_glossary_path, language_code)
 
+
     def _build_relative_localized_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
-        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app, glossary,
-                                                                        language_code, app_version=app_version)
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app,
+                                                            glossary, language_code, app_version=app_version)
 
         filename = 'glossary.json'
 
         return os.path.join(localized_glossaries_relative_folder, filename)
 
 
+    def _build_relative_localized_glossary_csv_filepath(self, meta_app, glossary, language_code,
+                                                        app_version=None):
+        
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app,
+                                                            glossary, language_code, app_version=app_version)
+
+        filename = 'glossary.csv'
+
+        return os.path.join(localized_glossaries_relative_folder, filename)
+
+
     def _build_relative_used_terms_glossary_filepath(self, meta_app, glossary, language_code, app_version=None):
 
-        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app, glossary,
-                                                                    language_code, app_version=app_version)
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app,
+                                                        glossary, language_code, app_version=app_version)
 
         filename = 'used_terms_glossary.json'
         
-        used_terms_glossary_filepath = os.path.join(localized_glossaries_relative_folder, filename)
+        return os.path.join(localized_glossaries_relative_folder, filename)
 
-        return used_terms_glossary_filepath
+
+    def _build_relative_used_terms_glossary_csv_filepath(self, meta_app, glossary, language_code,
+                                                         app_version=None):
+
+        localized_glossaries_relative_folder = self._build_relative_localized_glossaries_folder(meta_app,
+                                                        glossary, language_code, app_version=app_version)
+
+        filename = 'used_terms_glossary.csv'
+        
+        return os.path.join(localized_glossaries_relative_folder, filename)
+
 
 
     ###############################################################################################################
@@ -1813,10 +1854,28 @@ class AppReleaseBuilder(AppBuilder):
 
 
             used_terms_glossary_relative_path = self._build_relative_used_terms_glossary_filepath(self.meta_app, glossary,
-                                                                        language_code, app_version=self.app_version)
+                                                                    language_code, app_version=self.app_version)
+
             self.build_features[generic_content_type]['localized'][language_code]['used_terms'] = used_terms_glossary_relative_path
 
+            # create a downloadable csv file
+            used_terms_glossary_csv = jsonbuilder.create_glossary_for_csv(used_terms_glossary)
+            used_terms_glossary_csv_filepath = self._build_used_terms_glossary_csv_filepath(self.meta_app,
+                                                        glossary, language_code, app_version=self.app_version)
 
+            
+            with open(used_terms_glossary_csv_filepath, 'w', newline='') as utg_csvfile:
+                utg_writer = csv.writer(utg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                for utg_row in used_terms_glossary_csv:
+                    utg_writer.writerow(utg_row)
+
+            used_terms_glossary_csv_relative_path = self._build_relative_used_terms_glossary_csv_filepath(
+                self.meta_app, glossary,language_code, app_version=self.app_version)
+
+            self.build_features[generic_content_type]['localized'][language_code]['used_terms_csv'] = used_terms_glossary_csv_relative_path
+
+
+            # localized glossary, all terms
             localized_glossary = jsonbuilder.build_localized_glossary(glossary_json, language_code)
             localized_glossary_filepath = self._build_localized_glossary_filepath(self.meta_app, glossary,
                                                                 language_code, app_version=self.app_version)
@@ -1829,6 +1888,25 @@ class AppReleaseBuilder(AppBuilder):
                                                         glossary, language_code, app_version=self.app_version)
             
             self.build_features[generic_content_type]['localized'][language_code]['all_terms'] = localized_glossary_relative_path
+
+
+            # downloadable csv file of all terms
+
+            # create a downloadable csv file
+            localized_glossary_csv = jsonbuilder.create_glossary_for_csv(localized_glossary)
+            localized_glossary_csv_filepath = self._build_localized_glossary_csv_filepath(self.meta_app,
+                                                        glossary, language_code, app_version=self.app_version)
+
+            
+            with open(localized_glossary_csv_filepath, 'w', newline='') as lg_csvfile:
+                lg_writer = csv.writer(lg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                for lg_row in localized_glossary_csv:
+                    lg_writer.writerow(lg_row)
+
+            localized_glossary_csv_relative_path = self._build_relative_localized_glossary_csv_filepath(
+                self.meta_app, glossary,language_code, app_version=self.app_version)
+
+            self.build_features[generic_content_type]['localized'][language_code]['all_terms_csv'] = localized_glossary_csv_relative_path
 
 
     ###############################################################################################################

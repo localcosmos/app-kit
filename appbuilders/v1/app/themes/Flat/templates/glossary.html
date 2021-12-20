@@ -36,6 +36,9 @@
 				{{else}}
 					<button class="tap btn btn-xs btn-secondary" link="glossary/{{ glossary_uuid }}/?used_terms=1">{{t 'hide unused'}}</button>
 				{{/if}}
+				{{#if csv_path}}
+					<a class="btn btn-xs btn-secondary" href="{{ csv_path }}" download>{{t 'Download'}}</a>
+				{{/if}}
 			</div>
 		</div>
 		<div class="row pb-5">

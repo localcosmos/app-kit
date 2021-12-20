@@ -140,7 +140,7 @@ class GlossaryJSONBuilder(JSONBuilder):
                 # first, check if the text part is blocked
                 # original matches reference the plain text. These references are used to avoid multiple
                 # glossarizifications. example: terms "bark" and "black bark". only black bark should be
-                # glossarized
+                # glossarized in the text "a black bark is common for ..."
                 original_matches = [m for m in re.finditer(term_whole_word, original_text, re.IGNORECASE)]
 
                 allowed_match_indices = []
@@ -167,15 +167,14 @@ class GlossaryJSONBuilder(JSONBuilder):
                             allowed_match_indices.append(original_match_index)
                             blocked_text_parts.append([original_match_start, original_match_end])
 
-                            
+
+                # matches are used to iteratively add html links to text parts
+                # glossarized_text is edited during this loop. therefore, original_matches are required
+                # to avoid the "link in link" scenario
                 matches = [m for m in re.finditer(term_whole_word, glossarized_text, re.IGNORECASE)]
 
 
                 if matches:
-
-                    # add to used_glossary_terms
-                    used_terms_glossary = self.update_used_terms_glossary(used_terms_glossary, tas_entry,
-                                                                          glossary_json, language_code)
 
                     # the glossarized_text will be split into a list
                     # eg if the glossary term is 'distribution':
@@ -210,6 +209,11 @@ class GlossaryJSONBuilder(JSONBuilder):
                             match_index = text_parts.index(match_text)
 
                             text_parts[match_index] = glossarized_term
+
+                            # add to used_glossary_terms
+                            used_terms_glossary = self.update_used_terms_glossary(used_terms_glossary,
+                                                                    tas_entry, glossary_json, language_code)
+                            
 
 
                     glossarized_text = ''.join(text_parts)
@@ -311,6 +315,25 @@ class GlossaryJSONBuilder(JSONBuilder):
             used_terms_glossary[start_letter][localized_term] = localized_glossary_entry
 
         return used_terms_glossary
+
+
+    # transform the glossary into a list of lists for creating a .csv file
+    def create_glossary_for_csv(self, glossary):
+
+        csv_rows = [['Term', 'Synonyms', 'Definition']]
+
+        # synonyms delimiter: "|"
+        for start_letter, glossary_entries in glossary.items():
+
+            for term, glossary_entry in glossary_entries.items():
+
+                synonyms_str = ' | '.join(glossary_entry['synonyms'])
+
+                row = [term, synonyms_str, glossary_entry['definition']]
+
+                csv_rows.append(row)
+
+        return csv_rows
         
         
 
