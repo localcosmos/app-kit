@@ -4776,13 +4776,13 @@ var glossary = function(self, request, args, kwargs){
 
 			var glossary = JSON.parse(atob(content));
 
-			var definition = glossary["glossary"][term];
+			var glossary_entry = glossary["glossary"][term];
 
 			ajax.GET(template_name, {}, function(template){
 
 				var context = {
 					"term" : term,
-					"definition" : definition
+					"glossary_entry" : glossary_entry
 				};
 
 				var template_html = Handlebars.compile(template)(context);

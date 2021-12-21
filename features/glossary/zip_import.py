@@ -200,7 +200,8 @@ class GlossaryZipImporter(GenericContentZipImporter):
                                                         term=synonym).first()
 
                 if db_synonym:
-                    del delete_synonyms[delete_synonyms.index(db_synonym.term)]
+                    if db_synonym.term in delete_synonyms:
+                        del delete_synonyms[delete_synonyms.index(db_synonym.term)]
                     
                 else:
                     # iexact query
@@ -217,7 +218,8 @@ class GlossaryZipImporter(GenericContentZipImporter):
                         db_synonym.save()
 
                         # exists in db and in excel, do not delete
-                        del delete_synonyms[delete_synonyms.index(db_synonym.term)]
+                        if db_synonym.term in delete_synonyms:
+                            del delete_synonyms[delete_synonyms.index(db_synonym.term)]
 
                     else:
                         # synonym not in db, create

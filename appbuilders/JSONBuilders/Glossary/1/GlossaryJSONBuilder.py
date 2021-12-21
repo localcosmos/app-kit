@@ -122,7 +122,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         terms_and_synonyms = sorted(terms_and_synonyms, key = lambda k: k['word_count'])
         terms_and_synonyms.reverse()
         
-
+        # key is language independant
         for key, text in locale.items():
 
             if key == '_meta':
