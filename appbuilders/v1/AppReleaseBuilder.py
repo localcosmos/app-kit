@@ -52,7 +52,7 @@ from app_kit.forms import AppDesignForm
 import os, json, base64, time, shutil, hashlib, zipfile
 
 from PIL import Image, ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+#ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # jobs
 from app_kit.app_kit_api.models import AppKitJobs

@@ -38,7 +38,7 @@ from localcosmos_server.models import App, SecondaryAppLanguages
 
 from datetime import datetime
 from PIL import Image, ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+#ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 '''--------------------------------------------------------------------------------------------------------------
