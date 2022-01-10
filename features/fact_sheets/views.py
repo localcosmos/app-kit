@@ -148,6 +148,7 @@ class ManageFactSheet(MetaAppMixin, FormView):
         if not self.fact_sheet.contents:
             self.fact_sheet.contents = {}
 
+        # existing keys in JSON - content that already has been saved
         old_keys = list(self.fact_sheet.contents.keys())
 
         for field_ in form:
@@ -161,8 +162,8 @@ class ManageFactSheet(MetaAppMixin, FormView):
 
                     microcontent_type = field.cms_tag.microcontent_type
 
-                    
-                    old_keys.remove(microcontent_type)
+                    if microcontent_type in old_keys:
+                        old_keys.remove(microcontent_type)
 
                     self.fact_sheet.contents[microcontent_type] = data
 
