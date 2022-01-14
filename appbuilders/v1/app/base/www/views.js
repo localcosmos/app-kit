@@ -106,11 +106,28 @@ function _get_categories(){
 			"submenu_id" : "glossary",
 			"category_name" : _("Glossary"),
 			"buttons" : [glossary_button],
-			"has_submenu" : has_submenu
+			"has_submenu" : false
 		};
 		
 		categories.push(glossary_category)
 	
+	}
+	
+	if ("TaxonProfiles" in app_features) {
+		var taxon_profiles = app_features.TaxonProfiles;
+		
+		var button_name = i18next.t('plainȵ' + taxon_profiles.name);
+	
+		var taxon_profiles_button = MainMenuButton.create(button_name, "taxon-profiles-registry/", null);
+	
+		var taxon_profiles_category = {
+			"submenu_id" : "taxon_profiles",
+			"category_name" : _("Taxon Profiles"),
+			"buttons" : [taxon_profiles_button],
+			"has_submenu" : false
+		};
+		
+		categories.push(taxon_profiles_category)
 	}
 
 	return categories;
@@ -4525,6 +4542,133 @@ var Toggle = View(TemplateView, {
 });
 
 
+var AlphabetMixin = {
+
+	add_alphabet_buttons : function(self){
+	
+		var alphabet_links = document.getElementsByClassName("alphabet-link");	
+		
+		for (let g=0; g<alphabet_links.length; g++){
+			let alphabet_link = alphabet_links[g];
+			var hammertime = new Hammer(alphabet_link, {});
+			hammertime.on("tap", function(event) {
+				let element_id = event.target.getAttribute("jumpto");
+				let element = document.getElementById(element_id);
+				self.scrollToTargetAdjusted(self, element);
+			});
+		}
+		
+		var alphabet_select = document.getElementById("alphabet-select");
+		alphabet_select.addEventListener("change", function(event){
+			let element_id = alphabet_select.value;
+			let element = document.getElementById(element_id);
+			self.scrollToTargetAdjusted(self, element);
+		});
+	
+	},
+	
+	add_search : function (self) {
+	
+		var search_inputs = document.getElementsByClassName("alphabet-search");
+		for (let i=0; i<search_inputs.length; i++){
+		
+			let search_input = search_inputs[i];
+			let results_container_id = search_input.getAttribute("results-container");
+			let results_container = document.getElementById(results_container_id);
+			
+			search_input.addEventListener("keyup", function(event){
+				self.search_data(self, event);
+			});
+			
+			search_input.addEventListener("blur", function(event){
+				var input = event.target;
+
+				var results_container_id = input.getAttribute("results-container");
+				var results_container = document.getElementById(results_container_id);
+				
+				// wait for mouseup to be able to click on a search result
+				results_container.classList.add("hidden");
+				input.value = "";
+
+			});
+			
+			results_container.addEventListener('mousedown', function(event) {
+			   event.preventDefault();
+			   event.stopPropagation();
+			});
+			
+		}
+	
+	},
+
+	// called from template
+	jumpTo : function(self, request, args, kwargs){
+
+		var target = kwargs.currentTarget;
+		var term = target.getAttribute("data-term");
+		var element_id = "alphabet-entry-" + term;
+		var element = document.getElementById(element_id);
+		
+		AlphabetMixin.scrollToTargetAdjusted(self, element);
+		
+		target.parentElement.classList.add("hidden");
+		var input_id = target.parentElement.getAttribute("data-input-id");
+		var input = document.getElementById(input_id);
+		input.value = "";
+		
+	},
+
+	scrollToTargetAdjusted : function(self, element){
+	
+		var subheader = document.getElementById("alphabet-bar");
+		
+		var headerOffset = 220;
+		
+		if (subheader.offsetParent == null){
+			headerOffset = 50;
+		}
+	
+		var elementPosition = element.getBoundingClientRect().top;
+		var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+	  
+		window.scrollTo({
+			 top: offsetPosition,
+			 behavior: "smooth"
+		});
+	},
+	
+	search_data : function(self, event){
+		// search all names, bith scientific and vernacular, always
+		
+		var max_results = 7;
+
+		var input = event.target;
+		var searchtext = input.value;
+		var results_container_id = input.getAttribute("results-container");
+		var results_container = document.getElementById(results_container_id);
+		
+		if (searchtext.length < 3){
+			results_container.classList.add("hidden");
+			results_container.textContent = "";
+		}
+		else {
+			
+			var results = self.perform_search(self, searchtext, max_results);
+			
+			var context = {
+				"results" : results
+			};
+
+			var template_html = Handlebars.compile( self.search_results_template )(context);
+
+			results_container.innerHTML = template_html;
+		
+			results_container.classList.remove("hidden");
+		}
+	}
+};
+
+
 var GlossaryView = View(TemplateView, {
 
 	"identifier" : "GlossaryView",
@@ -4592,164 +4736,61 @@ var GlossaryView = View(TemplateView, {
 		return url;
 	},
 	
-	// called from template
-	jumpTo : function(self, request, args, kwargs){
-
-		var target = kwargs.currentTarget;
-		var term = target.getAttribute("data-term");
-		var element_id = "glossary-entry-" + term;
-		var element = document.getElementById(element_id);
-		
-		GlossaryView.scrollToTargetAdjusted(self, element);
-		
-		target.parentElement.classList.add("hidden");
-		var input_id = target.parentElement.getAttribute("data-input-id");
-		var input = document.getElementById(input_id);
-		input.value = "";
-		
-	},
-
-	scrollToTargetAdjusted : function(self, element){
-	
-		var subheader = document.getElementById("glossary-bar");
-		
-		var headerOffset = 220;
-		
-		if (subheader.offsetParent == null){
-			headerOffset = 50;
-		}
-	
-		var elementPosition = element.getBoundingClientRect().top;
-		var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-	  
-		window.scrollTo({
-			 top: offsetPosition,
-			 behavior: "smooth"
-		});
-	},
-	
 	post_render : function(self, args, kwargs){
 	
-		var glossary_links = document.getElementsByClassName("glossary-link");	
-		
-		for (let g=0; g<glossary_links.length; g++){
-			let glossary_link= glossary_links[g];
-			var hammertime = new Hammer(glossary_link, {});
-			hammertime.on("tap", function(event) {
-				let element_id = event.target.getAttribute("jumpto");
-				let element = document.getElementById(element_id);
-				self.scrollToTargetAdjusted(self, element);
-			});
-		}
-		
-		var glossary_select = document.getElementById("glossary-select");
-		glossary_select.addEventListener("change", function(event){
-			let element_id = glossary_select.value;
-			let element = document.getElementById(element_id);
-			self.scrollToTargetAdjusted(self, element);
-		});
-		
-		var glossary_search_inputs = document.getElementsByClassName("glossary-search");
-		for (let i=0; i<glossary_search_inputs.length; i++){
-		
-			let glossary_search_input = glossary_search_inputs[i];
-			let results_container_id = glossary_search_input.getAttribute("results-container");
-			let results_container = document.getElementById(results_container_id);
-			
-			glossary_search_input.addEventListener("keyup", function(event){
-				self.search_glossary(self, event);
-			});
-			
-			glossary_search_input.addEventListener("blur", function(event){
-				var input = event.target;
-
-				var results_container_id = input.getAttribute("results-container");
-				var results_container = document.getElementById(results_container_id);
-				
-				// wait for mouseup to be able to click on a search result
-				results_container.classList.add("hidden");
-				input.value = "";
-
-			});
-			
-			results_container.addEventListener('mousedown', function(event) {
-			   event.preventDefault();
-			   event.stopPropagation();
-			});
-			
-		}
+		self.add_alphabet_buttons(self);
+		self.add_search(self);
 	
 	},
 	
-	search_glossary : function(self, event){
-		// search glossary and return x results
-		var max_results = 7;
+	perform_search : function(self, searchtext, max_results) {
 
-		var input = event.target;
-		var searchtext = input.value;
-		var results_container_id = input.getAttribute("results-container");
-		var results_container = document.getElementById(results_container_id);
+		var results = [];
+		var result_count = 0;
+	
+		var start_letter = searchtext[0].toUpperCase();
 		
-		if (searchtext.length < 3){
-			results_container.classList.add("hidden");
-			results_container.textContent = "";
-		}
-		else {
-		
-			var results = [];
-			var result_count = 0;
-		
-			var start_letter = searchtext[0].toUpperCase();
+		if (self.glossary.hasOwnProperty(start_letter)){
+			var glossary_entries = self.glossary[start_letter];
 			
-			if (self.glossary.hasOwnProperty(start_letter)){
-				var glossary_entries = self.glossary[start_letter];
+			for (let term in glossary_entries){
+			
+				if (result_count > max_results){
+					break;
+				}
 				
-				for (let term in glossary_entries){
+				let glossary_entry = glossary_entries[term];
 				
-					if (result_count > max_results){
-						break;
-					}
-					
-					let glossary_entry = glossary_entries[term];
-					
-					let result = {
-						"matched_text" : null,
-						"term" : term,
-						"glossary_entry" : glossary_entry
-					};
-					
-					if (term.toLowerCase().startsWith(searchtext.toLowerCase())){
-						result["matched_text"] = term;
-						results.push(result);
-						result_count++;
-					}
-					else {
-						let synonyms = glossary_entry["synonyms"];
-						for (let s=0; s<synonyms.length; s++){
-							let synonym = synonyms[s];
-							if (synonym.toLowerCase().startsWith(searchtext.toLowerCase())){
-								result["matched_text"] = synonym;
-								results.push(glossary_entry);
-								result_count++;
-							}
+				let result = {
+					"matched_text" : null,
+					"term" : term,
+					"glossary_entry" : glossary_entry
+				};
+				
+				if (term.toLowerCase().startsWith(searchtext.toLowerCase())){
+					result["matched_text"] = term;
+					results.push(result);
+					result_count++;
+				}
+				else {
+					let synonyms = glossary_entry["synonyms"];
+					for (let s=0; s<synonyms.length; s++){
+						let synonym = synonyms[s];
+						if (synonym.toLowerCase().startsWith(searchtext.toLowerCase())){
+							result["matched_text"] = synonym;
+							results.push(glossary_entry);
+							result_count++;
 						}
 					}
 				}
 			}
-			
-			var context = {
-				"results" : results
-			};
-
-			var template_html = Handlebars.compile( self.search_results_template )(context);
-
-			results_container.innerHTML = template_html;
-		
-			results_container.classList.remove("hidden");
 		}
+		
+		return results;
+			
 	}
 	
-});
+}, AlphabetMixin);
 
 
 var glossary = function(self, request, args, kwargs){
@@ -4818,3 +4859,144 @@ var glossary = function(self, request, args, kwargs){
 	}
 
 }
+
+
+var TaxonProfilesRegistry = View(TemplateView, {
+
+	"identifier" : "TaxonProfilesRegistry",
+	"template_name" : "themes/" + settings.THEME + "/templates/taxon_profiles_registry.html",
+	async_context : true,
+	
+	search_results_template : '{{#if results}}{{#each results}}<div class="tap" action="TaxonProfilesRegistry.on_select" data-taxon-source="{{ taxon_source }}" data-name-uuid="{{ name_uuid }}">{{ matched_text }}</div>{{/each}}{{else}}<div>{{t "No results found"}}</div>{{/if}}',
+	
+	get_context_data : function(self, kwargs, callback){
+	
+		var use_vernacular_names = self.request.GET.vernacular == "1";
+
+		var search_index_url = app_features.TaxonProfiles.search;
+		
+		self.search_index = null;
+
+		TaxonProfilesRegistry.super().get_context_data(self, kwargs, function(context){
+		
+			ajax.GET(search_index_url, {}, function(content){
+			
+				self.search_index = JSON.parse(content);
+
+				context["search_index"] = self.search_index;
+				context["use_vernacular_names"] = use_vernacular_names;
+				
+				context["vernacular_names"] = self.search_index.vernacular[app.language];
+
+				callback(context);			
+
+			});
+		
+		});
+	},
+	
+	post_finished : function(args, kwargs){
+	
+		var self = this;
+	
+		var search_index_url = app_features.TaxonProfiles.search;
+		
+		ajax.GET(search_index_url, {}, function(content){
+		
+			self.search_index = JSON.parse(content);
+		
+			self.add_alphabet_buttons(self);
+			self.add_search(self);
+		});
+	
+	},
+	
+	perform_search : function(self, searchtext, max_results) {
+	
+		var results = [];
+		var result_count = 0;
+		
+		var start_letter = searchtext[0].toUpperCase();
+	
+		if (self.search_index != null){
+			var vernacular_names = self.search_index.vernacular[app.language];
+			
+			if (start_letter in vernacular_names) {
+				var names_list = vernacular_names[start_letter];
+				
+				for (let n=0; n<names_list.length; n++){
+				
+					if (result_count > max_results){
+						break;
+					}
+					
+					let taxon = names_list[n];
+					
+					if (taxon.name.toLowerCase().startsWith(searchtext.toLowerCase())){
+						let result = {
+							"matched_text" : taxon.name,
+							"taxon_source" : taxon.taxon_source,
+							"taxon_latname" : taxon.taxon_latname,
+							"taxon_author" : taxon.taxon_author,
+							"name_uuid" : taxon.name_uuid,
+						};
+						results.push(result);
+						result_count++;
+					}
+				}
+			}
+			
+			if (start_letter in self.search_index.taxon_latname) {
+				
+				let taxa = self.search_index.taxon_latname[start_letter];
+				for (let full_taxon_latname in taxa) {
+				
+					if (result_count > max_results){
+						break;
+					}
+				
+					if (full_taxon_latname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
+					
+						let taxon = taxa[full_taxon_latname];
+					
+						let result = {
+							"matched_text" : full_taxon_latname,
+							"taxon_source" : taxon.taxon_source,
+							"taxon_latname" : taxon.taxon_latname,
+							"taxon_author" : taxon.taxon_author,
+							"name_uuid" : taxon.name_uuid,
+						};
+						results.push(result);
+						result_count++;
+					}
+				}
+				
+			}
+			
+		}
+		
+		return results;
+	},
+	
+	on_select : function(self, request, args, kwargs){
+
+		var target = kwargs.currentTarget;
+		
+		target.parentElement.classList.add("hidden");
+		var input_id = target.parentElement.getAttribute("data-input-id");
+		var input = document.getElementById(input_id);
+		input.value = "";
+	
+		var taxon_source = target.getAttribute("data-taxon-source");
+		var name_uuid = target.getAttribute("data-name-uuid");
+		
+		
+		var kwargs = [taxon_source, name_uuid]
+		
+		var url = reverse("TaxonProfilesUUID", kwargs);
+
+		HttpResponseRedirect(url);
+	
+	}
+
+}, AlphabetMixin);

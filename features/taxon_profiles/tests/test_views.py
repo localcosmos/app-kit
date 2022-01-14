@@ -15,7 +15,8 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTaxonProfile, ManageTaxonTextType,
                                                    DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits,
-                                                   ManageTaxonProfileImage, DeleteTaxonProfileImage)
+                                                   ManageTaxonProfileImage, DeleteTaxonProfileImage,
+                                                   GetManageOrCreateTaxonProfileURL)
 
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
@@ -148,7 +149,7 @@ class TestManageTaxonProfiles(WithNatureGuideNode, WithTaxonProfiles, ViewTestMi
 class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser, WithLoggedInUser,
                              WithMetaApp, WithTenantClient, TenantTestCase):
 
-    url_name = 'create_taxon_profile'
+    url_name = 'manage_taxon_profile'
     view_class = ManageTaxonProfile
 
     def setUp(self):
@@ -163,18 +164,9 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
             'meta_app_id' : self.meta_app.id,
             'taxon_profiles_id' : self.generic_content.id,
             'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : self.lazy_taxon.name_uuid
         }
         return url_kwargs
-
-
-    def get_request(self, ajax=False):
-
-        request = super().get_request(ajax=ajax)
-        request.GET = {
-            'taxon_latname' : self.lazy_taxon.taxon_latname,
-            'taxon_author' : self.lazy_taxon.taxon_author,
-        }
-        return request
 
 
     def get_view(self):
@@ -187,8 +179,6 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
     def test_dispatch(self):
 
         url = self.get_url()
-        url = '{0}?taxon_latname={1}&taxon_author={2}'.format(url, self.lazy_taxon.taxon_latname,
-                                                              self.lazy_taxon.taxon_author)
         
         url_kwargs = {}
 
@@ -274,6 +264,61 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
         taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
         self.assertEqual(taxon_text.text, text_content)
         
+
+
+class TestGetManageOrCreateTaxonProfileURL(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser,
+                                           WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'get_taxon_profiles_manage_or_create_url'
+    view_class = GetManageOrCreateTaxonProfileURL
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+
+        return view
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+        }
+        return url_kwargs
+
+
+    def get_request(self, ajax=False):
+
+        request = super().get_request(ajax=ajax)
+        request.GET = {
+            'taxon_source' : self.lazy_taxon.taxon_source,
+            'name_uuid' : str(self.lazy_taxon.name_uuid),
+        }
+        return request
+
+
+    def test_set_taxon(self):
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon, self.lazy_taxon)
+
+
+    def test_get(self):
+
+        view = self.get_view()
+        view.set_taxon(view.request, **view.kwargs)
+        response = view.get(view.request, **view.kwargs)
+        self.assertEqual(response.status_code, 200)
+
 
 
 class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,

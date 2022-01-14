@@ -5,12 +5,15 @@ from django.utils.translation import gettext as _
 from django.contrib.contenttypes.models import ContentType
 
 from django.urls import reverse
+from django.http import JsonResponse
+
+import urllib.parse
 
 from .forms import TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm
 from .models import TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile
 
 from app_kit.views import ManageGenericContent
-from app_kit.view_mixins import MetaAppFormLanguageMixin
+from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 
 from app_kit.features.nature_guides.models import MetaNode, NatureGuidesTaxonTree, NodeFilterSpace
@@ -45,8 +48,8 @@ class ManageTaxonProfiles(ManageGenericContent):
 
 
 '''
-    if a profile exists, name_uuid can be used to look it up
-    if it does NOT exists, taxon_latname AND taxon_author are needed
+    since the "copy tree branches" requirement has been implemented (AWI), name duplicates are possible
+    -> lookup of profiles can only be done by name_uuid
 '''
 class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
@@ -65,37 +68,21 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
         models = TaxonomyModelRouter(kwargs['taxon_source'])
 
-        # case 1: taxon profile does exist - use name_uuid from kwargs
-        if 'name_uuid' in kwargs:
-            name_uuid = kwargs['name_uuid']
-            taxon_profile = TaxonProfile.objects.get(taxon_source=kwargs['taxon_source'],
-                                                     name_uuid=name_uuid)
+        name_uuid = kwargs['name_uuid']
+        taxon = models.TaxonTreeModel.objects.get(name_uuid=name_uuid)
 
-            self.taxon = LazyTaxon(instance=taxon_profile)
-            
+        self.taxon = LazyTaxon(instance=taxon)
 
-        # case 2: taxon profile does NOT exist - use taxon_latname AND taxon_author
-        else:
-            taxon_latname = request.GET['taxon_latname']
-            taxon_author = request.GET['taxon_author']
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                    taxon_source=self.taxon.taxon_source, name_uuid=name_uuid).first()
 
-            if taxon_author == 'None' or taxon_author == '':
-                taxon_author = None
-                
-            taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)
 
-            self.taxon = LazyTaxon(instance=taxon)        
-            taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                    taxon_source=self.taxon.taxon_source, taxon_latname=self.taxon.taxon_latname,
-                    taxon_author=self.taxon.taxon_author).first()
-
-            # the taxon profile instance might not exist yet
-            if not taxon_profile:
-                taxon_profile = TaxonProfile(
-                    taxon_profiles = self.taxon_profiles,
-                    taxon=self.taxon,
-                )
-                taxon_profile.save()
+        if not taxon_profile:
+            taxon_profile = TaxonProfile(
+                taxon_profiles = self.taxon_profiles,
+                taxon=self.taxon,
+            )
+            taxon_profile.save()
             
 
         self.taxon_profile = taxon_profile
@@ -153,6 +140,49 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         return self.render_to_response(context)
 
 
+class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon(request, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_taxon(self, request, **kwargs):
+        taxon_source = request.GET['taxon_source']
+        models = TaxonomyModelRouter(taxon_source)
+
+        # maye use latname& author in the future - what happens to name_uuid if taxonDB gets updated?
+        #taxon_latname = request.GET['taxon_latname']
+        #taxon_author = request.GET['taxon_author']
+
+        name_uuid = request.GET['name_uuid']
+        
+        #taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)
+        taxon = models.TaxonTreeModel.objects.get(name_uuid=name_uuid)
+
+        self.taxon = LazyTaxon(instance=taxon)
+
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+
+    def get(self, request, *args, **kwargs):
+
+        url_kwargs = {
+            'meta_app_id':self.meta_app.id,
+            'taxon_profiles_id' : self.taxon_profiles.id,
+            'taxon_source' : self.taxon.taxon_source,
+            'name_uuid' : self.taxon.name_uuid,
+        }
+        
+        url = reverse('manage_taxon_profile', kwargs=url_kwargs)
+
+        data = {
+            'url' : url,
+        }
+        
+        return JsonResponse(data)
+
+    
 
 class ManageTaxonTextType(MetaAppFormLanguageMixin, FormView):
 

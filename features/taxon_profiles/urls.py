@@ -4,8 +4,6 @@ from . import views
 urlpatterns = [
     path('manage-taxon-profiles/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
          views.ManageTaxonProfiles.as_view(), name='manage_taxonprofiles'),
-    path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/',
-         views.ManageTaxonProfile.as_view(), name='create_taxon_profile'), # create with required GET parameters
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
     path('create-taxon-text-type/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
@@ -16,6 +14,8 @@ urlpatterns = [
     # this one is only for the autocomplete redirect
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/',
         views.ManageTaxonProfile.as_view(), name='manage_taxon_profile_baseurl'),
+    path('get-taxon-profiles-manage-or-create-url/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.GetManageOrCreateTaxonProfileURL.as_view(), name='get_taxon_profiles_manage_or_create_url'),
     # load images in taxon profiles
     path('collect-taxon-images/<int:meta_app_id>/<int:pk>/<str:taxon_source>/<uuid:name_uuid>/',
         views.CollectTaxonImages.as_view(), name='collect_taxon_images'),

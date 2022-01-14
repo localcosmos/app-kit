@@ -26,16 +26,27 @@
 
 	<script>
 		
-		var base_url = "{% url 'manage_taxon_profile_baseurl' meta_app.id generic_content.id %}";
 
-		var source_input = document.getElementById("id_taxon_0");
-		var uuid_input = document.getElementById("id_taxon_3");
+		var get_manage_or_create_baseurl = "{% url 'get_taxon_profiles_manage_or_create_url' meta_app.id generic_content.id %}";
 
-		uuid_input.addEventListener("change", function(event){
+		var taxon_source_input = document.getElementById("id_taxon_0");
+		var taxon_latname_input = document.getElementById("id_taxon_1");
+		var taxon_author_input = document.getElementById("id_taxon_2")
+		var name_uuid_input = document.getElementById("id_taxon_3")
 
-			if (source_input.value && uuid_input.value){
-				var url = base_url + source_input.value + '/' + uuid_input.value + '/';
-				window.location = url;
+		name_uuid_input.addEventListener("change", function(event){
+
+			if (taxon_source_input.value && name_uuid_input.value){
+				// create taxon profile or manage taxon profile?
+				// currently name_uuid is used. maybe use latname&author - what happens if a taxon DB gets updated with name_uuid?
+				// var url = base_url + '?taxon_source=' + source_input.value + '&taxon_latname=' + taxon_latname_input.value + '&taxon_author=' + encodeURIComponent(taxon_author_input.value);
+				var determineURL_url = get_manage_or_create_baseurl + '?taxon_source=' + taxon_source_input.value + '&name_uuid=' + name_uuid_input.value;
+				$.get(determineURL_url, function(data){
+					if (typeof data == "object"){
+						window.location = data.url;
+					}
+				}); 
+				
 			}
 		});
 	</script>

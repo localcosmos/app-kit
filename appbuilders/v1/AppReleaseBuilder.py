@@ -1669,7 +1669,9 @@ class AppReleaseBuilder(AppBuilder):
             os.makedirs(app_absolute_taxonprofiles_path)
 
 
-        for profile_taxon in taxon_profiles.collected_taxa():
+        collected_taxa = taxon_profiles.collected_taxa()
+        
+        for profile_taxon in collected_taxa:
             
             profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
                                                            languages=self.meta_app.languages())
@@ -1688,6 +1690,27 @@ class AppReleaseBuilder(AppBuilder):
                     json.dump(profile_json, f, indent=4, ensure_ascii=False)
 
 
+        # build search index and registry
+        languages = self.meta_app.languages()
+        taxon_profiles_registry = jsonbuilder.build_alphabetical_registry(collected_taxa, languages)
+        registry_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'registry.json')
+        
+        with open(registry_absolute_filepath, 'w', encoding='utf-8') as f:
+            json.dump(taxon_profiles_registry, f, indent=4, ensure_ascii=False)
+
+
+        taxon_profiles_search_indices = jsonbuilder.build_search_indices(collected_taxa, languages)
+        search_indices_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'search.json')
+
+        with open(search_indices_absolute_filepath, 'w', encoding='utf-8') as f:
+            json.dump(taxon_profiles_search_indices, f, indent=4, ensure_ascii=False)
+
+        # add paths to features.json
+        relative_registry_path = os.path.join(app_relative_taxonprofiles_folder, 'registry.json')
+        relative_search_index_path = os.path.join(app_relative_taxonprofiles_folder, 'search.json')
+
+        self.build_features[generic_content_type]['registry'] = relative_registry_path
+        self.build_features[generic_content_type]['search'] = relative_search_index_path
 
     ###############################################################################################################
     # FACT SHEETS

@@ -11,7 +11,7 @@
 								<div class="row no-gutters justify-content-center">
 									<div class="col-12 col-md-10 col-lg-8">
 										<div class="w-50" style="margin: 0 auto;"><img src="{{ space.image_url }}" class="img-fluid" /></div>
-										<div class="text-center text-small">{{ space.encoded_space }}</div>
+										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
 									</div>
 								</div>
 							{% endfor %}
@@ -19,7 +19,7 @@
 							{% for space in node_space.values.all %}
 								<div class="row no-gutters justify-content-center">
 									<div class="col-12 col-md-10 col-lg-8">
-										<div class="text-center text-small">{{ space.encoded_space }}</div>
+										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
 									</div>
 								</div>
 							{% endfor %}

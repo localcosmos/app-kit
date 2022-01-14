@@ -1557,26 +1557,26 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	background-color: #bfbfbf !important;
 }
 
-.glossary-link {
+.glossary-link, .alphabet-link {
 	cursor: pointer;
 	border-radius: .5em;
 }
 
-.glossary-link:hover {
+.glossary-link:hover, .alphabet-link:hover {
 	color: #17a2b8 !important;
 }
 
-#glossary-page {
+#glossary-page, #taxon-profiles-page {
 	padding-top: 25px;
 }
 
-.glossary-alphabet {
+.glossary-alphabet, .taxon-profiles-alphabet {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
 }
 
-.glossary-search-results {
+.glossary-search-results, .alphabet-search-results {
 	min-width: 80%;
 	position: absolute;
 	background-color: rgba(255,255,255,0.95);
@@ -1584,16 +1584,16 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	z-index: 500;
 }
 
-.glossary-search-results.lg {
+.glossary-search-results.lg, .alphabet-search-results.lg {
 	left: 15px;
 	top: 45px;
 }
 
-.glossary-search-results.sm {
+.glossary-search-results.sm, .alphabet-search-results.sm {
 	bottom: 45px;
 }
 
-.glossary-search-results.hidden {
+.glossary-search-results.hidden, .alphabet-search-results.hidden {
 	opacity: 0;
 	z-index: -1;
 }
@@ -1657,7 +1657,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		width: 10vw;
 	}
 	
-	#glossary-page {
+	#glossary-page, #taxon-profiles-page {
 		padding-top: 180px;
 	}
 

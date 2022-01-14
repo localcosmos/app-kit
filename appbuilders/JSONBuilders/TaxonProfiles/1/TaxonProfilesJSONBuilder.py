@@ -9,6 +9,8 @@ from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, Matrix
                                                    NatureGuide)
 from app_kit.models import ContentImage, MetaAppGenericContent
 
+from collections import OrderedDict
+
 '''
     Builds JSON for one TaxonProfiles
 '''
@@ -94,6 +96,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'name_uuid' : profile_taxon.name_uuid,
             'taxon_nuid' : profile_taxon.taxon_nuid,
             'vernacular' : {},
+            'all_vernacular_names' : {},
             'node_names' : [], # if the taxon occurs in a nature guide, primary_language only
             'node_decision_rules' : [],
             'traits' : [], # a collection of traits (matrix filters)
@@ -110,6 +113,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             vernacular_name = profile_taxon.vernacular(language=language_code)
 
             taxon_profile['vernacular'][language_code] = vernacular_name
+
+            all_vernacular_names = profile_taxon.all_vernacular_names(language=language_code)
+            
+            if all_vernacular_names.exists():
+                names_list = list(all_vernacular_names.values_list('name', flat=True))
+                taxon_profile['all_vernacular_names'][language_code] = names_list
+                
 
         collected_content_image_ids = set([])
         # get taxon_profile_images
@@ -225,3 +235,133 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
 
         return taxon_profile
+
+
+    # look up taxonomic data by name_uuid
+    def build_alphabetical_registry(self, taxon_list, languages):
+
+        registry = {}
+
+        for lazy_taxon in taxon_list:
+            
+            registry_entry = {
+                'taxon_source' : lazy_taxon.taxon_source,
+                'name_uuid' : str(lazy_taxon.name_uuid),
+                'taxon_latname' : lazy_taxon.taxon_latname,
+                'taxon_author' : lazy_taxon.taxon_author,
+                'vernacular_names' : {},
+                'alternative_vernacular_names' : {},
+            }
+
+            for language_code in languages:
+                vernacular_name = lazy_taxon.vernacular(language=language_code)
+
+                if vernacular_name:
+                    registry_entry['vernacular_names'][language_code] = vernacular_name
+
+            registry[str(lazy_taxon.name_uuid)] = registry_entry
+
+        return registry
+            
+
+    '''
+    {
+        'taxon_latname' : {
+            'A' : {
+                'A latname with author' : name_uuid
+            },
+        },
+        'vernacular' : {
+            'en' : {
+                'A' : [
+                    {'name': 'A name', 'name_uuid': name_uuid, 'taxon_latname': 'abc', 'taxon_author': 'def'}
+                ]
+            }
+        }
+    }
+    '''
+    def build_search_indices(self, taxon_list, languages):
+
+        search_indices = {
+            'taxon_latname' : {},
+            'vernacular' : {},
+        }
+
+        for lazy_taxon in taxon_list:
+
+            name_uuid = str(lazy_taxon.name_uuid)
+
+            # latname incl author is unique
+            if lazy_taxon.taxon_author:
+                taxon_full_latname = '{0} {1}'.format(lazy_taxon.taxon_latname, lazy_taxon.taxon_author)
+            else:
+                taxon_full_latname = lazy_taxon.taxon_latname
+                
+            taxon_latname_start_letter = lazy_taxon.taxon_latname[0].upper()
+            
+            if taxon_latname_start_letter not in search_indices['taxon_latname']:
+                search_indices['taxon_latname'][taxon_latname_start_letter] = {}
+
+            taxon_latname_entry = {
+                'taxon_source' : lazy_taxon.taxon_source,
+                'taxon_latname' : lazy_taxon.taxon_latname,
+                'taxon_author' : lazy_taxon.taxon_author,
+                'name_uuid' : name_uuid,
+            }
+            search_indices['taxon_latname'][taxon_latname_start_letter][taxon_full_latname] = taxon_latname_entry
+
+            # add vernacular names - these might not be unique, therefore use a list
+            # search result should look like this: "Vernacular (Scientfic name)"
+            for language_code in languages:
+                    
+                vernacular_names = lazy_taxon.all_vernacular_names(language=language_code)
+
+                for locale in vernacular_names:
+
+                    vernacular_name = locale.name
+
+                    list_entry = {
+                        'taxon_source' : lazy_taxon.taxon_source,
+                        'name' : vernacular_name,
+                        'name_uuid' : name_uuid,
+                        'taxon_latname' : lazy_taxon.taxon_latname,
+                        'taxon_author' : lazy_taxon.taxon_author
+                    }
+
+                    if language_code not in search_indices['vernacular']:
+                        search_indices['vernacular'][language_code] = OrderedDict()
+
+                    vernacular_name_start_letter = vernacular_name[0].upper()
+
+                    if vernacular_name_start_letter not in search_indices['vernacular'][language_code]:
+                        search_indices['vernacular'][language_code][vernacular_name_start_letter] = []
+
+                    search_indices['vernacular'][language_code][vernacular_name_start_letter].append(list_entry)
+
+
+                # sort start letters
+                vernacular_sorted_start_letters = sorted(search_indices['vernacular'][language_code].items(),
+                                                     key=lambda x: x[0])
+        
+                search_indices['vernacular'][language_code] = OrderedDict(vernacular_sorted_start_letters)
+
+                # sort list inside start letters
+                for start_letter, names_list in search_indices['vernacular'][language_code].items():
+
+                    sorted_names_list = sorted(names_list, key=lambda d: d['name']) 
+                    search_indices['vernacular'][language_code][start_letter] = sorted_names_list
+
+
+        # sort taxon_latname dict start letters and entries
+        taxon_latnames_sorted_start_letters = sorted(search_indices['taxon_latname'].items(),
+                                                     key=lambda x: x[0])
+        
+        search_indices['taxon_latname'] = OrderedDict(taxon_latnames_sorted_start_letters)
+
+        for taxon_latname_start_letter, taxon_latname_entries in search_indices['taxon_latname'].items():
+            sorted_taxon_latname_entries = OrderedDict(sorted(taxon_latname_entries.items(),
+                                                              key=lambda x: x[0]))
+            
+            search_indices['taxon_latname'][taxon_latname_start_letter] = sorted_taxon_latname_entries
+            
+        return search_indices

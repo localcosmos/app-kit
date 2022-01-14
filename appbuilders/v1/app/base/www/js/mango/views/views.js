@@ -272,6 +272,14 @@ var InteractionManager = {
 			self._input_worker(event, "tap");			
 		});
 
+		element.addEventListener("auxclick", function(event){
+			
+			if (event.button == 1) {
+				var link = event.target.getAttribute("link");
+				window.open("#" + link, '_blank').focus();
+			}
+		});
+
 	},
 
 	// currently each element with gesture gets its own hammer instance, this might not be ideal
