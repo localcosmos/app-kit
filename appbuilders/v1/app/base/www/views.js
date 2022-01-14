@@ -4882,12 +4882,15 @@ var TaxonProfilesRegistry = View(TemplateView, {
 			ajax.GET(search_index_url, {}, function(content){
 			
 				self.search_index = JSON.parse(content);
+				
+				let has_vernacular_names = Object.keys(self.search_index.vernacular[app.language]).length > 0 ? true : false;
 
 				context["search_index"] = self.search_index;
 				context["use_vernacular_names"] = use_vernacular_names;
 				
 				context["vernacular_names"] = self.search_index.vernacular[app.language];
 
+				context["has_vernacular_names"] = has_vernacular_names
 				callback(context);			
 
 			});
