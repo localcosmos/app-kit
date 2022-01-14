@@ -313,6 +313,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             # add vernacular names - these might not be unique, therefore use a list
             # search result should look like this: "Vernacular (Scientfic name)"
             for language_code in languages:
+
+                if language_code not in search_indices['vernacular']:
+                    search_indices['vernacular'][language_code] = OrderedDict()
                     
                 vernacular_names = lazy_taxon.all_vernacular_names(language=language_code)
 
@@ -327,9 +330,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         'taxon_latname' : lazy_taxon.taxon_latname,
                         'taxon_author' : lazy_taxon.taxon_author
                     }
-
-                    if language_code not in search_indices['vernacular']:
-                        search_indices['vernacular'][language_code] = OrderedDict()
 
                     vernacular_name_start_letter = vernacular_name[0].upper()
 
