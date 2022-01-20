@@ -72,24 +72,27 @@
 					{{/each}}
 				{{ else }}
 					{{#each search_index.taxon_latname }}
-					
+						
 						{{#with this as | taxonProfile |}}
-
+						
 							<div class="row mt-4">
 								<div class="col-12 bg-light pt-2">
 									<h3 id="alphabet-{{@key}}">{{@key}}</h3>
 								</div>
 								{{#each taxonProfile}}
-									<div id="alphabet-entry-{{@key}}" class="col-12 mt-3">
-										<div>
-											<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxon_source name_uuid }}"><i>{{@key}}</i></a>
+									{{#if is_synonym}}
+									{{else}}
+										<div id="alphabet-entry-{{@key}}" class="col-12 mt-3">
+											<div>
+												<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxon_source name_uuid }}"><i>{{@key}}</i></a>
+											</div>
 										</div>
-									</div>
-									
+									{{/if}}
 								{{/each}}
 							</div>
+
 						{{/with}}
-						
+
 					{{/each}}
 				{{/if}}
 			</div>

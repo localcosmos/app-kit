@@ -4935,6 +4935,7 @@ var TaxonProfilesRegistry = View(TemplateView, {
 					
 					let taxon = names_list[n];
 					
+					
 					if (taxon.name.toLowerCase().startsWith(searchtext.toLowerCase())){
 						let result = {
 							"matched_text" : taxon.name,
@@ -4957,10 +4958,14 @@ var TaxonProfilesRegistry = View(TemplateView, {
 					if (result_count > max_results){
 						break;
 					}
+					
+					let taxon = taxa[full_taxon_latname];
+					
+					if (taxon.is_synonym == true){
+						continue;
+					}
 				
 					if (full_taxon_latname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
-					
-						let taxon = taxa[full_taxon_latname];
 					
 						let result = {
 							"matched_text" : full_taxon_latname,

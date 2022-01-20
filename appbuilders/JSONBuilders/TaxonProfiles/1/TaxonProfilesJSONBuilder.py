@@ -7,6 +7,7 @@ from app_kit.appbuilders.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.features.taxon_profiles.models import TaxonProfile
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
                                                    NatureGuide)
+
 from app_kit.models import ContentImage, MetaAppGenericContent
 
 from collections import OrderedDict
@@ -106,8 +107,18 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'node_images' : [],
                 'taxon_images' : [],
             },
+            'synonyms' : [],
             'gbif_nubKey' : None,
         }
+
+        synonyms = profile_taxon.synonyms()
+        for synonym in synonyms:
+            synonym_entry = {
+                'taxon_latname' : synonym.taxon_latname,
+                'taxon_author' : synonym.taxon_author,
+            }
+
+            taxon_profile['synonyms'] = synonym_entry
 
         for language_code in languages:
             vernacular_name = profile_taxon.vernacular(language=language_code)
@@ -303,12 +314,31 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 search_indices['taxon_latname'][taxon_latname_start_letter] = {}
 
             taxon_latname_entry = {
-                'taxon_source' : lazy_taxon.taxon_source,
                 'taxon_latname' : lazy_taxon.taxon_latname,
                 'taxon_author' : lazy_taxon.taxon_author,
-                'name_uuid' : name_uuid,
+                'taxon_source' : lazy_taxon.taxon_source, # for looking up the original taxon
+                'name_uuid' : name_uuid, # for looking up the original taxon
+                'is_synonym' : False,
             }
             search_indices['taxon_latname'][taxon_latname_start_letter][taxon_full_latname] = taxon_latname_entry
+
+            # add synonyms
+            synonyms = lazy_taxon.synonyms()
+            for synonym in synonyms:
+
+                synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
+
+                synonym_entry = {
+                    'taxon_latname' : synonym.taxon_latname,
+                    'taxon_author' : synonym.taxon_author,
+                    'taxon_source' : lazy_taxon.taxon_source,
+                    'name_uuid' : name_uuid, # name_uuid of accepted name
+                    'synonym_name_uuid' : str(synonym.name_uuid),
+                    'is_synonym' : True,
+                }
+
+                search_indices['taxon_latname'][taxon_latname_start_letter][synonym_full_latname] = synonym_entry
+
 
             # add vernacular names - these might not be unique, therefore use a list
             # search result should look like this: "Vernacular (Scientfic name)"
