@@ -955,6 +955,28 @@ body {
 	cursor: pointer;
 }
 
+.choiceBoxNew {
+	display: flex;
+	background: #e0e0e0;
+	border-radius: .5em;
+	padding: .3rem;
+}
+
+.choiceBoxNew .title {
+	flex-grow: 1;
+	display: flex;
+	justify-content: left;
+	padding-left: .5rem;
+	padding-right: .5rem;
+	align-items: center;
+	font-size: 1rem;
+	color: #303030;
+}
+
+.choiceBoxNew .image {
+	width: 20%;
+}
+
 .choiceBox, .choiceBox > div {
 	width: 100%;
 }
@@ -1617,24 +1639,31 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		flex-direction: row;
 		justify-content: center;
 		align-items: stretch;
+		height: 92vh;
 	}
 
 	.nature-guide > div {
-		width: 48%; /* ugly solution for hiding horizontal scrollbars */
+		width: 25%; /* ugly solution for hiding horizontal scrollbars */
 	}
 
 	#nodes {
 		padding-bottom: 0rem;
 	}
+	
+	#keynodes-page {
+		overflow-y: scroll;
+		overflow-x : hidden;
+	}
 
 	#identification-matrix {
 		height: auto;
-		width: 50%;
+		width: 73%;
 		top: auto; bottom: auto; left: auto; right: auto;
 		padding-left: 0;
 		padding-right: 0;
 		position: relative;
 		color: rgba(255,255,255,1);
+		overflow-y: scroll;
 	}
 
 	#identification-matrix > div {
@@ -1669,6 +1698,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		height: auto;
 		width: 6vw;
 	}
+	
 }
 
 /* Extra large devices (large desktops, 1200px and up) */

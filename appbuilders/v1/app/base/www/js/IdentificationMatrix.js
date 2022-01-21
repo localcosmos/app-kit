@@ -124,7 +124,8 @@ var IdentificationMatrix = {
 		var self = this;
 
 		var elements = self.filterform.elements;
-
+		
+		// a dicitonary {"matrix_filter_uuid":[value,value]}
 		var selected_filters = {};
 
 		for (let e=0; e<elements.length; e++) {
@@ -611,17 +612,41 @@ var IdentificationMatrix = {
 				let matrix_filter_value_id = matrix_filter_value.id;
 				
 
-				let selected = [];
+				let selected_values = [];
 				
+				// uuid is uuid of matrix_filter, values do not have uuids
 				if (selected_filters.hasOwnProperty(matrix_filter_value.uuid)){
-					selected = selected_filters[matrix_filter_value.uuid];
+					selected_values = selected_filters[matrix_filter_value.uuid];
 				}
-	
-				if (self.possible_values.indexOf(matrix_filter_value_id) != -1 || selected.indexOf(matrix_filter_value.value) >= 0){
+				
+				if (self.possible_values.indexOf(matrix_filter_value_id) != -1) {
+					matrix_filter_value.show();
+				}
+				else if (selected_values.indexOf(matrix_filter_value.value) >= 0) {
 					matrix_filter_value.show();
 				}
 				else {
-					matrix_filter_value.hide();
+					if (matrix_filter_type == "ColorFilter") {
+						let is_visible = false;
+						// [].indexOf(element) is not supported if element is an Array or Object
+						for (let v=0; v<selected_values.length; v++){
+							let selected_value = selected_values[v];
+							if (JSON.stringify(matrix_filter_value.value) == JSON.stringify(selected_value)){
+								is_visible = true;
+								break;
+							}
+						}
+						
+						if (is_visible == false) {
+							matrix_filter_value.hide();
+						}
+						else {
+							matrix_filter_value.show();
+						}
+					}
+					else {
+						matrix_filter_value.hide();
+					}
 				}
 		
 			}

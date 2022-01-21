@@ -1,5 +1,5 @@
 <!-- identification-matrix may not be inside page. the transition/transform of the page relates position:fixed to page container instead of viewport-->
-<div class="nature-guide">
+<div id="nature-guide" class="nature-guide">
 	
 	{{#if node.matrix_filters}}
 		<div id="identification-matrix" class="matrix-hidden p-2">
@@ -128,8 +128,8 @@
 		</div>
 	{{/if}}
 
-	<div class="page">
-		<div id="keynodes" class="row no-gutters justify-content-center">
+	<div id="keynodes-page" class="page">
+		<div id="keynodes" class="row flex-column no-gutters justify-content-center">
 
 			<div class="text-loader">...{{tp 'Loading'}}...</div>
 		</div>
