@@ -1062,10 +1062,14 @@ class AppReleaseBuilder(AppBuilder):
 
             build_report['result'] = 'failure'
             
-            # send email! only if app validation succeeded
+            # send email! only if app building failed and validation was successful
             if app_is_valid == True:
-                self.send_bugreport_email(meta_app, e)
-  
+                # execute code below if sending of email fails
+                try:
+                    self.send_bugreport_email(meta_app, e)
+                    
+                except Exception as emailException:
+                    pass
 
         # LOCK app an features
         meta_app.is_locked = False
