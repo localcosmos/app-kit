@@ -4,8 +4,8 @@
 		{{ matrix_filter.encoded_space.0 }} {% if matrix_filter.definition.unit %}{{ matrix_filter.definition.unit }}{% endif %}
 	</div>
 	<div class="col-7">
-		<input id="{{ widget.attrs.id }}" type="range" max="{{ matrix_filter.encoded_space.1|safe }}" min="{{ matrix_filter.encoded_space.0|safe }}" step="{{ matrix_filter.definition.step|safe }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
-		<input id="{{ widget.attrs.id }}_value" type="hidden" name="{{ widget.name }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
+		<input id="{{ widget.attrs.id }}" type="range" name="{{ widget.name }}" max="{{ matrix_filter.encoded_space.1|safe }}" min="{{ matrix_filter.encoded_space.0|safe }}" step="{{ matrix_filter.definition.step|safe }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
+		<input id="{{ widget.attrs.id }}_value" type="hidden" name="{{ widget.name }}" data-widget-id="{{ widget.attrs.id }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
 	</div>
 	<div class="col-2 text-left">
 		{{ matrix_filter.encoded_space.1 }} {% if matrix_filter.definition.unit %}{{ matrix_filter.definition.unit }}{% endif %}
@@ -63,5 +63,6 @@
 
 		slider.addEventListener('input', onchange);
 		slider.addEventListener('change', onchange);
+		
 	})();
 </script>

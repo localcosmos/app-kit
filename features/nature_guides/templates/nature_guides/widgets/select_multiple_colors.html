@@ -3,7 +3,7 @@
 {% block size %}large{% endblock %}
 
 {% block input %}
-	<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" data-value="{{ option.value }}" {% if option.value in widget.value %}checked{% endif %} data-container-id="space_{{ option.space_id }}" />
+	<input id="choice_{{ widget.name }}_{{ option.index }}" type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" data-value="{{ option.value }}" {% if option.value in widget.value %}checked{% endif %} data-container-id="space_{{ option.space_id }}" />
 {% endblock %}
 {% block label %}
 	<label for="choice_{{ widget.name }}_{{ option.index }}" class="matrix-filter-color">

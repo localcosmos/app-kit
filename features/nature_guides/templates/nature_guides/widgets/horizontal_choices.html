@@ -47,10 +47,11 @@
 	{% if allow_multiple_values %}
 	{% else %}
 		(function(){
+		
+			// improvement: uncheck if checked, preventdefault. otherwise default
+		
 			var container = document.getElementById('{{ widget.attrs.id }}');
-			var radios = container.getElementsByTagName('input');
-
-			var current_selection = null;
+			var radios = container.querySelectorAll("input[type='radio']");
 
 			var change_event = new CustomEvent("change", {
 			  detail: {}
@@ -60,14 +61,25 @@
 				var radio = radios[r];
 
 				radio.addEventListener('click', function(event){
-					if (current_selection == event.target.value){
-						event.target.checked = false;
-						current_selection = null;
-						event.target.dispatchEvent(change_event);
+					event.preventDefault();
+					
+					let radio_input = event.currentTarget;
+					
+					
+					let checked = radio_input.getAttribute("checked");
+					
+					if (checked == null || checked == "false") {
+						radio_input.checked = true;
+						radio_input.setAttribute("checked", true);
 					}
-					else {
-						current_selection = event.target.value;
+					else if (checked == "true"){
+						radio_input.checked = false;
+						radio_input.removeAttribute("checked");
 					}
+					
+					radio_input.dispatchEvent(change_event);
+
+				
 				});
 			}
 		})()

@@ -105,16 +105,6 @@ class AppBuilderBase:
     def status(self):
         return 'development'
 
-    # which versions of the JSONBuilder Classes this AppBuilder version uses
-    BackboneTaxonomy_builder_version = 1
-    ButtonMatrix_builder_version = 1
-    GenericForm_builder_version = 1
-    NatureGuide_builder_version = 1
-    TaxonProfiles_builder_version = 1
-    Glossary_builder_version = 1
-    Map_builder_version = 1
-    FactSheets_builder_version = 1
-
     # set self._builder_version_root_folder and load the config
     def __init__(self):
 

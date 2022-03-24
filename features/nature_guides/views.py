@@ -1536,3 +1536,25 @@ class CopyTreeBranch(MetaAppMixin, FormView):
         context['parent_node'] = self.node.parent
 
         return self.render_to_response(context)
+
+
+class StoreIdentificationMode(TemplateView):
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+
+        self.meta_node = MetaNode.objects.get(pk=kwargs['meta_node_id'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        mode = kwargs['identification_mode']
+
+        self.meta_node.add_setting('identification_mode', mode)
+        self.meta_node.save()
+
+        response = {
+            'meta_node_id' : self.meta_node.id,
+            'identification_mode' : mode,
+        }
+        
+        return JsonResponse(response, safe=False)

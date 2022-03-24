@@ -88,6 +88,8 @@
 								{% endfor %}
 							</div>
 						</div>
+						
+						
 					</div>
 				</div>
 			</div>
@@ -110,6 +112,21 @@
 						{% with menualign='alignright' %}
 							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
 						{% endwith %}
+					</div>
+					
+					<hr>
+					
+					<div>
+						Mode: 
+						<div class="btn-group btn-group-toggle" data-toggle="buttons">
+							<label class="btn btn-sm btn-outline-primary {% if meta_node.settings.identification_mode == 'strict' %}{% else %}active{% endif %} identification-mode-label" data-input-id="identification-mode-fluid" data-value="fluid">
+								<input id="identification-mode-fluid" type="radio" name="identificationmode" value="fluid"> {% trans 'ranking' %}
+							</label>
+							<label class="btn btn-sm btn-outline-primary identification-mode-label {% if meta_node.settings.identification_mode == 'strict' %}active{% else %}{% endif %}" data-value="strict" data-input-id="identification-mode-strict">
+								<input id="identification-mode-strict" type="radio" name="identificationmode" value="strict"> {% trans 'exclusion criterion' %}
+							</label>
+						</div>
+						<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large mr-1"  data-toggle="popover" title="{% trans 'Identification mode' %}" data-content="{% blocktrans %}RANKING: Entries are ranked according to user selection. Entries are not sorted out. EXCLUSION: Entries are sorted out if an selection does not match.{% endblocktrans %}" data-placement="top" />
 					</div>
 
 				</div>
@@ -149,6 +166,13 @@
 				return node_name.textContent;
 			});
 		});
+		
+		(function(){
+			$('[data-toggle="popover"]').popover({
+				trigger: 'hover'
+			});
+		})();
+
 	</script>
 
 	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}

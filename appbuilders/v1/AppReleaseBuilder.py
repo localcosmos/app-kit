@@ -1421,10 +1421,8 @@ class AppReleaseBuilder(AppBuilder):
 
     def _get_json_builder_class(self, generic_content):
         
-        builder_version = getattr(self, '%s_builder_version' % generic_content.__class__.__name__)
         builder_class_name = '%sJSONBuilder' % generic_content.__class__.__name__
-        builder_module_path = 'app_kit.appbuilders.JSONBuilders.%s.%s.%s.%s' % (
-            generic_content.__class__.__name__, builder_version, builder_class_name, builder_class_name)
+        builder_module_path = 'app_kit.appbuilders.JSONBuilders.%s.%s' % (builder_class_name, builder_class_name)
         
         JSONBuilderClass = import_module(builder_module_path)
         

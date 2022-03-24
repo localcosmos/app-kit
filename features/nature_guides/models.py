@@ -17,6 +17,9 @@ from .definitions import TEXT_LENGTH_RESTRICTIONS
 
 import uuid, shutil, os, json
 
+IDENTIFICATION_MODE_FLUID = 'fluid'
+IDENTIFICATION_MODE_STRICT = 'strict'
+
 '''
     Universal identification key system:
     dichotomous keys and polytomus keys/matrix keys or a combination of both
@@ -212,6 +215,13 @@ class ChildrenCacheManager:
     def rebuild_cache(self):
 
         data = self.get_data(empty=True)
+
+        identification_mode = IDENTIFICATION_MODE_FLUID
+
+        if self.meta_node.settings:
+            identification_mode = self.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_FLUID)
+
+        data['identification_mode'] = identification_mode
         
         # add all matrix filters
         matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
@@ -263,7 +273,8 @@ class ChildrenCacheManager:
 
         # there is only one NodeFilterSpace per matrix_filter/node combination
         space_query = NodeFilterSpace.objects.filter(node=child, matrix_filter__in=matrix_filters)
-        
+
+        max_points = 0
         space = {}
 
         for node_filter_space in space_query:
@@ -278,6 +289,23 @@ class ChildrenCacheManager:
             space[matrix_filter_uuid] = matrix_filter.matrix_filter_type.get_filter_space_as_list(
                 node_filter_space)
 
+            weight = matrix_filter.weight
+            max_points = max_points + weight
+
+
+        # apply taxon filters
+        taxon_filters = matrix_filters.filter(filter_type='TaxonFilter')
+        for matrix_filter in taxon_filters:
+            
+            matrix_filter_uuid = str(matrix_filter.uuid)
+            
+            taxon_filter = matrix_filter.matrix_filter_type
+            node_taxon_space = taxon_filter.get_space_for_node(child)
+            space[matrix_filter_uuid] = node_taxon_space
+
+            weight = matrix_filter.weight
+            max_points = max_points + weight
+            
 
         decision_rule = child.decision_rule
 
@@ -291,6 +319,7 @@ class ChildrenCacheManager:
             'image_url' : child.meta_node.image_url(), 
             'uuid' : str(child.name_uuid),
             'space' : space,
+            'max_points' : max_points,
             'is_visible' : True,
             'name' : child.meta_node.name,
             'decision_rule' : decision_rule,
@@ -357,11 +386,18 @@ class ChildrenCacheManager:
     '''
     def add_matrix_filter_to_cache(self, data, matrix_filter):
 
+        allow_multiple_values = False
+
+        if matrix_filter.definition:
+            allow_multiple_values = matrix_filter.definition.get('allow_multiple_values', False)
 
         data['matrix_filters'][str(matrix_filter.uuid)] = {
             'type' : matrix_filter.filter_type,
+            'name' : matrix_filter.name,
+            'weight' : matrix_filter.weight,
+            'allow_multiple_values' : allow_multiple_values,
         }
-        
+            
         return data
         
         
@@ -512,7 +548,15 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     name = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'], null=True)
     node_type = models.CharField(max_length=30, choices=NODE_TYPES)
 
+    settings = models.JSONField(null=True)
+
     children_cache = models.JSONField(null=True)
+
+    def add_setting(self, key, value):
+        if not self.settings:
+            self.settings = {}
+            
+        self.settings[key] = value
 
     def rebuild_cache(self):
         cache_manager = ChildrenCacheManager(self)
@@ -525,7 +569,7 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     def __str__(self):
         return '{0}'.format(self.name)
 
-    # the requirement of copying tree branches makes unique met anode names impossible
+    # the requirement of copying tree branches makes unique meta node names impossible
     #class Meta:
     #    unique_together=('nature_guide', 'name')
 

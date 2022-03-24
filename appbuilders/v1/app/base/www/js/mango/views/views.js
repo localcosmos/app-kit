@@ -817,6 +817,14 @@ var Pagemanager = {
 	// inserting html
 	_insert : function(container, template_html, args, kwargs){
 		var self = this;
+
+		try {
+			modalDialog._close();
+		}
+		catch (e) {
+
+		}
+		
 		container.innerHTML = template_html;
 
 		InteractionManager._add_tap_highlightings(container); // on edge mobile this interferes with the tap listener

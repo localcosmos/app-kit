@@ -5,12 +5,14 @@
 		<div class="row mb-4">
 			<div class="col-12">
 				<button id="btn-reset-filters" type="button" class="btn btn-sm btn-secondary">{% octicon "sync" %} {% trans 'reset selection' %}</button>
+				
 			</div>
 		</div>
 		<hr />
 	{% endif %}
 
 	<form id="matrix-filters-form">
+
 		{% if meta_node_has_matrix_filters %}
 			<div class="matrixfiltermanagement" data-store-positions-url="{% url 'store_object_order' matrix_filter_ctype.id %}">
 
@@ -69,9 +71,171 @@
 			callback(json);
 		});
 	}
-	var identification = IdentificationMatrix.create('matrix-filters-form', get_items);
+	
+	var update_mode_urls = {
+		"fluid" : "{% url 'store_identification_mode' meta_node.id 'fluid' %}",
+		"strict" : "{% url 'store_identification_mode' meta_node.id 'strict' %}"
+	};
+
+	var identification_options = {
+		"mode" : "{% if meta_node.settings.identification_mode == 'strict' %}strict{% else %}fluid{% endif %}"
+	};
+	
+	var identification = new IdentificationMatrix('matrix-filters-form', get_items, identification_options);
+	
+	
+	// add event listeners
+	var identificationForm = document.getElementById("matrix-filters-form");
+	var inputs = identificationForm.querySelectorAll('input[type=radio], input[type=checkbox]');
+
+	for (let i=0; i<inputs.length; i++){
+		let input = inputs[i];
+		input.addEventListener("turnedOn", function(event){
+		
+			let element = event.currentTarget;
+			// slide to the beginning
+			let space_wrap_id = element.getAttribute("data-container-id");
+
+			let space_wrap = document.getElementById(space_wrap_id);
+			let space_container = space_wrap.firstElementChild;
+			
+			space_container.classList.add("is-active");
+		
+		});
+		
+		input.addEventListener("turnedOff", function(event){
+		
+			let element = event.currentTarget;
+			// slide to the beginning
+			let space_wrap_id = element.getAttribute("data-container-id");
+
+			let space_wrap = document.getElementById(space_wrap_id);
+			let space_container = space_wrap.firstElementChild;
+			
+			space_container.classList.remove("is-active");
+		
+		});
+		
+		input.addEventListener("possible", function(event){
+			let input = event.currentTarget;
+			
+			//if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+			//}
+			//else {
+				input.parentElement.classList.remove("matrix-filter-inactive");
+			//}
+		});
+		
+		input.addEventListener("impossible", function(event){
+			let input = event.currentTarget;
+		
+			//if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+			//}
+			//else {
+				input.parentElement.classList.add("matrix-filter-inactive");
+			//}
+		});
+	}
+	
+	var range_inputs = identificationForm.querySelectorAll('input[type=range]');
+	
+	for (let r=0; r<range_inputs.length; r++){
+		let range_input = range_inputs[r];
+		
+		range_input.addEventListener("turnedOff", function(event){
+		
+			event.currentTarget.clear(); // custom fn added in widgets/range.html
+		
+		});
+	}
 
 	$('#btn-reset-filters').on('click', function(event){
 		identification.reset();
 	});
+	
+	
+	identificationForm.addEventListener("activate-matrix-filter", function(event){
+		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
+				
+		restriction_indicator.classList.remove("badge-danger");
+		restriction_indicator.classList.add("badge-success");
+	});
+	
+	identificationForm.addEventListener("deactivate-matrix-filter", function(event){
+		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
+				
+		restriction_indicator.classList.add("badge-danger");
+		restriction_indicator.classList.remove("badge-success");
+	});
+
+	
+	// FLUID MODE
+	identificationForm.addEventListener("update-matrix-item", function(event){
+
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+
+		matrix_item_element.style.order = matrix_item.points * (-1);
+		
+		// update point percentage
+		let points_span = document.getElementById(matrix_item.uuid + "-points");
+		if (matrix_item.points > 0){
+			points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.max_points + ")";
+		}
+		else {
+			points_span.textContent = "";
+		}
+		
+	});
+	
+	
+	// STRICT MODE
+	identificationForm.addEventListener("activate-matrix-item", function(event){
+		
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+		
+		matrix_item_element.style.display = "";
+		
+	});
+	
+	identificationForm.addEventListener("deactivate-matrix-item", function(event){
+		
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+		
+		matrix_item_element.style.display = "none";
+		
+	});
+	
+	// bootstrap 4 prevents "change" - Event on radio buttons. This is an ugly workaround
+	function switch_mode(event){
+	
+		let label = event.currentTarget;
+	
+		let input = document.getElementById(label.getAttribute("data-input-id"));
+
+		let mode = event.currentTarget.getAttribute("data-value");
+		if (mode && input.checked == false){
+			identification.set_mode(mode);
+			
+			// update mode in database
+			let update_mode_url = update_mode_urls[mode];
+			$.get(update_mode_url, function(json){
+				console.log(json);
+			});
+		}
+		
+	}
+	
+	var mode_switch_buttons = document.querySelectorAll(".identification-mode-label");
+
+	for (let m=0; m<mode_switch_buttons.length; m++){
+		let mode_button = mode_switch_buttons[m];
+		
+		mode_button.addEventListener("click", switch_mode);
+	}
 </script>

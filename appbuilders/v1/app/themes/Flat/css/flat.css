@@ -907,6 +907,7 @@ body {
 
 .nature-guide {
 	width: 100%;
+	background-color: rgb(250, 250, 250);
 }
 
 #nodes {
@@ -917,16 +918,18 @@ body {
 }
 
 #identification-matrix {
-	position: fixed;
-	left: 0; top: 2.5rem;/*appbar height*/ right: 0rem; bottom: 3rem; /* .footer height */
-	z-index: 75;
+	/*position: fixed;*/
+	/*left: 0;*/
+	/*top: 2.5rem;*//*appbar height*/
+	/*right: 0rem; bottom: 3rem;*/ /* .footer height */
+	/*z-index: 75;
 	overflow-y: auto;
-	background: rgba(0,0,0,0.7);
+	background: rgba(255,255,255,0.95);
 	-webkit-transition: -webkit-transform 0.5s;
     transition: transform 0.3s;
 	padding-left: .5rem;
 	padding-right: .5rem;
-	transform-style: preserve-3d;
+	transform-style: preserve-3d;*/
 }
 
 
@@ -934,11 +937,26 @@ body {
 	position: relative;
 	padding-left: .5rem;
 	padding-right: .5rem;
-	overflow-y: scroll;
+	/*overflow-y: scroll; */ /* this shows unwanted scrollbars on large screens */
 	background: rgba(250,250,250,1);
 }
 
-.matrix-hidden {
+#keynodes-page {
+	position: fixed;
+	left: 0;
+	top: 2.5rem;/*appbar height*/
+	right: 0rem; bottom: 3rem; /* .footer height */
+	z-index: 75;
+	overflow-y: auto;
+	background: rgba(255,255,255,0.95);
+	-webkit-transition: -webkit-transform 0.5s;
+    transition: transform 0.3s;
+	padding-left: 15px;
+	padding-right: 15px;
+	transform-style: preserve-3d;
+}
+
+.keynodes-hidden {
 	-webkit-transform: translate3d(0px, 115%, 0px);
     transform : tanslate3d(0px, 115%, 0px);
 }
@@ -957,6 +975,7 @@ body {
 
 .choiceBoxNew {
 	display: flex;
+	align-items: center;
 	background: #e0e0e0;
 	border-radius: .5em;
 	padding: .3rem;
@@ -1008,16 +1027,13 @@ body {
 	flex-wrap: wrap;
 	align-items: center;
 	flex-direction: row;
-	justify-content: flex-start;
+	justify-content: center;
 }
 
-.range-output {
-	width: 100%;
-}
-
-.clearable-range-slider {
+.range-container > div {
 	width: 70%;
 }
+
 
 .range-output {
 	text-align: center;
@@ -1642,18 +1658,30 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		height: 92vh;
 	}
 
-	.nature-guide > div {
-		width: 25%; /* ugly solution for hiding horizontal scrollbars */
-	}
+	/*.nature-guide > div { */
+		/*width: 25%;*/ /* ugly solution for hiding horizontal scrollbars */
+	/*}*/
 
 	#nodes {
 		padding-bottom: 0rem;
 	}
-	
+
 	#keynodes-page {
+		position: relative;
+		width: 25%;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		margin-top: 3.5rem;
+		margin-bottom: 3rem;
+		
+	}
+	
+	/*#keynodes-page {
 		overflow-y: scroll;
 		overflow-x : hidden;
-	}
+	}*/
 
 	#identification-matrix {
 		height: auto;
@@ -1662,7 +1690,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		padding-left: 0;
 		padding-right: 0;
 		position: relative;
-		color: rgba(255,255,255,1);
+		color: rgba(50,50,50,1);
 		overflow-y: scroll;
 	}
 
@@ -1672,7 +1700,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		padding-right: 0;
 	}
 
-	.matrix-hidden {
+	.keynodes-hidden {
 		-webkit-transform: none;
 		transform : none;
 	}

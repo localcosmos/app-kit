@@ -385,7 +385,8 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
     # node/restriction filter space as list
     def get_filter_space_as_list(self, filter_space):
         # range filter stores [min,max] as encoded space
-        return filter_space.encoded_space
+        # a list of spaces is expected, so wrap the rang ein a list
+        return [filter_space.encoded_space]
 
 
     def validate_encoded_space(self, space):
@@ -631,7 +632,10 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             encoded_space = space.encoded_space
 
             # r,g,b,a
-            choice_value = json.dumps(encoded_space)
+            # it should becomde something like [255,255,255,1], NOT [255, 255, 255, 1]
+            # spaces dhould be prevented because javascript JSON.stringify() does not use  spaces and values from
+            # javascript and python sometimes have to be comapred as strings
+            choice_value = json.dumps(encoded_space, separators=(',', ':'))
             space_html = self.encoded_space_to_html(encoded_space)
 
             extra_kwargs = {
@@ -1154,7 +1158,7 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
                 # "taxon_source": "taxonomy.sources.col", "taxon_latname": "Animalia", "taxon_author":None}],"latname": "Animalia",
                 # "is_custom": false}
 
-                taxonfilter_json = json.dumps(taxonfilter)
+                taxonfilter_json = json.dumps(taxonfilter, separators=(',', ':'))
                 
                 extra_kwargs = {
                     'image' : static('app_kit/buttons/taxonfilters/{0}.svg'.format(taxonfilter['latname']) ),
@@ -1286,7 +1290,56 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return {}
 
     def get_filter_space_as_list(self, filter_space):
-        raise NotImplementedError('TaxonFilter does not support encoded_space')
+        raise NotImplementedError('TaxonFilter does not support get_filter_space_as_list. Use get_space_for_node instead.')
+
+    # a node only provides the nuid, which is sufficient
+    '''
+    [{
+      "taxa": [
+        {
+          "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
+          "taxon_nuid": "006",
+          "taxon_author": null,
+          "taxon_source": "taxonomy.sources.col",
+          "taxon_latname": "Plantae"
+        },
+        {
+          "name_uuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
+          "taxon_nuid": "003",
+          "taxon_author": "admin",
+          "taxon_source": "taxonomy.sources.custom",
+          "taxon_latname": "Plantae"
+        }
+      ],
+      "latname": "Plantae",
+      "is_custom": false
+    }]
+    '''
+    # this is for making space_identifiers in javascript work
+    # you do not have to compare nuids during runtime, this can be done during the build process, or in the backend (appkit)
+    def get_space_for_node(self, node):
+
+        node_space = []
+        
+        if (node.meta_node.taxon):
+            node_taxon = node.meta_node.taxon
+            
+            if self.matrix_filter.encoded_space:
+
+                for taxon_filter in self.matrix_filter.encoded_space:
+
+                    is_valid = False
+
+                    for taxon in taxon_filter['taxa']:
+                    
+                        if node_taxon.taxon_source == taxon['taxon_source'] and node_taxon.taxon_nuid.startswith(taxon['taxon_nuid']):
+                            is_valid = True
+                            break
+
+                    if is_valid == True:
+                        node_space.append(taxon_filter)
+        
+        return node_space
 
     # taxon json
     #{"taxa": [{"taxon_nuid": "001", "name_uuid": "f61b30e9-90d3-4e87-9641-eee71506aada",

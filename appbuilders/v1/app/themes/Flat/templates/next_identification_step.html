@@ -1,0 +1,23 @@
+<div class="my-4">
+	{{tp 'Go to the next identification step'}}
+</div>
+<div>
+	<div class="row">
+		{{#each matrix_items }}
+			<div class="col-12 keynode">
+				<div class="choiceBoxNew tap nohighlight" link="{{link}}">
+					<div class="image"><img src="{{ image_url }}" class="img-fluid" /></div>
+					<div>
+						<div class="title">{{tp name }}</div>
+						<div><span>{{points_percentage}}% ({{points}}/{{max_points}})</span></div>
+					</div>
+				</div>
+			</div>
+		{{/each}}
+	</div>
+</div>
+<hr>
+
+<div class="dialogbox-bottom">
+	<button type="button" action="NextIdentificationStep.close" class="btn flat tap closeperm">{{tp 'CLOSE'}}</button>
+</div>

@@ -2,7 +2,10 @@
 	<div id="{{uuid}}" class="col-12 keynode">
 		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal node_type 'result'}}{{url ../result_action.action taxon.taxon_source taxon.name_uuid taxon.taxon_nuid taxon.taxon_latname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
 			<div class="image"><img src="{{ image_url }}" class="img-fluid" /></div>
-			<div class="title">{{tp name }}</div>
+			<div>
+				<div class="title">{{tp name }}</div>
+				<div><span id="{{uuid}}-points"></span></div>
+			</div>
 		</div>
 	</div>
 {{/each}}

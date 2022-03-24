@@ -3968,6 +3968,11 @@ var NatureGuideView = View(TemplateView, {
 
 	get : function(self, request, args, kwargs){
 
+		var keynodes = document.getElementById("keynodes-page");
+		if (keynodes != null){
+			ToggleMatrixItems.close(ToggleMatrixItems);
+		}
+
 		// pass to appheader
 		self.initial_kwargs["filter_available"] = false;
 
@@ -4035,6 +4040,8 @@ var NatureGuideView = View(TemplateView, {
 	/* the nodes are loaded after rendering the page */
 	post_render : function(self, args, kwargs){
 
+		ToggleMatrixItems.close(ToggleMatrixItems);
+
 		var uuid = kwargs["nature_guide_uuid"];
 
 		self._get_nature_guide(uuid, function(nature_guide){
@@ -4074,131 +4081,156 @@ var NatureGuideView = View(TemplateView, {
 
 	},
 
-	// maybe move this to identificationmatrix.js
-	_attach_matrix_filter_listeners : function(){
-		var self = this;
-		
-		// add listeners
-		var form = document.getElementById("matrix-filters-form");
+	_attach_identification_event_listeners : function (){
 
-		// RANGE SLIDERS
-		var ranges = form.querySelectorAll('input[type=range]');
+		var identificationForm = document.getElementById("matrix-filters-form");
+		var inputs = identificationForm.querySelectorAll('input[type=radio], input[type=checkbox]');
 
-		for (var r=0; r<ranges.length; r++){
-			var range = ranges[r];
+		for (let i=0; i<inputs.length; i++){
+			let input = inputs[i];
 
-			range.clear = function(){
+			// matrix items
+			input.addEventListener("turnedOn", function(event){
 
-				var uuid = this.getAttribute("data-uuid");
-
-				this.value = '';
+			
+			});
+			
+			// matrix items
+			input.addEventListener("turnedOff", function(event){
 				
-				// unit.style.display = "none";
-				var indicator = document.getElementById("output-" + uuid);
-				indicator.textContent = "off";
+			
+			});
+			
+			// strict mode
+			input.addEventListener("possible", function(event){
 
-				// triggering range.change would make the browser read the current position of the slider
-				// us custom clear event to avoid this
-				var range_value = document.getElementById(uuid + "_range_value");
-				range_value.value = '';
-
-				var unit = document.getElementById(uuid + "_unit");
-
-				unit.style.display = "none";
-			};
-
-			range.addEventListener("input", function(event){
-
-				var uuid = event.currentTarget.getAttribute("data-uuid");
-				var output = document.getElementById("output-" + uuid);
-				output.textContent = event.currentTarget.value;
-
-				var unit = document.getElementById(uuid + "_unit");
-
-				if (unit.style.display != ""){
-					unit.style.display = "";
+				
+				let input = event.currentTarget;
+			
+				if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+				}
+				else {
+					input.parentElement.classList.remove("matrix-filter-inactive");
 				}
 
 			});
+			
+			// strict mode
+			input.addEventListener("impossible", function(event){
+				
+				let input = event.currentTarget;
+			
+				if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+				}
+				else {
+					input.parentElement.classList.add("matrix-filter-inactive");
+				}
 
-			range.addEventListener("change", function(event){
-				var value = document.getElementById(event.currentTarget.id + "_value");
-				value.value = event.currentTarget.value
+			});
+		}
+
+		var range_inputs = identificationForm.querySelectorAll('input[type=range]');
+
+		function onClear(event){
+			let matrix_filter_uuid = event.currentTarget.getAttribute("data-uuid");
+			let slider = document.getElementById(matrix_filter_uuid + "_range");
+			let unit_and_clear_button_container = document.getElementById(matrix_filter_uuid + "-onactive");
+
+			unit_and_clear_button_container.style.display = "none";
+
+			let value_container = document.getElementById("output-" + matrix_filter_uuid);
+			value_container.textContent = "off";
+
+			slider.value = "";
+
+			
+		}
+	
+		for (let r=0; r<range_inputs.length; r++){
+			let range_input = range_inputs[r];
+
+			let matrix_filter_uuid = range_input.name;
+
+			let clear_button = document.getElementById(matrix_filter_uuid + "-clearbtn");
+
+			clear_button.addEventListener("click", function(event){
+				onClear(event);
+
+				let matrix_filter_uuid = event.currentTarget.getAttribute("data-uuid");
+				let slider = document.getElementById(matrix_filter_uuid + "_range");
+				let clear_event = new Event("clear");
+				slider.dispatchEvent(clear_event);
 			});
 
-			// fix ios safari scroll on range bug
-			// this would break windows
-			var isSafari = navigator.vendor && navigator.vendor.indexOf('Apple') > -1 && navigator.userAgent && !navigator.userAgent.match('CriOS');
-			if (device.platform == "iOS" || isSafari == true){
-				range.addEventListener("touchstart", function(event){
-					document.getElementById("identification-matrix").style.overflowY = "hidden";
-				});
-				range.addEventListener("touchend", function(event){
-					document.getElementById("identification-matrix").style.overflowY = "auto";
-				});
+			range_input.addEventListener("input", function(event){
+
+				let matrix_filter_uuid = event.currentTarget.name;
+
+				let unit_and_clear_button_container = document.getElementById(matrix_filter_uuid + "-onactive");
+				unit_and_clear_button_container.style.display = "";
+
+				let value_container = document.getElementById("output-" + matrix_filter_uuid);
+				value_container.textContent = event.currentTarget.value;
+						
+			});
+
+			range_input.addEventListener("turnedOff", onClear);
+
+		}
+
+		// RESTRICTIONS
+		identificationForm.addEventListener("activate-matrix-filter", function(event){
+
+			let matrix_filter = event.detail.matrix_filter;
+			let container = document.getElementById(matrix_filter.uuid);
+			container.classList.remove("restriction-active");
+
+		});
+		
+		identificationForm.addEventListener("deactivate-matrix-filter", function(event){
+
+			let matrix_filter = event.detail.matrix_filter;
+			let container = document.getElementById(matrix_filter.uuid);
+			container.classList.add("restriction-active");
+			
+		});
+
+		// FLUID MODE
+		identificationForm.addEventListener("update-matrix-item", function(event){
+
+			let matrix_item = event.detail.matrix_item;
+			
+			let matrix_item_element = document.getElementById(matrix_item.uuid);
+
+			matrix_item_element.style.order = matrix_item.points * (-1);
+			
+			// update point percentage
+			let points_span = document.getElementById(matrix_item.uuid + "-points");
+			if (matrix_item.points > 0){
+				points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.max_points + ")";
+			}
+			else {
+				points_span.textContent = "";
+			}
+			
+		});
+
+		function onFinishedIdentificationStep(event){
+			  
+			var mqList = window.matchMedia("(min-width: 768px)");
+			if (mqList.matches == true){
+				HttpResponseRedirect(reverse("next_identification_step"));
+			}
+			else {
+				ToggleMatrixItems.open(ToggleMatrixItems);
 			}
 		}
 
-		// attach clear buttons
-		var clear_range = function(event){
-			var uuid = this.getAttribute("data-uuid");
-			var range = document.getElementById(uuid + "_range");
+		identificationForm.addEventListener("matrix-item-100-percent", onFinishedIdentificationStep);
 
-			range.clear();
+		identificationForm.addEventListener("identification-finished", onFinishedIdentificationStep);
 
-			var clear_event = new CustomEvent("clear", {
-			  detail: {}
-			});
-			range.dispatchEvent(clear_event);
-
-			this.blur();
-		}
-
-		var clear_buttons = form.querySelectorAll('.clearrangebtn');
-
-		for (var b=0; b<clear_buttons.length; b++){
-			var clear_button = clear_buttons[b];
-			clear_button.addEventListener('click', clear_range);
-		}
-
-
-		// HORIZONTAL SLIDERS
-		var sliders = form.querySelectorAll('.horizontal-slide');
-		for (var s=0; s<sliders.length; s++){
-			var slider = sliders[s];
-			//horizontal_slider(slider.firstElementChild);
-
-			var radios = slider.querySelectorAll('input[type="radio"]');
-
-			for (var r=0; r< radios.length; r++){
-				var radio = radios[r];
-
-				radio.addEventListener('click', function(event){
-
-					var uuid = event.target.getAttribute("name");
-					var _slider = document.getElementById(uuid);
-					
-					var current_selection = _slider.getAttribute("current-selection");
-
-					if (current_selection == event.target.id){
-						event.target.checked = false;
-						_slider.setAttribute("current-selection", "");
-						
-						// unchecking a radio via js does not trigger change event
-						var change_event = new CustomEvent("change", {
-						  detail: {}
-						});
-						event.target.dispatchEvent(change_event);
-
-					}
-					else {	
-						_slider.setAttribute("current-selection", event.target.id);
-					}
-
-				});
-			} 
-
-		}
+		
 	},
 
 	post_finished : function(args, kwargs){
@@ -4212,24 +4244,125 @@ var NatureGuideView = View(TemplateView, {
 
 			if (Object.keys(self.current_node.matrix_filters).length > 0){
 
-				self._attach_matrix_filter_listeners();
+				//self._attach_matrix_filter_listeners();
 
 				var data = {
 					"items" : self.current_node.children,
 					"matrix_filters" : self.current_node.matrix_filters
 				};
 
+				var options = {
+					"mode" : self.current_node.identification_mode
+				};
+
+
 				function get_items(callback){
 					callback(data);
 				}
 
-				app.identification = IdentificationMatrix.create('matrix-filters-form', get_items);
+				if (app.identification != null){
+					app.identification.destroy();
+				}
+
+				app.identification = new IdentificationMatrix('matrix-filters-form', get_items, options);
+
+				self._attach_identification_event_listeners();
 			}
 		});
 
 	}
 
 });
+
+
+var NextIdentificationStep = View(TemplateView, {
+
+	"identifier" : "NextIdentificationStep",
+	
+	template_name : "themes/" + settings.THEME + "/templates/next_identification_step.html",
+
+
+	modal_title : function(self){
+		return _("Next step");
+	},
+
+	get_context_data : function(self, kwargs){
+
+		var return_result_length = 3;
+
+		// top 3 results, sorted from high to low
+		var matrix_items_sorted = [];
+
+		for (let matrix_item_uuid in MATRIX_ITEMS){
+			let matrix_item = MATRIX_ITEMS[matrix_item_uuid];
+			if (matrix_items_sorted.length == 0){
+				matrix_items_sorted.push(matrix_item);
+			}
+			else {
+
+				let is_inserted = false;
+
+				for (let i=0; i<matrix_items_sorted.length; i++){
+					let sorted_matrix_item = matrix_items_sorted[i];
+					if (matrix_item.points_percentage > sorted_matrix_item.points_percentage){
+						// insert BEFORE sorted_matrix_item
+						matrix_items_sorted.splice(i, 0, matrix_item);
+						is_inserted = true;
+						break;
+					}
+				}
+
+				if (is_inserted == false){
+					matrix_items_sorted.push(matrix_item);
+				}
+			}
+		}
+
+		var top_matrix_items = [];
+
+		for (let i=0; i < matrix_items_sorted.length; i++){
+
+			let matrix_item = matrix_items_sorted[i];
+
+			if (top_matrix_items.length < return_result_length){
+
+				let nature_guide_item = app.identification.get_nature_guide_item(matrix_item.uuid);
+
+				if (nature_guide_item == null){
+					throw new Error("Could not find nature_guide_item for matrix_item " + matrix_item.name);
+				}
+				else {
+					nature_guide_item = JSON.parse(JSON.stringify(nature_guide_item));
+
+					let node = document.getElementById(nature_guide_item.uuid);
+					nature_guide_item.link = node.firstElementChild.getAttribute("link");
+
+					nature_guide_item.points = matrix_item.points;
+					nature_guide_item.max_points = matrix_item.max_points;
+					nature_guide_item.points_percentage = parseInt(matrix_item.points_percentage*100);
+
+					top_matrix_items.push(nature_guide_item);
+				}
+			}
+			else {
+				break;
+			}
+		}
+
+		var context = {
+			'matrix_items' : top_matrix_items
+		};
+
+		return context;
+
+	},
+
+	close : function(self, args, kwargs){
+		modalDialog._close();
+	}
+
+
+}, ModalView)
 
 
 var ThemeTextView = View(TemplateView, {
@@ -4342,28 +4475,32 @@ var Sidemenu = View(OverlayView, {
 
 });
 
-var ToggleMatrixFilters = View(OverlayView, {
+var ToggleMatrixItems = View(OverlayView, {
 
-	identifier : "ToggleMatrixFilters",
+	identifier : "ToggleMatrixItems",
+
+	toggle_element_id : "keynodes-page",
+
+	toggle_class : "keynodes-hidden",
 
 	open : function(self){
 
-		var filters = document.getElementById("identification-matrix");
-		filters.classList.remove("matrix-hidden");
+		var filters = document.getElementById(this.toggle_element_id);
+		filters.classList.remove(this.toggle_class);
 
 		filters.scrollTo(0,0);
 
 		document.body.classList.add("modal-open");
-		ToggleMatrixFilters.super().open(self);
+		ToggleMatrixItems.super().open(self);
 
 	},
 	close : function(){
 
-		var filters = document.getElementById("identification-matrix");
-		filters.classList.add("matrix-hidden");
+		var filters = document.getElementById(this.toggle_element_id);
+		filters.classList.add(this.toggle_class);
 
 		document.body.classList.remove("modal-open");
-		ToggleMatrixFilters.super().close();
+		ToggleMatrixItems.super().close();
 	},
 
 	toggle : function(self, request, args, kwargs){
@@ -4372,9 +4509,9 @@ var ToggleMatrixFilters = View(OverlayView, {
 			var self = Object.create(this);
 		}
 
-		var filters = document.getElementById("identification-matrix");
+		var filters = document.getElementById(this.toggle_element_id);
 
-		if (filters.classList.contains("matrix-hidden")){
+		if (filters.classList.contains(this.toggle_class)){
 			self.open(self);
 		}
 		else {

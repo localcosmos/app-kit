@@ -28,6 +28,7 @@ var urlpatterns = urlpatterns.concat([
 	path("switch-buttonmatrix/", SwitchButtonMatrix.as_view(), {"name" : "switch_buttonmatrix"}),
 	path("nature-guide/<uuid:nature_guide_uuid>/", NatureGuideView.as_view(), {"name" : "nature_guide"}),
 	path("nature-guide/<uuid:nature_guide_uuid>/<uuid:node_uuid>/", NatureGuideView.as_view(), {"name" : "nature_guide"}),
+	path("next-identification-step/", NextIdentificationStep.as_view(), {"name" : "next_identification_step" }),
 	//path("nature-guide/<uuid:natureguide_uuid>/<str:letter>/", NatureGuideView.as_view(), {"name" : "nature_guide"}),
 	path("toggle/<str:element_id>/", Toggle.as_view(), {"name" : "toggle"}),
 	path("online-content/<str:slug>/", OnlineContentView.as_view(), {"name" : "online_content"}),

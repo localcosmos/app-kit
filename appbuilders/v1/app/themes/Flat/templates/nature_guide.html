@@ -1,12 +1,11 @@
-<!-- identification-matrix may not be inside page. the transition/transform of the page relates position:fixed to page container instead of viewport-->
 <div id="nature-guide" class="nature-guide">
 	
 	{{#if node.matrix_filters}}
-		<div id="identification-matrix" class="matrix-hidden p-2">
+		<div id="identification-matrix" class="page pb-5">
 			<div>
 				<form id="matrix-filters-form">
-					<div class="d-none d-md-block mb-3">
-						<button type="button" class="btn btn-light tap" action="reset_matrix_filters"><i class="restart-button">&nbsp;</i> {{t 'restart'}}</button>
+					<div class="d-none d-md-block my-3">
+						<button type="button" class="btn btn-secondary tap" action="reset_matrix_filters"><i class="restart-button">&nbsp;</i> {{t 'restart'}}</button>
 					</div>
 
 					{{#each node.matrix_filters}}
@@ -20,7 +19,7 @@
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{encoded_space}}" type="{{#if ../definition.allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 												<label for="{{../uuid}}-{{encoded_space}}" class="text-center">
 													<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
 													<div class="slide-element-text">{{tp encoded_space}}</div>
@@ -35,7 +34,7 @@
 									<div class="stretch">
 										{{#each space}}
 											<div class="text-only">
-												<input id="{{../uuid}}-{{encoded_space}}" type="{{#if ../definition.allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 												<div>
 													<div class="slide-element-text">{{t encoded_space}}</div>
 													<div>
@@ -50,13 +49,13 @@
 								</div>
 							{{/ifequal}}
 							{{#ifequal type 'ColorFilter'}}
-								<div class="horizontal-slide large">
+								<div class="horizontal-slide">
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{@index}}" type="{{#if ../definition.allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{stringify encoded_space }}" data-value="{{stringify encoded_space }}" />
+												<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encoded_space }}" data-value="{{stringify encoded_space }}" />
 												<label for="{{../uuid}}-{{@index}}" class="text-center">
-													<div class="square responsiveback border-black" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
+													<div class="square responsiveback" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
 													{{#if description}}
 														<div>
 															{{ description }}
@@ -72,18 +71,30 @@
 								<div class="range-container mb-4">
 
 									<div class="range-output mb-2">
-										<span id="output-{{uuid}}">off</span> <span id="{{uuid}}_unit" style="display:none;">{{#if definition.unit}}{{definition.unit}}{{/if}}</span>
+										<div class="row justify-content-center">
+											<div class="col-8 col-md-10">
+												<span id="output-{{uuid}}">off</span> <span id="{{uuid}}_unit" style="display:none;">{{#if definition.unit}}{{definition.unit}}{{/if}}</span>
+												<span id="{{uuid}}-onactive" style="display:none;">
+													{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
+													<button id="{{uuid}}-clearbtn" data-uuid="{{uuid}}" type="button" class="btn btn-outline-secondary btn-sm clearrangebtn">{{t 'clear'}}</button>
+												</span>
+											</div>
+										</div>
 									</div>
 
-									<div class="clearable-range-unit">
-										{{#if definition.unit}}{{definition.unit}}{{/if}}
-									</div>
 									<div class="clearable-range-slider">
-										<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}_verbose" min="{{space.[0]}}" max="{{space.[1]}}" />
-										<input id="{{uuid}}_range_value" type="hidden" name="{{uuid}}" />
-									</div>
-									<div class="clearable-range-clear">
-										<button data-uuid="{{uuid}}" type="button" class="btn btn-outline-secondary btn-sm clearrangebtn">{{t 'clear'}}</button>
+										<div class="row">
+											<div>
+												{{space.[0]}}
+											</div>
+											<div class="col-6 col-md-8 col-lg-10">
+												<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{space.[0]}}" max="{{space.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
+											</div>
+											<div class="col-3 col-md-2 col-lg-1">
+												{{space.[1]}}
+											</div>
+										</div>
+										
 									</div>
 
 								</div>
@@ -93,7 +104,7 @@
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{this}}" type="{{#if ../definition.allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{ this }}" data-value="{{this}}" />
+												<input id="{{../uuid}}-{{this}}" type="checkbox" name="{{../uuid}}" value="{{ this }}" data-value="{{this}}" />
 												<label for="{{../uuid}}-{{this}}" class="text-center">
 													<div class="square responsiveback numbercontainer">
 														<span>{{this}}</span>
@@ -109,7 +120,7 @@
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{latname}}" type="{{#if ../definition.allow_multiple_values }}checkbox{{else}}radio{{/if}}" name="{{../uuid}}" value="{{encoded}}" data-value="{{encoded}}" />
+												<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 												<label for="{{../uuid}}-{{latname}}" class="text-center">
 													<div class="square responsiveback contain taxonfilter" {{#if is_custom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
 														<div>{{#if is_custom}}{{short_name}}{{/if}}</div>
@@ -128,7 +139,7 @@
 		</div>
 	{{/if}}
 
-	<div id="keynodes-page" class="page">
+	<div id="keynodes-page" class="keynodes-hidden">
 		<div id="keynodes" class="row flex-column no-gutters justify-content-center">
 
 			<div class="text-loader">...{{tp 'Loading'}}...</div>
@@ -149,13 +160,13 @@
 </div>
 {{#if node.matrix_filters}}
 	<div class="footer d-md-none">
-		<div class="tap text-center" action="ToggleMatrixFilters.toggle">
+		<div class="tap text-center" action="ToggleMatrixItems.toggle">
 			<div class="footer-icon"><img src="img/identify-icon.svg" /></div>
-			<div>{{tp 'identify'}}</div>
-		</div>
-		<div class="tap text-center" action="ToggleMatrixFilters.close">
-			<div class="children-count text-danger">{{ node.children_count }}</div>
 			<div>{{tp 'results'}}</div>
+		</div>
+		<div class="text-center"><!-- action="ToggleMatrixItems.close"> -->
+			<!--<div class="children-count text-danger">{{ node.children_count }}</div>
+			<div>{{tp 'results'}}</div>-->
 		</div>
 		<div class="tap text-center" action="reset_matrix_filters">
 			<div class="footer-icon"><img src="img/restart.svg" /></div>

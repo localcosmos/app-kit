@@ -62,4 +62,7 @@ urlpatterns = [
     # matrix filter restrictions
     path('manage-matrix-filter-restrictions/<int:meta_node_id>/<int:matrix_filter_id>',
          views.ManageMatrixFilterRestrictions.as_view(), name='manage_matrix_filter_restrictions'),
+    # identificatoin mode
+    path('set-identification-mode/<int:meta_node_id>/<str:identification_mode>/',
+         views.StoreIdentificationMode.as_view(), name='store_identification_mode'),
 ]

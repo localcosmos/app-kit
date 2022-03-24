@@ -11,6 +11,7 @@
 	display: flex;
 	flex-wrap: nowrap;
 	overflow-x: auto;
+	gap: .5rem;
 }
 
 .horizontal-slide > div.stretch {
@@ -63,7 +64,7 @@
 
 .horizontal-slide .text-only > div {
 	padding: 0.3rem 0.3rem 0rem 0.3rem;
-	background: rgba(255,255,255,1);
+	background-color: rgba(224,224,224,0.8);
 	color: rgb(50,50,50);
 	height: 100%;
 	border-radius: .3rem;
@@ -123,12 +124,14 @@
 .horizontal-slide input[type='checkbox'] + label, .horizontal-slide input[type='radio'] + label {
 	display: block;
 	padding: 0.3rem;
+	border-radius: .5em;
+	background-color: rgba(224,224,224,0.8);
 }
 
 .horizontal-slide input[type='checkbox']:checked + label, .horizontal-slide input[type='radio']:checked + label {
 	background-color: rgb(92,184,92);
-	-webkit-border-radius: 0.15rem;
-	border-radius: 0.15rem;
+	-webkit-border-radius: 0.5rem;
+	border-radius: 0.5rem;
 }
 
 .horizontal-slide label {

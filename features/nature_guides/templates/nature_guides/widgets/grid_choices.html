@@ -9,7 +9,7 @@
 				<div {% block grid_choice_class %}class="grid-choice"{% endblock %}>
 					<div>
 						{% block input %}
-							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="space_{{ option.space_id }}" />
+							<input id="choice_{{ widget.name }}_{{ option.index }}" type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="space_{{ option.space_id }}" />
 						{% endblock %}
 						{% block label %}
 							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
@@ -48,28 +48,6 @@
 	{% else %}
 		(function(){
 			var container = document.getElementById('{{ widget.attrs.id }}');
-			var radios = container.getElementsByTagName('input');
-
-			var current_selection = null;
-
-			var change_event = new CustomEvent("change", {
-			  detail: {}
-			});
-
-			for (var r=0; r< radios.length; r++){
-				var radio = radios[r];
-
-				radio.addEventListener('click', function(event){
-					if (current_selection == event.target.value){
-						event.target.checked = false;
-						current_selection = null;
-						event.target.dispatchEvent(change_event);
-					}
-					else {
-						current_selection = event.target.value;
-					}
-				});
-			}
 			
 			// enable drag and drop
 			var sortable = Sortable.create(container, {

@@ -13,6 +13,9 @@
 					{% endif %} {% if not node.is_active %}&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>{% endif %}
 				</div>
 				<div class="col-12">
+					<span id="{{ node.name_uuid }}-points"></span>
+				</div>
+				<div class="col-12">
 					<div class="btn-group dropup">
 						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuForNode-{{ node.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 							{% trans 'Modify' %}
