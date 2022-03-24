@@ -4987,7 +4987,7 @@ var glossary = function(self, request, args, kwargs){
 
 				var hide_popover = function(event){
 					element.popover("hide");
-					event.target.removeEventListener(event_handler, arguments.callee);
+					event.target.removeEventListener(event_handler, hide_popover); //arguments.callee); use hide_popover instead of arguments.callee, which is forbidden in strict mode
 				};
 
 				document.addEventListener(event_handler, hide_popover);
