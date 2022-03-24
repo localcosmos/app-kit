@@ -4216,7 +4216,7 @@ var NatureGuideView = View(TemplateView, {
 		});
 
 		function onFinishedIdentificationStep(event){
-			  
+			
 			var mqList = window.matchMedia("(min-width: 768px)");
 			if (mqList.matches == true){
 				HttpResponseRedirect(reverse("next_identification_step"));
@@ -4486,13 +4486,15 @@ var ToggleMatrixItems = View(OverlayView, {
 	open : function(self){
 
 		var filters = document.getElementById(this.toggle_element_id);
-		filters.classList.remove(this.toggle_class);
 
-		filters.scrollTo(0,0);
+		if (filters.classList.contains(this.toggle_class)){
+			filters.classList.remove(this.toggle_class);
 
-		document.body.classList.add("modal-open");
-		ToggleMatrixItems.super().open(self);
+			filters.scrollTo(0,0);
 
+			document.body.classList.add("modal-open");
+			ToggleMatrixItems.super().open(self);
+		}
 	},
 	close : function(){
 
