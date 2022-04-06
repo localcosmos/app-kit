@@ -19,7 +19,7 @@
 									<div class="row">
 
 										{{#each space}}
-											<div class="col-4 col-md-3 col-lg-3 col-xl-2">
+											<div class="col-4 col-md-3 col-lg-3 col-xl-2 mb-3">
 												<div class="trait-property">
 													<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 													<label for="{{../uuid}}-{{encoded_space}}" class="text-center">
@@ -37,7 +37,7 @@
 								<div class="container-fluid">
 									<div class="row align-items-stretch">
 										{{#each space}}
-											<div class="col-6 col-lg-4 col-xl-3">
+											<div class="col-6 col-lg-4 col-xl-2 mb-3">
 
 												<div class="trait-property text-only">
 													<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
@@ -60,7 +60,7 @@
 									<div class="row">
 
 										{{#each space}}
-											<div class="col-4 col-md-3 col-lg-2 col-xl-2">
+											<div class="col-4 col-md-3 col-lg-2 col-xl-2 mb-3">
 												<div class="trait-property">
 													<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encoded_space }}" data-value="{{stringify encoded_space }}" />
 													<label for="{{../uuid}}-{{@index}}" class="text-center">
@@ -115,7 +115,7 @@
 									<div class="row">
 
 										{{#each space}}
-											<div class="col-3 col-lg-2 col-xl-1">
+											<div class="col-3 col-lg-2 col-xl-1 mb-3">
 												<div class="trait-property">
 													<input id="{{../uuid}}-{{this}}" type="checkbox" name="{{../uuid}}" value="{{ this }}" data-value="{{this}}" />
 													<label for="{{../uuid}}-{{this}}" class="text-center">
@@ -135,7 +135,7 @@
 									<div class="row">
 										
 										{{#each space}}
-											<div class="col-4 col-md-3 col-lg-2 col-xl-1">
+											<div class="col-4 col-md-3 col-lg-2 col-xl-1 mb-3">
 												<div class="trait-property">
 													<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 													<label for="{{../uuid}}-{{latname}}" class="text-center">
