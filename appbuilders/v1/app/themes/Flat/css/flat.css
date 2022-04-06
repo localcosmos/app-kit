@@ -1424,12 +1424,6 @@ input[type=range]::-moz-range-track {
 	background-color: rgb(92,184,92);
 }
 
-.trait-property-text {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
 .trait-property-text > p {
 	margin:0;
 	padding-top: .3rem;
