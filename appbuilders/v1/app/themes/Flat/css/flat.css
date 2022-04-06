@@ -1394,6 +1394,112 @@ input[type=range]::-moz-range-track {
 	display: none;
 }
 
+
+/*
+*	TRAITS
+*/
+
+.trait-property {
+	width: 100%;
+}
+
+.trait-property, .trait-property * {
+	cursor: pointer;
+}
+
+.trait-property label {
+	width: 100%;
+	display: inline-block;
+	border-radius: .5em;
+	background-color: rgba(234,234,234,1);
+	color: rgb(50,50,50);
+	padding: .3rem;
+}
+
+.trait-property input[type='checkbox'], .trait-property input[type='radio'] {
+	display: none;
+}
+
+.trait-property input[type='checkbox']:checked + label, .trait-property input[type='radio']:checked + label {
+	background-color: rgb(92,184,92);
+}
+
+.trait-property-text {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.trait-property-text > p {
+	margin:0;
+	padding-top: .3rem;
+	padding-bottom: .3rem;
+}
+
+.trait-property-text {
+	font-weight: normal;
+	font-size: 0.9rem;
+	min-height: 2rem;
+}
+
+/* text only */
+.trait-property.text-only {
+	height: 100%;
+}
+
+.trait-property.text-only > div {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	border-radius: .5em;
+	background-color: rgba(234,234,234,1);
+	color: rgb(50,50,50);
+	padding: .3rem;
+}
+
+.trait-property.text-only > input:checked + div {
+	background-color: rgb(92,184,92);
+}
+
+.trait-property.text-only > input:checked + div > div > label {
+	background-image: url(../../../img/checkbox-on.svg);
+	background-color: rgb(92,184,92);
+}
+
+.trait-property.text-only .trait-property-text {
+	flex-grow: 1;
+	background-color: #e0e0e0;
+	color: #646464;
+	padding: .5rem;
+}
+
+.trait-property.text-only .trait-property-text, .trait-property.text-only .trait-property-text * {
+	cursor: auto;
+}
+
+.trait-property-indicator {
+	display: block;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0.3rem;
+	background-image: url(../../../img/checkbox-off.svg);
+	background-repeat: no-repeat;
+	background-size:contain;
+	background-position: center center;
+	margin-top: .3rem;
+}
+
+.trait-property-indicator img {
+	height: 2rem;
+	width: auto;
+}
+
+.trait-property.text-only label {
+	background-color: rgba(234,234,234,1);
+}
+
+
 @-webkit-keyframes sk-scaleout {
   0% { -webkit-transform: scale(0) }
   100% {
