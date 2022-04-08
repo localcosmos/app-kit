@@ -94,51 +94,117 @@
 		<div class="container-fluid translucent dark py-3">
 			<div class="container">
 				<div class="row mt-3">
-					<div class="col-12">
+					<div class="col-12 mb-4">
 						<h4>{{tp 'Traits'}}</h4>
 					</div>
 					<div class="col-12">
 						<div class="row">
 							{{#each taxon_profile.traits}}
 								{{#if values}}
-									<div class="col-6 col-md-4 col-lg-2 text-center mb-5">
-										<div class="taxon-profile-trait-text"><strong>{{t matrix_filter.name}}</strong></div>
-										{{#if matrix_filter.is_multispace}}
-											{{#each values}}
-												{{#ifequal ../matrix_filter.filter_type 'ColorFilter'}}
-													<div class="taxon-profile-trait-color" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}>&nbsp;</div>
-													{{#if description}}
-														<div class="mb-2">
-															<small>{{ description }}</small>
+									<div class="col-6 col-md-4 mb-5 taxon-profile-traits-container">
+										<h5>{{t matrix_filter.name}}</h5>
+										
+										{{#ifequal matrix_filter.filter_type 'ColorFilter'}}
+											<div class="row">
+												{{#each values}}
+													<div class="col-12 col-md-6">
+														<div class="trait-property">
+															<label class="text-center">
+																<div class="square responsiveback" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
+																{{#if description}}
+																	<div>
+																		{{ description }}
+																	</div>
+																{{/if}}
+															</label>
 														</div>
-													{{/if}}
-												{{/ifequal}}
-												{{#ifequal ../matrix_filter.filter_type 'DescriptiveTextAndImagesFilter'}}
-													<div class="text-center">
-														<img src="{{ image_url }}" class="taxon-profile-trait-image" />
 													</div>
-													<div class="text-center taxon-profile-trait-text">
-														{{tp encoded_space}}
+												{{/each}}
+											</div>
+										{{/ifequal}}
+										{{#ifequal matrix_filter.filter_type 'DescriptiveTextAndImagesFilter'}}
+											<div class="row">
+												{{#each values}}
+													<div class="col-12 col-md-6">
+														<div class="trait-property">
+															<label class="text-center">
+																<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
+																<div class="trait-property-text">{{tp encoded_space}}</div>
+															</label>
+														</div>
 													</div>
-												{{/ifequal}}
-												{{#ifequal ../matrix_filter.filter_type 'TextOnlyFilter'}}
-													<div class="text-center taxon-profile-trait-text">
-														{{t encoded_space}}
+												{{/each}}
+											</div>
+										{{/ifequal}}
+										{{#ifequal matrix_filter.filter_type 'TextOnlyFilter'}}
+											<div class="row">
+												{{#each values}}
+													<div class="col-12">
+														<div class="trait-property text-only">
+															<div>
+																<div class="trait-property-text">{{t encoded_space}}</div>
+															</div>
+														</div>
 													</div>
-												{{/ifequal}}
-											{{/each}}
-										{{else}}
-											{{#ifequal matrix_filter.filter_type 'RangeFilter'}}
-												<div>
-													{{values.[0]}}{{matrix_filter.definition.unit}} - {{values.[1]}}{{matrix_filter.definition.unit}}
+												{{/each}}
+											</div>
+										{{/ifequal}}
+										{{#ifequal matrix_filter.filter_type 'RangeFilter'}}
+											<div class="row">
+												<div class="col-12">
+													<div class="range-display">
+														<div class="range-display-min">
+															{{ values.[0] }}
+															{{#if matrix_filter.definition.unit }}
+																{{ matrix_filter.definition.unit }}
+															{{/if}}
+														</div>
+														<div class="range-display-bar">
+
+														</div>
+														<div class="range-display-max">
+															{{ values.[1] }}
+															{{#if matrix_filter.definition.unit }}
+																{{ matrix_filter.definition.unit }}
+															{{/if}}
+														</div>
+													</div>
+													 
 												</div>
-											{{/ifequal}}
-											{{#ifequal matrix_filter.filter_type 'NumberFilter'}}
-												<div>
-													{{#each values}}{{this}}, {{/each}}
-												</div>
-											{{/ifequal}}
-										{{/if}}
+											</div>
+										{{/ifequal}}
+										{{#ifequal matrix_filter.filter_type 'NumberFilter'}}
+											<div class="row">
+												{{#each values}}
+													<div class="col-6 col-md-4">
+														<div class="trait-property">
+															<label class="text-center">
+																<div class="square responsiveback numbercontainer">
+																	<span>{{this}}</span>
+																</div>
+															</label>
+														</div>
+													</div>
+												{{/each}}
+											</div>
+										{{/ifequal}}
+
+										{{#ifequal matrix_filter.filter_type 'TaxonFilter'}}
+											<div class="row">
+												{{#each values}}
+													<div class="col-6 col-md-4">
+														<div class="trait-property">
+															<label class="text-center">
+																<div class="square responsiveback numbercontainer">
+																	<span>{{this}}</span>
+																</div>
+															</label>
+														</div>
+													</div>
+												{{/each}}
+											</div>
+										{{/ifequal}}
+										
 									</div>
 								{{/if}}
 							{{/each }}

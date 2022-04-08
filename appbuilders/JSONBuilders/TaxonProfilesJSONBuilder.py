@@ -202,11 +202,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # collect all traits of all parent nuids
         parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
         for parent in parents:
-            if parent.parent:
-                parent_node_traits = self.collect_node_traits(parent)
-                for parent_node_trait in parent_node_traits:
-                    
-                    taxon_profile['traits'].append(parent_node_trait)
+
+            # respect NatureGuidesTaxonTree.additional_data['is_active'] == True
+            if parent.additional_data and parent.additional_data.get('is_active', False) == True:
+                if parent.parent:
+                    parent_node_traits = self.collect_node_traits(parent)
+                    for parent_node_trait in parent_node_traits:
+                        
+                        taxon_profile['traits'].append(parent_node_trait)
                 
 
         # get taxonomic images
