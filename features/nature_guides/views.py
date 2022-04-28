@@ -1265,7 +1265,7 @@ class CopyTreeBranch(MetaAppMixin, FormView):
 
     def copy_content_image(self, content_image, new_object):
 
-        copy_fields = ['image_store', 'crop_parameters', 'content_type', 'image_type', 'position',
+        copy_fields = ['image_store', 'crop_parameters', 'features', 'content_type', 'image_type', 'position',
                        'is_primary', 'text']
 
         overwrite_values = {

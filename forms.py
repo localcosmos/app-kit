@@ -15,7 +15,7 @@ from .models import MetaAppGenericContent
 from .generic import LocalizeableImage
 
 from localcosmos_server.widgets import (CropImageInput, ImageInputWithPreview, AjaxFileInput,
-                                        TwoStepDiskFileInput)
+                                        TwoStepDiskFileInput, HiddenJSONInput)
 from localcosmos_server.forms import LocalizeableForm
 from localcosmos_server.models import App
 
@@ -118,9 +118,14 @@ from content_licencing.mixins import LicencingFormMixin, OptionalLicencingFormMi
     A form with a required, licenced ContentImage
 '''
 class ManageContentImageForm(ManageContentImageFormCommon, LicencingFormMixin):
+
+    allow_features = True
     
     # cropping
     crop_parameters = forms.CharField(widget=forms.HiddenInput)
+
+    # features like arrows
+    features = forms.CharField(widget=forms.HiddenInput, required=False)
 
     # image_type
     image_type = forms.CharField(widget=forms.HiddenInput, required=False)
@@ -148,8 +153,13 @@ class ManageContentImageWithTextForm(ManageContentImageForm):
 '''
 class OptionalContentImageForm(ManageContentImageFormCommon, OptionalLicencingFormMixin):
 
+    allow_features = True
+
     # cropping
     crop_parameters = forms.CharField(widget=forms.HiddenInput, required=False)
+
+    # features like arrows
+    features = forms.CharField(widget=HiddenJSONInput, required=False)
 
     # image_type
     image_type = forms.CharField(widget=forms.HiddenInput, required=False)

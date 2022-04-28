@@ -336,6 +336,7 @@ class MatrixFilterSpace {
       }
       self.on_change(event);
     });
+
   }
 
   get_input_element () {
@@ -378,6 +379,7 @@ class MatrixFilterSpace {
   // BOTH:
   //  - all MatrixFilters listed in this.restricts are informed
   activate() {
+
     console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being activated.");
 
     this.status = STATUS_ACTIVE; 
@@ -415,7 +417,12 @@ class MatrixFilterSpace {
         }
       }
     }
+
+    this.post_activation();
   }
+
+  // hook
+  post_activation () {}
 
   // if the user clicked on a input element to UNselect the filter,  MatrixFilterSpace becomes INactive 
   deactivate() {
@@ -628,6 +635,8 @@ class RangeSpace extends MatrixFilterSpace {
       // notify matrix items
       this.signal_matrix_items();
 
+      this.post_activation();
+
     }
   }
 
@@ -683,11 +692,7 @@ class MatrixFilter {
     this.restricted_by = {};
 
     // active: unrestricted filter, or all restrictions are met
-    this.STATUS = STATUS_ACTIVE;
-
-    // values selected by the user (using an html form)
-    // {identifier:parsedValue}
-    this.active_matrix_filter_spaces = {};
+    this.status = STATUS_ACTIVE;
 
     this.weight = weight;
 
@@ -936,6 +941,7 @@ class MatrixFilter {
     }
     else {
       console.warn("[MatrixFilter] " + this.matrix_filter_type + " space_identifier " + space_identifier + " not found in matrix_filter_spaces.");
+      console.warn(this.matrix_filter_spaces);
 
       // send impossible event
       const event_data = {
@@ -1284,6 +1290,7 @@ class MatrixItem {
     this.update();
 
   }
+
   remove_matching_matrix_filter_space(matrix_filter_space) {
 
     if (this.DEBUG == true){
@@ -1316,6 +1323,10 @@ class MatrixItem {
     this.points = this.calculate_points();
     this.points_percentage = this.points / this.max_points;
     this.send_matrix_item_update_event();
+
+    if (this.points_percentage == 1){
+      this.send_100_percent_event();
+    }
   }
 
   // events
@@ -1347,6 +1358,19 @@ class MatrixItem {
 
 		this.form_element.dispatchEvent(points_update_event);
 	}
+
+  // send an event when a matrix item reaches 100%
+  send_100_percent_event () {
+    if (this.DEBUG == true){
+			console.log("[MatrixItem] " + this.name +  " sending matrix-item-100-percent");
+		}
+
+		const event_data = this.get_event_data();
+
+		const matrix_item_100_percent_event = new CustomEvent("matrix-item-100-percent", event_data);
+
+		this.form_element.dispatchEvent(matrix_item_100_percent_event);
+  }
 
   reset() {
 
@@ -1477,6 +1501,8 @@ class IdentificationMatrix {
 
     this.get_matrix_filters_and_items = get_matrix_filters_and_items;
 
+    this.data = [];
+
     this.form_element = document.getElementById(filter_form_id);
 
     this.init();
@@ -1496,6 +1522,9 @@ class IdentificationMatrix {
       if (self.DEBUG == true) {
         console.log(matrix_filters_and_items_json);
       }
+
+
+      self.data = matrix_filters_and_items_json;
 
       // instantiate filters
       for (let matrix_filter_uuid in matrix_filters_and_items_json["matrix_filters"]) {
@@ -1525,6 +1554,11 @@ class IdentificationMatrix {
             let parsed_space = spaces[s];
             let matrix_filter_space = matrix_filter.add_matrix_filter_space(parsed_space);
             matrix_item.add_matrix_filter_space(matrix_filter_space);
+
+            // bind evaluation to MatrixFilterSpace.post_change
+            matrix_filter_space.post_activation = function(){
+              self.evaluate_identification();
+            }
           }
         }
 
@@ -1571,20 +1605,28 @@ class IdentificationMatrix {
         }
       }
 
+      // if the user comes from using the back button, activate all checked MatrixFilterSpaces
+      // this has to be done at the end ofinitialization, so the MatrixFilterSpaces can signal/notify MatrixItems, which leads to the MatrixItems updateing their points
+      for (let matrix_filter_uuid in MATRIX_FILTERS){
+        let matrix_filter = MATRIX_FILTERS[matrix_filter_uuid];
+
+        for (let space_identifier in matrix_filter.matrix_filter_spaces){
+          let matrix_filter_space = matrix_filter.matrix_filter_spaces[space_identifier];
+
+          if (matrix_filter_space.input_element != null && matrix_filter_space.input_element.checked == true){
+            // the input might be checked on initialization, e.g. when the page is rendered from history using the back button
+    
+            matrix_filter_space.activate();
+    
+          }
+        }
+      }
+
       if (typeof onFinished == "function"){
         onFinished();
       }
 
     });
-  }
-
-  on_matrix_filter_change(event) {
-
-    let matrix_filter_uuid = event.currentTarget.name;
-    let matrix_filter = MATRIX_FILTERS[matrix_filter_uuid];
-
-    matrix_filter.on_matrix_filter_space_change(event);
-
   }
 
   bind_dom_elements_to_matrix_filters() {
@@ -1669,4 +1711,92 @@ class IdentificationMatrix {
     });
 
   }
+
+  destroy () {
+    MATRIX_FILTERS = {};
+    MATRIX_ITEMS = {};
+  }
+
+  // events when identification has finished
+  evaluate_identification () {
+
+    if (this.DEBUG == true){
+      console.log("[IdentificationMatrix] evalutating identification");
+    }
+
+    let all_filters_have_selection = true;
+
+    for (let matrix_filter_uuid in MATRIX_FILTERS){
+      let matrix_filter = MATRIX_FILTERS[matrix_filter_uuid];
+
+      let matrix_filter_has_selection = false;
+
+      if (matrix_filter.status == STATUS_INACTIVE){
+        matrix_filter_has_selection = true;
+        continue;
+      }
+      else {
+
+        // this does not work with ranges. the user can select a value that is not within any given range.
+        // simply check if the range slider has been set
+        
+        if (matrix_filter.matrix_filter_type == "RangeFilter"){
+          if (matrix_filter.input_element.value.length != 0){
+            matrix_filter_has_selection = true;
+          }
+        }
+        else {
+          for (let space_identifier in matrix_filter.matrix_filter_spaces){
+            let matrix_filter_space = matrix_filter.matrix_filter_spaces[space_identifier];
+
+            if (matrix_filter_space.status == STATUS_ACTIVE){
+              matrix_filter_has_selection = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matrix_filter_has_selection == false){
+        all_filters_have_selection = false;
+        if (this.DEBUG == true){
+          console.log("[IdentificationMatrix] " + matrix_filter.name + " has no selection yet.");
+        }
+        break;
+      }
+    }
+
+    if (all_filters_have_selection == true){
+      this.send_identification_finished_event();
+    }
+
+  }
+  // notify the user to select the next identification step
+  send_identification_finished_event (){
+    // strict mode always ends with 100%
+    // send event when every VISIBLE matrix filter has one selection
+    // use MatrixFilter.active_matrix_filter_spaces{}
+    if (this.DEBUG == true){
+      console.log("[IdentificationMatrix] sending identification-finished event");
+    }
+    const event_data = {};
+    const finished_event = new CustomEvent("identification-finished", event_data);
+    
+    this.form_element.dispatchEvent(finished_event);
+  }
+
+  get_nature_guide_item (matrix_item_uuid){
+    var matched_nature_guide_item = null;
+
+    for (let i=0; i<this.data.items.length; i++){
+      let nature_guide_item = this.data.items[i];
+      if (nature_guide_item.uuid == matrix_item_uuid){
+        matched_nature_guide_item = nature_guide_item;
+        break;
+      }
+    }
+
+    return matched_nature_guide_item;
+  }
+
 }

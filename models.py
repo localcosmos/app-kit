@@ -40,6 +40,11 @@ from datetime import datetime
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+# draw features on image
+import io
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+
 
 '''--------------------------------------------------------------------------------------------------------------
     MIXINS
@@ -957,6 +962,9 @@ class ImageStore(ModelWithTaxon):
 '''
     Multiple images per content are possible
 '''
+
+RELATIVE_ARROW_STROKE_WIDTH =  0.02
+RELATIVE_ARROW_LENGTH = 0.5
 class ContentImage(models.Model):
 
     # make it compatible with LocalizeableImage
@@ -965,6 +973,10 @@ class ContentImage(models.Model):
     image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
     
     crop_parameters = models.TextField(null=True)
+
+    # for things like arrows/vectors on the image
+    # arrows are stored as [{"type" : "arrow" , "initialPoint": {x:1, y:1}, "terminalPoint": {x:2,y:2}, color: string}]
+    features = models.JSONField(null=True)
     
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.IntegerField()
@@ -991,13 +1003,97 @@ class ContentImage(models.Model):
             if self.crop_parameters:
                 suffix = hashlib.md5(self.crop_parameters.encode('utf-8')).hexdigest()
 
-            thumbname = '{0}-{1}-{2}{3}'.format(blankname, suffix, size, ext)
+            feature_suffix = 'nofeatures'
+            if self.features:
+                features_str = json.dumps(self.features)
+                feature_suffix = hashlib.md5(features_str.encode('utf-8')).hexdigest()
+
+
+            thumbname = '{0}-{1}-{2}-{3}{4}'.format(blankname, suffix, feature_suffix, size, ext)
             return thumbname
         
         else:
             return 'noimage.png'
 
 
+    def get_arrow_stroke_width(self):
+
+        # {"x":3,"y":3,"width":1130,"height":1130,"rotate":0,"scaleX":1,"scaleY":1}
+        crop_params = json.loads(self.crop_parameters)
+
+        return crop_params['width'] * RELATIVE_ARROW_STROKE_WIDTH
+    
+    # add features to an image file, return a buffer
+    def add_features(self):
+
+        image_path = self.image_store.source_image.path
+
+        # first, add all features
+        # the coordinates/definitions of a feature are relative to the original image
+
+        dpi = plt.rcParams['figure.dpi']
+
+        img = mpimg.imread(image_path)
+
+        img_height, img_width, bands = img.shape
+
+        fig = plt.figure(dpi=dpi, figsize=[img_width/dpi,img_height/dpi])
+
+        # remove axis
+        plt.axis('off')
+
+        # remove whitespace around plot
+        plt.tight_layout()
+
+        # plot the image
+        imgplot = plt.imshow(img)
+
+        # plot the arrows
+        '''
+        [{"type": "arrow", "color": "#c061cb", "initialPoint": {"x": -23, "y": 74}, "terminalPoint": {"x": 399, "y": 449}}, {"type": "arrow", "color": "#ffa348", "initialPoint": {"x": 1074, "y": 336}, "terminalPoint": {"x": 727, "y": 782}}]
+        '''
+        for feature in self.features:
+            if feature['type'] == 'arrow':
+
+                arrow = feature
+
+                initialPoint = arrow['initialPoint']
+                terminalPoint = arrow['terminalPoint']
+
+                vector = {
+                    'x' : terminalPoint['x'] - initialPoint['x'],
+                    'y' : terminalPoint['y'] - initialPoint['y']
+                }
+
+                # do not allow off-canvas initialPoints
+                if initialPoint['x'] < 0 or initialPoint['y'] < 0:
+
+                    if initialPoint['x'] < initialPoint['y']:
+                         lambda_factor = - (initialPoint['x'] / vector['x'])
+
+                    else:
+                        lambda_factor = - (initialPoint['y'] / vector['y'])
+              
+                    initialPoint['x'] = initialPoint['x'] + ( vector['x'] * lambda_factor )
+                    initialPoint['y'] = initialPoint['y'] + ( vector['y'] * lambda_factor )
+
+                dx = terminalPoint['x'] - initialPoint['x']
+                dy = terminalPoint['y'] - initialPoint['y']
+
+                linewidth = self.get_arrow_stroke_width()
+                head_width = linewidth * 3
+
+                plt.arrow(arrow['initialPoint']['x'], arrow['initialPoint']['y'], dx, dy, linewidth=linewidth, head_width=head_width, head_length=head_width, fill=True, length_includes_head=True, color=arrow["color"])
+
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+
+        return buf
+
+
+
+    # compile features during thumbnail creation
     def image_url(self, size=400, force=False):
 
         image_path = self.image_store.source_image.path
@@ -1013,7 +1109,14 @@ class ContentImage(models.Model):
 
         if not os.path.isfile(thumbpath) or force == True:
 
-            imageFile = Image.open(image_path)
+            if self.features:
+                # buffer
+                image_source = self.add_features()
+
+            else:
+                image_source = image_path
+
+            imageFile = Image.open(image_source)
 
             if self.crop_parameters:
                 #{"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}

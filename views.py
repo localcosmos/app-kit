@@ -1075,6 +1075,9 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         # this makes sense because SVGS might be uploaded
         self.content_image.crop_parameters = form.cleaned_data.get('crop_parameters', None)
 
+        # features are optional in the db
+        self.content_image.features = form.cleaned_data.get('features', None)
+
         image_type = form.cleaned_data.get('image_type', None)
         if image_type:
             self.content_image.image_type = image_type
@@ -1107,6 +1110,7 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         if self.content_image:
             # file fields cannot have an initial value [official security feature of all browsers]
             initial['crop_parameters'] = self.content_image.crop_parameters
+            initial['features'] = self.content_image.features
             initial['source_image'] = self.content_image.image_store.source_image
             initial['image_type'] = self.content_image.image_type
             initial['text'] = self.content_image.text

@@ -1954,6 +1954,8 @@ class AppReleaseBuilder(AppBuilder):
     # BUILDING CONTENT IMAGES
     # - images of generic contents/features
     # - use proper image resizing
+    # - respect crop parameters
+    # - respect features
     # 
     ###############################################################################################################
 
@@ -1982,7 +1984,14 @@ class AppReleaseBuilder(AppBuilder):
                 'height' : image_file.height,
             }
 
-        original = Image.open(image_file.path)
+        if content_image.features:
+            # buffer
+            image_source = content_image.add_features()
+
+        else:
+            image_source = image_file.path
+
+        original = Image.open(image_source)
 
         right = crop_parameters['x'] + crop_parameters['width']
         bottom = crop_parameters['y'] + crop_parameters['height']
