@@ -1203,8 +1203,13 @@ class ManageContentImage(MetaAppMixin, ManageContentImageMixin, FormView):
         return self.render_to_response(context)
 
 
-class ManageContentImageWithText(ManageContentImage):
+from app_kit.view_mixins import FormLanguageMixin
+class ManageContentImageWithText(FormLanguageMixin, ManageContentImage):
     form_class = ManageContentImageWithTextForm
+
+    def set_primary_language(self):
+        meta_app = MetaApp.objects.get(pk=self.kwargs['meta_app_id'])
+        self.primary_language = meta_app.primary_language
 
 
 class DeleteContentImage(AjaxDeleteView):

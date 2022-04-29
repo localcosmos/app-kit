@@ -8,7 +8,10 @@
 
 {% block script %}
 	<script>
-		{% if form.is_valid %}
+
+		
+
+		{% if request.method == 'POST' and form.is_valid %}
 			
 			$.get("{% url 'collect_taxon_images' meta_app.id content_instance.id content_instance.taxon_source content_instance.name_uuid %}", function(html){
 				$("#taxon-images").html(html);
@@ -17,7 +20,15 @@
 
 			$("#LargeModal").modal("hide");
 			$("#LargeModalContent").empty();
-			
+		
+		{% else %}
+			{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
 		{% endif %}
 	</script>
+
+<style>
+	.ck-editor__editable {
+		min-height: 50px;
+	}
+</style>
 {% endblock %}

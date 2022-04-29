@@ -16,7 +16,7 @@ from .generic import LocalizeableImage
 
 from localcosmos_server.widgets import (CropImageInput, ImageInputWithPreview, AjaxFileInput,
                                         TwoStepDiskFileInput, HiddenJSONInput)
-from localcosmos_server.forms import LocalizeableForm
+from localcosmos_server.forms import LocalizeableForm, FormLocalizationMixin
 from localcosmos_server.models import App
 
 import hashlib, base64, math
@@ -125,7 +125,7 @@ class ManageContentImageForm(ManageContentImageFormCommon, LicencingFormMixin):
     crop_parameters = forms.CharField(widget=forms.HiddenInput)
 
     # features like arrows
-    features = forms.CharField(widget=forms.HiddenInput, required=False)
+    features = forms.CharField(widget=HiddenJSONInput, required=False)
 
     # image_type
     image_type = forms.CharField(widget=forms.HiddenInput, required=False)
@@ -144,9 +144,15 @@ class ManageContentImageForm(ManageContentImageFormCommon, LicencingFormMixin):
     
 
 
-class ManageContentImageWithTextForm(ManageContentImageForm):
-    text = forms.CharField(max_length=355, required=False,
+class ManageContentImageWithTextForm(FormLocalizationMixin, ManageContentImageForm):
+
+    input_language = forms.CharField(widget=forms.HiddenInput)
+
+    text = forms.CharField(max_length=355, required=False, widget=forms.Textarea,
                            help_text=_('Text that will be shown together with this image.'))
+
+    localizeable_fields = ['text']
+    layoutable_simple_fields = ['text']
     
 '''
     A form with an optional ContentImage. If the user uploads an image, creator_name and licence have to be present

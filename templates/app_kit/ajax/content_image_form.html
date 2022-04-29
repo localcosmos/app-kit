@@ -12,7 +12,10 @@
 
 {% block body %}
 	<p>
-		{% render_bootstrap_form form %}
+		{% if request.method == 'POST' and form.is_valid %}
+		{% else %}
+			{% render_bootstrap_form form %}
+		{% endif %}
 	</p>
 {% endblock %}
 
@@ -25,15 +28,26 @@
 {% endblock %}
 
 {% block script %}
+
 	<script>
-		{% if form.is_valid %}
+		
+		
+
+		{% if request.method == 'POST' and form.is_valid %}
 			
 			var d = new Date();
 			$("#content_image_{{ content_instance|ctype_id }}_{{ content_instance.id }}").css("background-image", "url('{{ content_instance.image_url }}?" + d.getTime() + "')");
 
 			$("#LargeModal").modal("hide");
 			$("#LargeModalContent").empty();
-			
+		{% else %}
+			{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
 		{% endif %}
 	</script>
+
+	<style>
+		.ck-editor__editable {
+			min-height: 50px;
+		}
+	</style>
 {% endblock %}

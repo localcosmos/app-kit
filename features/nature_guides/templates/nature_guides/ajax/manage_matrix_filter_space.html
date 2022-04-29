@@ -137,31 +137,7 @@
 	{% endif %}
 	
 	/* update source element data on every keystroke to prevent HTML5 validation to kick in before submit is called - which triggers updateSourceElement */
-	(function(){
-		{% for field_name in form.layoutable_simple_fields %}
-			var field = document.getElementById('id_{{ field_name }}');
-
-			ClassicEditor.create( field, { 
-				toolbar: ['bold', 'italic', 'underline', '|', 'undo', 'redo']
-			}).then(editor => {
-			
-				editor.model.document.on('change:data', (evt, data) => {
-				
-					editor.updateSourceElement();
-					
-					let text = editor.getData();
-					if (text.length <= 0 && field.required){
-						editor.ui.element.classList.add("has-error");
-					}
-					else {
-						editor.ui.element.classList.remove("has-error");
-					}
-				});
-			});
-			
-			
-		{% endfor %}
-	})();
+	{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
 	
 </script>
 
