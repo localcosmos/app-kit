@@ -277,6 +277,7 @@ class AppPreviewBuilder(AppBuilder):
             new_primary_locale_translations = self._update_new_primary_locale_translations(meta_app,
                                                             generic_content, new_primary_locale_translations)
 
+
         if glossary is not None:
 
             # first, check which glossary terms DO NOT occur in the texts

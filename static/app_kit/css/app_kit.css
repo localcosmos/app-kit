@@ -861,6 +861,11 @@ input[type="color"] {
 	height: auto;
 }
 
+.translation-spinner {
+	width: 1.8rem;
+	height: auto;
+}
+
 /* ckeditor errors */
 
 .ck.ck-editor.has-error .ck-content {

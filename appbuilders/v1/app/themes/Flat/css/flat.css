@@ -1403,7 +1403,7 @@ input[type=range]::-moz-range-track {
 	width: 100%;
 }
 
-.trait-property, .trait-property * {
+.trait-property, .trait-property:not(.dtai) *, .trait-property.dtai label {
 	cursor: pointer;
 }
 
@@ -1414,13 +1414,25 @@ input[type=range]::-moz-range-track {
 	background-color: rgba(234,234,234,1);
 	color: rgb(50,50,50);
 	padding: .3rem;
+	margin-bottom: 0;
+}
+
+.trait-property.dtai label {
+	border-radius: 0.5em 0.5em 0 0;
+	padding-bottom: 0;
+	display: block;
+} 
+
+.trait-property input[type='checkbox'] + label + div.trait-property-text {
+	background-color: rgba(234,234,234,1);
+	border-radius: 0 0 0.5em 0.5em;
 }
 
 .trait-property input[type='checkbox'], .trait-property input[type='radio'] {
 	display: none;
 }
 
-.trait-property input[type='checkbox']:checked + label, .trait-property input[type='radio']:checked + label {
+.trait-property input[type='checkbox']:checked + label, .trait-property input[type='radio']:checked + label, .trait-property input[type='checkbox']:checked + label + div.trait-property-text {
 	background-color: rgb(92,184,92);
 }
 
@@ -1468,7 +1480,7 @@ input[type=range]::-moz-range-track {
 	padding: .5rem;
 }
 
-.trait-property.text-only .trait-property-text, .trait-property.text-only .trait-property-text * {
+.trait-property.text-only .trait-property-text, .trait-property.text-only .trait-property-text *,  .trait-property-text.dtai {
 	cursor: auto;
 }
 
@@ -1493,7 +1505,6 @@ input[type=range]::-moz-range-track {
 .trait-property.text-only label {
 	background-color: rgba(234,234,234,1);
 }
-
 
 .taxon-profile-traits-container .trait-property, .taxon-profile-traits-container .trait-property * {
 	cursor: auto;

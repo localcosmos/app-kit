@@ -18,7 +18,7 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             DeleteAppLanguage, AddTaxonomicRestriction, RemoveTaxonomicRestriction, ManageContentImageMixin,
             ManageContentImage, ManageContentImageWithText, DeleteContentImage, ManageAppThemeImage,
             DeleteAppThemeImage, GetAppThemeImageFormField, StoreObjectOrder, MockButton, ManageAppDesign,
-            ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement)
+            ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation)
 
 from app_kit.forms import (CreateGenericContentForm, CreateAppForm, EditGenericContentNameForm,
                            TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm, AppDesignForm,
@@ -2443,3 +2443,84 @@ class TestPrivacyStatement(ViewTestMixin, WithUser, WithTenantClient, TenantTest
         response_2 = self.tenant_client.get(url)
         self.assertEqual(response_2.status_code, 200)
     
+
+
+class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTenantClient,
+                          WithMetaApp, WithFormTest, TenantTestCase):
+
+    url_name = 'get_translation'
+    view_class = GetDeepLTranslation
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_dispatch(self):
+        
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+        response_2 = self.tenant_client.get(url)
+        self.assertEqual(response_2.status_code, 400)
+
+
+    @test_settings
+    def test_get(self):
+
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        ajax_response = self.tenant_client.get(self.get_url(), **url_kwargs)
+        self.assertEqual(ajax_response.status_code, 200)
+
+
+    @test_settings
+    def test_post(self):
+
+        data_no_targetlang = {
+            'text' : 'Test text',
+        }
+
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        response = self.tenant_client.post(url, data_no_targetlang, **url_kwargs)
+        
+        self.assertEqual(response.status_code, 400)
+
+
+        data_no_text = {
+            'target-language' : 'EN',
+        }
+
+        response = self.tenant_client.post(url, data_no_text, **url_kwargs)
+        
+        self.assertEqual(response.status_code, 400)
+
+        valid_data = {
+            'text' : 'Test text',
+            'target-language' : 'EN',
+        }
+
+        response = self.tenant_client.post(url, valid_data, **url_kwargs)
+        
+        self.assertEqual(response.status_code, 200)
+

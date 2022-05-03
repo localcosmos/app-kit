@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView, FormView, ListView
+from django.views.generic import TemplateView, FormView, ListView, View
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from django.http import HttpResponse, JsonResponse, HttpResponseForbidden
+from django.http import HttpResponse, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
@@ -39,7 +39,7 @@ from .AppThemeImage import AppThemeImage
 from .AppThemeText import AppThemeText
 
 
-import json, urllib, threading
+import json, urllib.request, urllib.parse, urllib.error, traceback, threading
 from django.db import connection
 
 # activate permission rules
@@ -611,6 +611,113 @@ class TranslateApp(MetaAppMixin, FormView):
         context['form'] = form
         context['saved'] = True
         return self.render_to_response(context)
+
+
+
+'''
+    Fetch automated translation from DeepL
+    - currently, ony fetching-per-entry is supported, the user specifically requests the translation for one piece of text, not the whole application
+    - this way, the current translation can just be overridden
+
+    example response:
+    {
+        "translations": [{
+            "detected_source_language":"EN",
+            "text":"Hallo, Welt!"
+        }]
+    }
+'''
+class GetDeepLTranslation(MetaAppMixin, TemplateView):
+
+    template_name = 'app_kit/ajax/get_translation.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_json_response_base(self):
+
+        return {}
+
+
+    def send_error_report_email(self, exception, error_message):
+
+        subject = '[{0}] {1}'.format(self.__class__.__name__, error.__class__.__name__)
+
+        tenant = self.meta_app.tenant
+        tenant_admin_emails = tenant.get_admin_emails()
+        tenant_text = 'Tenant schema: {0}. App uid: {1}. Admins: {2}.'.format(tenant.schema_name, meta_app.app.uid,
+                                                    ','.join(tenant_admin_emails))
+        
+        text_content = '{0} \n\n Error type: {1} \n\n message: {2}'.format(tenant_text, exception.__class__.__name__, error_message)
+
+        mail.mail_admins(subject, text_content)
+
+
+    def get_translation(self, text, target_language):
+
+        url = settings.DEEPL_API_URL
+        auth_key = settings.DEEPL_AUTH_KEY
+        
+        values = {
+            'auth_key' : auth_key,
+            'text': text,
+            'target_lang' : target_language,
+        }
+
+        # according to https://www.deepl.com/docs-api
+        headers = {
+            'Accept ': '*/*',
+            #'Content-Length': [length],
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+
+        data = urllib.parse.urlencode(values)
+        data = data.encode('ascii') # data should be bytes
+
+        # passing the data argument will result in a POST request
+        req = urllib.request.Request(url, data, headers)
+
+        translation = None
+        success = False
+
+        try:
+            response = urllib.request.urlopen(req)
+        except urllib.error.HTTPError as e:
+            # use e.code
+            self.send_error_report_email(e, e.code)
+        except urllib.error.URLError as e:
+            # use e.reason
+            self.send_error_report_email(e, e.reason)
+        else:
+            success = True
+            json_response = json.loads(response.read())
+
+        result = {
+            'translation' : json_response,
+            'success' : success,
+        }
+
+        return result
+
+
+        # e-mail to admin if request fails
+    def post(self, request, *args, **kwargs):
+
+        text = request.POST.get('text', None)
+
+        if text is None or len(text) == 0:
+            return HttpResponseBadRequest("GetDeepLTranslation requires 'text' in POST data.")
+
+        target_language = request.POST.get('target-language', None)
+
+        if target_language is None or len(target_language) == 0:
+            return HttpResponseBadRequest("GetDeepLTranslation requires 'target_language' in POST data.")
+        
+        result = self.get_translation(text, target_language)
+
+        # return result as json
+        return JsonResponse(result)
 
 
 '''

@@ -95,6 +95,10 @@ class TaxonProfiles(GenericContent):
 
                     text_key = self.get_text_key(text)
                     locale[text_key] = text.text
+
+
+                content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
+                locale.update(content_images_primary_localization)
         
         
         return locale

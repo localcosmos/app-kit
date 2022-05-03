@@ -95,6 +95,22 @@ class ContentImageMixin:
             if not image_is_used:
                 image_store.delete()
         
+
+    def get_content_images_primary_localization(self):
+
+        locale = {}
+
+        content_images = self.images()
+
+        for content_image in content_images:
+
+            if content_image.text and len(content_image.text) > 0:
+                locale[content_image.text] = content_image.text
+
+
+        return locale
+
+
 '''
     Scenario:
     - user uploads image with taxon

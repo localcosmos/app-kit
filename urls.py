@@ -14,5 +14,8 @@ urlpatterns = [
          name='fact_sheet_preview'),
 
     path('server/', include('app_kit.global_urls')),
+
+    path('get-translation/<int:meta_app_id>/', views.GetDeepLTranslation.as_view(),
+         name='get_translation'),
     
 ]

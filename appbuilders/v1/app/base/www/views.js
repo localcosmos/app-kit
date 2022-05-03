@@ -22,18 +22,18 @@ function _get_categories(){
 
 	if ("NatureGuide" in app_features){
 
-		var nature_guides = app_features.NatureGuide.list;
-		var has_submenu = nature_guides.length > 1 ? true : false;
+		let nature_guides = app_features.NatureGuide.list;
+		let has_submenu = nature_guides.length > 1 ? true : false;
 
 		let buttons = [];
 
-		for (var k=0; k<nature_guides.length; k++){
-			var nature_guide = nature_guides[k];
-			var button = MainMenuButton.create(nature_guide.name[app.language], "nature-guide/" + nature_guide.uuid + "/", null);
+		for (let k=0; k<nature_guides.length; k++){
+			let nature_guide = nature_guides[k];
+			let button = MainMenuButton.create(nature_guide.name[app.language], "nature-guide/" + nature_guide.uuid + "/", null);
 			buttons.push(button);
 		} 
 
-		var category = {
+		let category = {
 			"submenu_id" : "identification",
 			"category_name" : _("Nature Guides"),
 			"buttons" : buttons,
@@ -50,23 +50,23 @@ function _get_categories(){
 		// always multiple: at least my observations and new observations
 		// forms are listed only using "new observation"
 
-		var default_observation_form_uuid = app_features.GenericForm["default"]["uuid"];
+		let default_observation_form_uuid = app_features.GenericForm["default"]["uuid"];
 
-		var new_observation_button = MainMenuButton.create(_('NewObservation'), "observation/new/" + default_observation_form_uuid + "/", null);
-		var my_observations_button = MainMenuButton.create(_('MyObservations'), "my-observations/", null);
+		let new_observation_button = MainMenuButton.create(_('NewObservation'), "observation/new/" + default_observation_form_uuid + "/", null);
+		let my_observations_button = MainMenuButton.create(_('MyObservations'), "my-observations/", null);
 
-		var all_observations_button = MainMenuButton.create(_('AllObservations'), "all-observations/", null);
+		let all_observations_button = MainMenuButton.create(_('AllObservations'), "all-observations/", null);
 
 		let buttons = [new_observation_button, my_observations_button, all_observations_button];
 
 		// not every app has a button matrix - check this
 		if (app_features.hasOwnProperty("ButtonMatrix") && app_features.ButtonMatrix.hasOwnProperty("default")){
-			var default_buttonmatrix_uuid = app_features.ButtonMatrix["default"]["uuid"];
-			var button_matrices_button = MainMenuButton.create(_('QuickLogging'), "quick-logging/" + default_buttonmatrix_uuid + "/", null);
+			let default_buttonmatrix_uuid = app_features.ButtonMatrix["default"]["uuid"];
+			let button_matrices_button = MainMenuButton.create(_('QuickLogging'), "quick-logging/" + default_buttonmatrix_uuid + "/", null);
 			buttons.push(button_matrices_button);
 		}
 		
-		var category = {
+		let category = {
 			"submenu_id" : "observation",
 			"category_name" : _("Observations"),
 			"buttons" : buttons,
@@ -78,14 +78,14 @@ function _get_categories(){
 	}
 
 	if ("Map" in app_features){
-		var has_submenu = app_features.Map.length > 1 ? true : false;
+		let has_submenu = app_features.Map.length > 1 ? true : false;
 
 		let buttons = [];
-		var map = app_features.Map.list[0];
-		var map_button = MainMenuButton.create(map.name[app.language], "map/" + map.uuid + "/", null);
+		let map = app_features.Map.list[0];
+		let map_button = MainMenuButton.create(map.name[app.language], "map/" + map.uuid + "/", null);
 		buttons.push(map_button);
 
-		var category = {
+		let category = {
 			"submenu_id" : "maps",
 			"category_name" : _("Maps"),
 			"buttons" : buttons,
@@ -98,11 +98,11 @@ function _get_categories(){
 	
 	if ("Glossary" in app_features){
 	
-		var glossary = app_features.Glossary;
+		let glossary = app_features.Glossary;
 	
-		var glossary_button = MainMenuButton.create(glossary.name[app.language], "glossary/" + glossary.uuid + "/", null);
+		let glossary_button = MainMenuButton.create(glossary.name[app.language], "glossary/" + glossary.uuid + "/", null);
 	
-		var glossary_category = {
+		let glossary_category = {
 			"submenu_id" : "glossary",
 			"category_name" : _("Glossary"),
 			"buttons" : [glossary_button],
@@ -114,13 +114,13 @@ function _get_categories(){
 	}
 	
 	if ("TaxonProfiles" in app_features) {
-		var taxon_profiles = app_features.TaxonProfiles;
+		let taxon_profiles = app_features.TaxonProfiles;
 		
-		var button_name = i18next.t('plainȵ' + taxon_profiles.name);
+		let button_name = i18next.t('plainȵ' + taxon_profiles.name);
 	
-		var taxon_profiles_button = MainMenuButton.create(button_name, "taxon-profiles-registry/", null);
+		let taxon_profiles_button = MainMenuButton.create(button_name, "taxon-profiles-registry/", null);
 	
-		var taxon_profiles_category = {
+		let taxon_profiles_category = {
 			"submenu_id" : "taxon_profiles",
 			"category_name" : _("Taxon Profiles"),
 			"buttons" : [taxon_profiles_button],
@@ -128,6 +128,29 @@ function _get_categories(){
 		};
 		
 		categories.push(taxon_profiles_category)
+	}
+
+	if ("FactSheets" in app_features){
+
+		let fact_sheets = app_features.FactSheets.list;
+		let has_submenu = fact_sheets.length > 1 ? true : false;
+
+		let buttons = [];
+
+		for (let k=0; k<fact_sheets.length; k++){
+			let fact_sheet = fact_sheets[k];
+			let button = MainMenuButton.create(fact_sheet.name[app.language], "fact-sheet/" + fact_sheet.uuid + "/", null);
+			buttons.push(button);
+		} 
+
+		let category = {
+			"submenu_id" : "factsheets",
+			"category_name" : _("Fact Sheets"),
+			"buttons" : buttons,
+			"has_submenu" : has_submenu
+		}; 
+
+		categories.push(category);
 	}
 
 	return categories;
