@@ -16,7 +16,7 @@ var MainMenuButton = {
 };
 
 
-function _get_categories(){
+function _get_categories(callback){
 
 	var categories = [];
 
@@ -130,30 +130,58 @@ function _get_categories(){
 		categories.push(taxon_profiles_category)
 	}
 
+	/*
+	* there is only one FactSheets Feature which contains the fact sheets
+	* {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "global_options": {}, "name": "Fact Sheets",
+	*	"fact_sheets": {"1": {
+	*		"taxonomic_restriction": [{"taxon_source": "taxonomy.sources.col", "taxon_latname": "Plantae", "taxon_author": "", "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxon_nuid": "006", "restriction_type": "exists"}],
+	*		"localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}
+			}
+	*	},
+	*	"localized_slugs": {"baume": 1}}
+	*/
 	if ("FactSheets" in app_features){
 
-		let fact_sheets = app_features.FactSheets.list;
-		let has_submenu = fact_sheets.length > 1 ? true : false;
+		let fact_sheets_path = app_features.FactSheets.list[0].path;
 
-		let buttons = [];
+		ajax.GET(fact_sheets_path, {}, function(content){
 
-		for (let k=0; k<fact_sheets.length; k++){
-			let fact_sheet = fact_sheets[k];
-			let button = MainMenuButton.create(fact_sheet.name[app.language], "fact-sheet/" + fact_sheet.uuid + "/", null);
-			buttons.push(button);
-		} 
+			let fact_sheets = JSON.parse(atob(content));
 
-		let category = {
-			"submenu_id" : "factsheets",
-			"category_name" : _("Fact Sheets"),
-			"buttons" : buttons,
-			"has_submenu" : has_submenu
-		}; 
+			let buttons = [];
 
-		categories.push(category);
+			for (let fact_sheet_id in fact_sheets["fact_sheets"]){
+				
+				let fact_sheet = fact_sheets["fact_sheets"][fact_sheet_id];
+				let localized_title = i18next.t('plainȵ' + fact_sheet.title);
+				let localized_slug = fact_sheet["localized"][app.language]["slug"];
+
+				let button = MainMenuButton.create(localized_title, "fact-sheet/" + localized_slug + "/", null);
+				buttons.push(button);
+			}
+			
+			
+			let has_submenu = buttons.length > 1 ? true : false;
+
+			let category = {
+				"submenu_id" : "factsheets",
+				"category_name" : _("Fact Sheets"),
+				"buttons" : buttons,
+				"has_submenu" : has_submenu
+			}; 
+
+			categories.push(category);	
+
+
+			callback(categories);
+
+		});
+
 	}
+	else {
 
-	return categories;
+		callback(categories);
+	}
 };
 
 
@@ -201,33 +229,35 @@ var load_footer_sponsors = function(){
 
 var load_sidemenu = function(){
 
-	var categories = _get_categories();
+	_get_categories(function(categories){
 
-	var sponsors = false;
-	if (settings.SPONSORS_DISABLED != false){
-		sponsors = true;
-	}
+		var sponsors = false;
+		if (settings.SPONSORS_DISABLED != false){
+			sponsors = true;
+		}
 
-	var request = HttpRequest.create();
-	request.user = mango_session.user;
+		var request = HttpRequest.create();
+		request.user = mango_session.user;
 
-	if (listeners.hasOwnProperty("get_sidemenu_context")){
-		var context = listeners.get_sidemenu_context();
-	}
-	else {
-		var context = {};
-	}
+		if (listeners.hasOwnProperty("get_sidemenu_context")){
+			var context = listeners.get_sidemenu_context();
+		}
+		else {
+			var context = {};
+		}
 
-	context["categories"] = categories
-	context["request"] = request
-	context["preview"] = settings.PREVIEW
-	context["app_name"] = settings.NAME
-	context["sponsors"] = sponsors
+		context["categories"] = categories
+		context["request"] = request
+		context["preview"] = settings.PREVIEW
+		context["app_name"] = settings.NAME
+		context["sponsors"] = sponsors
 
-	default_renderer.render("themes/" + settings.THEME + "/templates/sidemenu.html", context, function(template_html){
-		var container = document.getElementById("Sidemenu");
-		Pagemanager._insert(container, template_html, [], {});
-		OnlineContentMixin.load_online_content(container);
+		default_renderer.render("themes/" + settings.THEME + "/templates/sidemenu.html", context, function(template_html){
+			var container = document.getElementById("Sidemenu");
+			Pagemanager._insert(container, template_html, [], {});
+			OnlineContentMixin.load_online_content(container);
+		});
+
 	});
 };
 
@@ -236,12 +266,22 @@ var Home = View(TemplateView, {
 	identifier : "Home",
 	save_state_on_exit : false,
 	template_name : "themes/" + settings.THEME + "/templates/home.html",
-	get_context_data : function(self, kwargs){
+	async_context : true,
 
-		var context = Home.super().get_context_data(self, kwargs);
+	get_context_data : function(self, kwargs, callback){
 
-		context["categories"] = _get_categories();
-		return context;
+		//var context = Home.super().get_context_data(self, kwargs);
+
+		Home.super().get_context_data(self, kwargs, function(context){
+
+			_get_categories(function(categories){
+				context["categories"] = categories;
+				
+				callback(context);
+			});
+		
+
+		});
 	}
 });
 
@@ -4583,13 +4623,36 @@ var OnlineContentView = View(RemoteView, {
 
 // FactSheetView
 // - for both preview and view
+// ATTENTION: used by appKit
+
 var FactSheetView = View(RemoteView, {
 
 	"identifier" : "FactSheetView",
-	"template_name" : "themes/" + settings.THEME + "/templates/fact_sheet.html",	
+	"template_name" : "themes/" + settings.THEME + "/templates/fact_sheet.html",
+	
 	
 	get_local_html : function (self, onsuccess, onerror){
-		alert("local");
+		
+		let fact_sheets_path = app_features.FactSheets.list[0].path;
+		let fact_sheets_folder = app_features.FactSheets.list[0].folder;
+
+		// {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "global_options": {}, "name": "Fact Sheets", "fact_sheets": {"1": {"taxonomic_restriction": [{"taxon_source": "taxonomy.sources.col", "taxon_latname": "Plantae", "taxon_author": "", "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxon_nuid": "006", "restriction_type": "exists"}], "localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}}}, "localized_slugs": {"baume": 1}}
+		ajax.GET(fact_sheets_path, {}, function(content){
+
+			let fact_sheets = JSON.parse(atob(content));
+
+			let localized_slug = self.kwargs["slug"];
+
+			let fact_sheet_id = fact_sheets["localized_slugs"][localized_slug].toString();
+
+			let path = fact_sheets_folder + "/" + fact_sheets["fact_sheets"][fact_sheet_id]["localized"][app.language]["path"];
+
+			ajax.GET(path, {}, function(html){
+				onsuccess(html);
+			})
+			
+		});
+		
 	},
 	
 	get_preview_html : function(self, onsuccess, onerror){
@@ -4610,16 +4673,77 @@ var FactSheetView = View(RemoteView, {
 	}
 });
 
+
+var FactSheetModal = View(TemplateView, {
+
+	"identifier" : "FactSheetModal",
+	
+	template_name : "themes/" + settings.THEME + "/templates/fact_sheet_modal.html",
+
+	"async_context" : true,
+
+
+	_set_fact_sheet : function(self, fact_sheet_id, callback){
+		let fact_sheets_path = app_features.FactSheets.list[0].path;
+
+		ajax.GET(fact_sheets_path, {}, function(content){
+
+			let fact_sheets = JSON.parse(atob(content));
+
+			self.fact_sheets = fact_sheets;
+			self.fact_sheet = fact_sheets["fact_sheets"][fact_sheet_id];
+
+			callback();
+
+		});
+	},
+
+
+	dispatch : function(self, request, args, kwargs){
+		var self = Object.create(this);
+		self._set_fact_sheet(self, kwargs["fact_sheet_id"], function(){
+			FactSheetModal.super().dispatch(self, request, args, kwargs);
+		});
+	},
+
+	get_context_data : function(self, kwargs, callback){
+
+		let context = {};
+
+		let fact_sheets_folder = app_features.FactSheets.list[0].folder;
+
+		let path = fact_sheets_folder + "/" + self.fact_sheet["localized"][app.language]["path"];
+
+		ajax.GET(path, {}, function(html){
+			context["fact_sheet_html"] = html;
+
+			callback(context);
+		})		
+	},
+
+
+	modal_title : function(self){
+		i18next.t('plainȵ' + self.fact_sheet.title);
+	},
+
+	close : function(self, args, kwargs){
+		OverlayView.close_current_overlay();
+	}
+
+}, ModalView)
+
 // header views
 var BaseHeaderView = View(TemplateView, {
 
 	"online_content_container_id" : "main-nav",
+	"async_context" : true,
 
-	get_context_data : function(self, kwargs){
+	get_context_data : function(self, kwargs, callback){
 
 		var context = {};
 		context["preview"] = settings.PREVIEW;
-		return context;
+		
+		callback(context);
 	},
 
 	render_to_response : function(self, context){
@@ -4643,21 +4767,30 @@ var DefaultAppbar = View(BaseHeaderView, {
 
 	"identifier" : "DefaultAppbar",
 	"template_name" : "themes/" + settings.THEME + "/templates/appbars/default.html",
+	"async_context" : true,
 
-	get_context_data : function(self, kwargs){
+	get_context_data : function(self, kwargs, callback){
 
-		var context = DefaultAppbar.super().get_context_data(self, kwargs);
+		DefaultAppbar.super().get_context_data(self, kwargs, function(context){
 
-		context["categories"] = _get_categories();
-		context["backbutton"] = true;
+			_get_categories(function(categories){
 
-		var sponsors = false;
-		if (settings.SPONSORS_DISABLED != false){
-			sponsors = true;
-		}
-		context["sponsors"] = sponsors;
+				context["categories"] = categories;
 
-		return context;
+				context["backbutton"] = true;
+
+				var sponsors = false;
+				if (settings.SPONSORS_DISABLED != false){
+					sponsors = true;
+				}
+				context["sponsors"] = sponsors;
+
+				callback(context);
+
+			});
+
+		});
+
 	}
 
 });
@@ -4667,15 +4800,23 @@ var HomeAppbar = View(BaseHeaderView, {
 
 	"identifier" : "HomeAppbar",
 	"template_name" : "themes/" + settings.THEME + "/templates/appbars/default.html",
+	"async_context" : true,
 
-	get_context_data : function(self, kwargs){
+	get_context_data : function(self, kwargs, callback){
 
-		var context = HomeAppbar.super().get_context_data(self, kwargs);
+		HomeAppbar.super().get_context_data(self, kwargs, function(context){
 
-		context["categories"] = _get_categories();
-		context["backbutton"] = false;
+			_get_categories(function(categories){
 
-		return context;
+				context["categories"] = categories;
+
+				context["backbutton"] = false;
+
+				callback(context);
+			});
+			
+		});
+
 	}
 
 });

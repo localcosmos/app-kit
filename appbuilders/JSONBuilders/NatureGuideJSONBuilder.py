@@ -3,6 +3,9 @@ from app_kit.appbuilders.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
                                                    MatrixFilterRestriction, IDENTIFICATION_MODE_FLUID)
 
+
+from app_kit.features.fact_sheets.models import FactSheet
+
 import base64, json
 
 
@@ -46,12 +49,23 @@ class NatureGuideJSONBuilder(JSONBuilder):
             if parent_node.meta_node.settings:
                 identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_FLUID)
 
+            fact_sheets = []
+
+            if parent_node.meta_node.taxon:
+                fact_sheets = self.get_fact_sheets_json_for_taxon(parent_node.meta_node.taxon)
+                
+
             parent_node_json = {
+                'name' : parent_node.meta_node.name,
+                'taxon' : None,
                 'children' : [],
                 'matrix_filters' : {},
-                'identification_mode' : identification_mode
+                'identification_mode' : identification_mode,
+                'fact_sheets' : fact_sheets,
             }
 
+            if parent_node.meta_node.taxon:
+                parent_node_json['taxon'] = parent_node.meta_node.taxon.as_json()
             
             matrix_filters = MatrixFilter.objects.filter(meta_node=parent_node.meta_node).order_by('position')
 
@@ -108,6 +122,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     child_max_points = child_max_points + weight
 
 
+                child_fact_sheets = []
+                if child.meta_node.taxon:
+                    child_fact_sheets = self.get_fact_sheets_json_for_taxon(child.meta_node.taxon)
+
                 child_json = {
                     'id' : child.id,
                     'meta_node_id' : child.meta_node.id,
@@ -119,7 +137,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'is_visible' : True,
                     'name' : child.meta_node.name, # all langs as json
                     'decision_rule' : child.decision_rule,
-                    'taxon' : None
+                    'taxon' : None,
+                    'fact_sheets' : child_fact_sheets,
                 }
 
                 if child.meta_node.taxon:

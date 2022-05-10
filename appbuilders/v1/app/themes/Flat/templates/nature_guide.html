@@ -2,6 +2,18 @@
 	
 	{{#if node.matrix_filters}}
 		<div id="identification-matrix" class="page pb-5">
+
+			<div class="pt-5 pb-3">
+				<div class="col-12 text-center ">
+					<h3>{{t node.name}}</h3>
+				</div>
+				{{#if node.fact_sheets}}
+					<div class="col-12 text-center">
+						<a class="tap" link="{{url 'fact_sheet_modal' node.fact_sheets.0.id}}">{{tp node.fact_sheets.0.title }}</a>
+					</div>
+				{{/if}}
+			</div>
+
 			<div>
 				<form id="matrix-filters-form">
 					<div class="d-none d-md-block my-3">

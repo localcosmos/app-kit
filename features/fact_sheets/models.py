@@ -6,7 +6,7 @@ from django.template import Context
 from django.template import Template, TemplateDoesNotExist
 from django.template.backends.django import DjangoTemplates
 
-from app_kit.generic import GenericContentManager, GenericContent, LocalizeableImage
+from app_kit.generic import GenericContentManager, GenericContent, LocalizeableImage, AppContentTaxonomicRestriction
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 
@@ -174,6 +174,36 @@ class FactSheets(GenericContent):
 FeatureModel = FactSheets
 
 
+
+class FactSheetManager(models.Manager):
+    
+    def filter_by_taxon(self, lazy_taxon, ascendants=False):
+
+        fact_sheets = []
+
+        if ascendants == False:
+
+            fact_sheet_content_type = ContentType.objects.get_for_model(FactSheet)
+            
+            taxon_latname = lazy_taxon.taxon_latname
+            taxon_author=lazy_taxon.taxon_author
+            taxon_source = lazy_taxon.taxon_source
+
+            fact_sheet_links = AppContentTaxonomicRestriction.objects.filter(content_type=fact_sheet_content_type,
+                taxon_source=taxon_source, taxon_latname=taxon_latname, taxon_author=taxon_author)
+
+            fact_sheet_ids = fact_sheet_links.values_list('object_id', flat=True)
+
+            fact_sheets = self.filter(pk__in=fact_sheet_ids)
+
+
+        else:
+            # get for all nuids
+            taxon_nuid = lazy_taxon.taxon_nuid
+
+        
+        return fact_sheets
+
 '''
     Template based offline content
     - during build, .html files are produced
@@ -202,6 +232,8 @@ class FactSheet(models.Model):
     contents = models.JSONField(null=True)
 
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+
+    objects = FactSheetManager()
 
     def get_locale_key(self, microcontent_type):
 

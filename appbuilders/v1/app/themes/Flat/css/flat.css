@@ -965,8 +965,18 @@ body {
 /* identification */
 
 .keynode {
-	padding: 5px !important;
 	width: 100%;
+	background: #e0e0e0;
+	border-radius: .5em;
+	padding: .3rem !important;
+	margin-bottom: 1rem;
+}
+
+.keynode .fact-sheet-link {
+	background: #FFFFFF;
+	padding: .5rem;
+	text-align: center;
+	border-radius: .5em;
 }
 
 .tap, .choiceBox {
@@ -976,9 +986,7 @@ body {
 .choiceBoxNew {
 	display: flex;
 	align-items: center;
-	background: #e0e0e0;
-	border-radius: .5em;
-	padding: .3rem;
+	
 }
 
 .choiceBoxNew .title {
@@ -1774,6 +1782,12 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 .glossary-search-results.hidden, .alphabet-search-results.hidden {
 	opacity: 0;
 	z-index: -1;
+}
+
+
+.restricted-modal-content {
+	max-height: 70vh;
+	overflow-y: scroll;
 }
 
 /* Small devices (landscape phones, 576px and up) */

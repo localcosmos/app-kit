@@ -7,5 +7,10 @@
 				<div><span id="{{uuid}}-points"></span></div>
 			</div>
 		</div>
+		{{#if fact_sheets}}
+			<div class="fact-sheet-link">
+				<a class="tap" link="{{url 'fact_sheet_modal' fact_sheets.0.id}}">{{tp fact_sheets.0.title }}</a>
+			</div>
+		{{/if}}
 	</div>
 {{/each}}

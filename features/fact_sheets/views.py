@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.views.generic import FormView, TemplateView
 from django.utils.decorators import method_decorator
 
+from django.http import HttpResponseNotFound
+
 from django import forms
 
 from app_kit.views import ManageGenericContent

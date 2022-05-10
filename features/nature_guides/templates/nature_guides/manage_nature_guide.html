@@ -1,5 +1,5 @@
 {% extends 'nature_guides/manage_node.html' %}
-{% load i18n static localcosmos_tags app_tags %}
+{% load i18n static localcosmos_tags app_tags fact_sheet_tags %}
 
 {% block extra_style %}{% endblock %}
 {% block extra_head_script %}
@@ -43,7 +43,7 @@
 					&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
 				{% endfor %}
 				{{ parent_node }}
-			{% endif %}	
+			{% endif %}
 
 		</div>
 	</div>
@@ -114,7 +114,13 @@
 						{% endwith %}
 					</div>
 					
-					<hr>
+					<hr />
+
+					{% get_fact_sheet parent_node.meta_node.taxon as fact_sheet %}
+					{% if fact_sheet %}
+						{% trans 'Fact Sheet' %}: {% include 'fact_sheets/ajax/fact_sheet_button.html' %}
+						<hr />
+					{% endif %}
 					
 					<div>
 						Mode: 

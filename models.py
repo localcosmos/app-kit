@@ -13,7 +13,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 
 from collections import OrderedDict
 
-import os, json, hashlib, time, shutil
+import os, io, json, hashlib, time, shutil
 
 from localcosmos_server.slugifier import create_unique_slug
 from django.template.defaultfilters import slugify # package_name
@@ -1040,16 +1040,14 @@ class ContentImage(models.Model):
         return crop_params['width'] * RELATIVE_ARROW_STROKE_WIDTH
     
     # add features to an image file, return a buffer
-    def add_features(self):
-
-        image_path = self.image_store.source_image.path
+    def add_features(self, image_file):
 
         # first, add all features
         # the coordinates/definitions of a feature are relative to the original image
 
         dpi = plt.rcParams['figure.dpi']
 
-        img = mpimg.imread(image_path)
+        img = mpimg.imread(image_file)
 
         img_height, img_width, bands = img.shape
 
@@ -1125,15 +1123,29 @@ class ContentImage(models.Model):
 
         if not os.path.isfile(thumbpath) or force == True:
 
-            if self.features:
-                # buffer
-                image_source = self.add_features()
+            original_image = Image.open(self.image_store.source_image.path)
 
-            else:
-                image_source = image_path
+            # make the image square, fill with white
+            original_width, original_height = original_image.size
+            square_size = max(original_width, original_height)
+            fill_color = (255, 255, 255, 255)
+            square_image = Image.new('RGBA', (square_size, square_size), fill_color)
+            offset_x = int( (square_size - original_width) / 2 )
+            offset_y = int( (square_size - original_height) / 2 )
+            square_image.paste(original_image, (offset_x, offset_y) )
 
-            imageFile = Image.open(image_source)
+            if self.features:                    
 
+                in_memory_file = io.BytesIO()
+                square_image.save(in_memory_file, format='PNG')
+                in_memory_file.seek(0)
+
+                image_source = self.add_features(in_memory_file)
+
+                square_image = Image.open(image_source)
+
+            # ATTENTION: crop_parameters are relative to the top-left corner of the image
+            # -> make them relative to the top left corner of square
             if self.crop_parameters:
                 #{"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}
                 crop_parameters = json.loads(self.crop_parameters)
@@ -1141,20 +1153,23 @@ class ContentImage(models.Model):
                 # first crop, then resize
                 # box: (left, top, right, bottom)
                 box = (
-                    crop_parameters['x'],
-                    crop_parameters['y'],
-                    crop_parameters['x'] + crop_parameters['width'],
-                    crop_parameters['y'] + crop_parameters['height'],
+                    crop_parameters['x'] + offset_x,
+                    crop_parameters['y'] + offset_y,
+                    crop_parameters['x'] + offset_x + crop_parameters['width'],
+                    crop_parameters['y'] + offset_y + crop_parameters['height'],
                 )
                 
-                cropped = imageFile.crop(box)
+                cropped = square_image.crop(box)
 
             else:
-                cropped = imageFile
+                cropped = square_image
                 
             cropped.thumbnail([size,size], Image.ANTIALIAS)
             
-            cropped.save(thumbpath, imageFile.format)
+            if original_image.format != 'PNG':
+                cropped = cropped.convert('RGB')
+
+            cropped.save(thumbpath, original_image.format)
             
         
         thumburl = os.path.join(os.path.dirname(self.image_store.source_image.url), 'thumbnails', thumbname)

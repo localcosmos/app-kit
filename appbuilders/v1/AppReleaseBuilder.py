@@ -1460,6 +1460,7 @@ class AppReleaseBuilder(AppBuilder):
         relative_generic_content_filepath = os.path.join(relative_generic_content_folder, content_filename)
 
         feature_entry['path'] = relative_generic_content_filepath
+        feature_entry['folder'] = relative_generic_content_folder
 
         return feature_entry
 
@@ -1717,6 +1718,7 @@ class AppReleaseBuilder(AppBuilder):
     ###############################################################################################################
     # FACT SHEETS
     # - one file per fact sheet and locale
+    # - respect taxonomic restriction if any
 
     def _build_relative_fact_sheet_locale_filepath(self, fact_sheet, language_code):
 
@@ -1750,7 +1752,14 @@ class AppReleaseBuilder(AppBuilder):
 
         for fact_sheet in linked_fact_sheets:
 
-            fact_sheets_json['fact_sheets'][str(fact_sheet.pk)] = {}
+            fact_sheets_json['localized_slugs'] = {}
+
+            taxonomic_restriction = jsonbuilder.get_taxonomic_restriction(fact_sheet)
+            fact_sheet_json = {
+                'taxonomic_restriction' : taxonomic_restriction,
+                'localized' : {},
+                'title' : fact_sheet.title,
+            }
             
             for language_code in self.meta_app.languages():
 
@@ -1776,7 +1785,17 @@ class AppReleaseBuilder(AppBuilder):
                 html = jsonbuilder.render_localized_fact_sheet(fact_sheet, language_code,
                                                                plain_locale, glossarized_locale)
 
-                fact_sheets_json['fact_sheets'][str(fact_sheet.pk)][language_code] = fact_sheet_relative_path
+                localized_title = plain_locale.get(fact_sheet.title, fact_sheet.title)
+
+                localized_slug = slugify(localized_title)
+                fact_sheets_json['localized_slugs'][localized_slug] = fact_sheet.id
+
+                localized_fact_sheet_json = {
+                    'path' : fact_sheet_relative_path,
+                    'slug' : localized_slug,
+                }
+
+                fact_sheet_json['localized'][language_code] = localized_fact_sheet_json
 
                 absolute_fact_sheet_path = os.path.join(app_absolute_fact_sheets_folder,
                                                         fact_sheet_relative_path)
@@ -1788,6 +1807,9 @@ class AppReleaseBuilder(AppBuilder):
                 # store the fact sheet
                 with  open(absolute_fact_sheet_path, 'w') as fact_sheet_file:
                     fact_sheet_file.write(html)
+
+            
+            fact_sheets_json['fact_sheets'][str(fact_sheet.pk)] = fact_sheet_json
 
         
         self._add_generic_content_to_app(fact_sheets, fact_sheets_json)

@@ -9,7 +9,7 @@ from django.utils.safestring import mark_safe
 from django.db.models import Q
 
 
-from app_kit.features.fact_sheets.models import FactSheetImages
+from app_kit.features.fact_sheets.models import FactSheetImages, FactSheet
 
 '''
     cms_get
@@ -119,3 +119,16 @@ def image_url(image):
         return image.url
     except:
         return ''
+
+
+@register.simple_tag
+def get_fact_sheet(taxon):
+
+    fact_sheet = None
+
+    if taxon:
+        fact_sheets = FactSheet.objects.filter_by_taxon(taxon)
+        if fact_sheets.count() > 0:
+            fact_sheet = fact_sheets[0]
+
+    return fact_sheet

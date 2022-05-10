@@ -32,6 +32,8 @@ from .matrix_filters import MATRIX_FILTER_TYPES
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
+from app_kit.features.fact_sheets.models import FactSheet
+
 import json
 
 

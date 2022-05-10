@@ -5,6 +5,8 @@ from app_kit.models import ContentImage
 from app_kit.generic import AppContentTaxonomicRestriction
 from django.contrib.contenttypes.models import ContentType
 
+from app_kit.features.fact_sheets.models import FactSheet
+
 
 class JSONBuilder:
 
@@ -88,3 +90,26 @@ class JSONBuilder:
             taxonomic_restriction.append(taxon_dic)
 
         return taxonomic_restriction
+
+
+    def get_fact_sheets_json_for_taxon(self, taxon):
+
+        fact_sheets = []
+
+        fact_sheets_query = FactSheet.objects.filter_by_taxon(taxon)
+
+        for fact_sheet in fact_sheets_query:
+            fact_sheet_json = self.get_fact_sheet_json(fact_sheet)
+            fact_sheets.append(fact_sheet_json)
+
+        return fact_sheets
+
+
+    def get_fact_sheet_json(self, fact_sheet):
+
+        fact_sheet_json = {
+            'id' : fact_sheet.id,
+            'title' : fact_sheet.title,
+        }
+
+        return fact_sheet_json
