@@ -1562,6 +1562,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         post_data = {
             'md5' : correct_md5,
             'crop_parameters' : json.dumps(crop_parameters),
+            'input_language' : self.meta_app.primary_language,
         }
 
         file_data = {

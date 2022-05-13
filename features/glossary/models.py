@@ -12,6 +12,8 @@ from django.utils.translation import gettext_lazy as _
 from app_kit.generic import GenericContent
 from taxonomy.lazy import LazyTaxonList
 
+from app_kit.models import ContentImageMixin
+
 
 class Glossary(GenericContent):
 
@@ -70,7 +72,7 @@ class Glossary(GenericContent):
 FeatureModel = Glossary
 
 
-class GlossaryEntry(models.Model):
+class GlossaryEntry(models.Model, ContentImageMixin):
 
     glossary = models.ForeignKey(Glossary, on_delete=models.CASCADE)
 
