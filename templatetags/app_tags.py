@@ -59,16 +59,21 @@ def ranged(number):
 from app_kit.models import ContentImage
 from PIL import Image
 @register.simple_tag
-def content_image(instance):
+def content_image(instance, image_type=None):
 
     content_type = ContentType.objects.get_for_model(instance)
 
-    image = ContentImage.objects.filter(content_type=content_type, object_id=instance.id).first()
+    image = None
+
+    if image_type:
+        image = ContentImage.objects.filter(content_type=content_type, object_id=instance.id, image_type=image_type).first()
+    else:
+        image = ContentImage.objects.filter(content_type=content_type, object_id=instance.id).first()
 
     if image:
-        return image.image()
+        return image.image_url()
 
-    return static('noimage.png')
+    return image
 
 
 @register.filter

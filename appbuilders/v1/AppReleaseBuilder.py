@@ -1985,8 +1985,6 @@ class AppReleaseBuilder(AppBuilder):
 
         if size == None:
             size = (500,500)
-
-        image_file = content_image.image_store.source_image
         
         absolute_content_images_root = self._build_absolute_content_images_path(self.meta_app,
                                                                                 app_version=self.app_version)
@@ -1995,63 +1993,25 @@ class AppReleaseBuilder(AppBuilder):
             os.makedirs(absolute_content_images_root)
 
 
-        # open the image, apply crop parameters and resize
-        if content_image.crop_parameters:
-            crop_parameters = json.loads(content_image.crop_parameters)
-        else:
-            crop_parameters = {
-                'x' : 0,
-                'y' : 0,
-                'width' : image_file.width,
-                'height' : image_file.height,
-            }
+        image_store = content_image.image_store
 
-        if content_image.features:
-            # buffer
-            image_source = content_image.add_features()
+        original_image = Image.open(image_store.source_image.path)
 
-        else:
-            image_source = image_file.path
+        processed_pil_image = content_image.get_in_memory_processed_image(original_image, size[0])
 
-        original = Image.open(image_source)
-
-        right = crop_parameters['x'] + crop_parameters['width']
-        bottom = crop_parameters['y'] + crop_parameters['height']
-        box = (crop_parameters['x'], crop_parameters['y'], right, bottom)
-        cropped = original.crop(box)
-
-        # resize cropped image, default is maxwidth: 500 x  maxheight: 500 pixels
-        #cropped.thumbnail(size, Image.ANTIALIAS)
-        image_width, image_height = cropped.size
-
-        if image_width != size[0] or image_height != size[1]:
-            w_diff = image_width - size[0]
-            h_diff = image_height - size[1]
-
-            if w_diff >= h_diff:
-                output_width = size[0]
-                output_height = image_height * (size[0]/image_width)
-
-            else:
-                output_height = size[1]
-                output_width = image_width * (size[1]/image_height)
-
-            output_size = (output_width, output_height)
-            cropped.thumbnail(output_size, Image.BICUBIC)
-
-        filename = '{0}.{1}'.format(hashlib.md5(cropped.tobytes()).hexdigest(), original.format)
+        filename = '{0}.{1}'.format(hashlib.md5(processed_pil_image.tobytes()).hexdigest(), original_image.format)
 
         relative_image_filepath = os.path.join(self._build_relative_content_images_path(), filename)
         absolute_image_filepath = os.path.join(absolute_content_images_root, filename)
 
         if not os.path.isfile(absolute_image_filepath):
 
-            image_format = original.format
-            if original.format.lower() == 'bmp':
-                cropped = cropped.convert('RGB')
+            image_format = original_image.format
+            if original_image.format.lower() == 'bmp':
+                processed_pil_image = processed_pil_image.convert('RGB')
                 image_format = 'JPEG'
                 
-            cropped.save(absolute_image_filepath, image_format)
+            processed_pil_image.save(absolute_image_filepath, image_format)
 
 
         # add image to licence_registry

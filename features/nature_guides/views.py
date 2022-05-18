@@ -12,6 +12,7 @@ from .models import (NatureGuide, MetaNode, MatrixFilter, MatrixFilterSpace, Nod
 from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm,
                     MoveNodeForm, ManageMatrixFilterRestrictionsForm, CopyTreeBranchForm)
 
+# do not delete these imports, they are generically read
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
                             RangeFilterManagementForm, ColorFilterManagementForm, NumberFilterManagementForm,
                             TaxonFilterManagementForm, TextOnlyFilterManagementForm)
@@ -19,7 +20,8 @@ from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAnd
 from .matrix_filter_space_forms import (DescriptiveTextAndImagesFilterSpaceForm, ColorFilterSpaceForm,
                                         TextOnlyFilterSpaceForm)
 
-from app_kit.views import ManageGenericContent
+
+from app_kit.views import ManageGenericContent, ManageContentImage, DeleteContentImage
 from app_kit.view_mixins import MetaAppMixin, FormLanguageMixin, MetaAppFormLanguageMixin
 
 
@@ -31,8 +33,6 @@ from django.utils.decorators import method_decorator
 from .matrix_filters import MATRIX_FILTER_TYPES
 
 from localcosmos_server.generic_views import AjaxDeleteView
-
-from app_kit.features.fact_sheets.models import FactSheet
 
 import json
 
@@ -983,6 +983,26 @@ class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormVi
         context = self.get_context_data(**self.kwargs)
         context['success'] = True
         return self.render_to_response(context)
+
+
+class ManageAdditionalMatrixFilterSpaceImage(ManageContentImage):
+    
+    template_name = 'nature_guides/ajax/manage_additional_matrix_filter_space_image.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meta_node'] = self.content_instance.matrix_filter.meta_node
+        return context
+
+
+class DeleteAdditionalMatrixFilterSpaceImage(DeleteContentImage):
+    
+    template_name = 'nature_guides/ajax/delete_additional_matrix_filter_space_image.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meta_node'] = self.object.content.matrix_filter.meta_node
+        return context
 
 
 class DeleteMatrixFilter(AjaxDeleteView):

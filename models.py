@@ -1105,6 +1105,56 @@ class ContentImage(models.Model):
 
         return buf
 
+    # apply featres and cropping, return pil image
+    # only for square images
+    # original_image has to be Pil.Image instance
+    def get_in_memory_processed_image(self, original_image, size):
+
+        # make the image square, fill with white
+        original_width, original_height = original_image.size
+        square_size = max(original_width, original_height)
+        fill_color = (255, 255, 255, 255)
+        square_image = Image.new('RGBA', (square_size, square_size), fill_color)
+        offset_x = int( (square_size - original_width) / 2 )
+        offset_y = int( (square_size - original_height) / 2 )
+        square_image.paste(original_image, (offset_x, offset_y) )
+
+        if self.features:                    
+
+            in_memory_file = io.BytesIO()
+            square_image.save(in_memory_file, format='PNG')
+            in_memory_file.seek(0)
+
+            image_source = self.add_features(in_memory_file)
+
+            square_image = Image.open(image_source)
+
+        # ATTENTION: crop_parameters are relative to the top-left corner of the image
+        # -> make them relative to the top left corner of square
+        if self.crop_parameters:
+            #{"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}
+            crop_parameters = json.loads(self.crop_parameters)
+            
+            # first crop, then resize
+            # box: (left, top, right, bottom)
+            box = (
+                crop_parameters['x'] + offset_x,
+                crop_parameters['y'] + offset_y,
+                crop_parameters['x'] + offset_x + crop_parameters['width'],
+                crop_parameters['y'] + offset_y + crop_parameters['height'],
+            )
+            
+            cropped = square_image.crop(box)
+
+        else:
+            cropped = square_image
+            
+        cropped.thumbnail([size,size], Image.ANTIALIAS)
+        
+        if original_image.format != 'PNG':
+            cropped = cropped.convert('RGB')
+
+        return cropped
 
 
     # compile features during thumbnail creation
@@ -1125,49 +1175,7 @@ class ContentImage(models.Model):
 
             original_image = Image.open(self.image_store.source_image.path)
 
-            # make the image square, fill with white
-            original_width, original_height = original_image.size
-            square_size = max(original_width, original_height)
-            fill_color = (255, 255, 255, 255)
-            square_image = Image.new('RGBA', (square_size, square_size), fill_color)
-            offset_x = int( (square_size - original_width) / 2 )
-            offset_y = int( (square_size - original_height) / 2 )
-            square_image.paste(original_image, (offset_x, offset_y) )
-
-            if self.features:                    
-
-                in_memory_file = io.BytesIO()
-                square_image.save(in_memory_file, format='PNG')
-                in_memory_file.seek(0)
-
-                image_source = self.add_features(in_memory_file)
-
-                square_image = Image.open(image_source)
-
-            # ATTENTION: crop_parameters are relative to the top-left corner of the image
-            # -> make them relative to the top left corner of square
-            if self.crop_parameters:
-                #{"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}
-                crop_parameters = json.loads(self.crop_parameters)
-                
-                # first crop, then resize
-                # box: (left, top, right, bottom)
-                box = (
-                    crop_parameters['x'] + offset_x,
-                    crop_parameters['y'] + offset_y,
-                    crop_parameters['x'] + offset_x + crop_parameters['width'],
-                    crop_parameters['y'] + offset_y + crop_parameters['height'],
-                )
-                
-                cropped = square_image.crop(box)
-
-            else:
-                cropped = square_image
-                
-            cropped.thumbnail([size,size], Image.ANTIALIAS)
-            
-            if original_image.format != 'PNG':
-                cropped = cropped.convert('RGB')
+            cropped = self.get_in_memory_processed_image(original_image, size)
 
             cropped.save(thumbpath, original_image.format)
             

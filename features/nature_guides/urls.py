@@ -50,6 +50,13 @@ urlpatterns = [
          views.ManageMatrixFilterSpace.as_view(), name='manage_matrix_filter_space'),
     path('delete-matrix-filter_space/<int:pk>/',
         views.DeleteMatrixFilterSpace.as_view(), name='delete_matrix_filter_space'),
+    # additional space image
+    path('manage-additional-matrix-filter-space-image/<int:content_type_id>/<int:object_id>/<str:image_type>/',
+        views.ManageAdditionalMatrixFilterSpaceImage.as_view(),
+        name='manage_additional_matrix_filter_space_image'),
+    path('delete-additional-matrix-filter-space-image/<int:pk>/',
+        views.DeleteAdditionalMatrixFilterSpaceImage.as_view(),
+        name='delete_additional_matrix_filter_space_image'),
     # node search
     path('search-for-node/<int:meta_app_id>/<int:nature_guide_id>/',
         views.SearchForNode.as_view(), name='search_for_node'),

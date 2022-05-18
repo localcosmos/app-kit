@@ -1348,6 +1348,9 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
                                              self.encoded_space)
 
 
+        self.matrix_filter._load_filter_type()
+
+
     def delete(self, *args, **kwargs):
 
         # update cache

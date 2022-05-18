@@ -1815,7 +1815,8 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                     'node_type': 'node',
                     'space': {},
                     'taxon': None,
-                    'uuid': str(node.name_uuid)
+                    'uuid': str(node.name_uuid),
+                    'max_points' : 0,
                 }
             ],
             'matrix_filters': {}
@@ -1851,6 +1852,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             'name' : node.meta_node.name,
             'decision_rule' : node.decision_rule,
             'taxon' : None,
+            'max_points' : 0,
         }
 
         self.assertEqual(expected_json, child_json)
@@ -1896,24 +1898,29 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             space.save()
 
             node_space = self.create_node_space(matrix_filter, node, space)
-            # add a nodefilterspace
 
-            if filter_type != 'TaxonFilter':
+            # add a nodefilterspace
+            if filter_type == 'TaxonFilter':
+                expected_space[str(matrix_filter.uuid)] = matrix_filter.matrix_filter_type.get_space_for_node(node)
+            else:
                 matrix_filter_uuid = str(matrix_filter.uuid)
                 matrix_filter_type = matrix_filter.matrix_filter_type
                 expected_space[matrix_filter_uuid] = matrix_filter_type.get_filter_space_as_list(
                     node_space)
             
-
+        expected_json['max_points'] = len(MATRIX_FILTER_TYPES) * 5
         # check if all keys/values exist in the json
         child_json_wspaces = children_cache_manager.child_as_json(node)
         for key, value in expected_json.items():
 
             if key != 'space':
                 self.assertIn(key, child_json_wspaces)
+                if value != child_json_wspaces[key]:
+                    print(key)
                 self.assertEqual(value, child_json_wspaces[key])
 
         # check the spaces
+        self.maxDiff = None
         self.assertEqual(expected_space, child_json_wspaces['space'])
 
 

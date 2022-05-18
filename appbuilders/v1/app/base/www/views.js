@@ -4330,12 +4330,36 @@ var NatureGuideView = View(TemplateView, {
 				app.identification = new IdentificationMatrix('matrix-filters-form', get_items, options);
 
 				self._attach_identification_event_listeners();
+
 			}
 		});
 
 	}
 
 });
+
+
+function switchImage(self, request, args, kwargs){
+
+	var currentTarget = kwargs["currentTarget"];
+
+	var primary_image_id = currentTarget.getAttribute("data-primary-image-id");
+	var primary_image = document.getElementById(primary_image_id);
+
+	// check if a popover is already present
+	var primary_image_url = currentTarget.getAttribute("data-primary-image-url");
+	var secondary_image_url = currentTarget.getAttribute("data-secondary-image-url");
+
+	if (primary_image.style.backgroundImage.indexOf(primary_image_url) >=0){
+		primary_image.style.backgroundImage = "url(" + secondary_image_url + ")";
+		currentTarget.src = primary_image_url;
+	}
+	else {
+		primary_image.style.backgroundImage = "url(" + primary_image_url + ")";
+		currentTarget.src = secondary_image_url;
+	}
+
+}
 
 
 var NextIdentificationStep = View(TemplateView, {

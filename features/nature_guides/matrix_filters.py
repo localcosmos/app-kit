@@ -385,7 +385,7 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
     # node/restriction filter space as list
     def get_filter_space_as_list(self, filter_space):
         # range filter stores [min,max] as encoded space
-        # a list of spaces is expected, so wrap the rang ein a list
+        # a list of spaces is expected, so wrap the range in a list
         return [filter_space.encoded_space]
 
 
@@ -877,6 +877,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
                 'image' : image,
                 'modify' : True,
                 'space_id' : space.id,
+                'matrix_filter_space' : space,
             }
 
             image = space.image()

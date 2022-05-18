@@ -6,8 +6,11 @@ from .models import MetaApp
 class MetaAppMixin:
 
     def dispatch(self, request, *args, **kwargs):
-        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
+        self.set_meta_app(**kwargs)
         return super().dispatch(request, *args, **kwargs)
+
+    def set_meta_app(self, **kwargs):
+        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -35,9 +35,14 @@
 												<div class="trait-property dtai">
 													<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
 													<label for="{{../uuid}}-{{encoded_space}}" class="text-center">
-														<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
+														<div id="{{../uuid}}-{{encoded_space}}-primary-image" class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
 														
 													</label>
+													{{#if secondary_image_url}}
+														<div class="secondary-image">
+															<img class="secondary-dtai-image tap" action="switchImage" src="{{secondary_image_url}}" data-primary-image-id="{{../uuid}}-{{encoded_space}}-primary-image" data-primary-image-url="{{ image_url }}" data-secondary-image-url="{{ secondary_image_url }}" />
+														</div>
+													{{/if}}
 													<div class="trait-property-text dtai text-center p-1">{{t encoded_space}}</div>
 												</div>
 											</div>

@@ -242,7 +242,14 @@ class NatureGuideJSONBuilder(JSONBuilder):
             for subspace in space:
                 entry = {}
                 entry['encoded_space'] = subspace.encoded_space
-                entry['image_url'] = self._get_image_url(subspace),
+                entry['image_url'] = self._get_image_url(subspace)
+
+                secondary_image = self._get_content_image(subspace, image_type='secondary')
+
+                if secondary_image:
+                    entry['secondary_image_url'] = self._get_image_url(subspace, image_type='secondary')
+                else:
+                    entry['secondary_image_url'] = None
                 
                 encoded_space.append(entry)
                 

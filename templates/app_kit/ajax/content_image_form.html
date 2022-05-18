@@ -3,7 +3,7 @@
 {% load i18n localcosmos_tags app_tags %}
 
 {% block above %}
-	<form method="POST" action="{% url 'manage_content_image' meta_app.id content_type.id content_instance.id %}?{% if new %}new=1&{% endif %}{% if content_image_taxon %}taxon_source={{ content_image_taxon.taxon_source }}&taxon_latname={{ content_image_taxon.taxon_latname }}&taxon_author={{ content_image_taxon.taxon_author }}{% endif %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
+	<form method="POST" action="{% block base_url %}{% url 'manage_content_image' content_type.id content_instance.id %}{% endblock %}?{% if new %}new=1&{% endif %}{% if content_image_taxon %}taxon_source={{ content_image_taxon.taxon_source }}&taxon_latname={{ content_image_taxon.taxon_latname }}&taxon_author={{ content_image_taxon.taxon_author }}{% endif %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
 {% endblock %}
 
 {% block title %}
@@ -22,16 +22,16 @@
 {% block footer %}
 	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
 	{% if content_image %}
-		<a href="#" data-url="{% url 'delete_content_image' content_image.pk %}" ajax-target="ModalContent" class="btn btn-danger xhr">{% trans 'Delete' %}</a>
+		<a href="#" data-url="{% block delete_url %}{% url 'delete_content_image' content_image.pk %}{% endblock %}" ajax-target="ModalContent" class="btn btn-danger xhr">{% trans 'Delete' %}</a>
 	{% endif %}
 	<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
 {% endblock %}
 
 {% block script %}
 
+	{% block extra_script %}{% endblock %}
+
 	<script>
-		
-		
 
 		{% if request.method == 'POST' and form.is_valid %}
 			
@@ -50,4 +50,6 @@
 			min-height: 50px;
 		}
 	</style>
+
+	
 {% endblock %}

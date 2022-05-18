@@ -1444,6 +1444,10 @@ input[type=range]::-moz-range-track {
 	background-color: rgb(92,184,92);
 }
 
+.trait-property.dtai input:checked + label + div, .trait-property.dtai input:checked + label + div + div {
+	background-color: rgb(92,184,92);
+}
+
 .trait-property-text > p {
 	margin:0;
 	padding-top: .3rem;
@@ -1492,6 +1496,10 @@ input[type=range]::-moz-range-track {
 	cursor: auto;
 }
 
+.trait-property-text.dtai {
+	border-radius: 0 0 .5em .5em;
+}
+
 .trait-property-indicator {
 	display: block;
 	width: 100%;
@@ -1516,6 +1524,24 @@ input[type=range]::-moz-range-track {
 
 .taxon-profile-traits-container .trait-property, .taxon-profile-traits-container .trait-property * {
 	cursor: auto;
+}
+
+
+.trait-property.dtai .secondary-image, .trait-property-text.dtai {
+	background-color: rgba(234,234,234,1);
+}
+
+.trait-property.dtai .secondary-image {
+	padding: .3rem;
+	display: flex;
+	align-items: flex-end;
+	justify-content: end;
+	cursor: auto;
+}
+
+.trait-property.dtai .secondary-image > img {
+	width: 25%;
+	height: auto;
 }
 
 .taxon-profile-traits-container .tap {

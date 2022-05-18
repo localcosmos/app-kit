@@ -17,7 +17,8 @@ from app_kit.features.nature_guides.views import (ManageNatureGuide, ManageNodel
         AddExistingNodes, LoadKeyNodes, StoreNodeOrder, LoadNodeManagementMenu, DeleteMatrixFilter,
         SearchForNode, LoadMatrixFilters, ManageMatrixFilter, ManageMatrixFilterSpace, DeleteMatrixFilterSpace,
         NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup,
-        ManageMatrixFilterRestrictions, CopyTreeBranch)
+        ManageMatrixFilterRestrictions, CopyTreeBranch, ManageAdditionalMatrixFilterSpaceImage,
+        DeleteAdditionalMatrixFilterSpaceImage)
 
 
 from app_kit.features.nature_guides.models import (NatureGuide, NatureGuidesTaxonTree, NatureGuideCrosslinks,
@@ -39,6 +40,9 @@ from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
 
 from app_kit.multi_tenancy.models import TenantUserRole
+
+
+from app_kit.tests.test_views import ContentImagePostData
 
 
 import json
@@ -1504,6 +1508,7 @@ class ManageMatrixFilterCommon:
             'input_language' : self.generic_content.primary_language,
             'name' : '{0} filter'.format(filter_type),
             'filter_type' : filter_type,
+            'weight' : 5,
         }
 
         if filter_type in ['RangeFilter', 'NumberFilter']:
@@ -3774,3 +3779,149 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
     def test_copy_and_delete_old(self):
         pass
         
+
+
+
+class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia, WithFormTest, WithMatrixFilters, WithNatureGuideLink, ViewTestMixin,
+                            WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'manage_additional_matrix_filter_space_image'
+    view_class = ManageAdditionalMatrixFilterSpaceImage
+
+    def setUp(self):
+        super().setUp()
+
+        self.content_type = ContentType.objects.get_for_model(MatrixFilterSpace)
+
+        parent_node = self.start_node
+        filter_type = 'DescriptiveTextAndImagesFilter'
+        encoded_space = 'description'
+        self.matrix_filter = self.create_matrix_filter_with_space(parent_node, filter_type, encoded_space)
+        self.space = MatrixFilterSpace.objects.filter(matrix_filter=self.matrix_filter).first()
+
+        self.image_type = 'secondary'
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.space.id,
+            'image_type' : self.image_type,
+        }
+
+        return url_kwargs
+
+    def get_view(self):
+        view = super().get_view()
+        url_kwargs = self.get_url_kwargs()
+        view.set_content_image(**url_kwargs)
+
+        if view.content_image:
+            view.set_licence_registry_entry(view.content_image.image_store, 'source_image')
+
+        self.assertEqual(view.image_type, self.image_type)
+        view.set_taxon(view.request)
+        return view
+
+    def test_get_context_data(self):
+        view = self.get_view()
+        kwargs = self.get_url_kwargs()
+        context = view.get_context_data(**kwargs)
+
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertEqual(context['content_instance'], self.space)
+        self.assertEqual(context['content_image'], None)
+        self.assertEqual(context['content_image_taxon'], None)
+        self.assertEqual(context['new'], True)
+
+    def test_post(self):
+        
+        post_data, file_data = self.get_post_form_data()
+
+        view = self.get_view()
+
+        initial = view.get_initial()
+        self.assertEqual(initial['image_type'], self.image_type)
+
+        post_data['image_type'] = self.image_type
+
+        form = view.form_class(initial=initial, data=post_data, files=file_data)
+        
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        view.set_content_image(**view.kwargs)
+        view.licence_registry_entry = None
+
+        content_image_qry = ContentImage.objects.filter(content_type=self.content_type,
+                                                object_id=self.space.id, image_type=self.image_type)
+        self.assertFalse(content_image_qry.exists())
+
+
+        self.assertEqual(view.image_type, self.image_type)
+
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.status_code, 200)
+
+        # check image existance
+        # check if the content image has been created
+        self.assertTrue(content_image_qry.exists())
+        
+        # check if the licence has been stored
+        content_image = content_image_qry.first()
+
+        licence = content_image.image_store.licences.first()
+        licencing_data = self.get_licencing_post_data()
+        
+        self.assertEqual(licence.creator_name, licencing_data['creator_name'])
+        self.assertEqual(licence.licence, 'CC0')
+
+        # check response context data
+        self.assertEqual(response.context_data['content_image'], content_image)
+
+        # test new context data from GET
+        kwargs = self.get_url_kwargs()
+        view = self.get_view()
+        
+        context = view.get_context_data(**kwargs)
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertEqual(context['content_instance'], self.space)
+        self.assertEqual(context['content_image'], content_image)
+        self.assertEqual(context['content_image_taxon'], None)
+        self.assertEqual(context['new'], False)
+
+
+class TestDeleteAdditionalMatrixFilterSpaceImage( WithImageStore, WithMedia, WithMatrixFilters, WithNatureGuideLink, ViewTestMixin,
+                            WithAjaxAdminOnly, ContentImagePostData, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'delete_additional_matrix_filter_space_image'
+    view_class = DeleteAdditionalMatrixFilterSpaceImage
+
+    def setUp(self):
+        super().setUp()
+
+        self.content_type = ContentType.objects.get_for_model(MatrixFilterSpace)
+
+        parent_node = self.start_node
+        filter_type = 'DescriptiveTextAndImagesFilter'
+        encoded_space = 'description'
+        self.matrix_filter = self.create_matrix_filter_with_space(parent_node, filter_type, encoded_space)
+        self.space = MatrixFilterSpace.objects.filter(matrix_filter=self.matrix_filter).first()
+
+        self.generic_content = self.space
+
+    def get_url_kwargs(self):
+        content_image = self.create_content_image()
+        url_kwargs = {
+            'pk' : content_image.pk,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.object = view.get_object()
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['image_type'], 'image')
+        self.assertEqual(context['content_instance'], self.space)

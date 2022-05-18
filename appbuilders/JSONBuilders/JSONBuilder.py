@@ -47,14 +47,19 @@ class JSONBuilder:
 
         return generic_content_json
 
-
-
-    def _get_image_url(self, content_image_mixedin, size=None):
+    def _get_content_image(self, content_image_mixedin, image_type='image'):
 
         if type(content_image_mixedin) == ContentImage:
             content_image = content_image_mixedin
         else:
-            content_image = content_image_mixedin.image()
+            content_image = content_image_mixedin.image(image_type=image_type)
+
+        return content_image
+
+
+    def _get_image_url(self, content_image_mixedin, image_type='image', size=None):
+
+        content_image = self._get_content_image(content_image_mixedin, image_type=image_type)
 
         if content_image:
             image_url = self.app_release_builder.save_content_image(content_image, size=size)

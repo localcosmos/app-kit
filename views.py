@@ -1282,7 +1282,8 @@ class ManageContentImageSuggestions(TemplateView):
         
     
 
-class ManageContentImage(MetaAppMixin, ManageContentImageMixin, FormView):
+class ManageContentImage(ManageContentImageMixin, FormView):
+
     form_class = ManageContentImageForm
     template_name = 'app_kit/ajax/content_image_form.html'
 
@@ -1311,8 +1312,10 @@ class ManageContentImage(MetaAppMixin, ManageContentImageMixin, FormView):
 
 
 from app_kit.view_mixins import FormLanguageMixin
-class ManageContentImageWithText(FormLanguageMixin, ManageContentImage):
+class ManageContentImageWithText(MetaAppMixin, FormLanguageMixin, ManageContentImage):
+
     form_class = ManageContentImageWithTextForm
+    template_name = 'app_kit/ajax/content_image_with_text_form.html'
 
     def set_primary_language(self):
         meta_app = MetaApp.objects.get(pk=self.kwargs['meta_app_id'])

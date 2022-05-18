@@ -10,6 +10,8 @@
 		image_element.css("background-image", "url('{% static 'noimage.png' %}'");
 		$("#Modal").modal("hide");
 	</script>
+
+	{% block extra_success_js %}{% endblock %}
 {% endblock %}
 
 {% block title %}{% blocktrans %}Delete image{% endblocktrans %}{% endblock %}

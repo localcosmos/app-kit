@@ -1393,7 +1393,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
 
     def get_url(self):
         url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
+            #'meta_app_id' : self.meta_app.id,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1822,7 +1822,7 @@ class TestManageContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
 
     def get_url_kwargs(self):
         url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
+            #'meta_app_id' : self.meta_app.id,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }

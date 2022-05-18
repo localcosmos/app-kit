@@ -1,0 +1,3 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% block base_url %}{% url 'manage_content_image_with_text' meta_app.id content_type.id content_instance.id %}{% endblock %}

@@ -325,6 +325,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
             'min_value' : '-10',
             'max_value' : '10.5',
             'step' : '0.5',
+            'weight' : 5,
         }
 
         form = RangeFilterManagementForm(self.root_meta_node, None, data=data)
@@ -384,7 +385,7 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         range_filter = RangeFilter(self.matrix_filter)
         space_list = range_filter.get_filter_space_as_list(node_filter_space)
-        self.assertEqual(space_list, [-2,2])
+        self.assertEqual(space_list, [[-2,2]])
         
 
     @test_settings
@@ -582,6 +583,7 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
             'filter_type' : 'NumberFilter',
             'input_language' : 'en',
             'numbers' : '2,5,1,10,1.010',
+            'weight' : 5,
         }
 
         form = NumberFilterManagementForm(self.root_meta_node, None, data=data)
@@ -925,13 +927,13 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         choices = color_filter._get_choices()
         expected_choices = [
-            ('[111, 222, 255, 1]', 'rgba(111,222,255,1)', {
+            ('[111,222,255,1]', 'rgba(111,222,255,1)', {
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
                 'gradient' : False,
             }),
-            ('[[0, 0, 0, 1], [255, 255, 255, 1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
+            ('[[0,0,0,1],[255,255,255,1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
                 'modify' : True,
                 'space_id' : space_2.id,
                 'description' : None,
@@ -962,13 +964,13 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         field = color_filter.get_matrix_form_field()
 
         expected_choices = [
-            ('[111, 222, 255, 1]', 'rgba(111,222,255,1)', {
+            ('[111,222,255,1]', 'rgba(111,222,255,1)', {
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
                 'gradient' : False,
             }),
-            ('[[0, 0, 0, 1], [255, 255, 255, 1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
+            ('[[0,0,0,1],[255,255,255,1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
                 'modify' : True,
                 'space_id' : space_2.id,
                 'description' : None,
@@ -1292,8 +1294,8 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         choices = dtai_filter._get_choices()
         expected_choices = [
-            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id}),
-            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id})
+            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
+            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
         ]
 
         self.assertEqual(choices, expected_choices)
@@ -1335,8 +1337,8 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
         space_2 = self.create_space('pattern 2')
 
         expected_choices = [
-            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id}),
-            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id})
+            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
+            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
         ]
 
         field = dtai_filter.get_matrix_form_field()
@@ -2145,6 +2147,7 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
             'filter_type' : 'TaxonFilter',
             'taxonomic_filters' : ['Animalia'],
             'add_custom_taxonomic_filter' : None, # or a taxon
+            'weight' : 5,
         }
 
         form = TaxonFilterManagementForm(self.root_meta_node, self.matrix_filter, data=data)

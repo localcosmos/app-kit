@@ -727,14 +727,17 @@ input[type="color"] {
 	/*margin: 0.3rem;*/
 }
 
-.grid-choices label {
+.grid-choices label, .grid-choices .label-text {
 	cursor: pointer;
 	white-space: normal;
 	font-size: 0.85rem;
 	margin-bottom: 0px !important;
 }
+.grid-choices .label-text {
+	cursor: default;
+}
 
-.grid-choice label p {
+.grid-choice label p, .grid-choice .label-text p {
 	margin-bottom: 0;
 }
 
@@ -841,6 +844,25 @@ input[type="color"] {
 
 .grid-choices input[type='radio']:checked + div.text-only label {
 	background-image: url(../images/checkbox-on.svg);
+}
+
+.grid-choice .secondary-image-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: end;
+	align-items: end;
+	padding-top: .5rem;
+	padding-bottom: .5rem;
+}
+
+.grid-choice .secondary-dtai-image {
+	width: 33%;
+	height: 33%;
+	border: 1px solid black;
+	border-radius: .5em;
+	cursor: pointer;
+	
 }
 
 /*
