@@ -2339,6 +2339,7 @@ class AppReleaseBuilder(AppBuilderBase):
             os.symlink(source_path, dest_path)
 
         # add android specific files, if any
+        # the android folder does not have to be present
         if os.path.isdir(self._frontend_android_www_path):
             shutil.copytree(self._frontend_android_www_path, self._build_android_www_path, dirs_exist_ok=True)
 
