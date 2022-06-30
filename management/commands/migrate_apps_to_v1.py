@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def _create_frontend(self, meta_app):
 
-        frontend_content_type = ContentType.objects.get_for_model(feature)
+        frontend_content_type = ContentType.objects.get_for_model(Frontend)
 
         frontend_exists = MetaAppGenericContent.objects.filter(meta_app = meta_app,
             content_type = frontend_content_type).exists()
@@ -53,13 +53,16 @@ class Command(BaseCommand):
             # Step 2: rename the current app folder in /opt/apps to not lose any data
             app_release_builder = meta_app.get_release_builder()
 
-            app_root = app_release_builder.app_root_path()
+            app_root = app_release_builder._app_root_path
+
+            if os.path.isdir(app_root):
+                self.stdout.write('Found existing app at {0}'.format(app_root))
 
             new_folder_name = '{0}_old'.format(str(meta_app.uuid))
             new_app_root = os.path.join(settings.APP_KIT_ROOT, new_folder_name)
 
             if os.path.isdir(new_app_root):
-                self.stdout.write('{1} already exists'.format(new_app_root))
+                self.stdout.write('{0} already exists'.format(new_app_root))
             else:
                 self.stdout.write('Moving {0} -> {1}'.format(app_root, new_app_root))
 
