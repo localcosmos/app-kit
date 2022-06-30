@@ -5,6 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH, TEST_TEMPLATE_PATH)
 from app_kit.features.fact_sheets.models import FactSheet, FactSheets
 
+from app_kit.appbuilder import AppPreviewBuilder
+
 import os, shutil
 
 class WithFactSheets:
@@ -44,6 +46,11 @@ class WithFactSheets:
             shutil.rmtree(TEST_MEDIA_ROOT)
 
         os.makedirs(TEST_MEDIA_ROOT)  
+
+    def build_preview_app(self):
+        # create the preview on disk
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        preview_builder.build()
 
     
     def tearDown(self):

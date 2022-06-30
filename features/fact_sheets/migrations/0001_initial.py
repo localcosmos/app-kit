@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('microcontent_type', models.CharField(max_length=355)),
-                ('image', models.ImageField(upload_to=app_kit.features.fact_sheets.models.factsheet_images_upload_path)),
+                ('image', models.ImageField(upload_to='obsolete')),#app_kit.features.fact_sheets.models.factsheet_images_upload_path)),
                 ('text', models.CharField(max_length=355, null=True)),
                 ('fact_sheet', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='fact_sheets.factsheet')),
             ],

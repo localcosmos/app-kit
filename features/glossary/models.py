@@ -49,7 +49,7 @@ class Glossary(GenericContent):
         return translation
 
 
-    def get_primary_localization_terms_and_synonyms(self, meta_app=None):
+    def get_primary_localization_terms_and_synonyms(self):
 
         all_entries = GlossaryEntry.objects.filter(glossary=self)
             

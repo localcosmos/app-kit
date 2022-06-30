@@ -6,21 +6,12 @@ from app_kit.generic_content_zip_import import GenericContentZipImporter
 from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
 
 
-import os, xlrd, openpyxl
+import os, openpyxl
 
 
 '''
     Glossary as Spreadsheet
     - only reads the first sheet
-'''
-
-'''
-    xlrd cell types cell.ctype
-    XL_CELL_EMPTY 	0 	empty string ''
-    XL_CELL_TEXT 	1 	a Unicode string
-    XL_CELL_NUMBER 	2 	float
-    XL_CELL_DATE 	3 	float
-    XL_CELL_BOOLEAN 	4 	int; 1 means TRUE, 0 means FALSE
 '''
 
 class GlossaryZipImporter(GenericContentZipImporter):
@@ -35,7 +26,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
         self.filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
         if self.filepath is not None:
-            self.workbook = xlrd.open_workbook(self.filepath)
+            self.workbook = openpyxl.load_workbook(self.filepath)
             self.workbook_filename = os.path.basename(self.filepath)
             self.validate_spreadsheet()
 
@@ -46,29 +37,28 @@ class GlossaryZipImporter(GenericContentZipImporter):
     # self.workbook is available
     def validate_spreadsheet(self):
 
-        glossary_sheet = self.workbook.sheet_by_index(0)
-
+        glossary_sheet = self.get_sheet_by_index(0)
         found_synonyms = {}
 
-        for row_index, row in enumerate(glossary_sheet.get_rows(), 0):
+        for row_index, row in enumerate(glossary_sheet.iter_rows(), 1):
 
             if row_index == 0:
 
                 if row[0].value.lower() != 'term':
                     message = _('Cell content has to be "Term", not {0}'.format(row[0].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
 
 
                 if row[1].value.lower() != 'synonyms':
 
                     message = _('Cell content has to be "Synonyms", not {0}'.format(row[1].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
                     
 
                 if row[2].value.lower() != 'definition':
 
                     message = _('Cell content has to be "Definition", not {0}'.format(row[2].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
 
 
             else:
@@ -77,7 +67,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
                 synonyms = row[1].value
                 definition = row[2].value
 
-                self.validate_glossary_entry(term, synonyms, definition, glossary_sheet.name, row_index)
+                self.validate_glossary_entry(term, synonyms, definition, glossary_sheet.title, row_index)
 
                 if synonyms:
                     synonyms_list = synonyms.split('|')
@@ -92,7 +82,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
                                 message = _('Unambiguous synonym: {0} is mapped to {1} and {2}'.format(
                                     synonym, term, found_synonyms[synonym]))
                                             
-                                self.add_cell_error(self.workbook_filename, glossary_sheet.name, 1, 0, message)
+                                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
                             
 
     def validate_glossary_entry(self, term, synonyms, definition, glossary_sheet_name, row_index):
@@ -116,13 +106,13 @@ class GlossaryZipImporter(GenericContentZipImporter):
         if len(self.errors) != 0:
             raise ValueError('Only valid zipfiles can be imported.')
 
-        glossary_sheet = self.workbook.sheet_by_index(0)
+        glossary_sheet = self.get_sheet_by_index(0)
 
         # check if the term exists - only update its synonyms and definition if it is new
         db_glossary_entries = GlossaryEntry.objects.filter(glossary=self.generic_content)
         delete_glossary_entries = [e.term for e in db_glossary_entries]
                         
-        for row_index, row in enumerate(glossary_sheet.get_rows(), 0):
+        for row_index, row in enumerate(glossary_sheet.iter_rows(), 1):
 
             if row_index == 0:
                 continue

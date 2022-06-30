@@ -3,21 +3,6 @@
 
 {% block generic_content_specific_top %}
 	<div id="app-components" class="row">
-		<div class="col-12 col-md-6 col-lg-4 mb-4">
-			<div class="card">
-				<div class="card-header">
-					<img src="{% get_static_prefix %}app_kit/images/features/Theme.svg" alt="Theme" width="30" height="auto"/>
-					<small>{% trans 'Theme' %}</small>
-					<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large float-right"  data-toggle="popover" title="{% trans 'Theme' %}" data-content="{% trans 'Defines the appearance of your app.' %}" data-placement="left" />
-				</div>
-				<div class="card-body" style="position:relative;">
-					<h5 class="card-title">{% trans 'Theme' %}: {{ meta_app.get_theme.name }}</h5>
-					<div class="text-right">
-						<strong><a class="stretched-link" href="{% url 'manage_app_design' meta_app.id %}">{% trans 'Edit' %}</a></strong>
-					</div>
-				</div>
-			</div>
-		</div>
 		{% for link in generic_content_links %}
 			{% include 'app_kit/ajax/component_card.html' %}
 		{% endfor %}

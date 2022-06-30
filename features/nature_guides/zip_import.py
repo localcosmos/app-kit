@@ -16,9 +16,13 @@ MATRIX_FILTERS = [t[0][:-6] for t in MATRIX_FILTER_TYPES]
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
-import os, xlrd, openpyxl
+import os, openpyxl
+
+from openpyxl.utils import get_column_letter
 
 from PIL import Image
+
+DEBUG = True
 
 
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
@@ -33,15 +37,6 @@ TREE_SHEET_DEFINITION = [
     ['Node Name', 'Parent Node', 'Taxonomic Source', 'Scientific Name', 'Decision Rule']
 ]
 
-
-'''
-    xlrd cell types cell.ctype
-    XL_CELL_EMPTY 	0 	empty string ''
-    XL_CELL_TEXT 	1 	a Unicode string
-    XL_CELL_NUMBER 	2 	float
-    XL_CELL_DATE 	3 	float
-    XL_CELL_BOOLEAN 	4 	int; 1 means TRUE, 0 means FALSE
-'''
 
 class NatureGuideZipImporter(GenericContentZipImporter):
 
@@ -67,7 +62,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
             self.workbook_filename = os.path.basename(self.filepath)
 
-            self.workbook = xlrd.open_workbook(self.filepath)
+            self.workbook = openpyxl.load_workbook(self.filepath)
             
             # color sheet is optional
             # xlrd for xls, openpyxl for xlsx
@@ -110,14 +105,15 @@ class NatureGuideZipImporter(GenericContentZipImporter):
     def validate_spreadsheet(self):
 
         # at least the sheet 'Tree' has to be present
-        sheet_names = self.workbook.sheet_names()
+        sheet_names = self.workbook.sheetnames
 
         tree_sheet = self.get_tree_sheet()
 
         if tree_sheet is not None:
 
             # validate tree sheet
-            cells = tree_sheet.row(0)
+            # [1] is the first row
+            cells = tree_sheet[1]
             
             for column, cell in enumerate(cells, 0):
 
@@ -132,9 +128,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     self.add_cell_error(self.workbook_filename, self.tree_sheet_name, column, 0, message)
 
 
-            for row_number in range(1, tree_sheet.nrows):
+            row_count = tree_sheet.max_row
+            for row_number in range(2, row_count):
 
-                row = tree_sheet.row(row_number)
+                row = tree_sheet[row_number]
 
                 # check if each row has either Node Name or Decision Rule set
                 if not row[0].value:
@@ -154,7 +151,9 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     self.add_row_error(self.workbook_filename, self.tree_sheet_name, row_number, message)
 
 
-                decision_rule = row[5].value
+                decision_rule = None
+                if len(row) >= 4:
+                    decision_rule = row[4].value
 
                 if decision_rule and len(decision_rule) > TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule']:
                     
@@ -192,13 +191,13 @@ class NatureGuideZipImporter(GenericContentZipImporter):
         if tree_sheet is not None:
 
             # at least the sheet 'Tree' has to be present
-            sheet_names = self.workbook.sheet_names()
+            sheet_names = self.workbook.sheetnames
 
             for sheet_name in sheet_names:
 
                 if sheet_name.startswith('Matrix_'):
 
-                    matrix_sheet = self.workbook.sheet_by_name(sheet_name)
+                    matrix_sheet = self.workbook[sheet_name]
 
                     self.validate_matrix_sheet(tree_sheet, matrix_sheet)
 
@@ -209,9 +208,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         if taxonomic_filters_sheet:
 
-            for r in range(1, taxonomic_filters_sheet.nrows):
+            row_count = taxonomic_filters_sheet.max_row
+            for r in range(1, row_count):
 
-                row = taxonomic_filters_sheet.row(r)
+                row = taxonomic_filters_sheet[r]
 
                 # check if the taxon is available in the source
 
@@ -257,8 +257,8 @@ class NatureGuideZipImporter(GenericContentZipImporter):
         
         tree_sheet = self.get_tree_sheet()
 
-        node_col = tree_sheet.col(0)
-        parent_node_col = tree_sheet.col(1)
+        node_col = tree_sheet['A']
+        parent_node_col = tree_sheet['B']
 
         found_match = False
 
@@ -277,12 +277,12 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
     def validate_matrix_sheet(self, tree_sheet, matrix_sheet):
 
-        parent_node_name = matrix_sheet.name[len('Matrix_'):]
+        parent_node_name = matrix_sheet.title[len('Matrix_'):]
 
         found_parent_node_in_tree = False
 
         # check if parent node name is present in tree
-        for row in tree_sheet.get_rows():
+        for row in tree_sheet.iter_rows():
 
             node_name = row[0].value
             
@@ -292,7 +292,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         if found_parent_node_in_tree == False:
             message = _('[%(matrix_sheet)s] %(parent_node_name)s not found in sheet %(tree)s' % {
-                'matrix_sheet' : matrix_sheet.name,
+                'matrix_sheet' : matrix_sheet.title,
                 'parent_node_name' : parent_node_name,
                 'tree' : self.tree_sheet_name,
             })
@@ -301,19 +301,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         # the first 4 rows of a matrix sheet are definition rows
         # A1 - A4 have to be empty
-        first_column = matrix_sheet.col(0)
-
-        ''' deprecated
-        for r in range(0,4):
-            cell = first_column[r]
-
-            if cell.value:
-                message = _('cell must be empty')
-                self.add_cell_error(self.workbook_filename, matrix_sheet.name, 0, r, message)
-        '''
+        first_column = matrix_sheet['A']
         
         # check column 0 (=A), row 5 to end. The values have to be Node names attached to the correct parent node
-        for r in range(4, len(first_column)):
+        for r in range(5, len(first_column)):
 
             node_name = first_column[r].value
             # check if the node_name has the correct parent_node
@@ -325,21 +316,20 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     'tree_sheet' : self.tree_sheet_name,
                 })
 
-                self.add_cell_error(self.workbook_filename, matrix_sheet.name, 0, r, message)
+                self.add_cell_error(self.workbook_filename, matrix_sheet.title, 0, r, message)
             
         
         # iterate over all traits
-        column_count = matrix_sheet.ncols
+        for column_index, column in enumerate(matrix_sheet.iter_cols(min_col=2), 2):
 
-        for c in range(1, column_count):
-
-            column = matrix_sheet.col(c)
+            column_letter = get_column_letter(column_index)
 
             trait_name = column[0].value
 
             if not trait_name:
-                message = _('Nameless trait found')
-                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, 0, message)
+                continue
+                #message = _('Nameless trait found')
+                #self.add_cell_error(self.workbook_filename, matrix_sheet.title, column_letter, 0, message)
 
             trait_type = column[1].value
             if trait_type not in MATRIX_FILTERS:
@@ -347,7 +337,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     'trait_type' : trait_type,
                 })
                 
-                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, 1, message)
+                self.add_cell_error(self.workbook_filename, matrix_sheet.title, column_letter, 1, message)
 
             # depending on the trait type, additional information might be required
             if trait_type == 'Range':
@@ -356,7 +346,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
                 if not unit:
                     message = _('Range traits need a unit, e.g. "cm". Found empty cell instead.')
-                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, 2, message)
+                    self.add_cell_error(self.workbook_filename, matrix_sheet.title, column_letter, 2, message)
                 
                 step = column[3].value
 
@@ -364,7 +354,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     step = float(step)
                 except:
                     message = _('Invalid value. Range traits need a step which defines the intervals of the slider, e.g. "0.5"')
-                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, 3, message)
+                    self.add_cell_error(self.workbook_filename, matrix_sheet.title, column_letter, 3, message)
 
             if trait_type == 'Taxon':
                 ### TAXONOMIC Matrix_XY_Taxonomy sheet needs to be present
@@ -373,7 +363,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                 if not taxonomic_filters_sheet:
                     message = _('You defined a taxonomic filter in {0}, but the sheet {1} was not found.'.format(
                         matrix_sheet.name, self.taxonomic_filters_sheet_name))
-                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, 0, message)
+                    self.add_cell_error(self.workbook_filename, matrix_sheet.title, column_letter, 0, message)
                 else:
                     pass
                 
@@ -391,7 +381,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                 })
 
                 # type 0 is the empty string
-                if cell.ctype != 0:
+                if cell.value and cell.value != '':
 
                     ### DescriptiveTextAndImages
                     if trait_type == 'DescriptiveTextAndImages':
@@ -410,13 +400,13 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                                         'value' : space_name,
                                         'max_length' : TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'],
                                     })
-                                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                         
                     ### RANGE
                     elif trait_type == 'Range':
 
                         # only type text is allowed
-                        if cell.ctype == 1:
+                        if cell.data_type == 's':
                             # a range needs min and max
 
                             range_list = cell.value.split('-')
@@ -426,20 +416,20 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                                     min_value = float(range_list[0])
                                     max_value = float(range_list[1])
                                 except:
-                                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                    self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                                     
                             else:
-                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                                 
                         # 0 is the empty string
                         else:
-                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
 
                     ### NUMBERS
                     elif trait_type == 'Numbers':
 
                         # type text
-                        if cell.ctype == 1:
+                        if cell.data_type == 's':
                             numbers = cell.value.split(',')
 
                             numbers_are_valid = True
@@ -451,17 +441,17 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                                     break
 
                             if numbers_are_valid == False:
-                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                                 
                         
                         # type number
-                        elif cell.ctype == 2:
+                        elif cell.data-type == 'n':
                             try:
                                 number = float(number_text)
                             except:
-                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                         else:
-                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
 
 
                     ### COLOR
@@ -469,25 +459,25 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
                         colors_sheet = self.get_colors_sheet()
                         available_colors = []
-                        for color_cell in colors_sheet.col(0):
+                        for color_cell in colors_sheet['A']:
                             available_colors.append(color_cell.value.strip())
 
                         if colors_sheet:
 
-                            if cell.ctype == 1:
+                            if cell.data_type == 's':
                                 colors = cell.value.split('|')
 
                                 for color in colors:
                                     if color.strip() not in available_colors:
-                                        self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r,
+                                        self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r,
                                                             message)
                                 
                             else:
-                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r, message)
+                                self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
 
                         else:
                             no_color_sheet_message = _('You defined a Colors trait, but no Colors sheet found.')
-                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, c, r,
+                            self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r,
                                                 no_color_sheet_message)
                         
                 
@@ -498,8 +488,9 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
             colors_sheet = self.get_colors_sheet()
 
-            for row_number in range(1, colors_sheet.nrows):
-                row = colors_sheet.row(row_number)
+            row_count = colors_sheet.max_row
+            for row_number in range(1, row_count):
+                row = colors_sheet[row_number]
 
                 if row[0].value == color_name:
 
@@ -541,9 +532,9 @@ class NatureGuideZipImporter(GenericContentZipImporter):
     # returns e.g. (176, 171, 154)
     def get_background_color_xls(self, row_number, col_number):
 
-        workbook = xlrd.open_workbook(self.filepath, formatting_info=True)
+        workbook = openpyxl.load_workbook(self.filepath, formatting_info=True)
 
-        colors_sheet = workbook.sheet_by_name(self.colors_sheet_name)
+        colors_sheet = workbook[self.colors_sheet_name]
         
         cif = colors_sheet.cell_xf_index(row_number, col_number)
         iif = workbook.xf_list[cif]
@@ -557,9 +548,12 @@ class NatureGuideZipImporter(GenericContentZipImporter):
     def validate_colors_sheet_xls(self):
         colors_sheet = self.get_colors_sheet()
 
-        for r in range(1, colors_sheet.nrows):
+        row_count = colors_sheet.max_row
+        for r in range(1, row_count):
 
-            row = colors_sheet.row(r)
+            row_number = r
+
+            row = colors_sheet[r]
 
             name = row[0].value
             if not name:
@@ -686,8 +680,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         # make a set of parent_nodes to determine if a node is a result
         self.parent_nodes = set([])
-        parent_node_col = tree_sheet.col(1)
-        for r in range(1, tree_sheet.nrows):
+        parent_node_col = tree_sheet['B']
+
+        tree_sheet_row_count = tree_sheet.max_row
+        for r in range(1, tree_sheet_row_count):
             parent_node = parent_node_col[r].value
             if parent_node:
                 self.parent_nodes.add(parent_node)
@@ -699,15 +695,20 @@ class NatureGuideZipImporter(GenericContentZipImporter):
         # last_leftmost_child will be a result or None
         last_leftmost_child = self.work_tree_down(tree_sheet, parent_node_db)
 
+        if DEBUG == True:
+            print('last leftmost child of branch root {0} : {1}'.format(parent_node_db, last_leftmost_child))
+
         # parent_node_db is needed if there are no children, so last_leftmost_child is None
-        next_parent_sibling = self.get_next_parent_sibling(tree_sheet, last_leftmost_child)
+        next_parent_sibling = self.get_next_parent_sibling(last_leftmost_child)
+
+        print(next_parent_sibling)
 
         while next_parent_sibling:
 
             last_leftmost_child = self.work_tree_down(tree_sheet, next_parent_sibling,
                                                       parent_node_name=next_parent_sibling.name)
 
-            next_parent_sibling = self.get_next_parent_sibling(tree_sheet, last_leftmost_child)
+            next_parent_sibling = self.get_next_parent_sibling(last_leftmost_child)
 
     
     def get_nodelink_image_filepath(self, meta_node):
@@ -731,9 +732,13 @@ class NatureGuideZipImporter(GenericContentZipImporter):
         return abspath
     
         
-    def work_tree_down(self, tree_sheet, parent_node_db, parent_node_name=''):
+    def work_tree_down(self, tree_sheet, parent_node_db, parent_node_name=None):
 
         children = self.get_children(tree_sheet, parent_node_name=parent_node_name)
+
+        if DEBUG == True:
+            print('children:')
+            print(children)
 
         last_leftmost_child = None
         last_leftmost_child_db = None
@@ -822,9 +827,11 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         children = []
 
-        for r in range(1, tree_sheet.nrows):
+        row_count = tree_sheet.max_row
+        for r in range(1, row_count):
 
-            row = tree_sheet.row(r)
+            row = tree_sheet[r]
+
             parent_node = row[1].value
 
             if parent_node == parent_node_name:
@@ -834,7 +841,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
 
     # 
-    def get_next_parent_sibling(self, tree_sheet, last_leftmost_child):
+    def get_next_parent_sibling(self, last_leftmost_child):
 
         next_parent_sibling = None
 
@@ -861,9 +868,11 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         if definitions_sheet:
 
-            for c in range(1, definitions_sheet.ncols):
+            for c in range(1, definitions_sheet.max_column):
 
-                column = definitions_sheet.col(c)
+                column_letter = get_column_letter(c)
+
+                column = definitions_sheet[column_letter]
 
                 # the first 4 rows are definitons
                 col_matrix_filter_name = column[0].value
@@ -887,239 +896,258 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
         nature_guide = self.generic_content
 
-        sheet_names = self.workbook.sheet_names()
+        sheet_names = self.workbook.sheetnames
         matrix_sheet_name = 'Matrix_{0}'.format(parent_node_db.name)
 
         if matrix_sheet_name in sheet_names:
 
             matrix_filter_cache = {}
-            matrix_sheet = self.workbook.sheet_by_name(matrix_sheet_name)
+            matrix_sheet = self.workbook[matrix_sheet_name]
 
             # create all matrix filters
-            for c in range(1, matrix_sheet.ncols):
+            for c in range(2, matrix_sheet.max_column):
 
-                column = matrix_sheet.col(c)
+                column_letter = get_column_letter(c)
+
+                column = matrix_sheet[column_letter]
 
                 # the first 4 rows are definitons
                 matrix_filter_name = column[0].value
-                matrix_filter_type = column[1].value
 
-                definition = None
+                if matrix_filter_name:
+                    matrix_filter_type = column[1].value
 
-                if matrix_filter_type == 'Range':
-                    definition = {
-                        'unit' : column[2].value,
-                        'step' : float(column[3].value),
-                    }
+                    definition = None
 
-                elif matrix_filter_type == 'Numbers':
+                    if matrix_filter_type == 'Range':
+                        definition = {
+                            'unit' : column[2].value,
+                            'step' : float(column[3].value),
+                        }
 
-                    definition = {
-                        'unit' : column[2].value,
-                    }
+                    elif matrix_filter_type == 'Numbers':
 
-                matrix_filter = MatrixFilter(
-                    meta_node = parent_node_db.meta_node,
-                    name = matrix_filter_name,
-                    filter_type = '{0}Filter'.format(matrix_filter_type),
-                    definition = definition,
-                    position = c,
-                )
+                        definition = {
+                            'unit' : column[2].value,
+                        }
 
-                matrix_filter.save()
+                    matrix_filter = MatrixFilter(
+                        meta_node = parent_node_db.meta_node,
+                        name = matrix_filter_name,
+                        filter_type = '{0}Filter'.format(matrix_filter_type),
+                        definition = definition,
+                        position = c,
+                    )
 
-                matrix_filter_cache[str(c)] = matrix_filter
+                    matrix_filter.save()
 
-                # add all taxa to taxonomic filter
-                if matrix_filter.filter_type == 'TaxonFilter':
-                    taxonfilter_sheet = self.get_taxonomic_filters_sheet()
+                    matrix_filter_cache[column_letter] = matrix_filter
 
-                    taxon_space = []
+                    # add all taxa to taxonomic filter
+                    if matrix_filter.filter_type == 'TaxonFilter':
+                        taxonfilter_sheet = self.get_taxonomic_filters_sheet()
 
-                    # find the correct column. column[0] has to match the name of the matrix_filter
-                    for r in range(1, taxonfilter_sheet.nrows):
+                        taxon_space = []
 
-                        row =  taxonfilter_sheet.row(r)
+                        # find the correct column. column[0] has to match the name of the matrix_filter
+                        taxonfilter_sheet_row_count = taxonfilter_sheet.max_row
+                        for r in range(1, taxonfilter_sheet_row_count):
 
-                        if row[2].value == matrix_sheet_name and row[3].value == matrix_filter.name:
-                            taxon_latname = row[0].value # can be comma separated
-                            taxon_source = row[1].value.split(',') # multiple sources are possible
+                            row =  taxonfilter_sheet[r]
 
-                            taxonfilter_entry = matrix_filter.matrix_filter_type.make_taxonfilter_entry(
-                                taxon_latname, taxon_source)
+                            if row[2].value == matrix_sheet_name and row[3].value == matrix_filter.name:
+                                taxon_latname = row[0].value # can be comma separated
+                                taxon_source = row[1].value.split(',') # multiple sources are possible
 
-                            taxon_space.append(taxonfilter_entry)
+                                taxonfilter_entry = matrix_filter.matrix_filter_type.make_taxonfilter_entry(
+                                    taxon_latname, taxon_source)
 
-                    # save the space
-                    db_space = MatrixFilterSpace(matrix_filter=matrix_filter, encoded_space=taxon_space)
-                    db_space.save()               
+                                taxon_space.append(taxonfilter_entry)
+
+                        # save the space
+                        db_space = MatrixFilterSpace(matrix_filter=matrix_filter, encoded_space=taxon_space)
+                        db_space.save()               
                             
 
             # iterate over all matrix entry rows which are not trait definition rows
             # create MatrixFilterSpace using the entries given in the sheet
             # create the NodeFilterSpace at the same time
-            for r in range(4, matrix_sheet.nrows):
+            matrix_sheet_row_count = matrix_sheet.max_row
+            for r in range(5, matrix_sheet_row_count):
 
-                row = matrix_sheet.row(r)
+                row = matrix_sheet[r]
 
                 node_name = row[0].value
 
-                node = NatureGuidesTaxonTree.objects.get(
-                    nature_guide=nature_guide,
-                    meta_node__name=node_name)
+                if node_name:
 
-                # iterate over all matrix filter values
-                for c in range(1, matrix_sheet.ncols):
+                    if DEBUG == True:
+                        print('Fetching node {0}'.format(node_name))
 
-                    matrix_filter_value = row[c].value
+                    node = NatureGuidesTaxonTree.objects.get(
+                        nature_guide=nature_guide,
+                        meta_node__name=node_name)
 
-                    # depending on filter type, create/update MatrixFilterSpace and NodeFilterSpace
+                    # iterate over all matrix filter values
+                    for c in range(2, matrix_sheet.max_column):
 
-                    matrix_filter = matrix_filter_cache[str(c)]
+                        column_letter = get_column_letter(c)
 
-                    if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+                        matrix_filter_value = row[c-1].value
 
-                        values = [v.strip() for v in matrix_filter_value.split('|')]
+                        if matrix_filter_value:
 
-                        for encoded_space in values:
-                            # one MatrixFilterSpace per text
-                            space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter,
-                                                                     encoded_space=encoded_space).first()
+                            # depending on filter type, create/update MatrixFilterSpace and NodeFilterSpace
 
-                            if not space:
+                            matrix_filter = matrix_filter_cache[column_letter]
 
-                                position = self.get_matrix_filter_space_position(matrix_filter.name, encoded_space)
+                            if DEBUG == True:
+                                print('Fetched matrix filter value {0} of {1} for {2}'.format(matrix_filter_value,
+                                    matrix_filter.name, node_name))
 
-                                if not position:
-                                    position = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).count()
+                            if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
 
-                                space = MatrixFilterSpace(
-                                    matrix_filter = matrix_filter,
-                                    encoded_space = encoded_space,
-                                    position = position,
-                                )
+                                values = [v.strip() for v in matrix_filter_value.split('|')]
 
-                                space.save()
+                                for encoded_space in values:
+                                    # one MatrixFilterSpace per text
+                                    space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter,
+                                                                            encoded_space=encoded_space).first()
 
-                                # add image if present                                
-                                image_relpath = 'images/Matrix_{0}/{1}/{2}.'.format(parent_node_db.name,
-                                                                    matrix_filter.name, space.encoded_space)
-                                
-                                image_abspath = self.get_app_file_abspath(image_relpath, self.image_file_extensions)
+                                    if not space:
 
-                                if not image_abspath:
-                                    fallback_image_relpath = 'images/Matrix/{1}/{2}.'.format(parent_node_db.name,
-                                                                    matrix_filter.name, space.encoded_space)
+                                        position = self.get_matrix_filter_space_position(matrix_filter.name, encoded_space)
 
-                                    image_abspath = self.get_app_file_abspath(fallback_image_relpath,
-                                                                             self.image_file_extensions)
-                                
-                                if image_abspath:
-                                    image_licence_path = self.get_image_licence_path_from_abspath(image_abspath)
-                                    self.save_content_image(image_abspath, space, image_licence_path)
+                                        if not position:
+                                            position = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).count()
+
+                                        space = MatrixFilterSpace(
+                                            matrix_filter = matrix_filter,
+                                            encoded_space = encoded_space,
+                                            position = position,
+                                        )
+
+                                        space.save()
+
+                                        # add image if present                                
+                                        image_relpath = 'images/Matrix_{0}/{1}/{2}.'.format(parent_node_db.name,
+                                                                            matrix_filter.name, space.encoded_space)
+                                        
+                                        image_abspath = self.get_app_file_abspath(image_relpath, self.image_file_extensions)
+
+                                        if not image_abspath:
+                                            fallback_image_relpath = 'images/Matrix/{1}/{2}.'.format(parent_node_db.name,
+                                                                            matrix_filter.name, space.encoded_space)
+
+                                            image_abspath = self.get_app_file_abspath(fallback_image_relpath,
+                                                                                    self.image_file_extensions)
+                                        
+                                        if image_abspath:
+                                            image_licence_path = self.get_image_licence_path_from_abspath(image_abspath)
+                                            self.save_content_image(image_abspath, space, image_licence_path)
+                                            
+
+                                    node_space, created = NodeFilterSpace.objects.get_or_create(
+                                        node = node,
+                                        matrix_filter = matrix_filter,
+                                    )
+
+                                    node_space.values.add(space)
                                     
 
-                            node_space, created = NodeFilterSpace.objects.get_or_create(
-                                node = node,
-                                matrix_filter = matrix_filter,
-                            )
+                            elif matrix_filter.filter_type == 'RangeFilter':
 
-                            node_space.values.add(space)
-                            
+                                node_encoded_space = [float(val) for val in matrix_filter_value.split('-')] 
 
-                    elif matrix_filter.filter_type == 'RangeFilter':
+                                # for ranges, only one MatrixFilterSpace exists, which might need updating
+                                space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).first()
+                                if space:
+                                    encoded_space = space.encoded_space
 
-                        node_encoded_space = [float(val) for val in matrix_filter_value.split('-')] 
+                                    if encoded_space[0] > node_encoded_space[0]:
+                                        encoded_space[0] = node_encoded_space[0]
 
-                        # for ranges, only one MatrixFilterSpace exists, which might need updating
-                        space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).first()
-                        if space:
-                            encoded_space = space.encoded_space
+                                    if encoded_space[1] < node_encoded_space[1]:
+                                        encoded_space[1] = node_encoded_space[1]
 
-                            if encoded_space[0] > node_encoded_space[0]:
-                                encoded_space[0] = node_encoded_space[0]
+                                    space.encoded_space = encoded_space
+                                    space.save()
+                                    
+                                else:
+                                    
 
-                            if encoded_space[1] < node_encoded_space[1]:
-                                encoded_space[1] = node_encoded_space[1]
+                                    space = MatrixFilterSpace(
+                                        matrix_filter = matrix_filter,
+                                        encoded_space = node_encoded_space,
+                                    )
 
-                            space.encoded_space = encoded_space
-                            space.save()
-                            
-                        else:
-                            
-
-                            space = MatrixFilterSpace(
-                                matrix_filter = matrix_filter,
-                                encoded_space = node_encoded_space,
-                            )
-
-                            space.save()
+                                    space.save()
 
 
-                        node_space = NodeFilterSpace(
-                            node = node,
-                            matrix_filter = matrix_filter,
-                            encoded_space = node_encoded_space,
-                        )
+                                node_space = NodeFilterSpace(
+                                    node = node,
+                                    matrix_filter = matrix_filter,
+                                    encoded_space = node_encoded_space,
+                                )
 
-                        node_space.save()
-
-
-                    elif matrix_filter.filter_type == 'ColorFilter':
-                        color_names = [val.strip() for val in matrix_filter_value.split('|')]
-
-                        for color_name in color_names:
-
-                            encoded_space = self.get_rgb_from_color_name(color_name)
-
-                            space, created = MatrixFilterSpace.objects.get_or_create(matrix_filter=matrix_filter,
-                                                                            encoded_space=encoded_space)
-
-                            node_space, created = NodeFilterSpace.objects.get_or_create(
-                                node = node,
-                                matrix_filter = matrix_filter,
-                            )
-
-                            node_space.values.add(space)
-                            
-
-                    elif matrix_filter.filter_type == 'NumbersFilter':
-                        node_encoded_space = [float(val) for val in matrix_filter_value.split('|')]
-
-                        space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).first()
-                        if space:
-                            encoded_space = space.encoded_space
-
-                            for number in node_encoded_space:
-                                if number not in encoded_space:
-                                    encoded_space.append(number)
-
-                            space.encoded_space = sorted(encoded_space)
-                            space.save()
-                            
-                        else:
-                            space = MatrixFilterSpace(
-                                matrix_filter = matrix_filter,
-                                encoded_space = node_encoded_space,
-                            )
-
-                            space.save()
+                                node_space.save()
 
 
-                        node_space = NodeFilterSpace(
-                            node = node,
-                            matrix_filter = matrix_filter,
-                            encoded_space = node_encoded_space,
-                        )
+                            elif matrix_filter.filter_type == 'ColorFilter':
+                                color_names = [val.strip() for val in matrix_filter_value.split('|')]
 
-                        node_space.save()
+                                for color_name in color_names:
 
-                    elif matrix_filter.filter_type == 'TaxonomicFilter':
-                        pass
+                                    encoded_space = self.get_rgb_from_color_name(color_name)
+
+                                    space, created = MatrixFilterSpace.objects.get_or_create(matrix_filter=matrix_filter,
+                                                                                    encoded_space=encoded_space)
+
+                                    node_space, created = NodeFilterSpace.objects.get_or_create(
+                                        node = node,
+                                        matrix_filter = matrix_filter,
+                                    )
+
+                                    node_space.values.add(space)
+                                    
+
+                            elif matrix_filter.filter_type == 'NumbersFilter':
+                                node_encoded_space = [float(val) for val in matrix_filter_value.split('|')]
+
+                                space = MatrixFilterSpace.objects.filter(matrix_filter=matrix_filter).first()
+                                if space:
+                                    encoded_space = space.encoded_space
+
+                                    for number in node_encoded_space:
+                                        if number not in encoded_space:
+                                            encoded_space.append(number)
+
+                                    space.encoded_space = sorted(encoded_space)
+                                    space.save()
+                                    
+                                else:
+                                    space = MatrixFilterSpace(
+                                        matrix_filter = matrix_filter,
+                                        encoded_space = node_encoded_space,
+                                    )
+
+                                    space.save()
 
 
-                cache = ChildrenCacheManager(node.parent.meta_node)
-                cache.add_or_update_child(node)
+                                node_space = NodeFilterSpace(
+                                    node = node,
+                                    matrix_filter = matrix_filter,
+                                    encoded_space = node_encoded_space,
+                                )
+
+                                node_space.save()
+
+                            elif matrix_filter.filter_type == 'TaxonomicFilter':
+                                pass
+
+
+                    cache = ChildrenCacheManager(node.parent.meta_node)
+                    cache.add_or_update_child(node)
 
 
     def get_image_licence_path_from_abspath(self, abspath):

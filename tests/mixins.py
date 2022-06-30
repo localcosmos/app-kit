@@ -14,6 +14,12 @@ from app_kit.models import (ContentImageMixin, MetaApp, MetaAppGenericContent, I
 
 from app_kit.multi_tenancy.models import TenantUserRole
 
+from app_kit.settings import ADDABLE_FEATURES, REQUIRED_FEATURES
+
+from app_kit.utils import import_module
+
+from app_kit.appbuilder import AppPreviewBuilder
+
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
@@ -87,6 +93,7 @@ class WithUser:
         
 
 
+
 # creating a meta app version creates files on disk
 # each method has to be decorated with @test_settings
 class WithMetaApp:
@@ -146,36 +153,47 @@ class WithMetaApp:
                     language_code=language_code,
                 )
                 secondary_language.save()
+
+
+    def create_generic_content(self, FeatureModel, meta_app, force=False):
+
+        content_type = ContentType.objects.get_for_model(FeatureModel)
+
+        exists = MetaAppGenericContent.objects.filter(meta_app=meta_app,
+                                                    content_type=content_type).exists()
+
+
+        app_link = None
+
+        if not exists or force == True:
+            
+            # create link
+            generic_content_name = '{0} {1}'.format(meta_app.name, FeatureModel._meta.verbose_name)
+            generic_content = FeatureModel.objects.create(generic_content_name, meta_app.primary_language)
+
+            app_link = MetaAppGenericContent(
+                meta_app=meta_app,
+                content_type=content_type,
+                object_id=generic_content.id
+            )
+
+            app_link.save()
+
+
+        return app_link
         
 
     # create one instance of all generic contents for the given meta_app, if it does not yet exist
     def create_all_generic_contents(self, meta_app):
-        release_builder = meta_app.get_release_builder()
 
-        # choice = {
-        #    'content_type' : content_type,
-        #    'feature_model' : FeatureModel,
-        #}
         
-        feature_choices = release_builder.feature_choices()
+        for feature_module in ADDABLE_FEATURES:
 
-        for choice in feature_choices:
+            module = import_module(feature_module)
 
-            if not MetaAppGenericContent.objects.filter(meta_app=meta_app,
-                                                        content_type=choice['content_type']).exists():
-                
-                FeatureModel = choice['feature_model']
-                # create link
-                generic_content_name = '{0} {1}'.format(meta_app.name, FeatureModel.__class__.__name__)
-                generic_content = FeatureModel.objects.create(generic_content_name, meta_app.primary_language)
+            FeatureModel = module.models.FeatureModel
 
-                app_link = MetaAppGenericContent(
-                    meta_app=meta_app,
-                    content_type=choice['content_type'],
-                    object_id=generic_content.id
-                )
-
-                app_link.save()
+            app_link = self.create_generic_content(FeatureModel, meta_app)
 
 
     def get_generic_content_link(self, Model):
@@ -187,7 +205,7 @@ class WithMetaApp:
         return link
 
 
-    def create_content_image(self, content_instance, user, taxon=None):
+    def create_content_image(self, content_instance, user, taxon=None, image_type='image'):
 
         image_name = '{0}-{1}.jpg'.format(content_instance.__class__.__name__, content_instance.id)
 
@@ -212,7 +230,7 @@ class WithMetaApp:
         content_type = ContentType.objects.get_for_model(content_instance)
 
         content_image = ContentImage.objects.filter(image_store=image_store, content_type=content_type,
-                                                    object_id=content_instance.id).first()
+                                                    object_id=content_instance.id, image_type=image_type).first()
 
         if not content_image:
 
@@ -220,11 +238,18 @@ class WithMetaApp:
                 image_store=image_store,
                 content_type=content_type,
                 object_id=content_instance.id,
+                image_type=image_type,
             )
 
             content_image.save()
 
         return content_image
+
+
+    def build_app_preview(self):
+
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        preview_builder.build()
 
 
 class WithMedia:
@@ -406,8 +431,13 @@ class WithFormTest:
 
 class WithAjaxAdminOnly:
 
+    def before_test_dispatch(self):
+        pass
+
     @test_settings
     def test_dispatch(self):
+
+        self.before_test_dispatch()
 
         url = self.get_url()
         
@@ -426,8 +456,13 @@ class WithAjaxAdminOnly:
 
 class WithAdminOnly:
 
+    def before_test_dispatch(self):
+        pass
+
     @test_settings
     def test_dispatch(self):
+
+        self.before_test_dispatch()
 
         url = self.get_url()
         
@@ -502,3 +537,74 @@ class ViewTestMixin(WithPublicDomain):
         return view
 
 
+class MultipleURLSViewTestMixin(WithPublicDomain):
+
+    def get_url_kwargs_list(self):
+        return []
+
+    def get_urls(self):
+
+        urls = []
+
+        url_kwargs_list = self.get_url_kwargs_list()
+
+        for url_kwargs in url_kwargs_list:
+        
+            url = reverse(self.url_name, kwargs=url_kwargs)
+
+            url_dict = {
+                'url' : url,
+                'url_kwargs' : url_kwargs,
+            }
+
+            urls.append(url_dict)
+
+        return urls
+
+
+    def get_url(self):
+        urls = self.get_urls()
+        return urls[0]['url']
+
+    def get_requests(self, ajax=False):
+
+        factory = RequestFactory()
+
+        requests = []
+
+        urls = self.get_urls()
+
+        for url_dict in urls:
+
+            if ajax == True:
+                ajax_kwargs = {
+                    'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+                }
+                request = factory.get(url_dict['url'], **ajax_kwargs)
+            else:
+                request = factory.get(url_dict['url'])
+
+            request.user = self.user
+            request.session = self.client.session
+            request.tenant = self.tenant
+            request.url_kwargs = url_dict['url_kwargs']
+
+            requests.append(request)
+
+        return requests
+
+    def get_views(self, ajax=False):
+
+        views = []
+
+        requests = self.get_requests(ajax=ajax)
+
+        for request in requests:
+
+            view = self.view_class()        
+            view.request = request
+            view.kwargs = request.url_kwargs
+
+            views.append(view)
+
+        return views

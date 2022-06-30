@@ -2,10 +2,9 @@ from django import forms
 from django.conf import settings
 from django.urls import reverse
 
-from django.utils.translation import gettext as _
+from django.contrib.contenttypes.models import ContentType
 
-from localcosmos_server.online_content.fields import MultiContentField
-from localcosmos_server.online_content.widgets import MultiContentWidget
+from django.utils.translation import gettext as _
 
 import os, json
 
@@ -72,24 +71,36 @@ class CMSTag:
         
         delete_url = None
 
-        data_url_kwargs = {
-            'fact_sheet_id' : self.fact_sheet.id,
-            'microcontent_category' : self.microcontent_category,
-            'microcontent_type' : self.microcontent_type,
-        }
-
-        data_url = reverse('upload_factsheet_image', kwargs=data_url_kwargs)
-
         if current_image:
 
-            data_url_kwargs['pk'] = current_image.pk
+            data_url_kwargs = {
+                'fact_sheet_id' : self.fact_sheet.id,
+                'microcontent_category' : self.microcontent_category, # image or images
+                'content_image_id' : current_image.id,
+            }
+
             data_url = reverse('manage_factsheet_image', kwargs=data_url_kwargs)
             
             delete_kwargs = {
+                'fact_sheet_id' : self.fact_sheet.id,
+                'microcontent_category' : self.microcontent_category,
                 'pk' : current_image.pk,
             }
+
             delete_url = reverse('delete_factsheet_image', kwargs=delete_kwargs)
-            delete_url = '{0}?microcontent_category={1}'.format(delete_url, self.microcontent_category)
+
+        else :
+            fact_sheet_content_type = ContentType.objects.get_for_model(self.fact_sheet)
+
+            data_url_kwargs = {
+                'fact_sheet_id' : self.fact_sheet.id,
+                'microcontent_category' : self.microcontent_category,
+                'content_type_id' : fact_sheet_content_type.id,
+                'object_id' : self.fact_sheet.id,
+                'image_type' : self.microcontent_type
+            }
+
+            data_url = reverse('manage_factsheet_image', kwargs=data_url_kwargs)
             
         widget_attrs['data-url'] = data_url  
         widget_attrs['accept'] = 'image/*'
@@ -189,6 +200,7 @@ class CMSTag:
                 'label' : label
             }
 
+            # currently, there are no multi text CMSTags
             if self.multi:
 
                 pass
@@ -264,7 +276,7 @@ class CMSTag:
                 initial = ''
 
                 if self.fact_sheet.contents and self.microcontent_category in self.fact_sheet.contents:
-                    initial = fact_sheet.contents[self.microcontent_category]
+                    initial = self.fact_sheet.contents[self.microcontent_category]
                                                   
                 field_kwargs.update({
                     'widget' : widget,

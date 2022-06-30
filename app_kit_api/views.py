@@ -24,8 +24,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import AppKitJobs
 from app_kit.models import MetaApp
-from localcosmos_appkit_utils.MetaAppDefinition import MetaAppDefinition
-from app_kit.appbuilders import  get_app_release_builder_class
+from localcosmos_cordova_builder.MetaAppDefinition import MetaAppDefinition
+from app_kit.appbuilder import  AppReleaseBuilder
 
 from localcosmos_server.models import App
 from localcosmos_server.api.authentication import LCTokenAuthentication
@@ -191,19 +191,17 @@ class CompletedAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView
         # save the ipa file if necessary
         if instance.platform == 'ios' and instance.job_type == 'build' and instance.job_result['success'] == True:
             
-            # only meta_app_definition contains the correct appbuilder_version.
             # The MetaApp db instance might already be the next version
             meta_app_definition_json = instance.meta_app_definition
             meta_app_definition = MetaAppDefinition(meta_app_definition_json['current_version'],
                                                     meta_app_definition = meta_app_definition_json)
             
-            AppReleaseBuilderClass = get_app_release_builder_class(meta_app_definition.appbuilder_version)
 
-            app_release_builder = AppReleaseBuilderClass()
+            app_release_builder = AppReleaseBuilder()
 
             meta_app = MetaApp.objects.get(app__uuid=instance.meta_app_uuid)
             
-            cordova_builder = app_release_builder._get_cordova_builder(meta_app, instance.app_version)
+            cordova_builder = app_release_builder.get_cordova_builder(meta_app, instance.app_version)
 
             # the cordova builder defines where to upload the .ipa file to
             ipa_folder = cordova_builder.get_ipa_folder()

@@ -56,24 +56,22 @@
 							{{ field.field.language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" />
 						</div>
 						<div class="col-10 col-md-11 text-left">
-							{% if field.field.is_image %}
-								{% if field.field.preview_url %}
-									<div>
-										<img class="img-fluid translation-image" src="{{ request.scheme }}://{{ field.field.preview_url }}" />
-									</div>
-								{% endif %}
-							{% endif %}
 							{{ field }}
 						</div>
 					</div>
 
-					<div class="form-row">
-						<div class="col-12 pl-5 mt-1 mb-3">
-							<button type="button" class="btn btn-sm btn-secondary get-translation-button mr-2" data-primary-language-text="{{ field.id_for_label }}-primary-language" data-target-language="{{ field.field.language }}" data-field-id="{{ field.id_for_label }}">{% trans 'automatic translation' %}</button>
-							<img src="{% static 'app_kit/images/spinner.gif' %}" class="translation-spinner d-none" />
-							<span class="text-muted"></span>
+					{% if field.field.is_image %}
+					{% else %}
+						<div class="form-row">
+							<div class="col-12 pl-5 mt-1 mb-3">
+								<div class="ml-5">
+									<button type="button" class="btn btn-sm btn-secondary get-translation-button mr-2" data-primary-language-text="{{ field.id_for_label }}-primary-language" data-target-language="{{ field.field.language }}" data-field-id="{{ field.id_for_label }}">{% trans 'automatic translation' %}</button>
+									<img src="{% static 'app_kit/images/spinner.gif' %}" class="translation-spinner d-none" />
+									<span class="text-muted"></span>
+								</div>	
+							</div>
 						</div>
-					</div>
+					{% endif %}
 					<br>
 					{% if field.field.is_last %}
 							</div>
@@ -112,9 +110,15 @@
 {% block extra_script %}
 	<script src="{% static 'online_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
 	<script>
+
+		var editors = {};
+		let editor;
 		{% for field in form %}
 			{% if field.field.layoutability == 'layoutable-full' %}
-				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-complex.js' %});
+				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-complex.js' %}).then( editor => {
+					editors['id_{{ field.name }}'] = editor;
+				});
+				
 			{% else %}
 				{% if field.field.layoutability == 'layoutable-simple' %}
 					ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-simple.js' %});
@@ -182,6 +186,10 @@
 							onError();
 						}
 						else {
+							if (editors.hasOwnProperty(target_field.id)){
+								let editor = editors[target_field.id];
+								editor.setData(translated_text);
+							}
 							target_field.value = translated_text;
 						}
 					},

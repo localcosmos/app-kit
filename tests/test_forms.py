@@ -12,13 +12,10 @@ from app_kit.tests.mixins import (WithMetaApp, WithFormTest, WithZipFile, WithIm
 from app_kit.forms import (CleanAppSubdomainMixin, CreateAppForm, CreateGenericContentForm, AddLanguageForm,
                     ManageContentImageForm, ManageContentImageWithTextForm, OptionalContentImageForm,
                     GenericContentOptionsForm, EditGenericContentNameForm, MetaAppOptionsForm,
-                    GetAppThemeImageFormFieldMixin, AppDesignForm, AppThemeImageForm, TranslateAppForm,
-                    BuildAppForm, ZipImportForm, RESERVED_SUBDOMAINS, AddExistingGenericContentForm)
+                    TranslateAppForm, BuildAppForm, ZipImportForm, RESERVED_SUBDOMAINS, AddExistingGenericContentForm)
 
 from app_kit.multi_tenancy.models import Domain
-from app_kit.models import MetaAppGenericContent, ContentImage
-
-from app_kit.generic import LocalizeableImage
+from app_kit.models import (MetaAppGenericContent, ContentImage, LocalizedContentImage)
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 
@@ -49,7 +46,7 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
         with self.assertRaises(forms.ValidationError):
             subdomain = mixin.clean_subdomain()
         
-
+    @test_settings
     def test_in_reserved(self):
 
         value = RESERVED_SUBDOMAINS[0]
@@ -58,6 +55,7 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
         with self.assertRaises(forms.ValidationError):
             subdomain = mixin.clean_subdomain()
 
+    @test_settings
     def test_0_unalpha(self):
         value = '1test'
 
@@ -66,6 +64,7 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
         with self.assertRaises(forms.ValidationError):
             subdomain = mixin.clean_subdomain()
 
+    @test_settings
     def test_is_not_alphanumeric(self):
 
         value = 'test!'
@@ -75,7 +74,7 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
         with self.assertRaises(forms.ValidationError):
             subdomain = mixin.clean_subdomain()
             
-
+    @test_settings
     def test_already_exists(self):
 
         domain = Domain(
@@ -93,7 +92,7 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
         with self.assertRaises(forms.ValidationError):
             subdomain = mixin.clean_subdomain()
 
-
+    @test_settings
     def test_valid(self):
 
         value = 'test2'
@@ -515,151 +514,6 @@ class TestMetaAppOptionsForm(WithFormTest, WithMetaApp, TenantTestCase):
         self.perform_form_test(MetaAppOptionsForm, post_data, form_kwargs=form_kwargs)
 
 
-class TestGetAppThemeImageFormFieldMixin(WithFormTest, WithMetaApp, TenantTestCase):
-
-    @test_settings
-    def test_get_image_form_field(self):
-
-        theme = self.meta_app.get_theme()
-
-        image_keys = theme.user_content['images'].keys()
-        self.assertTrue(len(image_keys) > 0)
-
-        mixin = GetAppThemeImageFormFieldMixin()
-        mixin.meta_app = self.meta_app
-        
-
-        for image_type, definition in sorted(theme.user_content['images'].items()):
-            image_form_field = mixin.get_image_form_field(image_type, definition)
-
-            is_required = definition.get('required', False)
-            self.assertEqual(is_required, image_form_field.is_required)
-
-
-
-class TestAppDesignForm(WithFormTest, WithMetaApp, TenantTestCase):
-    
-    @test_settings
-    def test_init(self):
-
-        theme = self.meta_app.get_theme()
-
-        text_keys = theme.user_content['texts'].keys()
-        self.assertTrue(len(text_keys) > 0)
-
-        form = AppDesignForm(self.meta_app)
-
-        self.assertEqual(form.meta_app, self.meta_app)
-        self.assertEqual(form.language, self.meta_app.primary_language)
-
-        self.assertEqual(form.fields['input_language'].initial, self.meta_app.primary_language)
-
-
-        for text_type, definition in theme.user_content['texts'].items():
-            self.assertIn(text_type, form.fields)
-
-            text_required = definition.get('required', False)
-
-            self.assertEqual(form.fields[text_type].required, text_required)
-
-            self.assertIn(text_type, form.localizeable_fields)
-
-            self.assertEqual(form.fields[text_type].language, self.meta_app.primary_language)
-
-
-        for field_name, form_field in form.legal_notice_fields.items():
-            self.assertIn(field_name, form.fields)
-            self.assertTrue(form_field.is_legal_notice_field)
-
-
-    @test_settings
-    def test_init_with_text_initial(self):
-
-        theme = self.meta_app.get_theme()
-
-        text_keys = theme.user_content['texts'].keys()
-        self.assertTrue(len(text_keys) > 0)
-        
-        appbuilder = self.meta_app.get_preview_builder()
-
-        translation_dict = {}
-
-        for text_type, definition in theme.user_content['texts'].items():
-            translation_dict[text_type] = text_type
-            
-        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, translation_dict)
-
-        form = AppDesignForm(self.meta_app)
-
-        for text_type, definition in theme.user_content['texts'].items():
-
-            self.assertEqual(form.fields[text_type].initial, text_type)
-
-        
-
-class TestAppThemeImageForm(WithFormTest, WithMetaApp, TenantTestCase):
-
-    @test_settings
-    def test_init(self):
-        theme = self.meta_app.get_theme()
-
-        image_type = list(theme.user_content['images'].keys())[0]
-
-        initial = {
-            'image_type' : image_type,
-        }
-
-        form = AppThemeImageForm(self.meta_app, initial=initial)
-        self.assertEqual(form.meta_app, self.meta_app)
-        self.assertEqual(theme.name, form.active_theme.name)
-        
-
-    @test_settings
-    def test_get_source_image_field(self):
-
-        theme = self.meta_app.get_theme()
-
-        image_type = list(theme.user_content['images'].keys())[0]
-
-        initial = {
-            'image_type' : image_type,
-        }
-
-        form = AppThemeImageForm(self.meta_app, initial=initial)
-
-        for image_type, definition in theme.user_content['images'].items():
-            
-            form.initial = {
-                'image_type' : image_type
-            }
-            
-            source_image_field = form.get_source_image_field()
-            
-
-    @test_settings
-    def test_clean(self):
-
-        licencing_data = self.get_licencing_post_data()
-
-        theme = self.meta_app.get_theme()
-
-        image_type = list(theme.user_content['images'].keys())[0]
-
-        initial = {
-            'image_type' : image_type,
-        }
-
-        licencing_data.update(initial)
-
-        form = AppThemeImageForm(self.meta_app, initial=initial, data=licencing_data)
-
-        form.cleaned_data = {}
-        form._clean_fields()
-
-        with self.assertRaises(forms.ValidationError):
-            cleaned_data = form.clean()
-
-
 '''
     Test TranslateAppForm
     - secondary languages are needed
@@ -685,9 +539,11 @@ class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp,
 
             locale_entries[key] = value
 
-        appbuilder = self.meta_app.get_preview_builder()
-
-        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
+        
+        if not self.meta_app.localizations:
+            self.meta_app.localizations = {}
+        self.meta_app.localizations[self.meta_app.primary_language] = locale_entries
+        self.meta_app.save()
 
         return locale_entries
 
@@ -716,7 +572,7 @@ class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp,
 
         self.create_secondary_languages(languages)
 
-        locale_entries = self.create_locale_entries(10)
+        locale_entries = self.create_locale_entries()
 
         form = TranslateAppForm(self.meta_app)
         self.assertEqual(form.meta_app, self.meta_app)
@@ -752,24 +608,24 @@ class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp,
             },
         }
 
-        filename = 'localized_image_{0}_{1}.jpg'.format(content_type.id, content_image.id)
+        image_locale_key = content_image.get_image_locale_key()
+        image_locale_entry = content_image.get_image_locale_entry()
 
-        locale_entries[filename] = image_url
-        
-        locale_entries['_meta'][filename] = {
-            'type' : 'image',
-            'media_url' : image_url,
-            'content_type_id' : content_type.id,
-            'object_id' : content_image.id,
-        }
+        locale_entries[image_locale_key] = image_locale_entry
 
-        appbuilder = self.meta_app.get_preview_builder()
-        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
+        if not self.meta_app.localizations:
+            self.meta_app.localizations = {}
+            self.meta_app.localizations[self.meta_app.primary_language] = {}
 
-        primary_locale = appbuilder.get_primary_locale(self.meta_app)
+        for key, value in locale_entries.items():
+            self.meta_app.localizations[self.meta_app.primary_language][key] = value
+
+        self.meta_app.save()
+
+        primary_locale = self.meta_app.localizations[self.meta_app.primary_language]
 
         language_code = 'de'
-        field_name_utf8 = '{0}-{1}'.format(language_code, filename)
+        field_name_utf8 = '{0}-{1}'.format(language_code, image_locale_key)
         field_name = base64.b64encode(field_name_utf8.encode()).decode()
 
         # init without existing translated image
@@ -778,34 +634,23 @@ class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp,
         field = form.fields[field_name]
         
         self.assertTrue(isinstance(field, forms.ImageField))
-        self.assertEqual(field.preview_url, None)
-        self.assertTrue(field.is_image)
-        self.assertEqual(field.primary_language_image_url, image_url)
+        self.assertEqual(field.widget.instance, None)
 
         # init with existing translated image
-        # store the locale
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-        app_www_folder = appbuilder._app_www_folder(self.meta_app)
-        
-        image = SimpleUploadedFile(name='test_image.jpg', content=open(TEST_IMAGE_PATH, 'rb').read(),
-                                        content_type='image/jpeg')
+        localized_content_image = LocalizedContentImage(
+            image_store = content_image.image_store,
+            content_image=content_image,
+            language_code=language_code,
+        )
 
-        localizeable_image.save_locale(app_www_folder, image, language_code)
-
-        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
-        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
-
-        self.assertTrue(os.path.isfile(full_localized_image_path))
+        localized_content_image.save()
 
         form = TranslateAppForm(self.meta_app)
         field = form.fields[field_name]
 
         self.assertTrue(isinstance(field, forms.ImageField))
 
-        expected_preview_url = 'test.org/apps/testmetaapp/preview/www/locales/de/images/localized_image_46_1_de.jpg'
-        self.assertEqual(field.preview_url, expected_preview_url)
-        self.assertTrue(field.is_image)
-        self.assertEqual(field.primary_language_image_url, image_url)
+        self.assertEqual(field.widget.instance, localized_content_image)
         
 
     @test_settings
@@ -815,7 +660,7 @@ class TestTranslateAppForm(WithImageStore, WithMedia, WithFormTest, WithMetaApp,
 
         self.create_secondary_languages(languages)
 
-        locale_entries = self.create_locale_entries(10)
+        locale_entries = self.create_locale_entries()
 
         post_data = {}
 

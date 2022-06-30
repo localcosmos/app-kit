@@ -1,0 +1,32 @@
+{% extends 'common/base.html' %}
+{% load fact_sheet_tags %}
+
+
+{% block content %}
+	<div class="container translucent white">
+		<h2>
+			{{ fact_sheet.title }}
+		</h2>
+
+		<h4>Not layoutable content:</h4>
+		{% cms_get_microcontent 'simple_content' %}
+
+
+		<h4>Fully Layoutable content:</h4>
+		{% cms_get_microcontent 'layout1' 'layoutable-full' %}
+
+		<h4>Simply Layoutable content:</h4>
+		{% cms_get_microcontent 'layout2' 'layoutable-simple' %}
+
+		<h4>An Image:</h4>
+		{% cms_get_image 'test_image' as image %}
+		<img src="{{ image.image_url }}" class="img-thumbnail" />
+
+		<h4>Multiple images:</h4>
+		{% cms_get_images 'multi_image' as mimages %}
+		{% for mimage in mimages %}
+			<img src="{{ mimage.image_url }}" class="img-thumbnail"/>
+		{% endfor %}
+
+	</div>
+{% endblock %}

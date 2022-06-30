@@ -1,7 +1,7 @@
 from django.test import TestCase, override_settings
 import os
 
-TESTS_ROOT = os.path.dirname(os.path.realpath(__file__))
+TESTS_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'TESTS_ROOT')
 
 TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'Leaf.jpg')
 TEST_BACKGROUND_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'app-background.jpg')
@@ -13,7 +13,7 @@ LARGE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'test-image-2560-1440
 TEST_MEDIA_ROOT = os.path.join(TESTS_ROOT, 'media_for_tests')
 
 test_settings = override_settings(
-    LOCALCOSMOS_OPEN_SOURCE = False,
+    LOCALCOSMOS_PRIVATE = False,
     LOCALCOSMOS_APPS_ROOT = os.path.join(TESTS_ROOT, 'www_apps'),
     APP_KIT_ROOT = os.path.join(TESTS_ROOT, 'app_kit_apps'),
     APP_KIT_TEMPORARY_FOLDER = os.path.join(TESTS_ROOT, 'app_kit_tmp'),

@@ -1,21 +1,16 @@
 from django.conf import settings
 from django.db import connection, models
-from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.templatetags.static import static
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.apps import apps
 from django.urls import reverse
 
 from django.contrib.contenttypes.fields import GenericRelation
 
-from collections import OrderedDict
+import os, io, json, hashlib
 
-import os, io, json, hashlib, time, shutil
-
-from localcosmos_server.slugifier import create_unique_slug
 from django.template.defaultfilters import slugify # package_name
 
 from .generic import GenericContentMethodsMixin
@@ -26,8 +21,6 @@ from taxonomy.lazy import LazyTaxon, LazyTaxonList
 
 from .utils import import_module
 
-from .generic_content_validation import ValidationError, ValidationWarning
-
 from content_licencing.models import ContentLicenceRegistry
 
 from django_tenants.utils import get_tenant_model, get_tenant_domain_model
@@ -36,7 +29,6 @@ from app_kit.app_kit_api.models import AppKitJobs
 
 from localcosmos_server.models import App, SecondaryAppLanguages
 
-from datetime import datetime
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -45,6 +37,9 @@ import io
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+from .settings import ADDABLE_FEATURES, REQUIRED_FEATURES
+
+LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX = 'localized_content_image'
 
 '''--------------------------------------------------------------------------------------------------------------
     MIXINS
@@ -58,6 +53,14 @@ class ContentImageMixin:
                                                           image_type=image_type)
 
         return self.content_images
+
+    def all_images(self):
+
+        content_type = ContentType.objects.get_for_model(self.__class__)
+        self.content_images = ContentImage.objects.filter(content_type=content_type, object_id=self.pk)
+
+        return self.content_images
+
 
     def images(self, image_type='image'):
         return self._content_images(image_type=image_type)
@@ -158,11 +161,6 @@ APP_VALIDATION_STATUS = (
 )
 
 
-from .appbuilders import (get_available_appbuilder_versions, get_latest_app_preview_builder,
-                          get_app_preview_builder_class, get_app_release_builder_class)
-
-INSTALLED_APPBUILDER_VERSIONS = [(version, version) for version in get_available_appbuilder_versions()]
-
 '''
     used to create new apps
     - one subdomain per app on LC
@@ -170,9 +168,10 @@ INSTALLED_APPBUILDER_VERSIONS = [(version, version) for version in get_available
 class MetaAppManager(models.Manager):
 
 
-    def _create_required_features(self, app_preview_builder, meta_app):
+    def _create_required_features(self, meta_app):
+
         # create all required features and link them to the app
-        for required_feature in app_preview_builder.required_features:
+        for required_feature in REQUIRED_FEATURES:
             
             feature_module = import_module(required_feature)
             FeatureModel = feature_module.models.FeatureModel
@@ -190,18 +189,8 @@ class MetaAppManager(models.Manager):
 
     def create(self, name, primary_language, domain_name, tenant, subdomain, **kwargs):
 
-        appbuilder_version = kwargs.pop('appbuilder_version', None)
         secondary_languages = kwargs.pop('secondary_languages', [])
         global_options = kwargs.pop('global_options', {})
-
-        # get an AppPreviewBuilder instance
-        if appbuilder_version is None:
-            app_preview_builder = get_latest_app_preview_builder()
-            appbuilder_version = app_preview_builder.version
-        else:
-            AppPreviewBuilderClass = get_app_preview_builder_class(appbuilder_version)
-            app_preview_builder = AppPreviewBuilderClass()
-            appbuilder_version = app_preview_builder.version
 
         package_name_base = 'org.localcosmos.{0}'.format(slugify(name).replace('-','').lower()[:30])
         package_name = package_name_base
@@ -213,11 +202,6 @@ class MetaAppManager(models.Manager):
             package_name = '{0}{1}'.format(package_name_base, i)
             i += 1
             exists = self.filter(package_name=package_name).exists()
-
-        if 'theme' in kwargs:
-            theme = kwargs['theme']
-        else:
-            theme = app_preview_builder.default_app_theme
 
         # this also creates the online content link
         extra_app_kwargs = {}
@@ -247,8 +231,6 @@ class MetaAppManager(models.Manager):
         # create app and profile
         meta_app = self.model(
             app=app,
-            appbuilder_version=str(appbuilder_version),
-            theme=theme,
             package_name=package_name,
             global_options=global_options
         )
@@ -266,9 +248,7 @@ class MetaAppManager(models.Manager):
                 )
                 secondary_language.save()
 
-        self._create_required_features(app_preview_builder, meta_app)
-
-        meta_app.create_version(meta_app.current_version)
+        self._create_required_features(meta_app)
         
         return meta_app
 
@@ -276,9 +256,6 @@ class MetaAppManager(models.Manager):
     META APP
     - uuid, primary_language and name lie in MetaApp.app
     - published versions cannot be changed
-    - if the appbuilder version has been changed the cordova project has to be recreated
-    - for the end user, the cordova create process is irrelevant
-    - the appbuilder version is strictly bound to the app version
 '''
 class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
@@ -308,15 +285,11 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
     # version_specific build number
     build_number = models.IntegerField(null=True)
 
-    # the theme name of the app
-    # this has to be a required field, without a theme, eg user content preview does not work
-    theme = models.CharField(max_length=255)
+    # all localizations of all features, not including images
+    localizations = models.JSONField(null=True)
 
     # links to several stores, using json for future safety
     store_links = models.JSONField(null=True)
-
-    # appbuilder is not changeable by user
-    appbuilder_version = models.CharField(max_length=10, choices=INSTALLED_APPBUILDER_VERSIONS)
     
     build_status = models.CharField(max_length=50, choices=APP_BUILD_STATUS, null=True)
     last_build_report = models.JSONField(null=True)
@@ -350,7 +323,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
     # in_progress, passing, failing or None
     @property
     def global_build_status(self):
-        
 
         build_jobs = AppKitJobs.objects.filter(meta_app_uuid=self.uuid, job_type='build')
 
@@ -399,27 +371,31 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
     def secondary_languages(self):
         return self.app.secondary_languages()
 
-    # theme
-    # meta_app.get_theme always uses the apps preview theme
-    def get_theme(self):
-        app_preview_builder = self.get_preview_builder()
-        return app_preview_builder.get_theme(self.theme)
 
-    
-    def get_preview_builder(self):
-        AppPreviewBuilderClass = get_app_preview_builder_class(self.appbuilder_version)
-        return AppPreviewBuilderClass()
+    def addable_features(self):
+        
+        feature_models = []
 
-    def get_release_builder(self):
-        AppReleaseBuilderClass = get_app_release_builder_class(self.appbuilder_version)
-        return AppReleaseBuilderClass()
+        for feature in ADDABLE_FEATURES:
+            
+            feature_module = import_module(feature)
+            FeatureModel = feature_module.models.FeatureModel
 
-    # depend on theme
+            feature_models.append(FeatureModel)
+
+        return feature_models
+
+    # depends on frontend
     def get_fact_sheet_templates_path(self):
-        theme_path = self.app.get_theme_path()
-        fact_sheets_templates_path = os.path.join(theme_path, 'fact_sheets', 'templates')
+
+        app_state = 'preview'
+
+        app_path = self.app.get_installed_app_path(app_state)
+
+        fact_sheets_templates_path = os.path.join(app_path, 'fact_sheets', 'templates')
 
         return fact_sheets_templates_path
+
         
     def get_fact_sheet_templates(self):
 
@@ -427,7 +403,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         templates = []
 
-        # iterate over templates shipped with the theme
+        # iterate over templates shipped with the frontend
         for filename in os.listdir(fact_sheets_templates_path):
 
             template_path = '{0}'.format(filename)
@@ -443,12 +419,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
     
     # BUILDING 
-    # on a new version, the old www folder is moved and renamed, same for config.xml
-    # if a new appbuilder version is chosen, the create command has to be rerun
-    # kwargs can be:
-    # app_version: version of the app to build
-    # appbuilder_version: version of the appbuilder to use
-    # force_recreate_cordova: force the builder to recreate the cordova project
     def lock_generic_contents(self):
         contents = MetaAppGenericContent.objects.filter(meta_app=self)
         for link in contents:
@@ -468,26 +438,21 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         locale[self.name] = self.name
 
-        # add the theme specific texts
-        theme = self.get_theme()
-        theme_text_types = theme.user_content['texts']
-
-        app_preview_builder = self.get_preview_builder()
-        primary_locale = app_preview_builder.get_primary_locale(self)
-
-        if primary_locale:
-            
-            for key, definition in theme_text_types.items():
-
-                if key in primary_locale:
-
-                    text = primary_locale[key]
-                    if text and len(text) > 0:
-                        locale[key] = text
-                    else:
-                        locale[key] = ''
-        
         return locale
+
+
+    def get_localized_content_images(self):
+
+        primary_locale = self.localizations[self.primary_language]
+
+        images = {}
+        for key, value in primary_locale.items():
+
+            if key.startswith(LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX):
+
+                images[key] = value
+        
+        return images
 
     
     # all uploads for an app (except "design and text") go to this folder
@@ -498,17 +463,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
     def features(self):
         return MetaAppGenericContent.objects.filter(meta_app=self)
-    
-
-    def addable_features(self):
-        appbuilder = self.get_preview_builder()
-
-        features = []
-
-        for feature in appbuilder.feature_choices():
-            features.append(feature['feature_model'])
-
-        return features
     
 
     def get_generic_content_link(self, generic_content):
@@ -684,7 +638,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
                 label = taxon.name
                 lazy_taxon = LazyTaxon(instance=taxon.taxon)
-                result = lazy_Taxon.as_typeahead_choice(label=label)
+                result = lazy_taxon.as_typeahead_choice(label=label)
 
                 if result not in results:
                     results.append(result)
@@ -790,43 +744,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         return results
 
 
-    # create app version on disk and set correct preview_version_path
-    def create_version(self, app_version):
-
-        if self.current_version > app_version:
-            raise ValueError('App versions can only be incremented. Curent version: {0}. You tried to create version {1}'.format(
-                self.current_version, app_version))
-
-        elif self.current_version < app_version:
-            self.current_version = app_version
-
-        app_preview_builder = self.get_preview_builder()
-
-         # create folders
-        app_preview_builder.init_app_version(self, app_version)
-
-        # create preview
-        app_preview_builder.build(self, app_version)
-        
-        # set the apps preview folder - to the served folder, not the app-kits internal folder
-        self.app.preview_version_path = os.path.join(app_preview_builder._preview_app_served_folder(self), 'www')
-        self.app.save()
-
-        # optionally increment generic_content versions, if they equal their published version
-        for feature_link in self.features():
-
-            generic_content = feature_link.generic_content
-            if generic_content.published_version == generic_content.current_version:
-                generic_content.current_version = generic_content.current_version + 1
-                generic_content.save()
-
-        # reset validation and build result
-        self.validation_status = None
-        self.build_status = None
-        self.build_number = None
-        self.save()
-        
-
     def save(self, publish=False, *args, **kwargs):
 
         if publish == True:
@@ -845,43 +762,58 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             self.app.published_version = self.published_version
 
             appbuilder = self.get_release_builder()
-            published_version_path = appbuilder._published_webapp_www_folder(self)
+            published_version_path = appbuilder._published_webapp_served_www_path
             self.app.published_version_path = published_version_path
 
             # set apk_url
-            self.app.apk_url = appbuilder.apk_published_url(self, self.published_version)
+            self.app.apk_url = appbuilder.aab_published_url()
             # set ipa_url
-            self.app.ipa_url = appbuilder.ipa_published_url(self, self.published_version)
+            self.app.ipa_url = appbuilder.ipa_published_url()
             # set pwa_zip_url
-            self.app.pwa_zip_url = appbuilder.pwa_zip_published_url(self, self.published_version)
+            self.app.pwa_zip_url = appbuilder.webapp_zip_published_url()
             
             self.app.save()
                 
         super().save(*args, **kwargs)
         
 
-    # delete the dumped contents of this app on the commercial installation
+    # importing globally results in a circular import
+    def get_app_builder(self):
+        from .appbuilder import AppBuilder
+        app_builder = AppBuilder(self)
+        return app_builder
+
+
+    def get_preview_builder(self):
+        from .appbuilder import AppPreviewBuilder
+        app_preview_builder = AppPreviewBuilder(self)
+        return app_preview_builder
+
+    def get_release_builder(self):
+        from .appbuilder import AppReleaseBuilder
+        app_release_builder = AppReleaseBuilder(self)
+        return app_release_builder
+
+    # delete the dumped contents of this app
     def delete(self):
 
         # remove all folders of this app
-        appbuilder = self.get_preview_builder()
-        app_root_folder = appbuilder._app_root_folder(self)
-
-        if os.path.isdir(app_root_folder):
-            shutil.rmtree(app_root_folder)
+        app_builder = self.get_app_builder()
+        app_builder.delete_app()
 
         super().delete()
 
 
     # keep only 1 version back
-    def remove_old_version_from_disk(self, app_version):
-        
-        if app_version <= self.current_version -2:
-            appbuilder = self.get_preview_builder()
-            version_folder = appbuilder._app_version_root_folder(self, app_version)
+    def remove_old_versions_from_disk(self):
 
-            if os.path.isdir(version_folder):
-                 shutil.rmtree(version_folder)
+        app_builder = self.get_app_builder()
+        app_version = 1
+
+        while app_version <= self.current_version -2:
+            app_builder.delete_app_version(app_version)
+            app_version = app_version + 1
+
 
     @property
     def is_localcosmos_private(self):
@@ -978,36 +910,8 @@ class ImageStore(ModelWithTaxon):
 '''
     Multiple images per content are possible
 '''
-
-RELATIVE_ARROW_STROKE_WIDTH =  0.02
-RELATIVE_ARROW_LENGTH = 0.5
-class ContentImage(models.Model):
-
-    # make it compatible with LocalizeableImage
-    image_field = 'image_store.source_image'
-
-    image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
-    
-    crop_parameters = models.TextField(null=True)
-
-    # for things like arrows/vectors on the image
-    # arrows are stored as [{"type" : "arrow" , "initialPoint": {x:1, y:1}, "terminalPoint": {x:2,y:2}, color: string}]
-    features = models.JSONField(null=True)
-    
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.IntegerField()
-    content = GenericForeignKey('content_type', 'object_id')
-
-    # a content can have different images
-    # eg an image of type 'background' and an image of type 'logo'
-    image_type = models.CharField(max_length=100, default='image')
-    
-    position = models.IntegerField(default=0)
-    is_primary = models.BooleanField(default=False)
-
-
-    text = models.CharField(max_length=355, null=True)
-
+# Contentimagecommon is for both ContentImage, LocalizedContentImage
+class ContentImageCommon:
 
     def get_thumb_filename(self, size=400):
 
@@ -1040,14 +944,18 @@ class ContentImage(models.Model):
         return crop_params['width'] * RELATIVE_ARROW_STROKE_WIDTH
     
     # add features to an image file, return a buffer
-    def add_features(self, image_file):
+    def add_features(self, pil_image):
+
+        in_memory_file = io.BytesIO()
+        pil_image.save(in_memory_file, format='PNG')
+        in_memory_file.seek(0)
 
         # first, add all features
         # the coordinates/definitions of a feature are relative to the original image
 
         dpi = plt.rcParams['figure.dpi']
 
-        img = mpimg.imread(image_file)
+        img = mpimg.imread(in_memory_file)
 
         img_height, img_width, bands = img.shape
 
@@ -1105,31 +1013,64 @@ class ContentImage(models.Model):
 
         return buf
 
-    # apply featres and cropping, return pil image
-    # only for square images
+    # apply features and cropping, return pil image
     # original_image has to be Pil.Image instance
+    # CASE 1: crop parameters given.
+    #   - make a canvas according to crop_parameters.width and crop_parameters.height
+    #
+    # CASE 2: no crop parameters given
+    #   1. apply features
+    #   2. thumbnail        
     def get_in_memory_processed_image(self, original_image, size):
 
-        # make the image square, fill with white
+        # scale the image to match size
         original_width, original_height = original_image.size
-        square_size = max(original_width, original_height)
-        fill_color = (255, 255, 255, 255)
-        square_image = Image.new('RGBA', (square_size, square_size), fill_color)
-        offset_x = int( (square_size - original_width) / 2 )
-        offset_y = int( (square_size - original_height) / 2 )
-        square_image.paste(original_image, (offset_x, offset_y) )
 
+        larger_original_side = max(original_width, original_height)
+        if larger_original_side < size:
+            size = larger_original_side
+
+        # fill color for the background, if the selection expands the original image
+        fill_color = (255, 255, 255, 255)
+
+        # offset of the image on the canvas
+        offset_x = 0
+        offset_y = 0
+        
+        if self.crop_parameters:
+            
+            square_size = max(original_width, original_height)
+            offset_x = int( (square_size - original_width) / 2 )
+            offset_y = int( (square_size - original_height) / 2 )
+            width = size
+            height = size
+        
+            canvas = Image.new('RGBA', (square_size, square_size), fill_color)
+            canvas.paste(original_image, (offset_x, offset_y) )
+
+            
+        else:
+
+            # define width and height
+            width = size
+            scaling_factor = original_width / size
+            height = original_height * scaling_factor
+
+            canvas = Image.new('RGBA', (original_width, original_height), fill_color)
+            canvas.paste(original_image, (offset_x, offset_y) )
+            
+        
+        # features are applied to unscaled image
         if self.features:                    
 
-            in_memory_file = io.BytesIO()
-            square_image.save(in_memory_file, format='PNG')
-            in_memory_file.seek(0)
+            image_source = self.add_features(canvas)
 
-            image_source = self.add_features(in_memory_file)
+            canvas_with_features = Image.open(image_source)
 
-            square_image = Image.open(image_source)
+        else:
+            canvas_with_features = canvas
 
-        # ATTENTION: crop_parameters are relative to the top-left corner of the image
+        # ATTENTION: crop_parameters are relative to the top-left corner of the original image
         # -> make them relative to the top left corner of square
         if self.crop_parameters:
             #{"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}
@@ -1144,45 +1085,124 @@ class ContentImage(models.Model):
                 crop_parameters['y'] + offset_y + crop_parameters['height'],
             )
             
-            cropped = square_image.crop(box)
+            cropped_canvas = canvas_with_features.crop(box)
 
         else:
-            cropped = square_image
+            cropped_canvas = canvas_with_features
             
-        cropped.thumbnail([size,size], Image.ANTIALIAS)
+        cropped_canvas.thumbnail([width, height], Image.ANTIALIAS)
         
         if original_image.format != 'PNG':
-            cropped = cropped.convert('RGB')
+            cropped_canvas = cropped_canvas.convert('RGB')
 
-        return cropped
+        return cropped_canvas
 
 
     # compile features during thumbnail creation
     def image_url(self, size=400, force=False):
 
-        image_path = self.image_store.source_image.path
-        folder_path = os.path.dirname(image_path)
+        if self.image_store.source_image.path.endswith('.svg'):
+            thumburl = self.image_store.source_image.url
 
-        thumbname = self.get_thumb_filename(size)
+        else:
 
-        thumbfolder = os.path.join(folder_path, 'thumbnails')
-        if not os.path.isdir(thumbfolder):
-            os.makedirs(thumbfolder)
+            image_path = self.image_store.source_image.path
+            folder_path = os.path.dirname(image_path)
 
-        thumbpath = os.path.join(thumbfolder, thumbname)
+            thumbname = self.get_thumb_filename(size)
 
-        if not os.path.isfile(thumbpath) or force == True:
+            thumbfolder = os.path.join(folder_path, 'thumbnails')
+            if not os.path.isdir(thumbfolder):
+                os.makedirs(thumbfolder)
 
-            original_image = Image.open(self.image_store.source_image.path)
+            thumbpath = os.path.join(thumbfolder, thumbname)
 
-            cropped = self.get_in_memory_processed_image(original_image, size)
+            if not os.path.isfile(thumbpath) or force == True:
 
-            cropped.save(thumbpath, original_image.format)
+                original_image = Image.open(self.image_store.source_image.path)
+
+                processed_image = self.get_in_memory_processed_image(original_image, size)
+
+                processed_image.save(thumbpath, original_image.format)
+                
             
-        
-        thumburl = os.path.join(os.path.dirname(self.image_store.source_image.url), 'thumbnails', thumbname)
+            thumburl = os.path.join(os.path.dirname(self.image_store.source_image.url), 'thumbnails', thumbname)
+            
         return thumburl
+
+
+    def get_image_locale_key(self):
+        locale_key = '{0}_{1}_{2}_{3}'.format(LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, self.content_type.id,
+                                                self.object_id, self.image_type)
+
+        return locale_key
+
+
+    def get_image_locale_entry(self):
+
+        locale_entry = {
+            'image_type' : self.image_type,
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.object_id,
+            'content_image_id' : self.id,
+            'media_url' : self.image_url(),
+        }
+
+        return locale_entry
+
+
+RELATIVE_ARROW_STROKE_WIDTH =  0.02
+RELATIVE_ARROW_LENGTH = 0.5
+class ContentImage(ContentImageCommon, models.Model):
+
+    image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
     
+    crop_parameters = models.TextField(null=True)
+
+    # for things like arrows/vectors on the image
+    # arrows are stored as [{"type" : "arrow" , "initialPoint": {x:1, y:1}, "terminalPoint": {x:2,y:2}, color: string}]
+    features = models.JSONField(null=True)
+    
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.IntegerField()
+    content = GenericForeignKey('content_type', 'object_id')
+
+    # a content can have different images
+    # eg an image of type 'background' and an image of type 'logo'
+    image_type = models.CharField(max_length=100, default='image')
+    
+    position = models.IntegerField(default=0)
+    is_primary = models.BooleanField(default=False)
+
+    # only primary language
+    text = models.CharField(max_length=355, null=True)
+
+    # flag if a translation is needed
+    requires_translation = models.BooleanField(default=False) # not all images require a translation
+
+
+'''
+    translations of content images
+    - require an on image_store link
+    - referred content is the same (-> ContentImage Foreign Key)
+'''
+class LocalizedContentImage(ContentImageCommon, models.Model):
+
+    content_image = models.ForeignKey(ContentImage, on_delete=models.CASCADE)
+    language_code = models.CharField(max_length=15)
+
+    # the source image of the translation
+    image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
+    
+    crop_parameters = models.TextField(null=True)
+
+    # for things like arrows/vectors on the image
+    # arrows are stored as [{"type" : "arrow" , "initialPoint": {x:1, y:1}, "terminalPoint": {x:2,y:2}, color: string}]
+    features = models.JSONField(null=True)
+
+    class Meta:
+        unique_together=('content_image', 'language_code')
+
 
 '''--------------------------------------------------------------------------------------------------------------
     META CACHE
@@ -1193,3 +1213,16 @@ class MetaCache(models.Model):
     name = models.CharField(max_length=255, unique=True) 
     cache = models.JSONField(null=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class SingleFeatureMixin:
+
+    @property
+    def meta_app(self):
+        
+        content_type = ContentType.objects.get_for_model(self)
+
+        generic_content_link = MetaAppGenericContent.objects.get(content_type=content_type, object_id=self.id)
+        meta_app = generic_content_link.meta_app
+
+        return meta_app

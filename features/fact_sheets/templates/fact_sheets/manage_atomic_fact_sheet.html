@@ -115,6 +115,7 @@
 			</div>
 		</div>
 	</div>
+	<input id="content_image_current_edit" type="hidden" />
 {% endblock %}
 {% block extra_script %}
 	{% include 'online_content/manage_template_content_extra_scripts.html' %}
@@ -132,9 +133,11 @@
 			$("#contentPreview").attr("data", "{{ preview_url }}");
 		}
 
+		var current_edit = document.getElementById("content_image_current_edit");
 
-		$(".fileupload input").on("change", function(event){
-			{% include 'online_content/content_managing_js.html' %}
+		$(".content-image-button").on("click", function(event){
+			let preview_id = event.currentTarget.getAttribute("data-container-id");
+			current_edit.value = preview_id;
 		});
 
 	</script>

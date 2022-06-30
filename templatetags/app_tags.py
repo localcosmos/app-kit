@@ -169,6 +169,7 @@ def get_generic_content_option(context, generic_content, option):
 
 @register.filter
 def generic_content_link_deletable(generic_content_link):
+    
     addable_features = generic_content_link.meta_app.addable_features()
 
     class_names = [c.__name__ for c in addable_features]
@@ -247,6 +248,7 @@ GENERIC_CONTENT_HELP_TEXTS = {
     'TaxonProfiles' : _('Describe the species of your app using taxon profiles.'),
     'GenericForm': _('An observation form is used to collect data.'),
     'FactSheets' : _('Create pages for certain groups of species.'),
+    'Frontend' : _('Defines the visual appearance of your app'),
     'App' : '',
 }
 

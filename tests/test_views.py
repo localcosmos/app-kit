@@ -1,4 +1,4 @@
-from django.test import TestCase, RequestFactory
+from django.test import RequestFactory
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -16,23 +16,19 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             EditGenericContentName, ManageApp, TranslateApp, BuildApp, StartNewAppVersion,
             AddExistingGenericContent, ListManageApps, RemoveAppGenericContent, ManageAppLanguages,
             DeleteAppLanguage, AddTaxonomicRestriction, RemoveTaxonomicRestriction, ManageContentImageMixin,
-            ManageContentImage, ManageContentImageWithText, DeleteContentImage, ManageAppThemeImage,
-            DeleteAppThemeImage, GetAppThemeImageFormField, StoreObjectOrder, MockButton, ManageAppDesign,
-            ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation)
+            ManageContentImage, ManageContentImageWithText, DeleteContentImage,
+            StoreObjectOrder, MockButton, DeleteLocalizedContentImage,
+            ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
+            ManageLocalizedContentImage)
 
 from app_kit.forms import (CreateGenericContentForm, CreateAppForm, EditGenericContentNameForm,
-                           TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm, AppDesignForm,
-                           ManageContentImageForm, ManageContentImageWithTextForm, AppThemeImageForm)
+                           TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm,
+                           ManageContentImageForm, ManageContentImageWithTextForm)
 
-from app_kit.models import MetaApp, MetaAppGenericContent, ContentImage
+from app_kit.models import MetaApp, MetaAppGenericContent, ContentImage, LocalizedContentImage
 from app_kit.features.nature_guides.models import NatureGuide
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
 from app_kit.features.generic_forms.models import GenericForm, GenericField, GenericFieldToGenericForm
-
-from app_kit.AppThemeImage import AppThemeImage
-from app_kit.AppThemeText import AppThemeText
-
-from app_kit.generic import LocalizeableImage
 
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
@@ -805,16 +801,22 @@ class TestTranslateApp(ViewTestMixin, WithImageStore, WithMedia, WithAjaxAdminOn
     def get_view(self):
         view = super().get_view()
         view.meta_app = self.meta_app
+        view.fill_primary_localization(**view.kwargs)
+        self.meta_app.refresh_from_db()
         return view
 
     @test_settings
-    def test_update_translation_files(self):
-        view = self.get_view()
-        view.update_translation_files(**view.kwargs)
+    def test_fill_primary_localization(self):
+
+        self.assertEqual(self.meta_app.localizations, None)
+
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        view.fill_primary_localization(**view.kwargs)
+        self.meta_app.refresh_from_db()
 
         # check if the primary locale exists
-        appbuilder = self.meta_app.get_preview_builder()
-        primary_locale = appbuilder.get_primary_locale(self.meta_app)
+        primary_locale = self.meta_app.localizations[self.meta_app.primary_language]
         self.assertIn(self.meta_app.name, primary_locale)
         
 
@@ -843,7 +845,6 @@ class TestTranslateApp(ViewTestMixin, WithImageStore, WithMedia, WithAjaxAdminOn
     def test_form_valid(self):
 
         view = self.get_view()
-        view.update_translation_files(**view.kwargs)
 
         # c&p from TranslateAppForm
         field_name_utf8 = '{0}-{1}'.format('de', self.meta_app.name)
@@ -856,6 +857,10 @@ class TestTranslateApp(ViewTestMixin, WithImageStore, WithMedia, WithAjaxAdminOn
 
         form = TranslateAppForm(self.meta_app, data=post_data)
 
+        self.assertIn(field_name, form.fields)
+        self.assertIn('en', self.meta_app.localizations)
+        self.assertIn(self.meta_app.name, self.meta_app.localizations['en'])
+
         is_valid = form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -864,77 +869,9 @@ class TestTranslateApp(ViewTestMixin, WithImageStore, WithMedia, WithAjaxAdminOn
         self.assertEqual(response.context_data['saved'], True)
         self.assertEqual(response.context_data['form'].__class__, TranslateAppForm)
 
-        appbuilder = self.meta_app.get_preview_builder()
-        de_locale = appbuilder.get_locale(self.meta_app, 'de')
-        self.assertEqual(de_locale[self.meta_app.name], app_name_de)
-
-
-    @test_settings
-    def test_form_valid_with_image(self):
-
-        view = self.get_view()
-
-        content_image = self.create_content_image(self.meta_app, self.user)
-        content_type = ContentType.objects.get_for_model(ContentImage)
-
-        image_url = content_image.image_url()
-
-        locale_entries = {
-            '_meta' : {
-            },
-        }
-
-        filename = 'localized_image_{0}_{1}.jpg'.format(content_type.id, content_image.id)
-
-        locale_entries[filename] = image_url
-        
-        locale_entries['_meta'][filename] = {
-            'type' : 'image',
-            'media_url' : image_url,
-            'content_type_id' : content_type.id,
-            'object_id' : content_image.id,
-        }
-
-
-        appbuilder = self.meta_app.get_preview_builder()
-        appbuilder.update_translation(self.meta_app, self.meta_app.primary_language, locale_entries)
-
-        image = self.get_image()
-
-        language_code = 'de'
-        field_name_utf8 = '{0}-{1}'.format(language_code, filename)
-        field_name = base64.b64encode(field_name_utf8.encode()).decode()
-
-        file_data = {}
-
-        file_data[field_name] = image
-        form = TranslateAppForm(self.meta_app, data={}, files=file_data)
-
-        form.is_valid()
-
-        self.assertEqual(form.errors, {})
-
-        response = view.form_valid(form)
-
-        self.assertEqual(response.status_code, 200)
-
-        self.assertEqual(response.context_data['form'].__class__, TranslateAppForm)
-
-        appbuilder = self.meta_app.get_preview_builder()
-        de_locale = appbuilder.get_locale(self.meta_app, 'de')
-
-        expected_value = 'locales/de/images/localized_image_{0}_{1}_de.jpg'.format(content_type.id,
-                                                                                   content_image.id)
-        self.assertEqual(de_locale[filename], expected_value)
-
-        # file present ?
-        localizeable_image = LocalizeableImage(content_image)
-        app_www_folder = appbuilder._app_www_folder(self.meta_app)
-        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
-        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
-
-        self.assertTrue(os.path.isfile(full_localized_image_path))
-        
+        self.meta_app.refresh_from_db()
+        de_locale = self.meta_app.localizations['de']
+        self.assertEqual(de_locale[self.meta_app.name], app_name_de)        
 
 
 class TestBuildApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,
@@ -1027,6 +964,14 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
     @test_settings
     def test_post_new_version(self):
 
+        appbuilder = self.meta_app.get_preview_builder()
+        appbuilder.build()
+        version_1_folder = appbuilder._app_version_root_path
+
+        self.assertTrue(os.path.isdir(version_1_folder))
+
+        self.assertIn('version/1', version_1_folder)
+
         view = self.get_view()
         # equal versions trigger starting a new one
         self.meta_app.published_version = self.meta_app.current_version
@@ -1040,9 +985,8 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
         self.meta_app.refresh_from_db()
         self.assertEqual(self.meta_app.current_version, 2)
 
-        appbuilder = self.meta_app.get_preview_builder()
-        version_1_folder = appbuilder._app_version_root_folder(self.meta_app, app_version=1)
-        version_2_folder = appbuilder._app_version_root_folder(self.meta_app, app_version=2)
+        version_2_folder = appbuilder._app_version_root_path
+        self.assertIn('version/2', version_2_folder)
 
         self.assertTrue(os.path.isdir(version_2_folder))
         self.assertTrue(os.path.isdir(version_1_folder))
@@ -1051,6 +995,11 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
     @test_settings
     def test_post_delete_one_version(self):
 
+        appbuilder = self.meta_app.get_preview_builder()
+
+        version_1_folder = appbuilder._app_version_root_path
+        self.assertIn('version/1', version_1_folder)
+
         view = self.get_view()
         # equal versions trigger starting a new one
         self.meta_app.published_version = self.meta_app.current_version
@@ -1064,13 +1013,14 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
         self.meta_app.refresh_from_db()
         self.assertEqual(self.meta_app.current_version, 2)
 
+        version_2_folder = appbuilder._app_version_root_path
+        self.assertIn('version/2', version_2_folder)
+
         self.meta_app.published_version = self.meta_app.current_version
         response = view.post(view.request, **view.kwargs)
-
-        appbuilder = self.meta_app.get_preview_builder()
-        version_1_folder = appbuilder._app_version_root_folder(self.meta_app, app_version=1)
-        version_2_folder = appbuilder._app_version_root_folder(self.meta_app, app_version=2)
-        version_3_folder = appbuilder._app_version_root_folder(self.meta_app, app_version=3)
+        
+        version_3_folder = appbuilder._app_version_root_path
+        self.assertIn('version/3', version_3_folder)
 
         self.assertTrue(os.path.isdir(version_3_folder))
         self.assertTrue(os.path.isdir(version_2_folder))
@@ -1919,253 +1869,6 @@ class TestDeleteContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
         self.assertEqual(context['content_instance'], self.generic_content)
 
 
-
-class WithAppThemeImage:
-    
-    def get_licence_as_dict(self):
-
-        content_licence = ContentLicence('CC0')
-        licence = {
-            'creator_name' : 'James Bond',
-            'licence' : content_licence.as_dict(),
-            'creator_link' : 'Test link',
-            'source_link' : 'Test source link',
-        }
-
-        return licence
-
-
-    def create_app_theme_image(self):
-        
-        image_file = SimpleUploadedFile(name='app-background.jpg',
-                            content=open(TEST_BACKGROUND_IMAGE_PATH, 'rb').read(), content_type='image/jpeg')
-        
-        app_theme_image = AppThemeImage(self.meta_app, self.image_type, image_file=image_file)
-        app_theme_image.save()
-
-        return app_theme_image
-
-
-    def get_image(self):
-        image = SimpleUploadedFile(name='app-background.jpg',
-                                   content=open(TEST_BACKGROUND_IMAGE_PATH, 'rb').read(),
-                                   content_type='image/jpeg')
-
-        return image
-    
-        
-    def get_post_form_data(self):
-        
-        md5_image = self.get_image()
-        correct_md5 = hashlib.md5(md5_image.read()).hexdigest()
-        
-        post_data = {
-            'image_type' : self.image_type,
-        }
-
-        file_data = {
-            'source_image' : self.get_image(),
-        }
-
-        licencing_data = self.get_licencing_post_data()
-        post_data.update(licencing_data)
-
-        return post_data, file_data
-
-    
-class TestManageAppThemeImage(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,
-                    WithMetaApp, WithAppThemeImage, WithImageStore, WithMedia, WithFormTest, TenantTestCase):
-
-    url_name = 'manage_app_theme_image'
-    view_class = ManageAppThemeImage
-    image_type = 'app_background'
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-            'image_type' : self.image_type,
-        }
-        return url_kwargs
-
-    @test_settings
-    def test_set_app_theme_image(self):
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-
-        self.assertEqual(view.meta_app, self.meta_app)
-        self.assertEqual(view.image_type, self.image_type)
-        self.assertEqual(view.app_theme_image.__class__, AppThemeImage)
-        
-
-    @test_settings
-    def test_get_licencing_initial(self):
-
-        self.create_public_domain()
-
-        app_theme_image = self.create_app_theme_image()
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-        
-        # no licence
-        licencing_initial = view.get_licencing_initial()
-        self.assertEqual(licencing_initial, {})
-
-        # store a licence
-        licence = self.get_licence_as_dict()
-        app_theme_image.set_licence(licence)
-        app_theme_image.save()
-
-        view_2 = self.get_view()
-        view_2.set_app_theme_image(**view_2.kwargs)
-        
-        # no licence
-        licencing_initial_2 = view_2.get_licencing_initial()
-
-        self.assertEqual(licencing_initial_2['creator_name'], licence['creator_name'])
-        self.assertEqual(licencing_initial_2['creator_link'], licence['creator_link'])
-        self.assertEqual(licencing_initial_2['source_link'], licence['source_link'])
-        self.assertEqual(licencing_initial_2['licence'].short_name, 'CC0')
-        
-
-    @test_settings
-    def test_get_form_kwargs(self):
-
-        self.create_public_domain()
-
-        app_theme_image = self.create_app_theme_image()
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-
-        form_kwargs = view.get_form_kwargs()
-        self.assertEqual(form_kwargs['current_image'], app_theme_image)
-
-
-    @test_settings
-    def test_get_form(self):
-
-        self.create_public_domain()
-
-        app_theme_image = self.create_app_theme_image()
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-        view.meta_app = self.meta_app
-
-        form = view.get_form()
-        self.assertEqual(form.__class__, AppThemeImageForm)
-        
-
-    @test_settings
-    def test_get_context_data(self):
-
-        self.create_public_domain()
-
-        app_theme_image = self.create_app_theme_image()
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-        view.meta_app = self.meta_app
-
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['image_type'], self.image_type)
-        self.assertIn('image_name', context)
-
-    '''
-    post data
-    '''    
-
-    @test_settings
-    def test_form_valid(self):
-
-        # no image present
-        self.create_public_domain()
-
-        view = self.get_view()
-        view.set_app_theme_image(**view.kwargs)
-        view.meta_app = self.meta_app
-        
-        post_data, file_data = self.get_post_form_data()
-
-        # test form with file
-        form = AppThemeImageForm(self.meta_app, data=post_data, files=file_data)
-        is_valid = form.is_valid()
-        self.assertEqual(form.errors, {})
-
-        app_theme_image = AppThemeImage(self.meta_app, self.image_type)
-        self.assertFalse(app_theme_image.exists())
-        response = view.form_valid(form)
-        self.assertEqual(response.status_code, 200)
-        
-        
-        self.assertTrue(app_theme_image.exists())
-
-
-class TestDeleteAppThemeImage(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,
-                    WithMetaApp, WithImageStore, WithMedia, WithFormTest, WithAppThemeImage, TenantTestCase):
-
-    url_name = 'delete_app_theme_image'
-    view_class = DeleteAppThemeImage
-    image_type = 'app_background'
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-            'image_type' : self.image_type,
-        }
-        return url_kwargs
-
-    @test_settings
-    def test_get_context_data(self):
-
-        view = self.get_view()
-        view.meta_app = self.meta_app
-        view.image_type = self.image_type
-
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['image_type'], self.image_type)
-        self.assertIn('verbose_name', context)
-        self.assertIn('url', context)
-
-    @test_settings
-    def test_post(self):
-        self.create_public_domain()
-
-        app_theme_image = self.create_app_theme_image()
-
-        self.assertTrue(app_theme_image.exists())
-
-        view = self.get_view()
-        view.meta_app = self.meta_app
-        view.image_type = self.image_type
-
-        response = view.post(view.request, **view.kwargs)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context_data['deleted'], True)
-        self.assertFalse(app_theme_image.exists())
-
-
-class TestGetAppThemeImageFormField(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
-                            WithTenantClient, WithMetaApp, WithFormTest, WithAppThemeImage, TenantTestCase):
-
-    url_name = 'get_app_theme_image_formfield'
-    view_class = GetAppThemeImageFormField
-    image_type = 'app_background'
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-            'image_type' : self.image_type,
-        }
-        return url_kwargs
-
-    @test_settings
-    def test_get_form(self):
-
-        view = self.get_view()
-        view.meta_app = self.meta_app
-        view.image_type = self.image_type
-        form = view.get_form()
-        self.assertIn(self.image_type, form.fields)
-
-
 '''
     no GET method, only POST
 '''
@@ -2265,119 +1968,6 @@ class TestMockButton(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUse
         }
         context_data = view.get_context_data(**view.kwargs)
         self.assertEqual(context_data['message'], test_message)
-
-        
-
-class TestManageAppDesign(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithTenantClient,
-                          WithMetaApp, WithFormTest, TenantTestCase):
-
-    url_name = 'manage_app_design'
-    view_class = ManageAppDesign
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-        }
-        return url_kwargs
-
-    def get_view(self):
-        view = super().get_view()
-        view.meta_app = self.meta_app
-        return view
-
-    @test_settings
-    def test_get_form(self):
-        view = self.get_view()
-        form = view.get_form()
-        self.assertEqual(form.__class__, AppDesignForm)
-
-    @test_settings
-    def test_get_initial(self):
-        view = self.get_view()
-        initial = view.get_initial()
-
-        legal_notice = {
-             'key1' : 'value1',
-             'key2' : 'value2',
-        }
-
-        self.meta_app.global_options = {
-            'legal_notice' : legal_notice
-        }
-
-        initial = view.get_initial()
-        for key, value in legal_notice.items():
-            self.assertEqual(initial[key], value)
-
-
-    @test_settings
-    def test_get_context_data(self):
-
-        view = self.get_view()
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['generic_content'], self.meta_app)
-        content_type = ContentType.objects.get_for_model(MetaApp)
-        self.assertEqual(context['content_type'], content_type)
-
-    @test_settings
-    def test_get(self):
-
-        view = self.get_view()
-        response = view.get(view.request, **view.kwargs)
-        self.assertEqual(response.status_code, 200)
-
-        url_kwargs = {
-            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest',
-        }
-
-        self.make_user_tenant_admin(self.user, self.tenant)
-        ajax_response = self.tenant_client.get(self.get_url(), **url_kwargs)
-        self.assertEqual(ajax_response.status_code, 200)
-
-    
-    @test_settings
-    def test_form_valid(self):
-
-        post_data = {
-            'entity_name' : 'sisol systems',
-            'street' : 'Test street 4',
-            'zip_code' : 'e115bl',
-            'city' : 'Munich',
-            'country' :'DE',
-            'email' : 'tester@test.org',
-            'phone' : '+499154660679',
-        }
-
-        legal_fields = post_data.copy()
-
-
-        theme = self.meta_app.get_theme()
-
-        post_data['theme'] = theme.name
-        post_data['input_language'] = self.meta_app.primary_language
-
-        for key, value in theme.user_content['texts'].items():
-            post_data[key] = '{0} test'.format(key)
-            app_text = AppThemeText(self.meta_app, key)
-            self.assertFalse(app_text.exists())
-        
-
-        form = AppDesignForm(self.meta_app, data=post_data)
-        is_valid = form.is_valid()
-        self.assertEqual(form.errors, {})
-
-        view = self.get_view()
-
-        response = view.form_valid(form)
-        self.assertEqual(response.status_code, 200)
-
-        for key, value in theme.user_content['texts'].items():
-            app_text = AppThemeText(self.meta_app, key)
-            self.assertTrue(app_text.exists())
-
-        self.meta_app.refresh_from_db()
-        for key, value in legal_fields.items():
-            self.assertEqual(self.meta_app.global_options['legal_notice'][key], value)
 
 
 '''
@@ -2525,3 +2115,211 @@ class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTen
         
         self.assertEqual(response.status_code, 200)
 
+
+
+class TestManageLocalizedContentImage(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
+            WithUser, WithTenantClient, WithMetaApp, WithImageStore, WithMedia, WithFormTest, TenantTestCase):
+
+    url_name = 'manage_localized_content_image'
+    view_class = ManageLocalizedContentImage
+
+    def setUp(self):
+        super().setUp()
+        self.content_instance = self.meta_app
+        self.user = self.create_user()
+        self.image_type = 'image'
+        self.content_image = self.create_content_image(self.content_instance, self.user)
+        self.language_code = 'jp'
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'content_image_id' : self.content_image.id,
+            'language_code' : self.language_code,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+
+        view = super().get_view()
+        view.set_content_image(**view.kwargs)
+    
+        return view
+
+
+    def create_localized_content_image(self):
+
+        localized_content_image = LocalizedContentImage(
+            content_image=self.content_image,
+            language_code = self.language_code,
+            image_store=self.content_image.image_store,
+        )
+
+        localized_content_image.save()
+
+        return localized_content_image
+
+    @test_settings
+    def test_get_new_image_store(self):
+        
+        view = self.get_view()
+
+        image_store = view.get_new_image_store()
+        self.assertEqual(image_store.uploaded_by, self.user)
+
+    @test_settings
+    def test_set_content_image(self):
+        
+        view = super().get_view()
+
+        self.assertFalse(hasattr(view, 'localized_content_image'))
+        self.assertFalse(hasattr(view, 'content_image'))
+        self.assertFalse(hasattr(view, 'language_code'))
+        self.assertFalse(hasattr(view, 'licence_registry_entry'))
+        
+        view.set_content_image(**view.kwargs)
+
+        self.assertEqual(view.content_image, self.content_image)
+        self.assertEqual(view.language_code, self.language_code)
+        self.assertEqual(view.localized_content_image, None)
+        self.assertTrue(hasattr(view, 'licence_registry_entry'))
+
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+
+        initial = view.get_initial()
+        self.assertEqual(initial, {})
+
+        localized_content_image = self.create_localized_content_image()
+
+        view = self.get_view()
+        initial = view.get_initial()
+        self.assertEqual(initial['crop_parameters'], None)
+        self.assertEqual(initial['features'], None)
+        self.assertEqual(initial['source_image'], localized_content_image.image_store.source_image)
+        self.assertEqual(initial['image_type'], self.content_image.image_type)
+        self.assertEqual(initial['text'], self.content_image.text)
+
+
+    @test_settings
+    def test_get_form_kwargs(self):
+        
+        view = self.get_view()
+        form_kwargs = view.get_form_kwargs()
+
+        self.assertEqual(form_kwargs['content_instance'], self.content_image.content)
+        self.assertFalse('current_image' in form_kwargs)
+
+        localized_content_image = self.create_localized_content_image()
+
+        view = self.get_view()
+
+        form_kwargs = view.get_form_kwargs()
+
+        self.assertEqual(form_kwargs['content_instance'], self.content_image.content)
+        self.assertEqual(form_kwargs['current_image'], localized_content_image.image_store.source_image)
+
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['localized_content_image'], None)
+        self.assertEqual(context['content_image'], self.content_image)
+        self.assertEqual(context['language_code'], self.language_code)
+
+        localized_content_image = self.create_localized_content_image()
+
+        view = self.get_view()
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['localized_content_image'], localized_content_image)
+        self.assertEqual(context['content_image'], self.content_image)
+        self.assertEqual(context['language_code'], self.language_code)
+
+
+    @test_settings
+    def test_form_valid(self):
+        
+        crop_parameters = {
+            'width' : 12,
+            'height' : 20,
+        }
+
+        md5_image = self.get_image()
+        correct_md5 = hashlib.md5(md5_image.read()).hexdigest()
+        
+        post_data = {
+            'md5' : correct_md5,
+            'crop_parameters' : json.dumps(crop_parameters),
+        }
+
+        file_data = {
+            'source_image' : self.get_image(),
+        }
+
+        licencing_data = self.get_licencing_post_data()
+        post_data.update(licencing_data)
+        
+        form = ManageContentImageForm(data=post_data, files=file_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        localized_content_image_qry = LocalizedContentImage.objects.filter(content_image=self.content_image,
+                                                        language_code=self.language_code)
+
+        self.assertFalse(localized_content_image_qry.exists())
+
+        view = self.get_view()
+        response = view.form_valid(form)
+
+        # check if the content image has been created
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(localized_content_image_qry.exists())
+
+
+class TestDeleteLocalizedContentimage(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
+            WithUser, WithTenantClient, WithMetaApp, WithImageStore, WithMedia, WithFormTest, TenantTestCase):
+
+    url_name = 'delete_localized_content_image'
+    view_class = DeleteLocalizedContentImage
+
+    def setUp(self):
+        super().setUp()
+        self.content_instance = self.meta_app
+        self.user = self.create_user()
+        self.image_type = 'image'
+        self.content_image = self.create_content_image(self.content_instance, self.user)
+        self.language_code = 'jp'
+        self.localized_content_image = LocalizedContentImage(
+            content_image=self.content_image,
+            language_code = self.language_code,
+            image_store=self.content_image.image_store,
+        )
+
+        self.localized_content_image.save()
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'pk' : self.localized_content_image.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+
+        view = super().get_view()
+        view.object = view.get_object()
+        return view
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['content_image'], self.content_image)
+        self.assertEqual(context['language_code'], self.language_code)

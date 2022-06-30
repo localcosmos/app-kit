@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.validators import FileExtensionValidator
 
-from .models import FactSheetTemplates, FactSheetImages, build_factsheets_templates_upload_path
+from .models import FactSheetTemplates, build_factsheets_templates_upload_path
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
@@ -82,8 +82,7 @@ class ManageFactSheetForm(FactSheetFormCommon):
             instances = []
 
             if tag.microcontent_category in ['image', 'images']:
-                instances = FactSheetImages.objects.filter(fact_sheet=self.fact_sheet,
-                                                           microcontent_type=tag.microcontent_type)
+                instances = self.fact_sheet.images(image_type=tag.microcontent_type).order_by('pk')
 
             # get cms form fields for each tag
             for field in tag.form_fields(instances=instances):
@@ -99,31 +98,7 @@ class ManageFactSheetForm(FactSheetFormCommon):
    
 
 
-from content_licencing.mixins import LicencingFormMixin
-from localcosmos_server.widgets import ImageInputWithPreview
-from localcosmos_server.forms import ManageContentImageFormCommon
-class UploadFactSheetImageForm(ManageContentImageFormCommon, LicencingFormMixin, forms.Form):
-
-    requires_translation = forms.BooleanField(required=False)
-
-    def get_source_image_field(self):
-        # unfortunately, a file field cannot be prepoluated due to html5 restrictions
-        # therefore, source_image has to be optional. Otherwise, editing would be impossible
-        # check if a new file is required in clean
-        required = False
-        image_file = None
-        
-        if self.current_image:
-            image_file = self.current_image.image
-        else:
-            required = True
-        source_image_field = forms.ImageField(widget=ImageInputWithPreview, required=required)
-        source_image_field.widget.current_image = image_file
-
-        return source_image_field
-
-
-# check if the template already exists in templates provided by the theme
+# check if the template already exists in templates provided by the frontend
 class UploadFactSheetTemplateForm(forms.Form):
 
     template = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['html'])])

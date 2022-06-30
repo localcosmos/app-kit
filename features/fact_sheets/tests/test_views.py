@@ -1,21 +1,26 @@
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django_tenants.test.cases import TenantTestCase
+from django.test import RequestFactory
 
 from app_kit.features.fact_sheets.views import (ManageFactSheets, CreateFactSheet, GetFactSheetPreview,
-            ManageFactSheet, UploadFactSheetImage, DeleteFactSheetImage, GetFactSheetFormField,
+            ManageFactSheet, ManageFactSheetImage, DeleteFactSheetImage, GetFactSheetFormFields,
             UploadFactSheetTemplate)
 
-from app_kit.features.fact_sheets.models import FactSheet, FactSheetImages, FactSheetTemplates
+from app_kit.features.fact_sheets.models import FactSheet, FactSheetTemplates
 from app_kit.features.fact_sheets.forms import (CreateFactSheetForm, ManageFactSheetForm, 
-                                                UploadFactSheetImageForm, UploadFactSheetTemplateForm)
+                                                UploadFactSheetTemplateForm)
 
 from app_kit.features.fact_sheets.tests.common import WithFactSheets
 
 from app_kit.tests.common import test_settings, TEST_TEMPLATE_PATH
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
-                                  WithAdminOnly, WithFormTest, ViewTestMixin, WithMedia)
+                                  WithAdminOnly, WithImageStore, ViewTestMixin, WithMedia, MultipleURLSViewTestMixin)
+
+
+from app_kit.models import ContentImage
+from django.contrib.contenttypes.models import ContentType
 
 
 import io
@@ -26,6 +31,7 @@ class TestManageFactSheets(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUse
 
     url_name = 'manage_factsheets'
     view_class = ManageFactSheets
+
 
     def get_url_kwargs(self):
         url_kwargs = {
@@ -46,6 +52,8 @@ class TestManageFactSheets(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUse
     @test_settings
     def test_get_context_data(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         context_data = view.get_context_data(**view.kwargs)
 
@@ -58,6 +66,9 @@ class TestCreateFactSheet(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUser
 
     url_name = 'create_factsheet'
     view_class = CreateFactSheet
+
+    def before_test_dispatch(self):
+        self.build_preview_app()
 
 
     def get_url_kwargs(self):
@@ -79,6 +90,8 @@ class TestCreateFactSheet(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUser
     @test_settings
     def test_get_context_data(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         context_data = view.get_context_data(**view.kwargs)
         self.assertEqual(context_data['generic_content'], self.generic_content)
@@ -87,6 +100,8 @@ class TestCreateFactSheet(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUser
     @test_settings
     def test_get_form(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         form = view.get_form()
         self.assertTrue(isinstance(form, CreateFactSheetForm))
@@ -94,12 +109,16 @@ class TestCreateFactSheet(WithFactSheets, ViewTestMixin, WithAdminOnly, WithUser
     @test_settings
     def test_get_initial(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         initial = view.get_initial()
         self.assertEqual(initial['input_language'], self.generic_content.primary_language)
 
     @test_settings
     def test_form_valid(self):
+
+        self.build_preview_app()
 
         view = self.get_view()
 
@@ -131,6 +150,7 @@ class WithFactSheet:
 
     def setUp(self):
         super().setUp()
+
         self.fact_sheet = FactSheet(
             fact_sheets = self.generic_content,
             template_name = 'test.html',
@@ -142,6 +162,24 @@ class WithFactSheet:
         self.fact_sheet.save()
 
         self.create_public_domain()
+
+    def before_test_dispatch(self):
+        self.build_preview_app()
+
+    def create_fact_sheet_image(self):
+        fact_sheet_content_type = ContentType.objects.get_for_model(FactSheet)
+        image_store = self.create_image_store()
+        
+        fact_sheet_image = ContentImage(
+            image_store = image_store,
+            content_type = fact_sheet_content_type,
+            object_id = self.fact_sheet.id,
+            image_type = 'test_image',
+        )
+
+        fact_sheet_image.save()
+
+        return fact_sheet_image
         
         
 class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdminOnly, WithUser,
@@ -171,6 +209,8 @@ class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdmi
     @test_settings
     def test_get_intial(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         initial = view.get_initial()
         self.assertEqual(initial['title'], 'Neobiota')
@@ -184,6 +224,8 @@ class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdmi
     @test_settings
     def test_get_form(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         form = view.get_form()
         self.assertTrue(isinstance(form, ManageFactSheetForm))
@@ -192,6 +234,8 @@ class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdmi
 
     @test_settings
     def test_get_preview_url(self):
+
+        self.build_preview_app()
 
         view = self.get_view()
         url = view.get_preview_url()
@@ -205,6 +249,8 @@ class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdmi
     @test_settings
     def test_get_context_data(self):
 
+        self.build_preview_app()
+
         expected_url = 'http://test.org/apps/testmetaapp/preview/www/#/fact-sheet/neobiota-{0}/?meta_app_id={1}'.format(
             self.fact_sheet.id, self.meta_app.id)
 
@@ -216,6 +262,8 @@ class TestManageFactSheet(WithFactSheet, WithFactSheets, ViewTestMixin, WithAdmi
 
     @test_settings
     def test_form_valid(self):
+
+        self.build_preview_app()
 
         view = self.get_view()
 
@@ -249,6 +297,9 @@ class TestGetFactSheetPreview(WithFactSheet, WithFactSheets, ViewTestMixin, With
     
     @test_settings
     def test_set_factsheet(self):
+
+        self.build_preview_app()
+
         view = self.get_view()
         view.set_factsheet(**view.kwargs)
         self.assertEqual(view.fact_sheet, self.fact_sheet)
@@ -258,6 +309,8 @@ class TestGetFactSheetPreview(WithFactSheet, WithFactSheets, ViewTestMixin, With
     @test_settings
     def test_get_context_data(self):
 
+        self.build_preview_app()
+
         view = self.get_view()
         view.set_factsheet(**view.kwargs)
 
@@ -265,272 +318,11 @@ class TestGetFactSheetPreview(WithFactSheet, WithFactSheets, ViewTestMixin, With
         self.assertIn('html', context)
 
 
-
-class TestUploadFactSheetImageCreate(WithFactSheet, WithFactSheets, ViewTestMixin, WithAjaxAdminOnly, WithUser,
-                    WithFormTest, WithMedia, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
-
-    url_name = 'upload_factsheet_image'
-    view_class = UploadFactSheetImage
-
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'fact_sheet_id' : self.fact_sheet.id,
-            'microcontent_category' : 'image',
-            'microcontent_type' : 'test_image',
-        }
-
-        return url_kwargs
-
-
-    @test_settings
-    def test_set_file(self):
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        self.assertEqual(view.fact_sheet, self.fact_sheet)
-        self.assertEqual(view.microcontent_category, 'image')
-        self.assertEqual(view.microcontent_type, 'test_image')
-        self.assertEqual(view.image, None)
-        
-
-    @test_settings
-    def test_get_context_data(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['fact_sheet'], self.fact_sheet)
-        self.assertEqual(context['microcontent_category'], 'image')
-        self.assertEqual(context['microcontent_type'], 'test_image')
-        self.assertEqual(context['success'], False)
-        self.assertEqual(context['image'], None)
-    
-
-    @test_settings
-    def test_get_initial(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        initial = view.get_initial()
-        self.assertFalse('source_image' in initial)
-
-
-    @test_settings
-    def test_get_form_kwargs(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        form_kwargs = view.get_form_kwargs()
-        self.assertFalse('current_image' in form_kwargs)
-        
-
-    @test_settings
-    def test_form_valid(self):
-
-        post_data = {
-            'creator_name' : 'image creator',
-            'licence_0' : 'CC0',
-            'licence_1' : '1.0',
-            'image_type' : 'test_image',
-        }
-
-        file_data = {
-            'source_image' : self.get_image('test_image.jpg'),
-        }
-
-        form = UploadFactSheetImageForm(data=post_data, files=file_data)
-
-        is_valid = form.is_valid()
-        self.assertEqual(form.errors, {})
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        response = view.form_valid(form)
-        self.assertTrue(response.context_data['success'])
-        self.assertEqual(response.context_data['form'].__class__, UploadFactSheetImageForm)
-        self.assertEqual(response.context_data['image'], view.image)
-
-
-class TestUploadFactSheetImageManage(WithFactSheet, WithFactSheets, ViewTestMixin, WithAjaxAdminOnly, WithUser,
-                               WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
-
-
-    url_name = 'manage_factsheet_image'
-    view_class = UploadFactSheetImage
-
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'fact_sheet_id' : self.fact_sheet.id,
-            'microcontent_category' : 'image',
-            'microcontent_type' : 'test_image',
-            'pk' : self.fact_sheet_image.pk,
-        }
-
-        return url_kwargs
-
-
-    def setUp(self):
-        super().setUp()
-
-        # create the image
-
-        self.fact_sheet_image = FactSheetImages(
-            fact_sheet = self.fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image('test.jpg'),
-        )
-
-        self.fact_sheet_image.save()
-
-    @test_settings
-    def test_set_file(self):
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        self.assertEqual(view.fact_sheet, self.fact_sheet)
-        self.assertEqual(view.microcontent_category, 'image')
-        self.assertEqual(view.microcontent_type, 'test_image')
-        self.assertEqual(view.image, self.fact_sheet_image)
-
-
-    @test_settings
-    def test_get_context_data(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['fact_sheet'], self.fact_sheet)
-        self.assertEqual(context['microcontent_category'], 'image')
-        self.assertEqual(context['microcontent_type'], 'test_image')
-        self.assertEqual(context['success'], False)
-        self.assertEqual(context['image'], self.fact_sheet_image)
-
-
-    @test_settings
-    def test_get_initial(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        initial = view.get_initial()
-        self.assertEqual(initial['source_image'], self.fact_sheet_image.image)
-
-
-    @test_settings
-    def test_get_form_kwargs(self):
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        form_kwargs = view.get_form_kwargs()
-        self.assertEqual(form_kwargs['current_image'], self.fact_sheet_image)
-
-
-    @test_settings
-    def test_form_valid(self):
-
-        post_data = {
-            'creator_name' : 'image creator',
-            'licence_0' : 'CC0',
-            'licence_1' : '1.0',
-            'image_type' : 'test_image',
-        }
-
-        file_data = {
-            'source_image' : self.get_image('test_image_neu.jpg'),
-        }
-
-        form = UploadFactSheetImageForm(data=post_data, files=file_data)
-
-        is_valid = form.is_valid()
-        self.assertEqual(form.errors, {})
-
-        view = self.get_view()
-        view.set_file(**view.kwargs)
-
-        response = view.form_valid(form)
-        self.assertTrue(response.context_data['success'])
-        self.assertEqual(response.context_data['form'].__class__, UploadFactSheetImageForm)
-        self.assertEqual(response.context_data['image'].pk, self.fact_sheet_image.pk)
-        
-        
-        
-
-class TestDeleteFactSheetImage(WithFactSheet, WithFactSheets, ViewTestMixin, WithAjaxAdminOnly, WithUser,
-                               WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
-
-    url_name = 'delete_factsheet_image'
-    view_class = DeleteFactSheetImage
-
-
-    def get_url_kwargs(self):
-        url_kwargs = {
-            'pk' : self.fact_sheet_image.pk,
-        }
-
-        return url_kwargs
-
-
-    def get_url(self):
-        url = super().get_url()
-        url = '{0}?microcontent_category=image'.format(url)
-        return url
-
-
-    def get_view(self):
-
-        view = super().get_view()
-        view.object = self.fact_sheet_image
-
-        return view
-
-
-    def setUp(self):
-        super().setUp()
-
-        # create the image
-
-        self.fact_sheet_image = FactSheetImages(
-            fact_sheet = self.fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image('test.jpg'),
-        )
-
-        self.fact_sheet_image.save()
-
-
-    @test_settings
-    def test_get_verbose_name(self):
-
-        view = self.get_view()
-        verbose_name = view.get_verbose_name()
-        self.assertEqual(verbose_name, 'Test image')
-
-
-    @test_settings
-    def test_get_context_data(self):
-
-        view = self.get_view()
-        
-        context = view.get_context_data(**view.kwargs)
-        self.assertEqual(context['fact_sheet'], self.fact_sheet)
-        self.assertEqual(context['microcontent_type'], 'test_image')
-        self.assertEqual(context['microcontent_category'], 'image')
-
-
-
-class TestGetFactSheetFormField(WithFactSheet, WithFactSheets, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+class TestGetFactSheetFormFields(WithFactSheet, WithFactSheets, ViewTestMixin, WithAjaxAdminOnly, WithUser,
                                 WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
-    url_name = 'get_factsheet_form_field'
-    view_class = GetFactSheetFormField
+    url_name = 'get_factsheet_form_fields'
+    view_class = GetFactSheetFormFields
 
 
     def get_url_kwargs(self):
@@ -651,3 +443,148 @@ class TestUploadFactSheetTemplate(WithFactSheets, ViewTestMixin, WithAjaxAdminOn
         self.assertTrue(response.context_data['success'])
 
 
+class TestManageFactSheetImage(WithFactSheet, WithFactSheets, WithMedia, WithImageStore, MultipleURLSViewTestMixin,
+        WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_factsheet_image'
+    view_class = ManageFactSheetImage
+
+    microcontent_category = 'image'
+
+
+    def setUp(self):
+        super().setUp()
+        self.fact_sheet_image = self.create_fact_sheet_image()
+
+
+    def get_url_kwargs_list(self):
+
+        fact_sheet_content_type = ContentType.objects.get_for_model(FactSheet)
+        
+        url_kwargs_list = [
+            {
+                'fact_sheet_id' : self.fact_sheet.id,
+                'microcontent_category' : self.microcontent_category,
+                'content_image_id' : self.fact_sheet_image.id,
+            },
+            {
+                'fact_sheet_id' : self.fact_sheet.id,
+                'microcontent_category' : self.microcontent_category,
+                'content_type_id' : fact_sheet_content_type.id,
+                'object_id' : self.fact_sheet.id,
+                'image_type' : self.fact_sheet_image.image_type,
+            }
+        ]
+
+        return url_kwargs_list
+
+
+    def get_views(self):
+
+        views = super().get_views()
+
+        for view in views:
+            view.set_fact_sheet(**view.kwargs)
+
+        return views
+
+
+    @test_settings
+    def test_set_fact_sheet(self):
+        
+        views = super().get_views()
+
+        for view in views:
+
+            self.assertFalse(hasattr(view, 'fact_sheet'))
+            self.assertFalse(hasattr(view, 'microcontent_category'))
+
+            view.set_content_image(*[], **view.kwargs)
+            view.set_fact_sheet(**view.kwargs)
+
+            self.assertEqual(view.fact_sheet, self.fact_sheet)
+            self.assertEqual(view.microcontent_category, self.microcontent_category)
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        views = self.get_views()
+
+        for view in views:
+
+            view.set_content_image(*[], **view.kwargs)
+            view.set_licence_registry_entry(self.fact_sheet_image.image_store, 'image')
+            view.set_fact_sheet(**view.kwargs)
+            view.taxon = None
+
+            context = view.get_context_data(**view.kwargs)
+
+            self.assertEqual(context['fact_sheet'], self.fact_sheet)
+            self.assertEqual(context['microcontent_category'], self.microcontent_category)
+            self.assertEqual(context['microcontent_type'], self.fact_sheet_image.image_type)
+
+
+class TestManageFactSheetImageMulti(TestManageFactSheetImage):
+
+    microcontent_category = 'images'
+
+
+
+class TestDeleteFactSheetImage(WithFactSheet, WithFactSheets, WithMedia, WithImageStore, ViewTestMixin, WithAjaxAdminOnly,
+                    WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_factsheet_image'
+    view_class = DeleteFactSheetImage
+
+    microcontent_category = 'image'
+
+    def setUp(self):
+        super().setUp()
+        self.fact_sheet_image = self.create_fact_sheet_image()
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'fact_sheet_id' : self.fact_sheet.id,
+            'microcontent_category' : self.microcontent_category,
+            'pk' : self.fact_sheet_image.id,
+        }
+
+        return url_kwargs
+
+
+    def get_view(self):
+
+        view = super().get_view()
+        view.set_fact_sheet(**view.kwargs)
+
+
+        return view
+
+
+    @test_settings
+    def test_set_fact_sheet(self):
+        
+        view = super().get_view()
+
+        self.assertFalse(hasattr(view, 'fact_sheet'))
+        self.assertFalse(hasattr(view, 'microcontent_category'))
+
+        view.set_fact_sheet(**view.kwargs)
+        self.assertEqual(view.fact_sheet, self.fact_sheet)
+        self.assertEqual(view.microcontent_category, self.microcontent_category)
+
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+
+        view.set_fact_sheet(**view.kwargs)
+        view.object = view.get_object()
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['fact_sheet'], self.fact_sheet)
+        self.assertEqual(context['microcontent_category'], self.microcontent_category)
+        self.assertEqual(context['microcontent_type'], self.fact_sheet_image.image_type)

@@ -6,13 +6,12 @@ from django.template import Context
 from django.template import Template, TemplateDoesNotExist
 from django.template.backends.django import DjangoTemplates
 
-from app_kit.generic import GenericContentManager, GenericContent, LocalizeableImage, AppContentTaxonomicRestriction
+from app_kit.generic import GenericContent, AppContentTaxonomicRestriction
 
-from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
+from app_kit.models import ContentImageMixin
+
 
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericRelation
-from content_licencing.models import ContentLicenceRegistry
 
 from taxonomy.lazy import LazyTaxonList
 
@@ -40,8 +39,6 @@ class FactSheets(GenericContent):
         locale[self.name] = self.name
 
         all_fact_sheets = FactSheet.objects.filter(fact_sheets=self)
-
-        fact_sheet_images_content_type = ContentType.objects.get_for_model(FactSheetImages)
 
         # due to layoutability, the underlying template has to be read
         for fact_sheet in all_fact_sheets:
@@ -80,32 +77,18 @@ class FactSheets(GenericContent):
                     }                    
 
             # fact sheet images which require translation
-            fact_sheet_images = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
-                                                               requires_translation=True)
+            fact_sheet_images = fact_sheet.all_images()
 
-            fact_sheet_images_content_type = ContentType.objects.get_for_model(FactSheetImages)
+            translation_images = fact_sheet_images.filter(requires_translation=True)
 
-            for fact_sheet_image in fact_sheet_images:
+            for fact_sheet_image in translation_images:
+                
+                locale_key = fact_sheet_image.get_image_locale_key()
 
-                # add image to locale if it needs translation
-                if fact_sheet_image.requires_translation == True:
+                locale_entry = fact_sheet_image.get_image_locale_entry()
 
-                    fact_sheet_image.build = True
-                    fact_sheet_image.language_code = self.primary_language
-
-                    localizeable_image = LocalizeableImage(fact_sheet_image)
-                    
-                    locale_key = localizeable_image.get_language_independant_filename()
-
-                    # this has to be a url relative to the apps www folder, and the image has to exist there
-                    locale[locale_key] = fact_sheet_image.url
-
-                    locale['_meta'][locale_key] = {
-                        'type' : 'image',
-                        'media_url' : fact_sheet_image.image.url,
-                        'content_type_id' : fact_sheet_images_content_type.id,
-                        'object_id' : fact_sheet_image.id,
-                    }                    
+                # there is no built image yet, use media_url for the translation matrix
+                locale[locale_key] = locale_entry                    
 
         return locale
 
@@ -198,7 +181,7 @@ class FactSheetManager(models.Manager):
 
 
         else:
-            # get for all nuids
+            # get for all nuids, not implemented yet
             taxon_nuid = lazy_taxon.taxon_nuid
 
         
@@ -208,10 +191,10 @@ class FactSheetManager(models.Manager):
     Template based offline content
     - during build, .html files are produced
     - how to deal with in-content-images?
-      - store them as FactSheetImages with content = content_id
+      - use ContentImage, bound to fact sheet id, image_type == microcontent_type
       - in the html, the data-image-id attribute is used as a reference to the image
 '''
-class FactSheet(models.Model):
+class FactSheet(models.Model, ContentImageMixin):
 
     fact_sheets = models.ForeignKey(FactSheets, on_delete=models.CASCADE)
     
@@ -243,7 +226,9 @@ class FactSheet(models.Model):
 
     def get_template(self, meta_app):
 
-        return self.fact_sheets.get_template(meta_app, self.template_name)
+        template = self.fact_sheets.get_template(meta_app, self.template_name)
+
+        return template
         
 
     def get_atomic_content(self, microcontent_type):
@@ -266,6 +251,16 @@ class FactSheet(models.Model):
         return rendered
 
 
+    def get_content_image_restrictions(self, image_type):
+        
+        restrictions = {
+            'allow_features' : False,
+            'allow_cropping' : False,
+        }
+
+        return restrictions
+
+
     def save(self, *args, **kwargs):
 
         super().save(*args, **kwargs)
@@ -282,71 +277,6 @@ class FactSheet(models.Model):
     class Meta:
         verbose_name = _('Fact sheet')
         verbose_name_plural = _('Fact sheets')
-
-
-
-def factsheet_images_upload_path(instance, filename):
-
-    generic_content_id = instance.fact_sheet.fact_sheets.id
-    fact_sheet_id = instance.fact_sheet.id
-
-    base_path = os.path.join('fact_sheets', 'content', str(generic_content_id), str(fact_sheet_id), 'images')
-    path = os.path.join(base_path, instance.microcontent_type, filename)
-
-    return path
-
-'''
-    primary language
-    - maybe mark an image as translatable
-'''
-class FactSheetImages(models.Model):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # flag if the image is called during the build process of the app
-        self.build = False
-        # no language
-        self.language_code = self.fact_sheet.fact_sheets.primary_language
-
-    fact_sheet = models.ForeignKey(FactSheet, on_delete=models.CASCADE)
-    
-    # bind image to microcontent_type of template (user adds image in text box) or microcontent_type
-    microcontent_type = models.CharField(max_length=355)
-    
-    image = models.ImageField(upload_to=factsheet_images_upload_path)
-    text = models.CharField(max_length=355, null=True)
-    
-    # mark an image as translatable
-    requires_translation = models.BooleanField(default=False)
-    
-    licences = GenericRelation(ContentLicenceRegistry)
-
-    # during build, url has to be different from preview
-    # the html rendering during build fetches the url using this method
-    # the translated images require the path accordingly
-    @property
-    def url(self):
-
-        if self.build == False:
-            return self.image.url
-
-        # during build, the url has to be according to the app file/folder layout
-        # also called By AppReleaseBuilder and FactSheetsJSONBuilder
-        filename = os.path.basename(self.image.name)
-
-        if self.requires_translation == True:
-
-            localizeable_image = LocalizeableImage(self)
-            url = localizeable_image.get_relative_localized_image_path(self.language_code)
-            
-        else:
-            # no language_code required
-            url = 'features/FactSheets/{0}/{1}-{2}/images/{3}'.format(
-                str(self.fact_sheet.fact_sheets.uuid), str(self.fact_sheet.pk), slugify(self.fact_sheet.title),
-                filename)
-
-        return url
 
 
 def get_user_uploaded_templates_base_dir(fact_sheets):

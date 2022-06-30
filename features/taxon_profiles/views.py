@@ -70,6 +70,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
         name_uuid = kwargs['name_uuid']
         # use the names model to support synonyms
+        
         taxon = models.TaxonNamesModel.objects.get(name_uuid=name_uuid)
 
         self.taxon = LazyTaxon(instance=taxon)

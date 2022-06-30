@@ -879,6 +879,7 @@ class ManageMatrixFilter(FormLanguageMixin, FormView):
     - the form_class depends on the type of the matrix_filter
 '''
 from app_kit.views import ManageContentImageMixin
+from localcosmos_server.forms import ManageContentImageFormCommon
 class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormView):
 
     form_class = None
@@ -967,6 +968,18 @@ class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormVi
                 self.matrix_filter_space))
             
         return initial
+
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        
+        form_class = self.get_form_class()
+
+        if not issubclass(form_class, ManageContentImageFormCommon):
+            if 'content_instance' in form_kwargs:
+                del form_kwargs['content_instance']
+        return form_kwargs
+
 
     def form_valid(self, form):
 

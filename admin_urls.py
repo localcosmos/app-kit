@@ -16,6 +16,7 @@ urlpatterns = [
     path('glossary/', include('app_kit.features.glossary.urls')),
     path('maps/', include('app_kit.features.maps.urls')),
     path('fact-sheets/', include('app_kit.features.fact_sheets.urls')),
+    path('frontend/', include('app_kit.features.frontend.urls')),
     # apps
     # create apps
     path('create-app/', views.CreateApp.as_view(), name='create_app'), # generic forms etc need app_to_feature
@@ -80,6 +81,11 @@ urlpatterns = [
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
     path('manage-content-image-with-text/<int:meta_app_id>/<int:content_image_id>/',
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
+    # localized content image
+    path('manage-localized-content-image/<int:content_image_id>/<str:language_code>/',
+        views.ManageLocalizedContentImage.as_view(), name='manage_localized_content_image'),
+    path('delete-localized-content-image/<int:pk>/',
+        views.DeleteLocalizedContentImage.as_view(), name='delete_localized_content_image'),
     # content image suggestions
     path('manage-content-image-suggestions/<int:content_type_id>/<int:object_id>/',
         views.ManageContentImageSuggestions.as_view(), name='manage_content_image_suggestions'),
@@ -91,18 +97,6 @@ urlpatterns = [
     # button placeholder
     path('mockbutton/',
         views.MockButton.as_view(), name='mockbutton'),
-    # app design
-    path('manage-app-design/<int:meta_app_id>/<str:theme_name>/',
-        views.ManageAppDesign.as_view(), name='switch_app_design'),
-    path('manage-app-design/<int:meta_app_id>/',
-        views.ManageAppDesign.as_view(), name='manage_app_design'),
-    # app theme images
-    path('manage-app-theme-image/<int:meta_app_id>/<str:image_type>/',
-        views.ManageAppThemeImage.as_view(), name='manage_app_theme_image'),
-    path('delete-app-theme-image/<int:meta_app_id>/<str:image_type>/',
-        views.DeleteAppThemeImage.as_view(), name='delete_app_theme_image'),
-    path('get-app-theme-image-formfield/<int:meta_app_id>/<str:image_type>/',
-        views.GetAppThemeImageFormField.as_view(), name='get_app_theme_image_formfield'),
     # anycluster, prefixed with app-kit to distinguish it from the API anycluster
     path('anycluster/', include('localcosmos_server.anycluster_schema_urls')),
     # spreadsheet import

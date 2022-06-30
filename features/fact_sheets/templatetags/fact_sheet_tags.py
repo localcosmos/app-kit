@@ -9,7 +9,7 @@ from django.utils.safestring import mark_safe
 from django.db.models import Q
 
 
-from app_kit.features.fact_sheets.models import FactSheetImages, FactSheet
+from app_kit.features.fact_sheets.models import FactSheet
 
 '''
     cms_get
@@ -36,13 +36,7 @@ def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
 
     elif microcontent_category == 'image':
 
-        content = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
-                                                 microcontent_type=microcontent_type).first()
-
-        if content:
-
-            content.build = build
-            content.language_code = language_code
+        content = fact_sheet.image(image_type=microcontent_type)
 
         return content
 
@@ -69,9 +63,8 @@ def cms_get_multiple(context, microcontent_category, microcontent_type, *args, *
     elif microcontent_category in ['image', 'images']:
 
         images = []
-        
-        images_qry = FactSheetImages.objects.filter(fact_sheet=fact_sheet,
-                                                 microcontent_type=microcontent_type)
+
+        images_qry = fact_sheet.images(image_type=microcontent_type)
 
         for image in images_qry:
             image.build = build

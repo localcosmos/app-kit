@@ -1,21 +1,13 @@
 from django.conf import settings
 from django import forms
-from django.conf import settings
-from django.apps import apps
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 
-from django_countries.fields import CountryField
+from .models import (MetaAppGenericContent, LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, LocalizedContentImage,
+                    ContentImage)
 
-from localcosmos_server.slugifier import create_unique_slug
-
-from .models import MetaAppGenericContent
-
-from .generic import LocalizeableImage
-
-from localcosmos_server.widgets import (CropImageInput, ImageInputWithPreview, AjaxFileInput,
-                                        TwoStepDiskFileInput, HiddenJSONInput)
+from localcosmos_server.widgets import (TwoStepFileInput, HiddenJSONInput)
 from localcosmos_server.forms import LocalizeableForm, FormLocalizationMixin
 from localcosmos_server.models import App
 
@@ -118,8 +110,6 @@ from content_licencing.mixins import LicencingFormMixin, OptionalLicencingFormMi
     A form with a required, licenced ContentImage
 '''
 class ManageContentImageForm(ManageContentImageFormCommon, LicencingFormMixin):
-
-    allow_features = True
     
     # cropping
     crop_parameters = forms.CharField(widget=forms.HiddenInput)
@@ -132,6 +122,8 @@ class ManageContentImageForm(ManageContentImageFormCommon, LicencingFormMixin):
 
     # md5
     md5 = forms.CharField(widget=forms.HiddenInput, required=False)
+
+    requires_translation = forms.BooleanField(required=False)
     
 
     def clean_source_image(self):
@@ -153,13 +145,19 @@ class ManageContentImageWithTextForm(FormLocalizationMixin, ManageContentImageFo
 
     localizeable_fields = ['text']
     layoutable_simple_fields = ['text']
+
+
+class ManageLocalizedContentImageForm(ManageContentImageForm):
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        del self.fields['requires_translation']
+
+
 '''
     A form with an optional ContentImage. If the user uploads an image, creator_name and licence have to be present
 '''
 class OptionalContentImageForm(ManageContentImageFormCommon, OptionalLicencingFormMixin):
-
-    allow_features = True
 
     # cropping
     crop_parameters = forms.CharField(widget=forms.HiddenInput, required=False)
@@ -290,230 +288,6 @@ class MetaAppOptionsForm(GenericContentOptionsForm):
 
 
 
-'''
-    App Design and texts
-    - the fields are loaded from the theme config file
-    - image fields have to be optional, they are handled via ajax. the form has to validate without images,
-      otherwise it would not be processed by ViewClass.form_valid()
-'''
-def ratio_to_css_class(ratio):
-    css_class = 'ratio-{0}'.format(ratio.replace(':','x'))
-    return css_class
-
-
-'''
-    AppThemeImages
-    - are not stored in the ImageStore and are no ContentImages
-    - The AppThemeImages are stored on disk, in the preview folder of the current app version
-'''
-from .AppThemeImage import AppThemeImage
-class GetAppThemeImageFormFieldMixin:
-
-    # image_type is the type name of the image as declared in the theme settings
-    def get_image_form_field(self, image_type, definition):
-
-        app_content_type = ContentType.objects.get_for_model(self.meta_app)
-        url_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-            'image_type' : image_type,
-        }
-
-        app_theme_image = AppThemeImage(self.meta_app, image_type)
-            
-        upload_image_url = reverse('manage_app_theme_image', kwargs=url_kwargs)
-
-        help_text = definition.get('help_text', None)
-        if help_text:
-            help_text = _(help_text)
-
-        extra_css_classes = ''
-
-        if 'ratio' in definition['restrictions']:
-            extra_css_classes = ratio_to_css_class(definition['restrictions']['ratio'])
-        else:
-            extra_css_classes = 'background-contains'
-
-        delete_url_kwargs = {
-            'meta_app_id': self.meta_app.id,
-            'image_type' : image_type,
-        }
-
-        delete_url = reverse('delete_app_theme_image', kwargs=delete_url_kwargs)
-
-        widget=TwoStepDiskFileInput(url=upload_image_url, instance=app_theme_image, delete_url=delete_url,
-                                    extra_css_classes=extra_css_classes)
-
-        # apply the restrictions, like file type, ratio etc as a validator for the ImageField
-        validators = []
-
-        for restriction_type, restriction in definition['restrictions'].items():
-            ValidatorClass = VALIDATOR_CLASS_MAP[restriction_type]
-            validator = ValidatorClass(restriction)
-            validators.append(validator)
-
-        form_field = SVGandImageField(widget=widget, help_text=help_text, required=False, validators=validators)
-
-        # do not use .required. Form should be valid without images - app validation is done during build
-        is_required = definition.get('required', False)
-        form_field.is_required = is_required
-        
-
-        return form_field
-        
-
-class AppDesignForm(GetAppThemeImageFormFieldMixin, forms.Form):
-
-    theme = forms.ChoiceField()
-    input_language = forms.CharField(widget=forms.HiddenInput)
-    localizeable_fields = []
-
-    legal_notice_fields = {
-        'entity_name' : forms.CharField(label=_('Name of entity'), required=False,
-            help_text=_('First- and Surname if you are an individual. Otherwise the name of the legal entity.')),
-        'street' : forms.CharField(label=_('Street'), required=False),
-        'zip_code' : forms.CharField(label=_('Zip code'), required=False),
-        'city' : forms.CharField(label=_('City'), required=False),
-        'country' : CountryField().formfield(),
-        'email' : forms.EmailField(label=_('Email'), required=False),
-        'phone' : forms.CharField(label=_('Phone'), required=False),
-    }
-
-
-    def __init__(self, meta_app, *args, **kwargs):
-        
-        self.meta_app = meta_app
-        self.language = kwargs.pop('language', meta_app.primary_language)
-        self.active_theme = self.meta_app.get_theme()
-
-        initial = kwargs.pop('initial', {})        
-
-        initial['theme'] = self.active_theme.name
-
-        super().__init__(initial=initial, *args, **kwargs)
-
-        appbuilder = meta_app.get_preview_builder()
-
-        theme_choices = []
-        
-        for theme in appbuilder.available_themes():
-
-            choice = (theme.name, theme.name)
-            theme_choices.append(choice)
-
-
-        self.fields['theme'].choices = theme_choices
-
-        # IMAGES, initial not possible
-        for image_type, definition in sorted(self.active_theme.user_content['images'].items()):
-            image_form_field = self.get_image_form_field(image_type, definition)
-            self.fields[image_type] = image_form_field
-            
-        # TEXTS
-        locale = appbuilder.get_primary_locale(meta_app)
-                
-        for text_type, definition in self.active_theme.user_content['texts'].items():
-
-            text_initial = None
-
-            # try to fetch field content from db
-            if locale and text_type in locale:
-                text_initial = locale[text_type]
-
-            help_text = definition.get('help_text', None)
-            if help_text:
-                help_text = _(help_text)
-
-            text_required = definition.get('required', False)
-            
-            self.fields[text_type] = forms.CharField(widget=forms.Textarea, help_text=help_text,
-                                                     required=text_required, initial=text_initial)
-
-            self.localizeable_fields.append(text_type)
-            
-
-        self.fields['input_language'].initial = self.language
-
-        for field_name in self.localizeable_fields:
-            self.fields[field_name].language = self.language
-
-        for field_name, field in self.legal_notice_fields.items():
-            field.is_legal_notice_field = True
-            
-            if field_name == 'entity_name':
-                field.is_legal_notice_first = True
-            else:
-                field.is_legal_notice_first = False
-            self.fields[field_name] = field
-
-
-'''
-    AppThemeImageForm
-    - App Theme Images do not offer the cropping of images
-    - restrictions are loaded from the theme
-'''
-from localcosmos_server.validators import FileExtensionValidator, ImageRatioValidator, ImageDimensionsValidator
-from localcosmos_server.fields import SVGandImageField
-
-VALIDATOR_CLASS_MAP = {
-    'file_type' : FileExtensionValidator,
-    'ratio' : ImageRatioValidator,
-    'dimensions' : ImageDimensionsValidator,
-}
-
-class AppThemeImageForm(ManageContentImageFormCommon, LicencingFormMixin):
-
-    # image_type
-    image_type = forms.CharField(widget=forms.HiddenInput)
-
-    # md5
-    md5 = forms.CharField(widget=forms.HiddenInput, required=False)
-
-    def __init__(self, meta_app, *args, **kwargs):
-        self.meta_app = meta_app
-        self.active_theme = self.meta_app.get_theme()
-        super().__init__(*args, **kwargs)
-
-    def get_source_image_field(self):
-        # image_type HAS TO be in initial or data for AppThemeImages
-        if 'image_type' in self.data:
-            image_type = self.data['image_type']
-        else:
-            image_type = self.initial['image_type']
-
-        # read help_text and validators from theme config
-        image_definition = self.active_theme.user_content['images'][image_type]
-
-        help_text = image_definition.get('help_text', None)
-        if help_text:
-            help_text = _(help_text)
-
-        validators = []
-        for restriction_type, restriction in image_definition['restrictions'].items():
-            ValidatorClass = VALIDATOR_CLASS_MAP[restriction_type]
-            validator = ValidatorClass(restriction)
-            validators.append(validator)
-        
-        source_image_field = SVGandImageField(widget=ImageInputWithPreview, help_text=help_text, required=False,
-                                              validators=validators)
-        
-        source_image_field.widget.current_image = self.current_image
-
-        return source_image_field
-
-
-    # the form has to be invalid if no image exists and the user uploads only a licence
-    def clean(self):
-        cleaned_data = super().clean()
-        file_ = cleaned_data.get('source_image')
-
-        if not file_:
-            image_type = cleaned_data['image_type']
-            app_theme_image = AppThemeImage(self.meta_app, image_type)
-            if not app_theme_image.exists():
-                raise forms.ValidationError(_('You have to upload an image.'))
-        return cleaned_data
-
-
 class TranslateAppForm(forms.Form):
 
     page_size = 30
@@ -524,12 +298,8 @@ class TranslateAppForm(forms.Form):
         self.page = kwargs.pop('page', 1)
         
         super().__init__(*args, **kwargs)
-
-        appbuilder = meta_app.get_preview_builder()
-        app_www_folder = appbuilder._app_www_folder(meta_app)
-        app_preview_url = self.meta_app.app.get_preview_url()
         
-        self.primary_locale = appbuilder.get_primary_locale(meta_app)
+        self.primary_locale = self.meta_app.localizations[self.meta_app.primary_language]
         all_items = list(self.primary_locale.items())
         all_items_count = len(all_items)
 
@@ -543,12 +313,9 @@ class TranslateAppForm(forms.Form):
 
         page_items = list(self.primary_locale.items())[start:end]
 
-        self.meta = self.primary_locale['_meta']
+        self.meta = self.primary_locale.get('_meta', {})
 
         for key, primary_language_value in page_items:
-
-            if key == '_meta':
-                continue
 
             languages = meta_app.secondary_languages()
 
@@ -556,35 +323,53 @@ class TranslateAppForm(forms.Form):
 
             fieldset = []
 
-            for counter, language in enumerate(languages, 1):
+            for counter, language_code in enumerate(languages, 1):
 
-                to_locale = appbuilder.get_locale(self.meta_app, language)
-                if not to_locale:
-                    to_locale = {}
+                if key == '_meta':
+                    continue
+
+                to_locale = self.meta_app.localizations.get(language_code, {})
 
                 # b64 encode the source key to make it a valid html field name attribute
-                field_name_utf8 = '{0}-{1}'.format(language, key)
+                field_name_utf8 = '{0}-{1}'.format(language_code, key)
 
                 field_name = base64.b64encode(field_name_utf8.encode()).decode()
 
-                if key in self.meta and self.meta[key].get('type', None) == 'image':
+                if key.startswith(LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX) == True:
 
-                    # get initial
-                    preview_url = None
+                    # get initial, LocalizedContentImage
+                    content_type = ContentType.objects.get(pk=primary_language_value['content_type_id'])
+                    object_id = primary_language_value['object_id']
+                    image_type = primary_language_value['image_type']
+                    content_image = ContentImage.objects.filter(content_type=content_type, object_id=object_id,
+                                        image_type=image_type).first()
 
-                    localized_filename = LocalizeableImage.localize_language_independant_filename(key, language)
-                                     
-                    relative_image_url = LocalizeableImage.preview_url(localized_filename, language)
-                    
-                    full_preview_path = os.path.join(app_www_folder, relative_image_url)
-                    
-                    if os.path.isfile(full_preview_path):
-                        preview_url = os.path.join(app_preview_url, relative_image_url)
+                    if content_image:
 
-                    field = forms.ImageField(label=primary_language_value, required=False)
-                    field.primary_language_image_url = self.meta[key]['media_url']
-                    field.is_image = True
-                    field.preview_url = preview_url
+                        primary_language_image_url = primary_language_value['media_url']
+
+                        localized_content_image = LocalizedContentImage.objects.filter(content_image=content_image,
+                                                                                    language_code=language_code).first()
+
+                        url_kwargs = {
+                            'content_image_id' : content_image.id,
+                            'language_code' : language_code,
+                        }
+                        
+                        url = reverse('manage_localized_content_image', kwargs=url_kwargs)
+                        image_container_id = 'localized_content_image_{0}_{1}'.format(content_image.id, language_code)
+
+                        widget_kwargs = {
+                            'instance' : localized_content_image,
+                            'url' : url,
+                            'image_container_id' : image_container_id,
+                        }
+
+                        widget = TwoStepFileInput(**widget_kwargs)
+
+                        field = forms.ImageField(label=_('Image'), widget=widget, required=False)
+                        field.primary_language_image_url = primary_language_image_url
+                        field.is_image = True
 
                 else:
 
@@ -594,7 +379,7 @@ class TranslateAppForm(forms.Form):
                     
                     widget = forms.TextInput
 
-                    if len(primary_language_value) > 50:
+                    if len(primary_language_value) > 50 or (key in self.meta and 'layoutability' in self.meta[key]):
                         widget = forms.Textarea            
                 
                     field = forms.CharField(widget=widget, label=primary_language_value, initial=initial,
@@ -602,7 +387,7 @@ class TranslateAppForm(forms.Form):
 
                     field.is_image = False
                     
-                field.language = language
+                field.language = language_code
                 field.is_first = False
                 field.is_last = False
 

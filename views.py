@@ -8,20 +8,20 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
 
-from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage
+from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
 from .generic import AppContentTaxonomicRestriction
 
-from .forms import (AddLanguageForm, MetaAppOptionsForm, ManageContentImageForm, AppDesignForm, ratio_to_css_class,
+from .forms import (AddLanguageForm, MetaAppOptionsForm, ManageContentImageForm,
                     CreateGenericContentForm, AddExistingGenericContentForm, TranslateAppForm,
-                    EditGenericContentNameForm, AppThemeImageForm, ManageContentImageWithTextForm,
-                    ZipImportForm, BuildAppForm, CreateAppForm)
+                    EditGenericContentNameForm, ManageContentImageWithTextForm,
+                    ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm)
 
 from django_tenants.utils import get_tenant_domain_model
 Domain = get_tenant_domain_model()
 
 from app_kit.app_kit_api.models import AppKitJobs, AppKitStatus
 
-from app_kit.generic import LocalizeableImage
+from app_kit.appbuilder import AppBuilder, AppPreviewBuilder
 
 from .view_mixins import ViewClassMixin, MetaAppMixin, MetaAppFormLanguageMixin
 
@@ -34,9 +34,6 @@ from taxonomy.models import TaxonomyModelRouter
 
 
 from localcosmos_server.generic_views import AjaxDeleteView
-
-from .AppThemeImage import AppThemeImage
-from .AppThemeText import AppThemeText
 
 
 import json, urllib.request, urllib.parse, urllib.error, traceback, threading
@@ -185,10 +182,23 @@ class CreateApp(CreateGenericContent):
 
         if 'uuid' in form.cleaned_data and form.cleaned_data['uuid']:
             meta_app_kwargs['uuid'] = form.cleaned_data['uuid']
-        self.created_content = MetaApp.objects.create(form.cleaned_data['name'],
+        meta_app = MetaApp.objects.create(form.cleaned_data['name'],
                                     form.cleaned_data['primary_language'], app_domain_name, self.request.tenant,
                                     form.cleaned_data['subdomain'], **meta_app_kwargs)
-        
+
+        self.created_content = meta_app
+
+
+        # MetaApp and all required features have been created
+
+        # create the version specific folder on disk
+        # fails if the version already exists
+        app_builder = AppBuilder(meta_app)
+        app_builder.create_app_version()
+
+        # create preview
+        app_preview_builder = AppPreviewBuilder(meta_app)
+        app_preview_builder.build()        
         
         context = self.get_context_data(**self.kwargs)
         context['meta_app'] = self.created_content
@@ -543,17 +553,16 @@ class TranslateApp(MetaAppMixin, FormView):
     form_class = TranslateAppForm
     template_name = 'app_kit/translate_app.html'
 
-
+    
     def dispatch(self, request, *args, **kwargs):
-        self.update_translation_files(**kwargs)
+        self.fill_primary_localization(**kwargs)
         return super().dispatch(request, *args, **kwargs)
 
-    def update_translation_files(self, **kwargs):
+    def fill_primary_localization(self, **kwargs):
         self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
-        # create or update the language files
-        appbuilder = self.meta_app.get_preview_builder()
-        appbuilder.update_translation_files(self.meta_app)
-        
+        # fill meta_app.localizations.json
+        app_builder = self.meta_app.get_app_builder()
+        app_builder.fill_primary_localization()
 
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()
@@ -571,41 +580,24 @@ class TranslateApp(MetaAppMixin, FormView):
     - use form.translations instead of cleaned_data, the latter is b64encoded
     '''
     def form_valid(self, form):
-
-        appbuilder = self.meta_app.get_preview_builder()
-
-        app_www_folder = appbuilder._app_www_folder(self.meta_app)
         
         for language_code, translation_dict in form.translations.items():
 
-            locale = {}
+            if language_code not in self.meta_app.localizations:
+                self.meta_app.localizations[language_code] = {}
 
             # value can be a file/image
             for key, value in translation_dict.items():
 
-                if key in form.meta and form.meta[key].get('type', None) == 'image':
-
-                    content_type_id = form.meta[key]['content_type_id']
-                    object_id = form.meta[key]['object_id']
-                    content_type = ContentType.objects.get(pk=content_type_id)
-
-                    image_instance = content_type.get_object_for_this_type(pk=object_id)
-
-                    localized_image = LocalizeableImage(image_instance)
-                    
-                    # save locale of image
-                    image_file = value
-                    localized_image.save_locale(app_www_folder, image_file, language_code)
-
-                    relative_path = localized_image.get_relative_localized_image_path(language_code)
-
-                    locale[key] = relative_path
-                    
+                # images are saved separately (TwoStepFileInput)
+                if key.startswith('localized_content_image') == True:
+                    continue
 
                 else:
-                    locale[key] = value
-                
-            appbuilder.update_translation(self.meta_app, language_code, locale)
+                    self.meta_app.localizations[language_code][key] = value
+            
+
+        self.meta_app.save()
             
         context = self.get_context_data(**self.kwargs)
         context['form'] = form
@@ -764,17 +756,13 @@ class BuildApp(FormView):
 
         # include review urls, if any present
         if not self.meta_app.published_version or self.meta_app.published_version != self.meta_app.current_version:
-            context['apk_review_url'] = app_release_builder.apk_review_url(self.request, self.meta_app,
-                                                                           self.meta_app.current_version)
+            context['aab_review_url'] = app_release_builder.aab_review_url(self.request)
             
-            context['webapp_review_url'] = app_release_builder.webapp_review_url(self.request, self.meta_app,
-                                                                                 self.meta_app.current_version)
+            context['webapp_review_url'] = app_release_builder.webapp_review_url(self.request)
 
-            context['ipa_review_url'] = app_release_builder.ipa_review_url(self.request, self.meta_app,
-                                                                           self.meta_app.current_version)
+            context['ipa_review_url'] = app_release_builder.ipa_review_url(self.request)
             
-            context['pwa_zip_review_url'] = app_release_builder.pwa_zip_review_url(self.request, self.meta_app,
-                                                                               self.meta_app.current_version)
+            context['pwa_zip_review_url'] = app_release_builder.webapp_zip_review_url(self.request)
 
             app_kit_job = AppKitJobs.objects.filter(meta_app_uuid=self.meta_app.uuid,
                     app_version=self.meta_app.current_version, platform='ios', job_type='build').first()
@@ -809,7 +797,7 @@ class BuildApp(FormView):
         if action == 'release':
             # commercial installation check
             if self.request.user.is_superuser or LOCALCOSMOS_COMMERCIAL_BUILDER == False:
-                release_result = app_release_builder.release(self.meta_app, self.meta_app.current_version)
+                release_result = app_release_builder.release()
             else:
                 return HttpResponseForbidden('Releasing requires payment')
         else:
@@ -820,9 +808,9 @@ class BuildApp(FormView):
                 connection.set_tenant(self.request.tenant)
                 
                 if action == 'validate':
-                    validation_result = app_release_builder.validate(self.meta_app)
+                    validation_result = app_release_builder.validate()
                 elif action == 'build':
-                    build_result = app_release_builder.build(self.meta_app, self.meta_app.current_version)
+                    build_result = app_release_builder.build()
 
             thread = threading.Thread(target=run_in_thread)
             thread.start()
@@ -852,11 +840,27 @@ class StartNewAppVersion(TemplateView):
 
         if self.meta_app.current_version == self.meta_app.published_version:
             new_version = self.meta_app.current_version + 1
-            self.meta_app.create_version(new_version)
+            self.meta_app.current_version = new_version
+
+            # reset status reports. otherwise the build page will show results of the last version
+            self.meta_app.build_status = None
+            self.meta_app.last_build_report = None
+
+            self.meta_app.validation_status = None
+            self.meta_app.last_validation_report = None
+
+            self.meta_app.save()
+
+            app_builder = self.meta_app.get_app_builder()
+            app_builder.create_app_version()
+
+
+            app_preview_builder = self.meta_app.get_preview_builder()
+            app_preview_builder.build()
 
             delete_version = new_version - 2
             while delete_version > 0:
-                self.meta_app.remove_old_version_from_disk(delete_version)
+                app_builder.delete_app_version(delete_version)
                 delete_version = delete_version - 1
         
         content_type = ContentType.objects.get_for_model(self.meta_app)
@@ -1190,6 +1194,9 @@ class ManageContentImageMixin(LicencingFormViewMixin):
             self.content_image.image_type = image_type
 
 
+        requires_translation = form.cleaned_data.get('requires_translation', False)
+        self.content_image.requires_translation = requires_translation
+
         # there might be text
         if form.cleaned_data.get('text', None):
             self.content_image.text = form.cleaned_data['text']
@@ -1205,9 +1212,11 @@ class ManageContentImageMixin(LicencingFormViewMixin):
         context = super().get_context_data(**kwargs)
         context['content_type'] = self.object_content_type
         context['content_instance'] = self.content_instance
+        context['image_type'] = self.image_type
         context['content_image'] = self.content_image
         context['content_image_taxon'] = self.taxon
-        context['new'] = self.new        
+        context['new'] = self.new
+
         return context
     
 
@@ -1221,6 +1230,7 @@ class ManageContentImageMixin(LicencingFormViewMixin):
             initial['source_image'] = self.content_image.image_store.source_image
             initial['image_type'] = self.content_image.image_type
             initial['text'] = self.content_image.text
+            initial['requires_translation'] = self.content_image.requires_translation
 
             licencing_initial = self.get_licencing_initial()
             initial.update(licencing_initial)
@@ -1234,6 +1244,7 @@ class ManageContentImageMixin(LicencingFormViewMixin):
 
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()
+        form_kwargs['content_instance'] = self.content_instance
         if self.content_image:
             form_kwargs['current_image'] = self.content_image.image_store.source_image
         return form_kwargs
@@ -1322,6 +1333,122 @@ class ManageContentImageWithText(MetaAppMixin, FormLanguageMixin, ManageContentI
         self.primary_language = meta_app.primary_language
 
 
+
+class ManageLocalizedContentImage(LicencingFormViewMixin, FormView):
+
+    form_class = ManageLocalizedContentImageForm
+    template_name = 'app_kit/ajax/localized_content_image_form.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_content_image(*args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_new_image_store(self):
+        image_store = ImageStore(
+            uploaded_by = self.request.user,
+        )
+
+        return image_store
+
+
+    def set_content_image(self, **kwargs):
+        
+        self.content_image = ContentImage.objects.get(pk=kwargs['content_image_id'])
+        self.language_code = kwargs['language_code']
+
+        self.localized_content_image = LocalizedContentImage.objects.filter(content_image=self.content_image,
+                                                                language_code=self.language_code).first()
+
+        self.licence_registry_entry = None
+        if self.localized_content_image:
+            self.set_licence_registry_entry(self.localized_content_image.image_store, 'source_image')
+
+
+    def get_initial(self):
+        initial = super().get_initial()
+
+        if self.localized_content_image:
+            # file fields cannot have an initial value [official security feature of all browsers]
+            initial['crop_parameters'] = self.localized_content_image.crop_parameters
+            initial['features'] = self.localized_content_image.features
+            initial['source_image'] = self.localized_content_image.image_store.source_image
+            # make the hidden fields of the form valid
+            initial['image_type'] = self.content_image.image_type
+            initial['text'] = self.content_image.text
+
+
+            licencing_initial = self.get_licencing_initial()
+            initial.update(licencing_initial)
+
+        return initial
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['content_instance'] = self.content_image.content
+        if self.localized_content_image:
+            form_kwargs['current_image'] = self.localized_content_image.image_store.source_image
+        return form_kwargs
+
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context['localized_content_image'] = self.localized_content_image
+        context['language_code'] = self.language_code
+        context['content_image'] = self.content_image
+
+        return context
+
+    def form_valid(self, form):
+        
+        # first, store the image in the imagestore
+        if not self.localized_content_image:
+            image_store = self.get_new_image_store()
+
+        else:
+            # check if the image has changed
+            current_image_store = self.localized_content_image.image_store
+
+            if current_image_store.source_image != form.cleaned_data['source_image']:
+                image_store = self.get_new_image_store()
+            else:
+                image_store = current_image_store
+
+        image_store.source_image = form.cleaned_data['source_image']
+        image_store.md5 = form.cleaned_data['md5']
+
+        image_store.save()
+
+
+        # store the link between ImageStore and Content in ContentImage
+        if not self.localized_content_image:
+            
+            self.localized_content_image = LocalizedContentImage(
+                content_image = self.content_image,
+                language_code = self.language_code,
+            )
+
+        self.localized_content_image.image_store = image_store
+
+        # crop_parameters are optional in the db
+        # this makes sense because SVGS might be uploaded
+        self.localized_content_image.crop_parameters = form.cleaned_data.get('crop_parameters', None)
+
+        # features are optional in the db
+        self.localized_content_image.features = form.cleaned_data.get('features', None)
+
+        self.localized_content_image.save()
+
+        self.register_content_licence(form, self.localized_content_image.image_store, 'source_image')
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+
+        return self.render_to_response(context)
+
+
+
 class DeleteContentImage(AjaxDeleteView):
     
     template_name = 'app_kit/ajax/delete_content_image.html'
@@ -1334,147 +1461,19 @@ class DeleteContentImage(AjaxDeleteView):
         return context
 
 
+
+class DeleteLocalizedContentImage(AjaxDeleteView):
     
-'''
-    App Theme Images
-    - no cropping
-    - file type validators etc
-    - image files lie in preview folder, there is no db representation of the image
-    - store the licence in the user_content_registry in the preview
-'''
-from content_licencing.licences import ContentLicence
-class ManageAppThemeImage(MetaAppMixin, FormView):
-    form_class = AppThemeImageForm
-    template_name = 'app_kit/ajax/manage_app_theme_image.html'
-
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.set_app_theme_image(**kwargs)
-        return super().dispatch(request, *args, **kwargs)
-
-    def set_app_theme_image(self, **kwargs):
-        self.image_type = kwargs['image_type']
-        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
-        self.app_theme_image = AppThemeImage(self.meta_app, self.image_type)
-
-
-    def get_licencing_initial(self):
-        initial = {}
-        
-        if self.app_theme_image.exists():
-            licence = self.app_theme_image.get_licence()
-            
-            if licence:
-                initial['creator_name'] = licence['creator_name']
-                initial['creator_link'] = licence.get('creator_link', '')
-                initial['source_link'] = licence.get('source_link', '')
-                content_licence = ContentLicence(licence['licence']['short_name'],
-                                                 licence['licence']['version'])
-                initial['licence'] = content_licence
-
-        return initial
-
-    def get_initial(self):
-        initial = super().get_initial()
-        initial['image_type'] = self.image_type
-        initial.update(self.get_licencing_initial())
-        return initial
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        if self.app_theme_image.exists():
-            form_kwargs['current_image'] = self.app_theme_image
-
-        return form_kwargs
-
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = self.get_form_class()
-
-        return form_class(self.meta_app, **self.get_form_kwargs())
+    template_name = 'app_kit/ajax/delete_localized_content_image.html'
+    model = LocalizedContentImage
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['image_type'] = self.image_type
-        context['image_name'] = ' '.join(self.image_type.split('_'))
+        context['content_image'] = self.object.content_image
+        context['language_code'] = self.object.language_code
         return context
 
-    def form_valid(self, form):
-        # save the image into the preview theme folder
-        # save the registry information in the preview folder
-        image_file = form.cleaned_data['source_image']
-
-        if image_file:
-            self.app_theme_image = AppThemeImage(self.meta_app, self.image_type, image_file=image_file)
-
-        licence = form.get_licence_as_dict()
-        self.app_theme_image.set_licence(licence)
-        self.app_theme_image.save()
-
-        context = self.get_context_data(**self.kwargs)
-        context['form'] = form
-
-        return self.render_to_response(context)
-
-
-class DeleteAppThemeImage(MetaAppFormLanguageMixin, TemplateView):
-
-    template_name = 'app_kit/ajax/delete_app_theme_image.html'
-
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.image_type = kwargs['image_type']
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['image_type'] = self.image_type
-        context['verbose_name'] = ' '.join(self.image_type.split('_'))
-        reverse_kwargs = {
-            'meta_app_id' : self.meta_app.id,
-            'image_type' : self.image_type,
-        }
-        context['url'] = reverse('delete_app_theme_image', kwargs=reverse_kwargs)
-        return context
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
-        app_theme_image = AppThemeImage(self.meta_app, self.image_type)
-        app_theme_image.delete()
-        context['deleted'] = True
-        return self.render_to_response(context)
-
-
-from django import forms
-from .forms import GetAppThemeImageFormFieldMixin
-class GetAppThemeImageFormField(MetaAppMixin, FormView):
-
-    template_name = 'app_kit/ajax/upload_theme_image.html'
-    form_class = forms.Form
-
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.image_type = kwargs['image_type']
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = forms.Form
-
-        field_generator = GetAppThemeImageFormFieldMixin()
-        field_generator.meta_app = self.meta_app
-
-        theme = self.meta_app.get_theme()
-        image_definition = theme.user_content['images'][self.image_type]
-
-        image_form_field = field_generator.get_image_form_field(self.image_type, image_definition)
-
-        form = form_class(**self.get_form_kwargs())
-        form.fields[self.image_type] = image_form_field
-
-        return form
-        
-        
+ 
 '''
     generic view for storing the order of elements, using the position attribute
 '''
@@ -1537,102 +1536,6 @@ class MockButton(TemplateView):
         context = super().get_context_data(**kwargs)
         context['message'] = self.request.GET.get('message', '')
         return context
-
-
-'''
-    ManageAppDesign
-    - this covers texts, not images, which are handled via ajax in a separate view
-    - the preview folder of the app has to be adjusted if the theme changes
-'''
-class ManageAppDesign(MetaAppFormLanguageMixin, FormView):
-
-    form_class = AppDesignForm
-    template_name = 'app_kit/manage_app_design.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = self.get_form_class()
-
-        return form_class(self.meta_app, **self.get_form_kwargs())
-
-
-    def get_initial(self):
-        initial = super().get_initial()
-
-        legal_notice = self.meta_app.get_global_option('legal_notice')
-
-        if legal_notice:
-            for key, value in legal_notice.items():
-
-                initial[key] = value
-
-        return initial
-
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['generic_content'] = self.meta_app
-        context['content_type'] = ContentType.objects.get_for_model(MetaApp)
-        return context
-    
-
-    # switch the form
-    # it is not ideal to do this using a GET request
-    def get(self, request, *args, **kwargs):
-
-        theme_name = kwargs.get('theme_name', None)
-        
-        if theme_name is not None:
-
-            # check if the theme is available
-            appbuilder = self.meta_app.get_preview_builder()
-
-            available_themes = appbuilder.available_themes()
-            theme_names = [theme.name for theme in available_themes]
-
-            if theme_name in theme_names:
-
-                self.meta_app.theme = theme_name
-                self.meta_app.save()
-                # update the theme
-                appbuilder.set_theme(self.meta_app)
-
-        if request.is_ajax():
-            self.template_name = 'app_kit/ajax/app_design_form.html'
-
-        context = self.get_context_data(**kwargs)
-        context['form'] = self.get_form()
-        return self.render_to_response(context)
-    
-    # form_valid covers the storing of AppThemeTexts
-    # AppThemeText are stored in the locales folder of the preview
-    def form_valid(self, form):
-
-        theme = self.meta_app.get_theme()
-
-        legal_notice = {}
-
-        for key, value in form.cleaned_data.items():
-
-            if key in form.legal_notice_fields:
-                legal_notice[key] = value
-
-            elif key in theme.user_content['texts']:
-
-                text = AppThemeText(self.meta_app, key, text=value)
-                text.save()
-
-        if not self.meta_app.global_options:
-            self.meta_app.global_options = {}
-
-        self.meta_app.global_options['legal_notice'] = legal_notice
-        self.meta_app.save()
-
-        context = self.get_context_data(**self.kwargs)
-        return self.render_to_response(context)
 
 
 '''

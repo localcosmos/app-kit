@@ -10,26 +10,24 @@ from django_tenants.test.cases import TenantTestCase
 
 from django.contrib.contenttypes.models import ContentType
 
-from app_kit.tests.common import (test_settings, TEST_MEDIA_ROOT, TEST_IMAGE_PATH, TEST_TEMPLATE_PATH)
-from app_kit.tests.mixins import WithMetaApp, WithUser
+from app_kit.tests.common import (test_settings, TEST_TEMPLATE_PATH)
+from app_kit.tests.mixins import WithMetaApp, WithUser, WithMedia, WithImageStore
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from app_kit.features.fact_sheets.models import (FactSheet, FactSheetImages, FactSheets,
-                factsheet_images_upload_path, factsheet_templates_upload_path, FactSheetTemplates)
+from app_kit.features.fact_sheets.models import (FactSheet, factsheet_templates_upload_path, FactSheetTemplates)
 
 
 from app_kit.features.fact_sheets.tests.common import WithFactSheets
 
-from app_kit.generic import LocalizeableImage
+from app_kit.models import ContentImage
 
-import os, shutil
-
-
-
-class TestFactSheets(WithFactSheets, WithMetaApp, TenantTestCase):
+class TestFactSheets(WithMedia, WithImageStore, WithFactSheets, WithUser, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_get_primary_localization(self):
+
+        self.build_preview_app()
+
         fact_sheet = FactSheet(
             fact_sheets = self.fact_sheets,
             template_name = self.template_name,
@@ -43,23 +41,25 @@ class TestFactSheets(WithFactSheets, WithMetaApp, TenantTestCase):
         fact_sheet.save()
 
         # fact sheet image
-
-        filename = 'test.jpg'
+        fact_sheet_content_type = ContentType.objects.get_for_model(FactSheet)
+        image_store = self.create_image_store()
         
-        fact_sheet_image = FactSheetImages(
-            fact_sheet = fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image(filename),
+        fact_sheet_image = ContentImage(
+            image_store = image_store,
+            content_type = fact_sheet_content_type,
+            object_id = fact_sheet.id,
+            image_type = 'test_image',
         )
 
         fact_sheet_image.save()
 
-        localizeable_image = LocalizeableImage(fact_sheet_image)
-        image_locale_key = localizeable_image.get_language_independant_filename()
+        
+        image_locale_key = fact_sheet_image.get_image_locale_key()
 
         locale = self.fact_sheets.get_primary_localization(self.meta_app)
 
         self.assertFalse(image_locale_key in locale)
+        self.assertFalse(image_locale_key in locale['_meta'])
 
         self.assertEqual(locale[self.fact_sheets.name], self.fact_sheets.name)
         
@@ -92,25 +92,19 @@ class TestFactSheets(WithFactSheets, WithMetaApp, TenantTestCase):
             }
         '''
 
-        content_type = ContentType.objects.get_for_model(fact_sheet_image)
-
         self.assertIn(image_locale_key, locale)
-        self.assertIn(image_locale_key, locale['_meta'])
-        self.assertEqual(locale['_meta'][image_locale_key]['type'], 'image')
-        self.assertEqual(locale['_meta'][image_locale_key]['media_url'], fact_sheet_image.image.url)
-        self.assertEqual(locale['_meta'][image_locale_key]['content_type_id'], content_type.id)
-        self.assertEqual(locale['_meta'][image_locale_key]['object_id'], fact_sheet_image.id)
-
-        fact_sheet_image.build = True
-        fact_sheet_image.language_code = self.primary_language
-        self.assertEqual(locale[image_locale_key], fact_sheet_image.url)
-        
+        self.assertEqual(locale[image_locale_key]['image_type'], 'test_image')
+        self.assertEqual(locale[image_locale_key]['media_url'], fact_sheet_image.image_url())
+        self.assertEqual(locale[image_locale_key]['content_type_id'], fact_sheet_content_type.id)
+        self.assertEqual(locale[image_locale_key]['object_id'], fact_sheet.id)        
 
 
 class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_create(self):
+
+        self.build_preview_app()
 
         fact_sheet = FactSheet(
             fact_sheets = self.fact_sheets,
@@ -132,6 +126,8 @@ class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_get_template(self):
+
+        self.build_preview_app()
         
         fact_sheet = self.create_fact_sheet()
         # just test execution
@@ -140,6 +136,8 @@ class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_get_atomic_content(self):
+
+        self.build_preview_app()
 
         fact_sheet = self.create_fact_sheet()
 
@@ -157,6 +155,8 @@ class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
     @test_settings
     def test_render_as_html(self):
 
+        self.build_preview_app()
+
         fact_sheet = self.create_fact_sheet()
 
         html = fact_sheet.render_as_html(self.meta_app)
@@ -166,64 +166,33 @@ class TestFactSheet(WithFactSheets, WithMetaApp, TenantTestCase):
     @test_settings
     def test_str(self):
 
+        self.build_preview_app()
+
         fact_sheet = self.create_fact_sheet()
         self.assertEqual(str(fact_sheet), self.title)
 
 
-
-class TestFactSheetImagesUploadPath(WithFactSheets, WithMetaApp, TenantTestCase):
-
     @test_settings
-    def test_path(self):
+    def test_get_content_image_restrictions(self):
+
+        self.build_preview_app()
 
         fact_sheet = self.create_fact_sheet()
 
-        filename = 'test.jpg'
-
-        fact_sheet_image = FactSheetImages(
-            fact_sheet = fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image(filename)
-        )
-
-        fact_sheet_image.save()
-
-        path = factsheet_images_upload_path(fact_sheet_image, filename)
-
-        expected_path = 'fact_sheets/content/{0}/{1}/images/test_image/{2}'.format(self.fact_sheets.id,
-                                                                        fact_sheet.id, filename)
-        self.assertEqual(path, expected_path)
+        restrictions = fact_sheet.get_content_image_restrictions(image_type='image')
+        expected_restrictions = {
+            'allow_features' : False,
+            'allow_cropping' : False,
+        }
+        self.assertEqual(restrictions, expected_restrictions)
 
 
-
-class TestFactSheetImages(WithFactSheets, TenantTestCase):
-
-    @test_settings
-    def test_create(self):
-
-        fact_sheet = self.create_fact_sheet()
-
-        filename = 'test.jpg'
-
-        fact_sheet_image = FactSheetImages(
-            fact_sheet = fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image(filename)
-        )
-
-        fact_sheet_image.save()
-
-        fact_sheet_image.refresh_from_db()
-
-        self.assertEqual(fact_sheet_image.microcontent_type, 'test_image')
-        self.assertEqual(fact_sheet_image.fact_sheet, fact_sheet)
-
-
-
-class TestFactSheetTemplates(WithFactSheets, WithUser, TenantTestCase):
+class TestFactSheetTemplates(WithFactSheets, WithUser, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_create_and_path(self):
+
+        self.build_preview_app()
 
         filename = 'neobiota.html'
 

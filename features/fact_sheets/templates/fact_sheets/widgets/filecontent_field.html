@@ -5,18 +5,22 @@
 	
 	{{ field }}
 
-	<label style="background-image:url({% if field.field.current_image %}{% thumbnail '100x100' field.field.current_image.image as th %}{% image_url th %}{% else %}{% static 'localcosmos_server/images/add_image.svg' %}{% endif %});">
+	<label style="background-image:url({% if field.field.current_image %}{{ field.field.current_image.image_url }}{% else %}{% static 'localcosmos_server/images/add_image.svg' %}{% endif %});">
 		<span>&nbsp;</span>
 	</label>
 
 	<div class="btn-group dropup">
-		<button id="dropdown-{{ field.auto_id }}" class="btn btn-outline-primary btn-xs dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		<button id="dropdown-{{ field.auto_id }}" class="btn btn-outline-primary btn-xs dropdown-toggle content-image-button" data-container-id="{{ cms_object.microcontent_category }}-{{ cms_object.microcontent_type }}-container" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 			{% trans 'Modify' %}
 		</button>
 		<div class="dropdown-menu" aria-labelledby="dropdown-{{ field.auto_id }}">
-			<a class="dropdown-item xhr" data-url="{{ field.field.licenced_url }}" ajax-target="ModalContent">{% if field.field.current_image %}{% trans 'Change image' %}{% else %}{% trans 'Add image' %}{% endif %}</a>
 			{% if field.field.current_image %}
+				<a class="dropdown-item xhr" data-url="{{ field.field.licenced_url }}" ajax-target="LargeModalContent">{% trans 'Change image' %}</a>
 				<a class="dropdown-item xhr" data-url="{{ field.field.delete_url }}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+			{% else %}
+			
+				<a class="dropdown-item xhr" data-url="{{ field.field.licenced_url }}?new=1" ajax-target="LargeModalContent">{% trans 'Add image' %}</a>
+				
 			{% endif %}
 		</div>
 	</div>

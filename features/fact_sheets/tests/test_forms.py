@@ -12,19 +12,28 @@ from app_kit.tests.common import test_settings, TEST_TEMPLATE_PATH
 from app_kit.tests.mixins import WithMetaApp, WithFormTest, WithUser, WithMedia
 
 from app_kit.features.fact_sheets.forms import (FactSheetFormCommon, CreateFactSheetForm, ManageFactSheetForm,
-                                                UploadFactSheetImageForm, UploadFactSheetTemplateForm)
+                                                UploadFactSheetTemplateForm)
 
-from app_kit.features.fact_sheets.models import FactSheetImages, FactSheetTemplates
+from app_kit.features.fact_sheets.models import FactSheetTemplates
 
 from app_kit.features.fact_sheets.tests.common import WithFactSheets
+
+from app_kit.appbuilder import AppPreviewBuilder
 
 import io
 
 
-class TestFactSheetFormCommon(WithFormTest, TenantTestCase):
+class TestFactSheetFormCommon(WithFormTest,  WithMetaApp, TenantTestCase):
+
+    def build_preview_app(self):
+        # create the preview on disk
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        preview_builder.build()
 
     @test_settings
     def test_form(self):
+
+        self.build_preview_app()
 
         form = FactSheetFormCommon()
 
@@ -43,6 +52,8 @@ class TestCreateFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantT
     @test_settings
     def test_get_template_choices(self):
 
+        self.build_preview_app()
+
         form = CreateFactSheetForm(self.meta_app, self.fact_sheets)
 
         choices = form.get_template_choices()
@@ -51,6 +62,8 @@ class TestCreateFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantT
 
     @test_settings
     def test_form(self):
+
+        self.build_preview_app()
 
         post_data = {
             'title' : 'Neobiota',
@@ -66,8 +79,11 @@ class TestCreateFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantT
 
 class TestManageFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantTestCase):
 
+
     @test_settings
     def test_init(self):
+
+        self.build_preview_app()
 
         fact_sheet = self.create_fact_sheet()
 
@@ -78,6 +94,8 @@ class TestManageFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantT
 
     @test_settings
     def test_form(self):
+
+        self.build_preview_app()
 
         fact_sheet = self.create_fact_sheet()
 
@@ -96,61 +114,9 @@ class TestManageFactSheetForm(WithFormTest, WithFactSheets, WithMetaApp, TenantT
         
 
 
-class TestUploadFactSheetImageForm(WithFormTest, WithFactSheets, WithMetaApp, TenantTestCase):
-
-    @test_settings
-    def test_get_source_image_field(self):
-
-        form = UploadFactSheetImageForm()
-        field = form.get_source_image_field()
-        self.assertEqual(field.required, True)
-        self.assertEqual(field.widget.current_image, None)
-
-    @test_settings
-    def test_get_source_image_field_with_current_image(self):
-        # attach current image
-        fact_sheet = self.create_fact_sheet()
-
-        filename = 'test.jpg'
-
-        fact_sheet_image = FactSheetImages(
-            fact_sheet = fact_sheet,
-            microcontent_type = 'test_image',
-            image = self.get_image(filename)
-        )
-
-        fact_sheet_image.save()
-        
-        form = UploadFactSheetImageForm(current_image = fact_sheet_image)
-
-        field = form.get_source_image_field()
-        self.assertEqual(field.required, False)
-        self.assertEqual(field.widget.current_image, fact_sheet_image.image)
-
-    @test_settings
-    def test_form(self):
-
-        image = self.get_image('test_image.jpg')
-
-        post_data = {
-            'image_type' : 'image',
-            'crop_parameters' : {},
-            'creator_name' : 'James Bond',
-            'creator_link' : '',
-            'source_link' : '',
-            'licence_0' : 'CC0',
-            'licence_1' : '1.0',
-        }
-
-        file_data = {
-            'source_image' : self.get_image,
-        }
-
-        self.perform_form_test(UploadFactSheetImageForm, post_data, file_data=file_data)
-
-
 class TestUploadFactSheetTemplateForm(WithFormTest, WithFactSheets, WithUser, WithMetaApp,
                                       WithMedia, TenantTestCase):
+
 
     def get_template_file(self, filename='test_template.html'):
 
@@ -164,12 +130,16 @@ class TestUploadFactSheetTemplateForm(WithFormTest, WithFactSheets, WithUser, Wi
 
     @test_settings
     def test_init(self):
-         form = UploadFactSheetTemplateForm(self.fact_sheets)
-         self.assertEqual(form.fact_sheets, self.fact_sheets)
+
+        self.build_preview_app()
+        form = UploadFactSheetTemplateForm(self.fact_sheets)
+        self.assertEqual(form.fact_sheets, self.fact_sheets)
 
 
     @test_settings
     def test_clean(self):
+
+        self.build_preview_app()
 
         post_data = {
             'name' : 'Test template',
@@ -229,6 +199,8 @@ class TestUploadFactSheetTemplateForm(WithFormTest, WithFactSheets, WithUser, Wi
 
     @test_settings
     def test_form(self):
+
+        self.build_preview_app()
 
         post_data = {
             'name' : 'Test template',

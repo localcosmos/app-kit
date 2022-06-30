@@ -1,5 +1,4 @@
 from django.shortcuts import redirect
-from django.urls import reverse
 from django.views.generic import FormView, TemplateView
 from django.utils.decorators import method_decorator
 
@@ -10,13 +9,13 @@ from django import forms
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin
 
-from app_kit.models import MetaApp
+from app_kit.models import MetaApp, ContentImage
 
-from .forms import (CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetImageForm,
-                    UploadFactSheetTemplateForm)
+from app_kit.views import ManageContentImage, DeleteContentImage
 
-from .models import (FactSheets, FactSheet, FactSheetImages, FactSheetTemplates,
-                     build_factsheets_templates_upload_path)
+from .forms import (CreateFactSheetForm, ManageFactSheetForm, UploadFactSheetTemplateForm)
+
+from .models import (FactSheets, FactSheet, FactSheetTemplates, build_factsheets_templates_upload_path)
                      
 from .CMSTags import CMSTag
 
@@ -217,120 +216,13 @@ class GetFactSheetPreview(TemplateView):
 
         return context
 
-
-'''
-    There are 2 types of images:
-    - images/files that are microcontent_types themselves
-    - images/files that are added to a text microcontent_type via ckeditor
-'''
-from content_licencing.view_mixins import LicencingFormViewMixin
-class UploadFactSheetImage(LicencingFormViewMixin, FormView):
-
-    template_name = 'fact_sheets/factsheet_image_form.html'
-
-    form_class = UploadFactSheetImageForm
-
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.set_file(**kwargs)
-        return super().dispatch(request, *args, **kwargs)
-
-    def set_file(self, **kwargs):
-        self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
-        self.microcontent_category = kwargs['microcontent_category']
-        self.microcontent_type = kwargs['microcontent_type']
-
-        self.image = None
-
-        if 'pk' in kwargs:
-            self.image = FactSheetImages.objects.get(pk=kwargs['pk'])
-
-            self.set_licence_registry_entry(self.image, 'image')
-    
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['fact_sheet'] = self.fact_sheet
-        context['microcontent_category'] = self.microcontent_category
-        context['microcontent_type'] = self.microcontent_type
-        context['success'] = False
-        context['image'] = self.image
-        return context
-
-
-
-    def get_initial(self):
-        initial = super().get_initial()
-
-        if self.image:
-            initial['source_image'] = self.image.image
-            initial['requires_translation'] = self.image.requires_translation
-            licencing_initial = self.get_licencing_initial()
-            initial.update(licencing_initial)
-
-        return initial
-            
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        if self.image:
-            form_kwargs['current_image'] = self.image
-        return form_kwargs
-
-
-    def form_valid(self, form):
-
-        image_file = form.cleaned_data['source_image']
-
-        if not self.image:
-            self.image = FactSheetImages(
-                fact_sheet = self.fact_sheet,
-                microcontent_type = self.microcontent_type,
-            )
-
-        self.image.image = image_file
-        self.image.requires_translation = form.cleaned_data.get('requires_translation', False)
-
-        self.image.save()
-
-        self.register_content_licence(form, self.image, 'image')
-        self.set_licence_registry_entry(self.image, 'image')
-
-        context = self.get_context_data(**self.kwargs)
-        context['form'] = form
-        context['success'] = True
-        context['image'] = self.image
-
-        return self.render_to_response(context)
-
-
-
-class DeleteFactSheetImage(AjaxDeleteView):
-    
-    model = FactSheetImages
-
-    template_name = 'fact_sheets/ajax/delete_fact_sheet_image.html'
-
-    def get_verbose_name(self):
-        name = ' '.join(self.object.microcontent_type.split('_')).capitalize()
-        return name
-
-    def get_context_data(self, **kwargs):
-        microcontent_category = self.request.GET['microcontent_category']
-        context = super().get_context_data(**kwargs)
-        context['fact_sheet'] = self.object.fact_sheet
-        context['microcontent_type'] = self.object.microcontent_type
-        context['microcontent_category'] = microcontent_category
-        context['url'] = '{0}?microcontent_category={1}'.format(self.request.path, microcontent_category)
-        return context
-    
 '''
     get all fields for a microcontent_type
     ajax only
     for successful image deletions and uploads
     reloads all fields if field is multi
 '''
-class GetFactSheetFormField(FormView):
+class GetFactSheetFormFields(FormView):
 
     template_name = 'fact_sheets/ajax/reloaded_file_fields.html'
     form_class = forms.Form
@@ -350,6 +242,8 @@ class GetFactSheetFormField(FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fact_sheet'] = self.fact_sheet
+        context['microcontent_category'] = self.microcontent_category
+        context['microcontent_type'] = self.microcontent_type
         return context
     
 
@@ -361,13 +255,57 @@ class GetFactSheetFormField(FormView):
 
         form = form_class(**self.get_form_kwargs())
 
-        instances = FactSheetImages.objects.filter(fact_sheet=self.fact_sheet,
-                                                   microcontent_type=self.microcontent_type)
+        instances = self.fact_sheet.images(image_type=self.microcontent_type).order_by('pk')
 
         for field in cms_tag.form_fields(instances=instances):
             form.fields[field['name']] = field['field']
 
         return form
+
+
+class ManageFactSheetImage(ManageContentImage):
+    template_name = 'fact_sheets/ajax/manage_factsheet_image.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_fact_sheet(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_fact_sheet(self, **kwargs):
+        self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
+        self.microcontent_category = kwargs['microcontent_category']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fact_sheet'] = self.fact_sheet
+        context['microcontent_category'] = self.microcontent_category
+        context['microcontent_type'] = self.image_type
+
+        return context
+
+
+
+class DeleteFactSheetImage(DeleteContentImage):
+
+    template_name = 'fact_sheets/ajax/delete_factsheet_image.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_fact_sheet(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_fact_sheet(self, **kwargs):
+        self.fact_sheet = FactSheet.objects.get(pk=kwargs['fact_sheet_id'])
+        self.microcontent_category = kwargs['microcontent_category']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['fact_sheet'] = self.fact_sheet
+        context['microcontent_category'] = self.microcontent_category
+        context['microcontent_type'] = self.object.image_type
+        return context
 
 
 class UploadFactSheetTemplate(MetaAppMixin, FormView):

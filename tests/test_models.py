@@ -5,25 +5,21 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 # django-tentants
 from django_tenants.test.cases import TenantTestCase
 
-from app_kit.AppThemeText import AppThemeText
-
 from app_kit.models import (ContentImageMixin, UpdateContentImageTaxonMixin, MetaAppManager, MetaApp,
-                            MetaAppGenericContent, ImageStore, ContentImage, MetaCache)
+                            MetaAppGenericContent, ImageStore, ContentImage, MetaCache, LocalizedContentImage)
 
 
 from app_kit.tests.common import test_settings, TESTS_ROOT, TEST_IMAGE_PATH
 from app_kit.tests.mixins import WithMetaApp, WithUser, WithMedia, WithImageStore
 from app_kit.tests.cases import TransactionTenantTestCase
 
-from localcosmos_appkit_utils.AppTheme import AppTheme
-
-from localcosmos_server.models import App, SecondaryAppLanguages
+from localcosmos_server.models import SecondaryAppLanguages
 from django_tenants.utils import get_tenant_domain_model
 Domain = get_tenant_domain_model()
 
 from app_kit.app_kit_api.models import AppKitJobs
 
-from app_kit.appbuilders.AppBuilderBase import AppBuilderBase
+from app_kit.appbuilder import AppBuilderBase, AppPreviewBuilder
 
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
 from app_kit.features.taxon_profiles.models import TaxonProfiles
@@ -32,21 +28,23 @@ from app_kit.features.glossary. models import Glossary
 from app_kit.features.maps.models import Map
 from app_kit.features.nature_guides.models import NatureGuide, MetaNode, NatureGuidesTaxonTree
 from app_kit.features.fact_sheets.models import FactSheets
+from app_kit.features.frontend.models import Frontend
 
-from app_kit.generic import AppContentTaxonomicRestriction, LocalizeableImage
+from app_kit.settings import ADDABLE_FEATURES
+
+from app_kit.generic import AppContentTaxonomicRestriction
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 
-feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, FactSheets]
+feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, FactSheets, Frontend]
 
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from taxonomy.models import TaxonomyModelRouter
 
 from django.utils import timezone
-from datetime import datetime
 from PIL import Image
 
-import os, shutil, inspect, time, hashlib, json
+import os, shutil, hashlib, json
                 
 
 # for some reason, decorating TenantTestCase with @test_settings does not work
@@ -105,11 +103,6 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         # creates App and MetaApp
         meta_app = MetaApp.objects.create(name, primary_language, domain_name, self.tenant, self.subdomain)
 
-        app_dir = os.path.join(TESTS_ROOT, settings.APP_KIT_ROOT, str(meta_app.uuid))
-
-        # check if App has been  created
-        self.assertTrue(os.path.isdir(app_dir))
-
         # check app params
         self.assertEqual(meta_app.published_version, None)
         self.assertEqual(meta_app.current_version, 1)
@@ -117,9 +110,7 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         self.assertEqual(meta_app.global_options, {})
         self.assertEqual(meta_app.package_name, 'org.localcosmos.testmetaapp')
         self.assertEqual(meta_app.build_settings, None)
-        self.assertEqual(meta_app.theme, 'Flat')
         self.assertEqual(meta_app.store_links, None)
-        self.assertEqual(meta_app.appbuilder_version, '1') # CharField
         self.assertEqual(meta_app.build_status, None)
         self.assertEqual(meta_app.last_build_report, None)
         self.assertEqual(meta_app.validation_status, None)
@@ -141,6 +132,10 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         self.assertEqual(app.pwa_zip_url, None)
         self.assertEqual(app.published_version, None)
         self.assertEqual(app.published_version_path, None)
+
+        # create the preview on disk
+        preview_builder = AppPreviewBuilder(meta_app)
+        preview_builder.build()
 
         preview_path_head = os.path.join(TESTS_ROOT, settings.LOCALCOSMOS_APPS_ROOT, app.uid)
         self.assertTrue(app.preview_version_path.startswith(preview_path_head))
@@ -194,22 +189,6 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         
 
     @test_settings
-    def test_create_with_passed_appbuilder_version(self):
-        self.assertTrue(settings.APP_KIT_ROOT.startswith(TESTS_ROOT))
-
-        domain_name = 'testmetaapp.my-domain.com'
-        name = 'Test Meta App'
-        primary_language = 'en'
-        secondary_languages = ['de', 'fr', 'jp']
-
-        # creates App and MetaApp
-        meta_app = MetaApp.objects.create(name, primary_language, domain_name, self.tenant, self.subdomain,
-                                          appbuilder_version='1')
-
-        self.assertEqual(meta_app.appbuilder_version, '1')
-        
-
-    @test_settings
     def test_create_with_passed_global_options(self):
 
         self.assertTrue(settings.APP_KIT_ROOT.startswith(TESTS_ROOT))
@@ -217,7 +196,6 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         domain_name = 'testmetaapp.my-domain.com'
         name = 'Test Meta App'
         primary_language = 'en'
-        secondary_languages = ['de', 'fr', 'jp']
 
         global_options = {
             'option_1' : 1,
@@ -244,6 +222,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     # Glossary and Maps can not contain taxa
     def add_set_of_taxa(self):
         collected_taxa = []
+        collected_higher_taxa = []
         
         self.create_all_generic_contents(self.meta_app)
         
@@ -301,6 +280,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         taxonomic_restriction.save()
 
         collected_taxa.append(quercus)
+        collected_higher_taxa.append(quercus)
 
         # nature guide: just add one node as a result
         nature_guide = self.get_app_generic_content(NatureGuide)
@@ -331,7 +311,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
 
         collected_taxa.append(turdus_merula)
 
-        return collected_taxa
+        return collected_taxa, collected_higher_taxa
 
     @test_settings
     def test_uuid(self):
@@ -436,14 +416,31 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         languages = set(meta_app.secondary_languages())
         expected_languages = set(secondary_languages)
 
+        self.assertEqual(languages, expected_languages)
+
 
     @test_settings
-    def test_get_theme(self):
+    def test_get_fact_sheet_templates_path(self):
 
-        theme = self.meta_app.get_theme()
-        self.assertEqual(theme.__class__, AppTheme)
+        self.build_app_preview()
+        
+        meta_app = self.meta_app
 
-        self. assertEqual(theme.name, 'Flat')
+        fact_sheet_templates_path = meta_app.get_fact_sheet_templates_path()
+
+        self.assertTrue(os.path.isdir(fact_sheet_templates_path))
+
+
+    @test_settings
+    def test_get_fact_sheet_templates(self):
+
+        self.build_app_preview()
+        
+        meta_app = self.meta_app
+
+        templates = meta_app.get_fact_sheet_templates()
+        self.assertEqual(templates, [('test.html','test.html')])
+        self.assertEqual(len(templates), 1)
 
 
     @test_settings
@@ -495,24 +492,6 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         self.assertIn(self.meta_app.name, primary_localization)
         self.assertEqual(primary_localization[self.meta_app.name], self.meta_app.name)
 
-        theme = self.meta_app.get_theme()
-        theme_text_types = theme.user_content['texts']
-
-        for key, definition in theme_text_types.items():
-            self.assertFalse(key in primary_localization)
-
-        # add some texts
-        for key, definition in theme_text_types.items():
-            text = '{0} text'.format(key)
-            app_text = AppThemeText(self.meta_app, key, text=text)
-            app_text.save()
-
-
-        primary_localization = self.meta_app.get_primary_localization()
-        for key, definition in theme_text_types.items():
-            text = '{0} text'.format(key)
-            self.assertEqual(primary_localization[key], text)
-
 
     @test_settings
     def test_media_path(self):
@@ -539,11 +518,10 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     def test_addable_features(self):
 
         addable_features = self.meta_app.addable_features()
-        release_builder = self.meta_app.get_release_builder()
 
         for feature in addable_features:
             models_path = feature.__module__.replace('.models', '')
-            self.assertIn(models_path, release_builder.addable_features)
+            self.assertIn(models_path, ADDABLE_FEATURES)
             self.assertIn(feature, feature_models)
 
 
@@ -589,16 +567,17 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_taxon_count(self):
         
-        taxa = self.add_set_of_taxa()
+        taxa, higher_taxa = self.add_set_of_taxa()
         count = 0
+
         for taxon in taxa:
-            if taxon.taxon_include_descendants == True:
-                models = TaxonomyModelRouter(taxon.taxon_source)
-                descendant_count = models.TaxonTreeModel.objects.filter(
-                    taxon_nuid__startswith=taxon.taxon_nuid).count()
-                count += descendant_count
-            else:
-                count += 1
+            count += 1
+
+        for taxon in higher_taxa:
+            models = TaxonomyModelRouter(taxon.taxon_source)
+            descendant_count = models.TaxonTreeModel.objects.filter(
+                taxon_nuid__startswith=taxon.taxon_nuid).count()
+            count += descendant_count
 
         taxon_count = self.meta_app.taxon_count()
 
@@ -608,19 +587,25 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_higher_taxa(self):
 
-        taxa = self.add_set_of_taxa()
+        taxa, higher_taxa = self.add_set_of_taxa()
 
         higher_taxa = self.meta_app.higher_taxa()
 
-        expected_taxa_uuids = set([expected_taxon.name_uuid for expected_taxon in taxa])
+        expected_taxa_list = []
+        for expected_taxon in higher_taxa:
+            expected_taxa_list.append(expected_taxon.name_uuid)
+
+        expected_taxa_uuids = set(expected_taxa_list)
         
         taxa_uuids = set([taxon.name_uuid for taxon in higher_taxa])
+
+        self.assertEqual(taxa_uuids, expected_taxa_uuids)
             
 
     @test_settings
     def test_taxa(self):
 
-        expected_taxa = self.add_set_of_taxa()
+        expected_taxa, higher_taxa = self.add_set_of_taxa()
 
         taxa = self.meta_app.taxa()
 
@@ -633,7 +618,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_name_uuids(self):
 
-        expected_taxa = self.add_set_of_taxa()
+        expected_taxa, higher_taxa = self.add_set_of_taxa()
 
         name_uuids = self.meta_app.name_uuids()
 
@@ -645,7 +630,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_has_taxon(self):
 
-        taxa = self.add_set_of_taxa()
+        taxa, higher_taxa = self.add_set_of_taxa()
         for taxon in taxa:
             exists = self.meta_app.has_taxon(taxon)
             self.assertTrue(exists)
@@ -659,7 +644,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
 
     @test_settings
     def test_all_taxa(self):
-        expected_taxa = self.add_set_of_taxa()
+        expected_taxa, higher_taxa = self.add_set_of_taxa()
 
         taxa = self.meta_app.all_taxa()
 
@@ -673,7 +658,7 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_search_taxon(self):
 
-        taxa = self.add_set_of_taxa()
+        taxa, higher_taxa = self.add_set_of_taxa()
 
         searchtext_1 = 'laCerta'
         results = self.meta_app.search_taxon(searchtext_1)
@@ -689,49 +674,6 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         results = self.meta_app.search_taxon(searchtext_3)
         self.assertEqual(len(results), 9)
 
-
-    @test_settings
-    def test_create_version(self):
-        current_version = self.meta_app.current_version
-
-        appbuilder = self.meta_app.get_release_builder()
-        version_folder = appbuilder._app_version_root_folder(self.meta_app, current_version)
-        self.assertTrue(os.path.isdir(version_folder))
-        self.assertIn(str(current_version), version_folder)
-
-        feature_versions = {}
-
-        for feature in self.meta_app.features():
-            generic_content = feature.generic_content
-            feature_versions[feature.content_type.id] = {}
-            feature_versions[feature.content_type.id][generic_content.id] = generic_content.current_version
-
-            generic_content.published_version = generic_content.current_version
-            generic_content.save()
-
-
-        # next version
-        next_version = current_version + 1
-        self.meta_app.create_version(next_version)
-
-        self.meta_app.refresh_from_db()
-        self.assertEqual(self.meta_app.current_version, current_version+1)
-        self.assertEqual(self.meta_app.validation_status, None)
-        self.assertEqual(self.meta_app.build_status, None)
-        self.assertEqual(self.meta_app.build_number, None)
-
-        for feature in self.meta_app.features():
-            generic_content = feature.generic_content
-            old_version = feature_versions[feature.content_type.id][generic_content.id]
-            self.assertEqual(old_version+1, generic_content.current_version)
-            self.assertEqual(old_version, generic_content.published_version)
-
-        new_version_folder = appbuilder._app_version_root_folder(self.meta_app, next_version)
-        self.assertTrue(os.path.isdir(new_version_folder))
-
-        with self.assertRaises(ValueError):
-            self.meta_app.create_version(1)
-            
 
     @test_settings
     def test_save(self):
@@ -792,31 +734,38 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_remove_old_version_from_disk(self):
 
-        release_builder = self.meta_app.get_release_builder()
-        
-        current_version = self.meta_app.current_version
-        current_version_folder = release_builder._app_version_root_folder(self.meta_app, current_version)
+        # build v1
+        self.build_app_preview()
+
+        preview_builder = self.meta_app.get_preview_builder()
+        current_version_folder = preview_builder._app_version_root_path
+
         self.assertTrue(os.path.isdir(current_version_folder))
 
-        next_version = current_version + 1
-        self.meta_app.create_version(next_version)
-        next_version_folder = release_builder._app_version_root_folder(self.meta_app, next_version)
+        # build v2
+        self.meta_app.current_version = 2
+        self.meta_app.save()
+
+        self.build_app_preview()
+
+        preview_builder = self.meta_app.get_preview_builder()
+        next_version_folder = preview_builder._app_version_root_path
+
         self.assertTrue(os.path.isdir(next_version_folder))
 
-        next_next_version = next_version + 1
-        self.meta_app.create_version(next_next_version)
-        next_next_version_folder = release_builder._app_version_root_folder(self.meta_app, next_next_version)
+        # build v3
+        self.meta_app.current_version = 3
+        self.meta_app.save()
+
+        self.build_app_preview()
+
+        preview_builder = self.meta_app.get_preview_builder()
+        next_next_version_folder = preview_builder._app_version_root_path
+
         self.assertTrue(os.path.isdir(next_next_version_folder))
 
         # REMOVE app version
-        self.meta_app.remove_old_version_from_disk(2)
-
-        self.assertTrue(os.path.isdir(current_version_folder))
-        self.assertTrue(os.path.isdir(next_version_folder))
-        self.assertTrue(os.path.isdir(next_next_version_folder))
-
-
-        self.meta_app.remove_old_version_from_disk(1)
+        self.meta_app.remove_old_versions_from_disk()
 
         self.assertFalse(os.path.isdir(current_version_folder))
         self.assertTrue(os.path.isdir(next_version_folder))
@@ -844,8 +793,11 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     @test_settings
     def test_delete(self):
 
+        self.build_app_preview()
+
         appbuilder = self.meta_app.get_preview_builder()
-        app_root_folder = appbuilder._app_root_folder(self.meta_app)
+
+        app_root_folder = appbuilder._app_root_path
 
         self.assertTrue(os.path.isdir(app_root_folder))
 
@@ -936,7 +888,9 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
 
         self.create_all_generic_contents(self.meta_app)
 
-        feature = self.meta_app.features()[0]
+        backbone_taxonomy_content_type = ContentType.objects.get_for_model(BackboneTaxonomy)
+
+        feature = self.meta_app.features().get(content_type=backbone_taxonomy_content_type)
         generic_content = feature.generic_content
 
         option = self.meta_app.make_option_from_instance(generic_content)
@@ -964,7 +918,9 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     def test_feature_type(self):
         self.create_all_generic_contents(self.meta_app)
 
-        feature = self.meta_app.features()[0]
+        backbone_taxonomy_content_type = ContentType.objects.get_for_model(BackboneTaxonomy)
+
+        feature = self.meta_app.features().get(content_type=backbone_taxonomy_content_type)
         generic_content = feature.generic_content
         
         feature_type = generic_content.feature_type()
@@ -975,7 +931,9 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
     def test_media_path(self):
         self.create_all_generic_contents(self.meta_app)
 
-        feature = self.meta_app.features()[0]
+        backbone_taxonomy_content_type = ContentType.objects.get_for_model(BackboneTaxonomy)
+
+        feature = self.meta_app.features().get(content_type=backbone_taxonomy_content_type)
         generic_content = feature.generic_content
         
         media_path = generic_content.media_path()
@@ -1293,15 +1251,25 @@ class TestContentImage(WithMedia, WithImageStore, WithMetaApp, WithUser, TenantT
         self.assertEqual(image.width, 400)
         self.assertEqual(image.height, 400)
 
-
+        # oversize: do not upscale
         url = content_image.image_url(size=450)
         filename = url.split('/')[-1]
         thumbpath = os.path.join(folder_path, 'thumbnails', filename)
         self.assertTrue(os.path.isfile(thumbpath))
 
         image = Image.open(thumbpath)
-        self.assertEqual(image.width, 450)
-        self.assertEqual(image.height, 450)
+        self.assertEqual(image.width, 400)
+        self.assertEqual(image.height, 400)
+
+        # smaller size: do downscale
+        url = content_image.image_url(size=350)
+        filename = url.split('/')[-1]
+        thumbpath = os.path.join(folder_path, 'thumbnails', filename)
+        self.assertTrue(os.path.isfile(thumbpath))
+
+        image = Image.open(thumbpath)
+        self.assertEqual(image.width, 350)
+        self.assertEqual(image.height, 350)
 
 
 class TestUpdateContentImageTaxonMixin(WithImageStore, WithMedia, WithUser, TenantTestCase):
@@ -1394,17 +1362,10 @@ class TestUpdateContentImageTaxonMixin(WithImageStore, WithMedia, WithUser, Tena
         self.assertEqual(image_store.taxon.name_uuid, lazy_taxon.name_uuid)
 
         
+class TestLocalizedContentImage(WithMedia, WithImageStore, WithMetaApp, WithUser, TenantTestCase):
 
-class TestLocalizeableImage(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantTestCase):
-
-
-    def setUp(self):
-        super().setUp()
-
-        self.content_type = ContentType.objects.get_for_model(ContentImage)
-
-
-    def create_content_image(self):
+    @test_settings
+    def test_create(self):
 
         image_store = self.create_image_store()
 
@@ -1418,168 +1379,11 @@ class TestLocalizeableImage(WithImageStore, WithMedia, WithMetaApp, WithUser, Te
 
         content_image.save()
 
-        return content_image
-    
 
-    @test_settings
-    def test_init(self):
+        localized_content_image = LocalizedContentImage(
+            image_store = image_store,
+            content_image = content_image,
+            language_code = 'de',
+        )
 
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        self.assertEqual(localizeable_image.image_instance, content_image)
-        self.assertEqual(localizeable_image.image_file, content_image.image_store.source_image)
-        
-
-    @test_settings
-    def test_get_relative_localized_image_folder(self):
-
-        language_code = 'en'
-
-        folder = LocalizeableImage.get_relative_localized_image_folder(language_code)
-        self.assertEqual(folder, 'locales/en/images/')
-
-
-    @test_settings
-    def test_get_localized_filename(self):
-
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        filename = localizeable_image.get_localized_filename('en')
-
-        # localized_image_46_1_en.jpg
-        self.assertEqual(filename, 'localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
-                                                                              content_image.id))
-
-
-    @test_settings
-    def test_localize_language_independant_filename(self):
-
-        content_image = self.create_content_image()
-
-        filename = 'localized_image_{0}_{1}.jpg'.format(self.content_type.id, content_image.id)
-        language_code = 'en'
-        
-        localized_filename = LocalizeableImage.localize_language_independant_filename(filename, language_code)
-
-
-        expected_filename = 'localized_image_{0}_{1}_en.jpg'.format(self.content_type.id, content_image.id)
-
-        self.assertEqual(localized_filename, expected_filename)
-
-
-    @test_settings
-    def test_get_language_independant_filename(self):
-        
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        filename = localizeable_image.get_language_independant_filename()
-
-        # localized_image_46_1_en.jpg
-        self.assertEqual(filename, 'localized_image_{0}_{1}.jpg'.format(self.content_type.id,
-                                                                              content_image.id))
-        
-    
-    @test_settings
-    def test_get_relative_localized_image_path(self):
-
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        language_code = 'en'
-        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
-
-        # locales/en/images/localized_image_46_2_en.jpg
-        expected_path = 'locales/en/images/localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
-                                                                                  content_image.id)
-        self.assertEqual(relative_image_path, expected_path)
-
-    
-    @test_settings
-    def test_get_locale(self):
-
-        # the media root is not uses in the real, for testing purposes this is irrelevant
-        app_www_folder = TEST_MEDIA_ROOT
-
-        language_code = 'en'
-
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        locale = localizeable_image.get_locale(app_www_folder, language_code)
-        self.assertEqual(locale, None)
-
-        # store the locale
-        relative_locale_folder = localizeable_image.get_relative_localized_image_folder(language_code)
-        absolute_locale_folder = os.path.join(app_www_folder, relative_locale_folder) 
-        
-        if not os.path.isdir(absolute_locale_folder):
-            os.makedirs(absolute_locale_folder)
-
-
-        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
-        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
-
-        img = Image.new("RGB", (800, 1280), (255, 255, 255))
-        img.save(full_localized_image_path, "PNG")
-
-        
-
-        locale = localizeable_image.get_locale(app_www_folder, language_code)
-        self.assertEqual(locale, full_localized_image_path)
-
-
-    @test_settings
-    def test_save_locale(self):
-
-        # the media root is not uses in the real, for testing purposes this is irrelevant
-        app_www_folder = TEST_MEDIA_ROOT
-
-        language_code = 'en'
-
-        image = SimpleUploadedFile(name='test_image.jpg', content=open(TEST_IMAGE_PATH, 'rb').read(),
-                                        content_type='image/jpeg')
-
-        content_image = self.create_content_image()
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        localizeable_image.save_locale(app_www_folder, image, language_code)
-
-        relative_image_path = localizeable_image.get_relative_localized_image_path(language_code)
-        full_localized_image_path = os.path.join(app_www_folder, relative_image_path)
-
-        self.assertTrue(os.path.isfile(full_localized_image_path))
-        
-
-    @test_settings
-    def test_url(self):
-
-        content_image = self.create_content_image()
-        language_code = 'en'
-
-        localizeable_image = LocalizeableImage(content_image, model_field='image_store.source_image')
-
-        url = localizeable_image.url(language_code)
-
-        expected_path = 'locales/en/images/localized_image_{0}_{1}_en.jpg'.format(self.content_type.id,
-                                                                                  content_image.id)
-        self.assertEqual(url, expected_path)
-
-
-    @test_settings
-    def test_preview_url(self):
-
-        language_code = 'en'
-        localized_filename = 'localized_image.jpg'
-
-        preview_url = LocalizeableImage.preview_url(localized_filename, language_code)
-
-        self.assertEqual('locales/en/images/localized_image.jpg', preview_url)
+        localized_content_image.save()

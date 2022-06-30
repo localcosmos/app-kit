@@ -1,3 +1,4 @@
+from gettext import install
 from django.test import TestCase, RequestFactory
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
@@ -354,6 +355,22 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         self.assertEqual(view.taxon, self.lazy_taxon)
         self.assertEqual(view.taxon_profile, self.taxon_profile)
 
+        # test with nature guide taxon, not col taxon
+        ng_taxon = self.start_node
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'taxon_source' : 'app_kit.features.nature_guides',
+            'name_uuid' : str(ng_taxon.name_uuid),
+        }
+
+        lazy_ng_taxon = LazyTaxon(instance=ng_taxon)
+
+        view = self.get_view()
+        view.set_taxon(view.request, **url_kwargs)
+
+        self.assertEqual(view.taxon, lazy_ng_taxon)
 
     @test_settings
     def test_form_valid(self):

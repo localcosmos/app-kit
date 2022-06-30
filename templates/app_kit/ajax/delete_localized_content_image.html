@@ -1,0 +1,22 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block success_js %}
+	<script>
+		{# the image has to be replaced with the default noimage #}
+		var image_element_id = "localized_content_image_{{ content_image.id }}_{{ language_code }}";
+		var image_element = $("#" + image_element_id);
+
+		{# in some cases, the image is a background #}
+		image_element.css("background-image", "url('{% static 'noimage.png' %}'");
+		$("#Modal").modal("hide");
+	</script>
+
+	{% block extra_success_js %}{% endblock %}
+{% endblock %}
+
+{% block title %}{% blocktrans %}Delete image{% endblocktrans %}{% endblock %}
+
+{% block deletion_text %}
+	{% trans 'Do you really want to delete this image?' %}
+{% endblock %}

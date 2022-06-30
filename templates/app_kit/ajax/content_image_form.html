@@ -3,7 +3,7 @@
 {% load i18n localcosmos_tags app_tags %}
 
 {% block above %}
-	<form method="POST" action="{% block base_url %}{% url 'manage_content_image' content_type.id content_instance.id %}{% endblock %}?{% if new %}new=1&{% endif %}{% if content_image_taxon %}taxon_source={{ content_image_taxon.taxon_source }}&taxon_latname={{ content_image_taxon.taxon_latname }}&taxon_author={{ content_image_taxon.taxon_author }}{% endif %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
+	<form method="POST" action="{% block base_url %}{% url 'manage_content_image' content_type.id content_instance.id image_type %}{% endblock %}?{% if new %}new=1&{% endif %}{% if content_image_taxon %}taxon_source={{ content_image_taxon.taxon_source }}&taxon_latname={{ content_image_taxon.taxon_latname }}&taxon_author={{ content_image_taxon.taxon_author }}{% endif %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
 {% endblock %}
 
 {% block title %}
@@ -36,7 +36,20 @@
 		{% if request.method == 'POST' and form.is_valid %}
 			
 			var d = new Date();
-			$("#content_image_{{ content_instance|ctype_id }}_{{ content_instance.id }}").css("background-image", "url('{{ content_instance.image_url }}?" + d.getTime() + "')");
+
+			var image_container = document.getElementById("content_image_{{ content_instance|ctype_id }}_{{ content_instance.id }}");
+			
+			if (image_container == null){
+				image_container = document.getElementById("content_image_{{ content_instance|ctype_id }}_{{ content_instance.id }}_{{ image_type }}");
+			}
+			
+
+			if (image_container != null){
+				image_container.style.backgroundImage = "url('{% content_image_url content_instance image_type %}?" + d.getTime() + "')";
+			}
+			else {
+				console.log("Could not find image container for content image")
+			}
 
 			$("#LargeModal").modal("hide");
 			$("#LargeModalContent").empty();

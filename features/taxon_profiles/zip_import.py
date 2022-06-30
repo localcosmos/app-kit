@@ -6,7 +6,7 @@ from app_kit.generic_content_zip_import import GenericContentZipImporter
 from app_kit.features.taxon_profiles.models import TaxonProfile, TaxonTextType, TaxonText
 
 
-import os, xlrd, openpyxl
+import os, openpyxl
 
 
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
@@ -15,15 +15,6 @@ TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 '''
     TaxonProfiles as Spreadsheet
     - only reads the first sheet
-'''
-
-'''
-    xlrd cell types cell.ctype
-    XL_CELL_EMPTY 	0 	empty string ''
-    XL_CELL_TEXT 	1 	a Unicode string
-    XL_CELL_NUMBER 	2 	float
-    XL_CELL_DATE 	3 	float
-    XL_CELL_BOOLEAN 	4 	int; 1 means TRUE, 0 means FALSE
 '''
 
 class TaxonProfilesZipImporter(GenericContentZipImporter):
@@ -38,7 +29,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
         self.filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
         if self.filepath is not None:
-            self.workbook = xlrd.open_workbook(self.filepath)
+            self.workbook = openpyxl.load_workbook(self.filepath)
             self.workbook_filename = os.path.basename(self.filepath)
             self.validate_spreadsheet()
 
@@ -49,36 +40,50 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
     # self.workbook is available
     def validate_spreadsheet(self):
 
-        taxon_profiles_sheet = self.workbook.sheet_by_index(0)
+        taxon_profiles_sheet = self.get_sheet_by_index(0)
 
-        for row_index, row in enumerate(taxon_profiles_sheet.get_rows(), 0):
+        for row_index, row in enumerate(taxon_profiles_sheet.iter_rows(), 1):
 
-            if row_index == 0:
+            if row_index == 1:
 
-                if row[0].value.lower() != 'scientific name':
+                if not row[0].value or row[0].value.lower() != 'scientific name':
                     message = _('Cell content has to be "Scientific name", not {0}'.format(row[0].value))
-                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, 'A', 0, message)
 
-                if row[1].value.lower() != 'author (optional)':
+                if not row[1].value or row[1].value.lower() != 'author (optional)':
                     message = _('Cell content has to be "Author (optional)", not {0}'.format(row[1].value))
-                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, 'B', 0, message)
 
-                if row[2].value.lower() != 'taxonomic source':
+                if not row[2].value or row[2].value.lower() != 'taxonomic source':
 
                     message = _('Cell content has to be "Taxonomic source", not {0}'.format(row[2].value))
-                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.name, 1, 0, message)
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, 'C', 0, message)
 
 
             else:
 
-                taxon_latname = row[0].value.strip()
-                taxon_author = row[1].value.strip()
-                taxon_source = row[2].value.strip()
+                # skip empty rows
+                if not row[0].value:
+                    continue
 
-                self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename,
-                                    taxon_profiles_sheet.name, row_index, 0, 1)
+                if not row[2].value:
+                    message = _('Cell content has to be a taxonomic source, found empty cell instead')
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, 'C', row_index, message)
 
-        
+
+                if row[0].value and row[2].value:
+
+                    taxon_latname = row[0].value.strip()
+
+                    taxon_author = None
+                    if row[1].value:
+                        taxon_author = row[1].value.strip()
+                    taxon_source = row[2].value.strip()
+
+                    self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename,
+                                        taxon_profiles_sheet.title, row_index, 0, 2)
+
+ 
 
     def valdiate_images(self):
         pass
@@ -98,17 +103,20 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         
 
         # import from spreadsheet
-        taxon_profiles_sheet = self.workbook.sheet_by_index(0)
+        taxon_profiles_sheet = self.get_sheet_by_index(0)
 
         # a list of text_type instances
         text_types = []
 
         # read the file row-by-row
-        for row_index, row in enumerate(taxon_profiles_sheet.get_rows(), 0):
+        for row_index, row in enumerate(taxon_profiles_sheet.iter_rows(), 1):
+
+            if not row[0].value:
+                continue
 
             # the second row is the first row with taxon and text
             # first, get the lazy_taxon and the TaxonProfile
-            if row_index > 0:
+            if row_index > 1:
 
                 taxon_latname = row[0].value
                 taxon_author = row[1].value
@@ -129,7 +137,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
                 
             # iterate over all columns of the current row
-            for column_index in range(0, taxon_profiles_sheet.row_len(row_index)):
+            for column_index, cell in enumerate(row, 0):
 
                 cell = row[column_index]
 
@@ -139,7 +147,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 if value and len(value) > 0:
 
                     # the first row defines text types
-                    if row_index == 0:
+                    if row_index == 1:
 
                         text_type_name = value
                         

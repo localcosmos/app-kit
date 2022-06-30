@@ -20,7 +20,7 @@ import json
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppFormLanguageMixin
 
-form_builder_path = 'app_kit.appbuilders.JSONBuilders.GenericForm.1.GenericFormJSONBuilder.GenericFormJSONBuilder'
+form_builder_path = 'app_kit.appbuilder.JSONBuilders.GenericForm.1.GenericFormJSONBuilder.GenericFormJSONBuilder'
 from app_kit.utils import import_class
 GenericFormJSONBuilder = import_class(form_builder_path)
 

@@ -1180,9 +1180,9 @@ class NatureGuidesTaxonLocale(TaxonLocale):
         index_together = [
             ['taxon', 'language'],
         ]
-    
-class NatureGuidesTaxonNamesView(TaxonNamesView):
-    pass
+
+
+NatureGuidesTaxonNamesView = NatureGuidesTaxonTree
 
     
 '''
@@ -1399,6 +1399,15 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
                                                       object_id__in=matrix_filter_space_ids)
 
         return suggestions
+
+
+    def get_content_image_restrictions(self, image_type='image'):
+        restrictions = {
+            'allow_features' : True,
+            'allow_cropping' : True,
+        }
+        
+        return restrictions
     
 
     def __str__(self):

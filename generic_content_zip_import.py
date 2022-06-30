@@ -13,11 +13,23 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
-import os, string, xlrd, hashlib, json
+import os, string, openpyxl, hashlib, json
 
 from PIL import Image
 
 LICENCES_SHORT = [l['short_name'] for l in content_licencing_settings.CONTENT_LICENCING_LICENCES]
+
+'''
+openpyxl data_types
+TYPE_STRING = 's'
+TYPE_FORMULA = 'f'
+TYPE_NUMERIC = 'n'
+TYPE_BOOL = 'b'
+TYPE_NULL = 'n'
+TYPE_INLINE = 'inlineStr'
+TYPE_ERROR = 'e'
+TYPE_FORMULA_CACHE_STRING = 'str'
+'''
 
 class GenericContentZipImporter:
 
@@ -39,8 +51,6 @@ class GenericContentZipImporter:
         self.zip_contents_path = zip_contents_path
 
         self.image_folder = os.path.join(zip_contents_path, self.image_folder_name)
-
-        is_valid = False
 
 
     def validate(self):
@@ -134,17 +144,25 @@ class GenericContentZipImporter:
             filepath = os.path.join(self.zip_contents_path, filename)
 
             if os.path.isfile(filepath):
-                licence_workbook = xlrd.open_workbook(filepath)
+                licence_workbook = openpyxl.load_workbook(filepath)
                 workbook_filename = filename
 
 
         return licence_workbook, workbook_filename
 
 
+    def get_sheet_by_index(self, index):
+        sheet_names = self.workbook.sheetnames
+
+        sheet = self.workbook[sheet_names[0]]
+
+        return sheet
+
+
     # get a sheet by name
     def get_sheet_by_name(self, sheet_name):
 
-        sheet_names = self.workbook.sheet_names()
+        sheet_names = self.workbook.sheetnames
 
         if not sheet_name in sheet_names:
 
@@ -155,17 +173,17 @@ class GenericContentZipImporter:
 
             return None
 
-        sheet = self.workbook.sheet_by_name(sheet_name)
+        sheet = self.workbook[sheet_name]
 
         return sheet
 
 
 
     def get_optional_sheet_by_name(self, sheet_name):
-        workbook = xlrd.open_workbook(self.filepath)
+        workbook = openpyxl.load_workbook(self.filepath)
 
-        if sheet_name in workbook.sheet_names():
-            return workbook.sheet_by_name(sheet_name)
+        if sheet_name in workbook.sheetnames:
+            return workbook[sheet_name]
 
         return None
 
@@ -186,11 +204,11 @@ class GenericContentZipImporter:
 
         if licence_workbook is not None:
 
-            licence_sheet = licence_workbook.sheet_by_index(0)
+            licence_sheet = licence_workbook[licence_workbook.sheetnames[0]]
             licences = {}
 
 
-            for row_index, row in enumerate(licence_sheet.get_rows(), 0):
+            for row_index, row in enumerate(licence_sheet.iter_rows(), 1):
 
                 if row_index == 0:
                     continue
@@ -255,13 +273,11 @@ class GenericContentZipImporter:
 
     def add_cell_error(self, filename, sheet_name, column, row, message):
 
-        alphabet = list(string.ascii_uppercase)
-
         error_message = _('[%(filename)s][Sheet:%(sheet_name)s][cell:%(column)s%(row)s] %(message)s' % {
             'filename' : filename,
             'sheet_name' : sheet_name,
             'row' : row + 1,
-            'column' : alphabet[column],
+            'column' : column,
             'message' : message,
         })
 
@@ -332,11 +348,11 @@ class GenericContentZipImporter:
     def get_licence_from_path(self, image_licence_path):
 
         licence_workbook, workbook_filename = self.get_image_licences_workbook()
-        licence_sheet = licence_workbook.sheet_by_index(0)
+        licence_sheet = licence_workbook[licence_workbook.sheetnames[0]]
 
         licence_definition = None
         
-        for row in licence_sheet.get_rows():
+        for row in licence_sheet.iter_rows():
             
             if row[0].value == image_licence_path:
                 
