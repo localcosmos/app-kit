@@ -213,7 +213,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
                     
                     current_nuid = current_nuid[:-3]
-                    parent_nuids.add(current_nuid)
+
+                    # first 3 digits are the nature guide, not the root node
+                    if len(current_nuid) > 3:
+                        parent_nuids.add(current_nuid)
 
         
         # collect all traits of all parent nuids
@@ -247,7 +250,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                                     pk__in=list(collected_content_image_ids))
 
         self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
-        
+
         for taxon_image in taxon_images:
             image_entry = {
                 'text': taxon_image.text,
