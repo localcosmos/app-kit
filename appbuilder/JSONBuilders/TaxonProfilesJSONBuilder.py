@@ -86,6 +86,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, gbiflib, languages):
 
+        self.app_release_builder.logger.info('building profile for {0}'.format(profile_taxon.taxon_latname))
+
         # get the profile
         db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
                     taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
@@ -196,6 +198,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
             current_nuid = node.taxon_nuid
             while len(current_nuid) > 3:
+
+                self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
+                
                 current_nuid = current_nuid[:-3]
                 parent_nuids.add(current_nuid)
 
