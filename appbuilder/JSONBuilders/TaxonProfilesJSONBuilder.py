@@ -180,7 +180,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             is_active = True
 
             if node.additional_data:
-                is_active = node.additional_data.get('is_active', False)
+                is_active = node.additional_data.get('is_active', True)
 
             if is_active == True:
                 if node.meta_node.name not in taxon_profile['node_names']:
@@ -230,11 +230,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
             # respect NatureGuidesTaxonTree.additional_data['is_active'] == True
             if parent.additional_data:
-                is_active = parent.additional_data.get('is_active', False)
+                is_active = parent.additional_data.get('is_active', True)
 
             if is_active == True:
 
                 if parent.parent:
+
+                    self.app_release_builder.logger.info('Collecting parent traits of {0}'.format(parent.taxon_latname))
+
                     parent_node_traits = self.collect_node_traits(parent)
                     for parent_node_trait in parent_node_traits:
                         
