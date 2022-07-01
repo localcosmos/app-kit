@@ -1610,10 +1610,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.build_features[generic_content_type] = feature_entry
 
+        self.logger.info('running TaxonProfilesJSONBuilder.build')
+
         # add the profiles directly to the features.js, instead of _add_generic_content_to_app
         taxon_profiles_json = jsonbuilder.build()
-
-        self.logger.info('running TaxonProfilesJSONBuilder.build')
 
         for key, value in taxon_profiles_json.items():
             if key not in self.build_features[generic_content_type].items():
@@ -1675,6 +1675,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.build_features[generic_content_type]['registry'] = relative_registry_path
         self.build_features[generic_content_type]['search'] = relative_search_index_path
+
+        self.logger.info('finished building TaxonProfiles')
 
     ###############################################################################################################
     # FACT SHEETS
