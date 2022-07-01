@@ -163,50 +163,57 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         if profile_taxon.taxon_source in installed_taxonomic_sources:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         meta_node__taxon_latname=profile_taxon.taxon_latname,
-                        meta_node__taxon_author=profile_taxon.taxon_author)
+                        meta_node__taxon_author=profile_taxon.taxon_author).order_by('pk').distinct('pk')
         else:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         taxon_latname=profile_taxon.taxon_latname,
-                        taxon_author=profile_taxon.taxon_author)
+                        taxon_author=profile_taxon.taxon_author).order_by('pk').distinct('pk')
 
 
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])
 
-        
+        self.app_release_builder.logger.info('{0} occurs {1} times in nature_guides'.format(profile_taxon.taxon_latname, node_occurrences.count()))
         
         for node in node_occurrences:
-            if node.meta_node.name not in taxon_profile['node_names']:
-                taxon_profile['node_names'].append(node.meta_node.name)
 
-            node_image = node.meta_node.image()
+            is_active = True
 
-            if node_image is not None and node_image.id not in collected_content_image_ids:
-                collected_content_image_ids.add(node_image.id)
-                image_entry = {
-                    'text' : node_image.text,
-                    'image_url' : self._get_image_url(node_image),
-                    'small_url' : self._get_image_url(node_image, self.small_image_size),
-                    'large_url' : self._get_image_url(node_image, self.large_image_size),
-                }
+            if node.additional_data:
+                is_active = node.additional_data.get('is_active', False)
 
-                taxon_profile['images']['node_images'].append(image_entry)
+            if is_active == True:
+                if node.meta_node.name not in taxon_profile['node_names']:
+                    taxon_profile['node_names'].append(node.meta_node.name)
 
-            if node.decision_rule and node.decision_rule not in taxon_profile['node_decision_rules']:
-                taxon_profile['node_decision_rules'].append(node.decision_rule)
+                node_image = node.meta_node.image()
 
-            node_traits = self.collect_node_traits(node)
-            for node_trait in node_traits:
-                
-                taxon_profile['traits'].append(node_trait)
+                if node_image is not None and node_image.id not in collected_content_image_ids:
+                    collected_content_image_ids.add(node_image.id)
+                    image_entry = {
+                        'text' : node_image.text,
+                        'image_url' : self._get_image_url(node_image),
+                        'small_url' : self._get_image_url(node_image, self.small_image_size),
+                        'large_url' : self._get_image_url(node_image, self.large_image_size),
+                    }
 
-            current_nuid = node.taxon_nuid
-            while len(current_nuid) > 3:
+                    taxon_profile['images']['node_images'].append(image_entry)
 
-                self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
-                
-                current_nuid = current_nuid[:-3]
-                parent_nuids.add(current_nuid)
+                if node.decision_rule and node.decision_rule not in taxon_profile['node_decision_rules']:
+                    taxon_profile['node_decision_rules'].append(node.decision_rule)
+
+                node_traits = self.collect_node_traits(node)
+                for node_trait in node_traits:
+                    
+                    taxon_profile['traits'].append(node_trait)
+
+                current_nuid = node.taxon_nuid
+                while len(current_nuid) > 3:
+
+                    self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
+                    
+                    current_nuid = current_nuid[:-3]
+                    parent_nuids.add(current_nuid)
 
         '''
         # collect all traits of all parent nuids
