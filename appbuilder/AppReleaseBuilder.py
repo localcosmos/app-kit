@@ -1613,6 +1613,8 @@ class AppReleaseBuilder(AppBuilderBase):
         # add the profiles directly to the features.js, instead of _add_generic_content_to_app
         taxon_profiles_json = jsonbuilder.build()
 
+        self.logger.info('running TaxonProfilesJSONBuilder.build')
+
         for key, value in taxon_profiles_json.items():
             if key not in self.build_features[generic_content_type].items():
                 self.build_features[generic_content_type][key] = value
@@ -1630,6 +1632,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         collected_taxa = taxon_profiles.collected_taxa()
+
+        self.logger.info('Building taxon profiles for collected taxa')
         
         for profile_taxon in collected_taxa:
             
