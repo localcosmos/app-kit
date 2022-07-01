@@ -215,19 +215,28 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     current_nuid = current_nuid[:-3]
                     parent_nuids.add(current_nuid)
 
-        '''
+        
         # collect all traits of all parent nuids
         parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
+
+        self.app_release_builder.logger.info('Found {0} parents for {1}'.format(len(parents), profile_taxon.taxon_latname))
+
         for parent in parents:
 
+            is_active = True
+
             # respect NatureGuidesTaxonTree.additional_data['is_active'] == True
-            if parent.additional_data and parent.additional_data.get('is_active', False) == True:
+            if parent.additional_data:
+                is_active = parent.additional_data.get('is_active', False)
+
+            if is_active == True:
+
                 if parent.parent:
                     parent_node_traits = self.collect_node_traits(parent)
                     for parent_node_trait in parent_node_traits:
                         
                         taxon_profile['traits'].append(parent_node_trait)
-        '''
+        
         
                 
 
@@ -237,6 +246,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                                     image_store__taxon_author=profile_taxon.taxon_author).exclude(
                                     pk__in=list(collected_content_image_ids))
 
+        self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
+        
         for taxon_image in taxon_images:
             image_entry = {
                 'text': taxon_image.text,
