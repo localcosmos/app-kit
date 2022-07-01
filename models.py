@@ -1011,6 +1011,8 @@ class ContentImageCommon:
         plt.savefig(buf, format='png')
         buf.seek(0)
 
+        plt.close('all')
+
         return buf
 
     # apply features and cropping, return pil image

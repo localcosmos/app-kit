@@ -17,6 +17,12 @@ from collections import OrderedDict
 '''
 class TaxonProfilesJSONBuilder(JSONBuilder):
 
+    def __init__(self, app_release_builder, app_generic_content):
+        super().__init__(app_release_builder, app_generic_content)
+
+        self.trait_cache = {}
+
+
     small_image_size = (200,200)
     large_image_size = (1000, 1000)
 
@@ -27,59 +33,65 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
     def collect_node_traits(self, node):
 
-        node_traits = []
+        if node.taxon_nuid in self.trait_cache:
+            node_traits = self.trait_cache[node.taxon_nuid]
+        
+        else:
 
-        matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
+            node_traits = []
 
-        for matrix_filter in matrix_filters:
-            node_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter)
+            matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
+
+            for matrix_filter in matrix_filters:
+                node_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter)
 
 
-            node_trait = {
-                'matrix_filter' : {
-                    'name' : matrix_filter.name,
-                    'is_multispace' : matrix_filter.matrix_filter_type.is_multispace,
-                    'description' : matrix_filter.description,
-                    'filter_type' : matrix_filter.filter_type,
-                    'definition' : matrix_filter.definition,
-                },
-            }
-
-            if matrix_filter.matrix_filter_type.is_multispace == True:
-                node_trait['values'] = []
-
-            for node_space in node_spaces:
+                node_trait = {
+                    'matrix_filter' : {
+                        'name' : matrix_filter.name,
+                        'is_multispace' : matrix_filter.matrix_filter_type.is_multispace,
+                        'description' : matrix_filter.description,
+                        'filter_type' : matrix_filter.filter_type,
+                        'definition' : matrix_filter.definition,
+                    },
+                }
 
                 if matrix_filter.matrix_filter_type.is_multispace == True:
-                    
-                    for value in node_space.values.all():
-                        values_entry = {
-                            'encoded_space': value.encoded_space,
-                            'image_url' : self._get_image_url(value),
-                        }
+                    node_trait['values'] = []
 
-                        if matrix_filter.filter_type == 'ColorFilter':
-                            encoded_space = value.encoded_space
-                            gradient = False
-                            description = None
+                for node_space in node_spaces:
 
-                            if value.additional_information:
-                                description = value.additional_information.get('description', None)
-                                gradient = value.additional_information.get('gradient', False)
+                    if matrix_filter.matrix_filter_type.is_multispace == True:
+                        
+                        for value in node_space.values.all():
+                            values_entry = {
+                                'encoded_space': value.encoded_space,
+                                'image_url' : self._get_image_url(value),
+                            }
+
+                            if matrix_filter.filter_type == 'ColorFilter':
+                                encoded_space = value.encoded_space
+                                gradient = False
+                                description = None
+
+                                if value.additional_information:
+                                    description = value.additional_information.get('description', None)
+                                    gradient = value.additional_information.get('gradient', False)
+                                    
+
+                                html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
+                                values_entry['html'] = html
+                                values_entry['gradient'] = gradient
+                                values_entry['description'] = description
                                 
+                            node_trait['values'].append(values_entry)
 
-                            html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
-                            values_entry['html'] = html
-                            values_entry['gradient'] = gradient
-                            values_entry['description'] = description
-                            
-                        node_trait['values'].append(values_entry)
+                    else:
+                        node_trait['values'] = node_space.encoded_space
 
-                else:
-                    node_trait['values'] = node_space.encoded_space
+                node_traits.append(node_trait)
 
-            node_traits.append(node_trait)
-
+            self.trait_cache[node.taxon_nuid] = node_traits
 
         return node_traits
     
