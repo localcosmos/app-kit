@@ -159,19 +159,21 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
 
         installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
+
         if profile_taxon.taxon_source in installed_taxonomic_sources:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         meta_node__taxon_latname=profile_taxon.taxon_latname,
                         meta_node__taxon_author=profile_taxon.taxon_author)
         else:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
-                        taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author)
+                        taxon_latname=profile_taxon.taxon_latname,
+                        taxon_author=profile_taxon.taxon_author)
 
 
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])
 
-        '''
+        
         
         for node in node_occurrences:
             if node.meta_node.name not in taxon_profile['node_names']:
@@ -206,6 +208,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 current_nuid = current_nuid[:-3]
                 parent_nuids.add(current_nuid)
 
+        '''
         # collect all traits of all parent nuids
         parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
         for parent in parents:
@@ -218,6 +221,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         
                         taxon_profile['traits'].append(parent_node_trait)
         '''
+        
                 
 
         # get taxonomic images
