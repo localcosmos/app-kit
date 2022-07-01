@@ -98,7 +98,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, gbiflib, languages):
 
-        self.app_release_builder.logger.info('building profile for {0}'.format(profile_taxon.taxon_latname))
+        #self.app_release_builder.logger.info('building profile for {0}'.format(profile_taxon.taxon_latname))
 
         # get the profile
         db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
@@ -185,7 +185,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])
 
-        self.app_release_builder.logger.info('{0} occurs {1} times in nature_guides'.format(profile_taxon.taxon_latname, node_occurrences.count()))
+        #self.app_release_builder.logger.info('{0} occurs {1} times in nature_guides'.format(profile_taxon.taxon_latname, node_occurrences.count()))
         
         for node in node_occurrences:
 
@@ -222,7 +222,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 current_nuid = node.taxon_nuid
                 while len(current_nuid) > 3:
 
-                    self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
+                    #self.app_release_builder.logger.info('current_nuid {0}'.format(current_nuid))
                     
                     current_nuid = current_nuid[:-3]
 
@@ -234,7 +234,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # collect all traits of all parent nuids
         parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
 
-        self.app_release_builder.logger.info('Found {0} parents for {1}'.format(len(parents), profile_taxon.taxon_latname))
+        #self.app_release_builder.logger.info('Found {0} parents for {1}'.format(len(parents), profile_taxon.taxon_latname))
 
         for parent in parents:
 
@@ -248,7 +248,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                 if parent.parent:
 
-                    self.app_release_builder.logger.info('Collecting parent traits of {0}'.format(parent.taxon_latname))
+                    #self.app_release_builder.logger.info('Collecting parent traits of {0}'.format(parent.taxon_latname))
 
                     parent_node_traits = self.collect_node_traits(parent)
                     for parent_node_trait in parent_node_traits:
@@ -264,7 +264,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                                     image_store__taxon_author=profile_taxon.taxon_author).exclude(
                                     pk__in=list(collected_content_image_ids))
 
-        self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
+        #self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
 
         for taxon_image in taxon_images:
             image_entry = {
