@@ -170,6 +170,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])
+
+        '''
         
         for node in node_occurrences:
             if node.meta_node.name not in taxon_profile['node_names']:
@@ -215,6 +217,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     for parent_node_trait in parent_node_traits:
                         
                         taxon_profile['traits'].append(parent_node_trait)
+        '''
                 
 
         # get taxonomic images
