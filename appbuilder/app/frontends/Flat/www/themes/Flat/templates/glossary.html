@@ -16,7 +16,7 @@
 				{{#if show_used_terms_only}}
 					<button class="tap btn btn-sm btn-secondary" action="BackButtonManager.back">{{t 'show unused'}}</button>
 				{{else}}
-					<button class="tap btn btn-sm btn-secondary" link="glossary/{{ glossary_uuid }}/?used_terms=1">{{t 'hide unused'}}</button>
+					<button class="tap btn btn-sm btn-secondary" link="glossary/{{ glossary_uuid }}/?usedTerms=1">{{t 'hide unused'}}</button>
 				{{/if}}
 				{{#if csv_path}}
 					<a class="btn btn-sm btn-secondary" href="{{ csv_path }}" download>{{t 'Download'}}</a>

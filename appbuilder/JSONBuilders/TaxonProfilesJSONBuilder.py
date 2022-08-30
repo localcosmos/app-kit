@@ -47,11 +47,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
 
                 node_trait = {
-                    'matrix_filter' : {
+                    'matrixFilter' : {
                         'name' : matrix_filter.name,
-                        'is_multispace' : matrix_filter.matrix_filter_type.is_multispace,
+                        'isMultispace' : matrix_filter.matrix_filter_type.is_multispace,
                         'description' : matrix_filter.description,
-                        'filter_type' : matrix_filter.filter_type,
+                        'filterType' : matrix_filter.filter_type,
                         'definition' : matrix_filter.definition,
                     },
                 }
@@ -65,8 +65,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         
                         for value in node_space.values.all():
                             values_entry = {
-                                'encoded_space': value.encoded_space,
-                                'image_url' : self._get_image_url(value),
+                                'encodedSpace': value.encoded_space,
+                                'imageUrl' : self._get_image_url(value),
                             }
 
                             if matrix_filter.filter_type == 'ColorFilter':
@@ -104,60 +104,55 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
                     taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
 
-        taxon_profile = {
-            'taxon_source' : profile_taxon.taxon_source,
-            'taxon_latname' : profile_taxon.taxon_latname,
-            'taxon_author' : profile_taxon.taxon_author,
-            'name_uuid' : profile_taxon.name_uuid,
-            'taxon_nuid' : profile_taxon.taxon_nuid,
+        taxon_profile_json = {
+            'taxonSource' : profile_taxon.taxon_source,
+            'taxonLatname' : profile_taxon.taxon_latname,
+            'taxonAuthor' : profile_taxon.taxon_author,
+            'nameUuid' : profile_taxon.name_uuid,
+            'taxonNuid' : profile_taxon.taxon_nuid,
             'vernacular' : {},
-            'all_vernacular_names' : {},
-            'node_names' : [], # if the taxon occurs in a nature guide, primary_language only
-            'node_decision_rules' : [],
+            'allVernacularNames' : {},
+            'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
+            'nodeDecisionRules' : [],
             'traits' : [], # a collection of traits (matrix filters)
             'texts': [],
             'images' : {
-                'taxon_profile_images' : [],
-                'node_images' : [],
-                'taxon_images' : [],
+                'taxonProfileImages' : [],
+                'nodeImages' : [],
+                'taxonImages' : [],
             },
             'synonyms' : [],
-            'gbif_nubKey' : None,
+            'gbifNubKey' : None,
         }
 
         synonyms = profile_taxon.synonyms()
         for synonym in synonyms:
             synonym_entry = {
-                'taxon_latname' : synonym.taxon_latname,
-                'taxon_author' : synonym.taxon_author,
+                'taxonLatname' : synonym.taxon_latname,
+                'taxonAuthor' : synonym.taxon_author,
             }
 
-            taxon_profile['synonyms'] = synonym_entry
+            taxon_profile_json['synonyms'] = synonym_entry
 
         for language_code in languages:
             vernacular_name = profile_taxon.vernacular(language=language_code)
 
-            taxon_profile['vernacular'][language_code] = vernacular_name
+            taxon_profile_json['vernacular'][language_code] = vernacular_name
 
             all_vernacular_names = profile_taxon.all_vernacular_names(language=language_code)
             
             if all_vernacular_names.exists():
                 names_list = list(all_vernacular_names.values_list('name', flat=True))
-                taxon_profile['all_vernacular_names'][language_code] = names_list
+                taxon_profile_json['allVernacularNames'][language_code] = names_list
                 
 
         collected_content_image_ids = set([])
         # get taxon_profile_images
         if db_profile:
             for content_image in db_profile.images():
-                image_entry = {
-                    'text' : content_image.text,
-                    'image_url' : self._get_image_url(content_image),
-                    'small_url' : self._get_image_url(content_image, self.small_image_size),
-                    'large_url' : self._get_image_url(content_image, self.large_image_size),
-                }
+                image_entry = self.get_image_entry(content_image)
 
-                taxon_profile['images']['taxon_profile_images'].append(image_entry)
+                taxon_profile_json['images']['taxonProfileImages'].append(image_entry)
 
                 collected_content_image_ids.add(content_image.id)
 
@@ -195,29 +190,26 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 is_active = node.additional_data.get('is_active', True)
 
             if is_active == True:
-                if node.meta_node.name not in taxon_profile['node_names']:
-                    taxon_profile['node_names'].append(node.meta_node.name)
+                if node.meta_node.name not in taxon_profile_json['nodeNames']:
+                    taxon_profile_json['nodeNames'].append(node.meta_node.name)
 
                 node_image = node.meta_node.image()
 
                 if node_image is not None and node_image.id not in collected_content_image_ids:
                     collected_content_image_ids.add(node_image.id)
-                    image_entry = {
-                        'text' : node_image.text,
-                        'image_url' : self._get_image_url(node_image),
-                        'small_url' : self._get_image_url(node_image, self.small_image_size),
-                        'large_url' : self._get_image_url(node_image, self.large_image_size),
-                    }
+                    image_entry = self.get_image_entry(node_image)
 
-                    taxon_profile['images']['node_images'].append(image_entry)
+                    collected_content_image_ids.add(node_image.id)
 
-                if node.decision_rule and node.decision_rule not in taxon_profile['node_decision_rules']:
-                    taxon_profile['node_decision_rules'].append(node.decision_rule)
+                    taxon_profile_json['images']['nodeImages'].append(image_entry)
+
+                if node.decision_rule and node.decision_rule not in taxon_profile_json['nodeDecisionRules']:
+                    taxon_profile_json['nodeDecisionRules'].append(node.decision_rule)
 
                 node_traits = self.collect_node_traits(node)
                 for node_trait in node_traits:
                     
-                    taxon_profile['traits'].append(node_trait)
+                    taxon_profile_json['traits'].append(node_trait)
 
                 current_nuid = node.taxon_nuid
                 while len(current_nuid) > 3:
@@ -253,7 +245,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     parent_node_traits = self.collect_node_traits(parent)
                     for parent_node_trait in parent_node_traits:
                         
-                        taxon_profile['traits'].append(parent_node_trait)
+                        taxon_profile_json['traits'].append(parent_node_trait)
         
         
                 
@@ -267,19 +259,21 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         #self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
 
         for taxon_image in taxon_images:
-            image_entry = {
-                'text': taxon_image.text,
-                'image_url' : self._get_image_url(taxon_image),
-                'small_url' : self._get_image_url(taxon_image, self.small_image_size),
-                'large_url' : self._get_image_url(taxon_image, self.large_image_size),
-            }
+
+            if taxon_image is not None and taxon_image.id not in collected_content_image_ids:
+
+                image_entry = self.get_image_entry(taxon_image)
+                taxon_profile_json['images']['taxonImages'].append(image_entry)
+
+                collected_content_image_ids.add(taxon_image.id)
+            
 
         # get the gbif nubKey
         if self.app_release_builder.use_gbif == True:
             self.logger.info('[TaxonPofiles] querying gbif')
             gbif_nubKey = gbiflib.get_nubKey(profile_taxon)
             if gbif_nubKey :
-                taxon_profile['gbif_nubKey'] = gbif_nubKey
+                taxon_profile_json['gbifNubKey'] = gbif_nubKey
 
 
         if db_profile:
@@ -288,16 +282,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                 if text.text:
 
-                    text_dic = {
-                        'taxon_text_type' : text.taxon_text_type.text_type,
+                    text_json = {
+                        'taxonTextType' : text.taxon_text_type.text_type,
                         'text' : text.text,
-                        'text_key' : self.generic_content.get_text_key(text),
+                        'textKey' : self.generic_content.get_text_key(text),
                     }
 
-                    taxon_profile['texts'].append(text_dic)
+                    taxon_profile_json['texts'].append(text_json)
 
 
-        return taxon_profile
+        return taxon_profile_json
 
 
     # look up taxonomic data by name_uuid
@@ -308,19 +302,19 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         for lazy_taxon in taxon_list:
             
             registry_entry = {
-                'taxon_source' : lazy_taxon.taxon_source,
-                'name_uuid' : str(lazy_taxon.name_uuid),
-                'taxon_latname' : lazy_taxon.taxon_latname,
-                'taxon_author' : lazy_taxon.taxon_author,
-                'vernacular_names' : {},
-                'alternative_vernacular_names' : {},
+                'taxonSource' : lazy_taxon.taxon_source,
+                'nameUuid' : str(lazy_taxon.name_uuid),
+                'taxonLatname' : lazy_taxon.taxon_latname,
+                'taxonAuthor' : lazy_taxon.taxon_author,
+                'vernacularNames' : {},
+                'alternativeVernacularNames' : {},
             }
 
             for language_code in languages:
                 vernacular_name = lazy_taxon.vernacular(language=language_code)
 
                 if vernacular_name:
-                    registry_entry['vernacular_names'][language_code] = vernacular_name
+                    registry_entry['vernacularNames'][language_code] = vernacular_name
 
             registry[str(lazy_taxon.name_uuid)] = registry_entry
 
@@ -345,8 +339,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
     '''
     def build_search_indices(self, taxon_list, languages):
 
-        search_indices = {
-            'taxon_latname' : {},
+        search_indices_json = {
+            'taxonLatname' : {},
             'vernacular' : {},
         }
 
@@ -362,17 +356,17 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 
             taxon_latname_start_letter = lazy_taxon.taxon_latname[0].upper()
             
-            if taxon_latname_start_letter not in search_indices['taxon_latname']:
-                search_indices['taxon_latname'][taxon_latname_start_letter] = {}
+            if taxon_latname_start_letter not in search_indices_json['taxonLatname']:
+                search_indices_json['taxonLatname'][taxon_latname_start_letter] = {}
 
-            taxon_latname_entry = {
-                'taxon_latname' : lazy_taxon.taxon_latname,
-                'taxon_author' : lazy_taxon.taxon_author,
-                'taxon_source' : lazy_taxon.taxon_source, # for looking up the original taxon
-                'name_uuid' : name_uuid, # for looking up the original taxon
-                'is_synonym' : False,
+            taxon_latname_entry_json = {
+                'taxonLatname' : lazy_taxon.taxon_latname,
+                'taxonAuthor' : lazy_taxon.taxon_author,
+                'taxonSource' : lazy_taxon.taxon_source, # for looking up the original taxon
+                'nameUuid' : name_uuid, # for looking up the original taxon
+                'isSynonym' : False,
             }
-            search_indices['taxon_latname'][taxon_latname_start_letter][taxon_full_latname] = taxon_latname_entry
+            search_indices_json['taxonLatname'][taxon_latname_start_letter][taxon_full_latname] = taxon_latname_entry_json
 
             # add synonyms
             synonyms = lazy_taxon.synonyms()
@@ -380,24 +374,24 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                 synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
 
-                synonym_entry = {
-                    'taxon_latname' : synonym.taxon_latname,
-                    'taxon_author' : synonym.taxon_author,
-                    'taxon_source' : lazy_taxon.taxon_source,
-                    'name_uuid' : name_uuid, # name_uuid of accepted name
-                    'synonym_name_uuid' : str(synonym.name_uuid),
-                    'is_synonym' : True,
+                synonym_entry_json = {
+                    'taxonLatname' : synonym.taxon_latname,
+                    'taxonAuthor' : synonym.taxon_author,
+                    'taxonSource' : lazy_taxon.taxon_source,
+                    'nameUuid' : name_uuid, # name_uuid of accepted name
+                    'synonymNameUuid' : str(synonym.name_uuid),
+                    'isSynonym' : True,
                 }
 
-                search_indices['taxon_latname'][taxon_latname_start_letter][synonym_full_latname] = synonym_entry
+                search_indices_json['taxonLatname'][taxon_latname_start_letter][synonym_full_latname] = synonym_entry_json
 
 
             # add vernacular names - these might not be unique, therefore use a list
             # search result should look like this: "Vernacular (Scientfic name)"
             for language_code in languages:
 
-                if language_code not in search_indices['vernacular']:
-                    search_indices['vernacular'][language_code] = OrderedDict()
+                if language_code not in search_indices_json['vernacular']:
+                    search_indices_json['vernacular'][language_code] = OrderedDict()
                     
                 vernacular_names = lazy_taxon.all_vernacular_names(language=language_code)
 
@@ -405,45 +399,57 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     vernacular_name = locale.name
 
-                    list_entry = {
-                        'taxon_source' : lazy_taxon.taxon_source,
+                    list_entry_json = {
+                        'taxonSource' : lazy_taxon.taxon_source,
                         'name' : vernacular_name,
-                        'name_uuid' : name_uuid,
-                        'taxon_latname' : lazy_taxon.taxon_latname,
-                        'taxon_author' : lazy_taxon.taxon_author
+                        'nameUuid' : name_uuid,
+                        'taxonLatname' : lazy_taxon.taxon_latname,
+                        'taxonAuthor' : lazy_taxon.taxon_author
                     }
 
                     vernacular_name_start_letter = vernacular_name[0].upper()
 
-                    if vernacular_name_start_letter not in search_indices['vernacular'][language_code]:
-                        search_indices['vernacular'][language_code][vernacular_name_start_letter] = []
+                    if vernacular_name_start_letter not in search_indices_json['vernacular'][language_code]:
+                        search_indices_json['vernacular'][language_code][vernacular_name_start_letter] = []
 
-                    search_indices['vernacular'][language_code][vernacular_name_start_letter].append(list_entry)
+                    search_indices_json['vernacular'][language_code][vernacular_name_start_letter].append(list_entry_json)
 
 
                 # sort start letters
-                vernacular_sorted_start_letters = sorted(search_indices['vernacular'][language_code].items(),
+                vernacular_sorted_start_letters = sorted(search_indices_json['vernacular'][language_code].items(),
                                                      key=lambda x: x[0])
         
-                search_indices['vernacular'][language_code] = OrderedDict(vernacular_sorted_start_letters)
+                search_indices_json['vernacular'][language_code] = OrderedDict(vernacular_sorted_start_letters)
 
                 # sort list inside start letters
-                for start_letter, names_list in search_indices['vernacular'][language_code].items():
+                for start_letter, names_list in search_indices_json['vernacular'][language_code].items():
 
                     sorted_names_list = sorted(names_list, key=lambda d: d['name']) 
-                    search_indices['vernacular'][language_code][start_letter] = sorted_names_list
+                    search_indices_json['vernacular'][language_code][start_letter] = sorted_names_list
 
 
         # sort taxon_latname dict start letters and entries
-        taxon_latnames_sorted_start_letters = sorted(search_indices['taxon_latname'].items(),
+        taxon_latnames_sorted_start_letters = sorted(search_indices_json['taxonLatname'].items(),
                                                      key=lambda x: x[0])
         
-        search_indices['taxon_latname'] = OrderedDict(taxon_latnames_sorted_start_letters)
+        search_indices_json['taxonLatname'] = OrderedDict(taxon_latnames_sorted_start_letters)
 
-        for taxon_latname_start_letter, taxon_latname_entries in search_indices['taxon_latname'].items():
+        for taxon_latname_start_letter, taxon_latname_entries in search_indices_json['taxonLatname'].items():
             sorted_taxon_latname_entries = OrderedDict(sorted(taxon_latname_entries.items(),
                                                               key=lambda x: x[0]))
             
-            search_indices['taxon_latname'][taxon_latname_start_letter] = sorted_taxon_latname_entries
+            search_indices_json['taxonLatname'][taxon_latname_start_letter] = sorted_taxon_latname_entries
             
-        return search_indices
+        return search_indices_json
+
+
+    def get_image_entry(self, content_image_mixedin):
+
+        image_entry = {
+            'text': content_image_mixedin.text,
+            'imageUrl' : self._get_image_url(content_image_mixedin),
+            'smallUrl' : self._get_image_url(content_image_mixedin, self.small_image_size),
+            'largeUrl' : self._get_image_url(content_image_mixedin, self.large_image_size),
+        }
+
+        return image_entry

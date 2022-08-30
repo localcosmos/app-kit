@@ -16,26 +16,26 @@ function createFieldFromJSON(field_definition){
 		"taxonomic_restriction" : field_definition.taxonomic_restriction
 	};
 
-	var widget_attrs = field_definition["widget_attrs"];
+	var widgetAttrs = field_definition["widgetAttrs"];
 
 	//enable bootstrap
 	if (field_definition["definition"]["widget"] == "CheckboxInput"){
-		widget_attrs["class"] = "form-check-input";
+		widgetAttrs["class"] = "form-check-input";
 	}
 	else {
-		widget_attrs["class"] = "form-control";
+		widgetAttrs["class"] = "form-control";
 	}
 
 	for (var key in field_definition["definition"]){
 		if (key == "widget"){
-			field_kwargs["widget"] = forms[field_definition["definition"]["widget"]].create([], {"attrs":widget_attrs});
+			field_kwargs["widget"] = forms[field_definition["definition"]["widget"]].create([], {"attrs":widgetAttrs});
 		}
 		else {
 			field_kwargs[key] = field_definition["definition"][key];
 		}
 	};
 
-	var field = forms[field_definition["field_class"]](field_kwargs);
+	var field = forms[field_definition["fieldClass"]](field_kwargs);
 
 	return field;	
 
@@ -55,9 +55,9 @@ function createObservationFormFromJSON(form_definition){
 
 	var observation_form_definition = {
 		"fields" : _fields,
-		"taxonomic_reference": form_definition.taxonomic_reference,
-		"geographic_reference": form_definition.geographic_reference,
-		"temporal_reference": form_definition.temporal_reference
+		"taxonomicReference": form_definition.taxonomicReference,
+		"geographicReference": form_definition.geographicReference,
+		"temporalReference": form_definition.temporalReference
 	};
 
 	return Form(forms.Form, observation_form_definition);

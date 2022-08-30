@@ -1863,11 +1863,11 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         node.save(parent_node)
 
         expected_json['taxon'] = {
-            'taxon_source' : 'taxonomy.sources.col',
-            'taxon_latname' : 'Lacerta agilis',
-            'taxon_author' : lazy_taxon.taxon_author,
-            'name_uuid' : str(lazy_taxon.name_uuid),
-            'taxon_nuid' : lazy_taxon.taxon_nuid,
+            'taxonSource' : 'taxonomy.sources.col',
+            'taxonLatname' : 'Lacerta agilis',
+            'taxonAuthor' : lazy_taxon.taxon_author,
+            'nameUuid' : str(lazy_taxon.name_uuid),
+            'taxonNuid' : lazy_taxon.taxon_nuid,
         }
 
         child_json_wtaxon = children_cache_manager.child_as_json(node)

@@ -106,7 +106,7 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
 
         for text_type in text_types:
             if text_type != 'legal_notice':
-                self.assertIn(text_type, frontend_settings['user_content']['texts'])
+                self.assertIn(text_type, frontend_settings['userContent']['texts'])
 
 
     @test_settings
@@ -123,7 +123,7 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
         app_builder = AppBuilder(self.meta_app)
         frontend_settings = app_builder._get_frontend_settings()
 
-        for text_type, definition in frontend_settings['user_content']['texts'].items():
+        for text_type, definition in frontend_settings['userContent']['texts'].items():
 
             frontend_text = FrontendText(
                 frontend = self.frontend,
@@ -233,7 +233,7 @@ class TestManageFrontendSettings(WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
             'legal_notice' : 'test legal notice',
         }
 
-        for text_type, definition in frontend_settings['user_content']['texts'].items():
+        for text_type, definition in frontend_settings['userContent']['texts'].items():
 
             data[text_type] = text_type
 

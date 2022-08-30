@@ -271,7 +271,7 @@ var RemoteDBModelInterface = derive(ModelInterface, {
 
 		if (value != null){
 
-			switch (field_definition.field_class){
+			switch (field_definition.fieldClass){
 				case "ForeignKey":
 
 					if (field_definition.hasOwnProperty("to_field")){
@@ -284,7 +284,7 @@ var RemoteDBModelInterface = derive(ModelInterface, {
 			}
 		}
 
-		if (field_definition.field_class == "ImageField" && value != null){
+		if (field_definition.fieldClass == "ImageField" && value != null){
 			// value is a FlexImage
 			value.blob(function(blob){
 

@@ -528,7 +528,7 @@ class AppBuilderBase:
         }
 
         settings["OPTIONS"] = {
-            "allow_anonymous_observations" : False,
+            "allowAnonymousObservations" : False,
         }
 
         if self.meta_app.global_options:

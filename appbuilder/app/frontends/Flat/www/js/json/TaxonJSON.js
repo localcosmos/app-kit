@@ -14,7 +14,7 @@ var TaxonJSONbuilder = derive(JSONbuilder, {
 	},
 
 	validate : function(self, json){
-		var required_data = ["taxon_source", "name_uuid", "taxon_latname", "taxon_author", "taxon_nuid"];
+		var required_data = ["taxonSource", "nameUuid", "taxonLatname", "taxonAuthor", "taxonNuid"];
 
 		var is_valid = true;
 
@@ -27,7 +27,7 @@ var TaxonJSONbuilder = derive(JSONbuilder, {
 				break;
 			}
 			// author can be null
-			else if (attr != "taxon_author" && json[attr].length == 0){
+			else if (attr != "taxonAuthor" && json[attr].length == 0){
 				is_valid = false;
 				break;
 			}
@@ -40,7 +40,7 @@ var TaxonJSONbuilder = derive(JSONbuilder, {
 	set_verbose : function(self){
 		var is_valid = self.validate(self, self.json);
 		if (is_valid === true){
-			self.verbose = self.json.taxon_latname;
+			self.verbose = self.json.taxonLatname;
 		}
 		else {
 			self.verbose = _("No Taxon set.");

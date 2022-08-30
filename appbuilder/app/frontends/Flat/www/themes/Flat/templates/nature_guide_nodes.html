@@ -1,15 +1,15 @@
 {{#each node.children }}
 	<div id="{{uuid}}" class="col-12 keynode">
-		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal node_type 'result'}}{{url ../result_action.action taxon.taxon_source taxon.name_uuid taxon.taxon_nuid taxon.taxon_latname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
-			<div class="image"><img src="{{ image_url }}" class="img-fluid" /></div>
+		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal nodeType 'result'}}{{url ../result_action.action taxon.taxonSource taxon.nameUuid taxon.taxonNuid taxon.taxonLatname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
+			<div class="image"><img src="{{ imageUrl }}" class="img-fluid" /></div>
 			<div>
 				<div class="title">{{tp name }}</div>
 				<div><span id="{{uuid}}-points"></span></div>
 			</div>
 		</div>
-		{{#if fact_sheets}}
+		{{#if factSheets}}
 			<div class="fact-sheet-link">
-				<a class="tap" link="{{url 'fact_sheet_modal' fact_sheets.0.id}}">{{tp fact_sheets.0.title }}</a>
+				<a class="tap" link="{{url 'fact_sheet_modal' factSheets.0.id}}">{{tp factSheets.0.title }}</a>
 			</div>
 		{{/if}}
 	</div>

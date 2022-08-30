@@ -1,3 +1,5 @@
+import re
+
 def import_module(module):
     module = str(module)
     d = module.rfind(".")
@@ -54,3 +56,16 @@ def copy_model_instance(instance, copy_fields, overwrite_values={}):
         field.set(m2m_query)
 
     return instance_copy
+
+
+def unCamelCase(string):
+    return re.sub(r"(\w)([A-Z])", r"\1 \2", string).title()
+
+def camelCase_to_underscore_case(string):
+
+    spaced = re.sub(r"(\w)([A-Z])", r"\1 \2", string).lower()
+    spaced_parts = spaced.split(' ')
+
+    underscored = '_'.join(spaced_parts)
+
+    return underscored

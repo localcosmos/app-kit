@@ -256,7 +256,7 @@ var BaseForm = {
 			}
 
 			try {
-				if (field.field_class == 'FileField'){
+				if (field.fieldClass == 'FileField'){
 					var initial = self.get_initial_for_field(self, field, name);
 					value = field.clean(field, value, initial);
 				}
@@ -479,8 +479,8 @@ var ALL_FIELDS = '__all__';
 function fields_for_model(model, kwargs){
 		/*fields=None, exclude=None, widgets=None,
                      formfield_callback=None, localized_fields=None,
-                     labels=None, help_texts=None, error_messages=None,
-                     field_classes=None, *, apply_limit_choices_to=True):*/
+                     labels=None, helpTexts=None, error_messages=None,
+                     fieldClasses=None, *, apply_limit_choices_to=True):*/
     /*"""
     Return an ``OrderedDict`` containing form fields for the given model.
     ``fields`` is an optional list of field names. If provided, return only the
@@ -493,10 +493,10 @@ function fields_for_model(model, kwargs){
     a form field.
     ``localized_fields`` is a list of names of fields which should be localized.
     ``labels`` is a dictionary of model field names mapped to a label.
-    ``help_texts`` is a dictionary of model field names mapped to a help text.
+    ``helpTexts`` is a dictionary of model field names mapped to a help text.
     ``error_messages`` is a dictionary of model field names mapped to a
     dictionary of error messages.
-    ``field_classes`` is a dictionary of model field names mapped to a form
+    ``fieldClasses`` is a dictionary of model field names mapped to a form
     field class.
     ``apply_limit_choices_to`` is a boolean indicating if limit_choices_to
     should be applied to a field's queryset.
@@ -554,15 +554,15 @@ function fields_for_model(model, kwargs){
         if (kwargs.hasOwnProperty("labels") && kwargs.labels.hasOwnProperty(field_name)){
             field_kwargs["label"] = kwargs.labels[field_name];
 		}
-        if (kwargs.hasOwnProperty("help_texts") && kwargs.help_texts.hasOwnProperty(field_name)){
-            field_kwargs["help_text"] = kwargs.help_texts[field_name];
+        if (kwargs.hasOwnProperty("helpTexts") && kwargs.helpTexts.hasOwnProperty(field_name)){
+            field_kwargs["helpText"] = kwargs.helpTexts[field_name];
 		}
         if (kwargs.hasOwnProperty("error_messages") && kwargs.error_messages.hasOwnProperty(field_name)){
             field_kwargs["error_messages"] = kwargs.error_messages[field_name];
 		}
-        if (kwargs.hasOwnProperty("field_classes") && kwargs.field_classes.hasOwnPropert(field_name)){
+        if (kwargs.hasOwnProperty("fieldClasses") && kwargs.fieldClasses.hasOwnPropert(field_name)){
 			// django source uses "form_class" attribute
-            field_kwargs["form_class"] = kwargs.field_classes[field_name];
+            field_kwargs["form_class"] = kwargs.fieldClasses[field_name];
 		}
 		
 		var form_field = f.formfield(f, field_kwargs);

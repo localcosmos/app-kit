@@ -47,7 +47,7 @@ class FrontendSettingsMixin:
 
     def get_text_types(self):
         frontend_settings = self.get_frontend_settings()
-        text_types = list(frontend_settings['user_content']['texts'].keys())
+        text_types = list(frontend_settings['userContent']['texts'].keys())
         text_types.append('legal_notice')
 
         return text_types

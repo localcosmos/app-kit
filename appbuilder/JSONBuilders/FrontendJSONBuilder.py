@@ -16,14 +16,14 @@ class FrontendJSONBuilder(JSONBuilder):
         frontend_json = self._build_common_json()
 
         # map built json to Frontend's settings.json
-        frontend_json['user_content'] = {
+        frontend_json['userContent'] = {
             'texts' : {},
             'images' : {},
         }
 
         frontend_settings = self.app_release_builder._get_frontend_settings()
 
-        for text_type, text_definition in frontend_settings['user_content']['texts'].items():
+        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
             
             frontend_text = FrontendText.objects.filter(frontend=frontend, identifier=text_type).first()
 
@@ -32,10 +32,14 @@ class FrontendJSONBuilder(JSONBuilder):
             if frontend_text:
                 text = frontend_text.text
 
-            frontend_json['user_content']['texts'][text_type] = text
+            text_key_json = text_type
+            if text_type == 'legal_notice':
+                text_key_json = self.to_camel_case(text_type)
+
+            frontend_json['userContent']['texts'][text_key_json] = text
 
 
-        for image_type, image_definition in frontend_settings['user_content']['images'].items():
+        for image_type, image_definition in frontend_settings['userContent']['images'].items():
             
             content_image = frontend.image(image_type)
 
@@ -54,7 +58,7 @@ class FrontendJSONBuilder(JSONBuilder):
             else:
                 relative_content_image_url = None
             
-            frontend_json['user_content']['images'][image_type] = relative_content_image_url
+            frontend_json['userContent']['images'][image_type] = relative_content_image_url
 
         return frontend_json
 

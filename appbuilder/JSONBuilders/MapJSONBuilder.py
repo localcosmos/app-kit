@@ -41,7 +41,7 @@ class MapJSONBuilder(JSONBuilder):
         map_json = self._build_common_json()
 
         map_json.update({
-            'map_type' : lc_map.map_type,
+            'mapType' : lc_map.map_type,
             'geometries' : {},
         })
 
@@ -51,7 +51,7 @@ class MapJSONBuilder(JSONBuilder):
         if project_area:
             geojson = self.serialize_project_area(project_area)
 
-            map_json['geometries']['project_area'] = geojson
+            map_json['geometries']['projectArea'] = geojson
 
         return map_json
     

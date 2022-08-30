@@ -32,7 +32,7 @@ forms["AutocompleteTextInput"] = Widget(BaseWidget, {
 
 /*
 * JSONWidget
-* - consists of a verbose field (TextInput) and a text_value field (HiddenInput) which holds the json
+* - consists of a verbose field (TextInput) and a textValue field (HiddenInput) which holds the json
 * - supports autocomplete
 * - currently, JSONWidget has to consist of exactly two widgets: verbose (Text or Fake) and json (Hidden)
 */
@@ -107,7 +107,7 @@ forms["BackboneTaxonAutocompleteWidget"] = Widget(forms.JSONWidget, {
 		var verbose_value = '';
 		
 		if (value && typeof value == "object") {
-			return value.taxon_latname;
+			return value.taxonLatname;
 		}
 
 		return verbose_value;
@@ -120,7 +120,7 @@ forms["BackboneTaxonAutocompleteWidget"] = Widget(forms.JSONWidget, {
 	*/
 	autofill : function(self, request, args, kwargs){
 
-		var search_result_template = '{{#if results}}{{#each results}}<div class="tap" action="forms.BackboneTaxonAutocompleteWidget.select_taxon" data-taxon-json="{{ json_string }}" data-verbose-input-id="{{ ../verbose_input_id }}" data-taxon-json-input-id="{{ ../taxon_json_input_id }}">{{#if name}}{{ name }} ({{ taxon_latname }}){{else}}{{ taxon_latname }}{{/if}}</div>{{/each}}{{else}}<div>{{t "NoTaxonFound"}}</div>{{/if}}';
+		var search_result_template = '{{#if results}}{{#each results}}<div class="tap" action="forms.BackboneTaxonAutocompleteWidget.select_taxon" data-taxon-json="{{ json_string }}" data-verbose-input-id="{{ ../verbose_input_id }}" data-taxon-json-input-id="{{ ../taxon_json_input_id }}">{{#if name}}{{ name }} ({{ taxonLatname }}){{else}}{{ taxonLatname }}{{/if}}</div>{{/each}}{{else}}<div>{{t "NoTaxonFound"}}</div>{{/if}}';
 
 		var input = kwargs.currentTarget;
 		input.classList.remove("is-valid");

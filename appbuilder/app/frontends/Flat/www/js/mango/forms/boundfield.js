@@ -25,7 +25,7 @@ var BoundField = {
             self.label = self.form_field.label;
 		}
 
-        self.help_text = field.help_text || '';
+        self.helpText = field.helpText || '';
 
 		if (self.form.is_bound == true){
 			self.errors = self.get_errors(self);
@@ -56,7 +56,7 @@ var BoundField = {
         """*/
         /*var id_ = self.form_field.widget.attrs.get('id') || self.auto_id;
         attrs = {'id': id_} if id_ else {}
-        attrs = self.build_widget_attrs(attrs)
+        attrs = self.build_widgetAttrs(attrs)
         return [
             BoundWidget(self.form_field.widget, widget, self.form.renderer)
             for widget in self.form_field.widget.subwidgets(self.html_name, self.value(), attrs=attrs)
@@ -108,7 +108,7 @@ var BoundField = {
             widget.is_localized = true;
 		}
 
-        attrs = self.build_widget_attrs(self, attrs, widget);
+        attrs = self.build_widgetAttrs(self, attrs, widget);
 
         var auto_id = self.auto_id(self);
 
@@ -278,7 +278,7 @@ var BoundField = {
         return data;
 	},
 
-    build_widget_attrs : function(self, attrs, widget){
+    build_widgetAttrs : function(self, attrs, widget){
 
 		var widget = widget || null;
         if (widget == null){

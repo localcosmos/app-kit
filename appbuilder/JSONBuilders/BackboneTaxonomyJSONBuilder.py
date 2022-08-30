@@ -46,7 +46,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
                     if isinstance(taxon_instance, AppContentTaxonomicRestriction):
                         # do not include descendants for restrictions
-                        taxon_dic = self._create_taxon_dic_from_lazy_taxon(lazy_higher_taxon, use_gbif)
+                        taxon_dic = self._create_taxon_json_from_lazy_taxon(lazy_higher_taxon, use_gbif)
                         start_letters = lazy_higher_taxon.taxon_latname[:2].upper()
                         yield start_letters, [taxon_dic]
 
@@ -97,7 +97,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                     current_letters_taxa = []
 
                 # add taxon to list if not yet exists
-                taxon_dic = self._create_taxon_dic_from_lazy_taxon(lazy_taxon, use_gbif)
+                taxon_dic = self._create_taxon_json_from_lazy_taxon(lazy_taxon, use_gbif)
 
                 if taxon_dic not in current_letters_taxa:
                     current_letters_taxa.append(taxon_dic)
@@ -107,8 +107,8 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
             yield current_start_letters, current_letters_taxa
 
 
-    def _create_taxon_dic_from_lazy_taxon(self, lazy_taxon, use_gbif):
-        return self.app_release_builder._create_taxon_dic_from_lazy_taxon(lazy_taxon, use_gbif)
+    def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
+        return self.app_release_builder._create_taxon_json_from_lazy_taxon(lazy_taxon, use_gbif)
         
 
     ##############################################################################################################
@@ -147,7 +147,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
         if vernacular_name:
 
-            vernacular_dic = self._create_taxon_dic_from_lazy_taxon(lazy_taxon, use_gbif)
+            vernacular_dic = self._create_taxon_json_from_lazy_taxon(lazy_taxon, use_gbif)
 
             vernacular_dic['name'] = vernacular_name
 

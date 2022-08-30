@@ -4,7 +4,7 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-12">
-					<h2>{{vernacular dataset.name_uuid}} (<i>{{ dataset.taxon_latname }}</i>)</h2>
+					<h2>{{vernacular dataset.nameUuid}} (<i>{{ dataset.taxonLatname }}</i>)</h2>
 				</div>
 			</div>
 			<div class="row mt-2">
@@ -22,7 +22,7 @@
 									<b>{{t field.definition.label}}:</b>
 								</div>
 
-								{{#ifequal field.field_class 'PointJSONField'}}
+								{{#ifequal field.fieldClass 'PointJSONField'}}
 									<div class="row">
 										<div class="col-12 col-md-6 col-lg-4">
 											<div id="map-{{ field.uuid }}" class="observation-detail-map" data-latitude="{{value.geometry.coordinates.[1]}}" data-longitude="{{value.geometry.coordinates.[0]}}"></div>
@@ -30,7 +30,7 @@
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'BooleanField'}}
+								{{#ifequal field.fieldClass 'BooleanField'}}
 									<div>
 										{{#ifequal value 'on'}}
 											{{tp 'yes'}}
@@ -40,55 +40,55 @@
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'CharField'}}
+								{{#ifequal field.fieldClass 'CharField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'ChoiceField'}}
+								{{#ifequal field.fieldClass 'ChoiceField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'DecimalField'}}
+								{{#ifequal field.fieldClass 'DecimalField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'FloatField'}}
+								{{#ifequal field.fieldClass 'FloatField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'IntegerField'}}
+								{{#ifequal field.fieldClass 'IntegerField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'MultipleChoiceField'}}
+								{{#ifequal field.fieldClass 'MultipleChoiceField'}}
 									<div>
 										{{value}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'DateTimeJSONField'}}
+								{{#ifequal field.fieldClass 'DateTimeJSONField'}}
 									<div>
 										{{verbose_datetime value.cron.timestamp}}
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'TaxonField'}}
+								{{#ifequal field.fieldClass 'TaxonField'}}
 									<div>
-										{{vernacular value.name_uuid}} ({{value.taxon_latname}})
+										{{vernacular value.nameUuid}} ({{value.taxonLatname}})
 									</div>
 								{{/ifequal}}
 
-								{{#ifequal field.field_class 'PictureField'}}
+								{{#ifequal field.fieldClass 'PictureField'}}
 									<div>
 										{{value}}
 									</div>
@@ -96,7 +96,7 @@
 
 							</div>
 						{{else}}
-							{{#ifequal field.field_class 'PictureField'}}
+							{{#ifequal field.fieldClass 'PictureField'}}
 								<div class="mb-2">
 									<div>
 										<b>{{t field.definition.label}}:</b>

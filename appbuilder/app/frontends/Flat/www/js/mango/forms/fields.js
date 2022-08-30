@@ -16,7 +16,7 @@ var FormField = {
 	required : true,
 	label : null,
 	initial : null,
-	help_text : '',
+	helpText : '',
 	show_hidden_initial : false,
 	localize : false,
 	disabled : false,
@@ -147,7 +147,7 @@ var FormField = {
 
 forms.CharField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "CharField"
+		"fieldClass" : "CharField"
 	}, kwargs);
 
 	return field;
@@ -155,7 +155,7 @@ forms.CharField = function(kwargs){
 
 forms.BooleanField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "BooleanField",
+		"fieldClass" : "BooleanField",
 		"widget" : forms.CheckboxInput
 	}, kwargs);
 
@@ -164,7 +164,7 @@ forms.BooleanField = function(kwargs){
 
 forms.ChoiceField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "ChoiceField",
+		"fieldClass" : "ChoiceField",
 		"widget" : forms.Select,
 		"choices" : []
 	}, kwargs);
@@ -174,7 +174,7 @@ forms.ChoiceField = function(kwargs){
 
 forms.MultipleChoiceField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "MultipleChoiceField",
+		"fieldClass" : "MultipleChoiceField",
 		"widget" : forms.SelectMultiple,
 		"prepare_value" : function(self, value){
 			/* prepare the value for html */
@@ -191,7 +191,7 @@ forms.MultipleChoiceField = function(kwargs){
 
 forms.DecimalField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "DecimalField",
+		"fieldClass" : "DecimalField",
 		"widget" : forms.NumberInput,
 		to_javascript : function(self, value){
 			if (typeof value == "string" && value.length >0){
@@ -210,7 +210,7 @@ forms.DecimalField = function(kwargs){
 
 forms.FloatField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "FloatField",
+		"fieldClass" : "FloatField",
 		"widget" : forms.NumberInput,
 		to_javascript : function(self, value){
 			if (typeof value == "string" && value.length >0){
@@ -228,7 +228,7 @@ forms.FloatField = function(kwargs){
 
 forms.IntegerField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "IntegerField",
+		"fieldClass" : "IntegerField",
 		"widget" : forms.NumberInput,
 		to_javascript : function(self, value){
 			if (typeof value == "string" && value.length >0){
@@ -247,7 +247,7 @@ forms.IntegerField = function(kwargs){
 
 forms.DateTimeField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "DateTimeField",
+		"fieldClass" : "DateTimeField",
 		"widget" : forms.NumberInput
 	}, kwargs);
 
@@ -274,7 +274,7 @@ forms.DateTimeField = function(kwargs){
 forms.PasswordField = function(kwargs){
 
 	var field = derive(FormField, {
-		"field_class" : "PasswordField"
+		"fieldClass" : "PasswordField"
 	}, kwargs);
 
 	return field;
@@ -283,7 +283,7 @@ forms.PasswordField = function(kwargs){
 
 forms.FileField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "FileField",
+		"fieldClass" : "FileField",
 		"widget" : forms.FileInput
 	}, kwargs);
 
@@ -292,7 +292,7 @@ forms.FileField = function(kwargs){
 
 forms.ImageField = function(kwargs){
 	var field = derive(FormField, {
-		"field_class" : "ImageField",
+		"fieldClass" : "ImageField",
 		"widget" : forms.FileInput
 	}, kwargs);
 

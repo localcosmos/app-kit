@@ -14,7 +14,7 @@ class FactSheetsJSONBuilder(JSONBuilder):
 
         fact_sheets_json = self._build_common_json()
 
-        fact_sheets_json['fact_sheets'] = {}
+        fact_sheets_json['factSheets'] = {}
 
         return fact_sheets_json
 
@@ -43,7 +43,7 @@ class FactSheetsJSONBuilder(JSONBuilder):
         context = {
             'fact_sheet' : fact_sheet,
             'build' : True,
-            'language_code' : language_code,
+            'languageCode' : language_code,
         }
 
         c = Context(context)

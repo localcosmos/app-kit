@@ -50,7 +50,7 @@ class TestFrontend(WithFrontend, TenantTestCase):
     @test_settings
     def test_get_content_image_restrictions(self):
         
-        restrictions = self.frontend.get_content_image_restrictions('app_background')
+        restrictions = self.frontend.get_content_image_restrictions('appBackground')
 
         self.assertIn('file_type', restrictions)
 

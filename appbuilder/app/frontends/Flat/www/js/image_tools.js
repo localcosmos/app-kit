@@ -274,7 +274,7 @@ var Thumbnail = {
     
 	// currently, on iOS the tempfolder is used (WKWEBVIEW limitation, maybe rewrite this after release of cordova ios 6.x)
 	// on Android, persistent folder is used
-	// image_url is cdvfile:// for Android and file:// for iOS
+	// imageUrl is cdvfile:// for Android and file:// for iOS
     get_thumbnail_filepath : function(cdvfilepath, onsuccess, onerror){
 
 		var self = this;

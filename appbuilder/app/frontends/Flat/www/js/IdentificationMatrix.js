@@ -43,38 +43,38 @@
           {
             "taxa": [
               {
-                "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
-                "taxon_nuid": "006",
-                "taxon_author": null,
-                "taxon_source": "taxonomy.sources.col",
-                "taxon_latname": "Plantae"
+                "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
+                "taxonNuid": "006",
+                "taxonAuthor": null,
+                "taxonSource": "taxonomy.sources.col",
+                "taxonLatname": "Plantae"
               },
               {
-                "name_uuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
-                "taxon_nuid": "003",
-                "taxon_author": "admin",
-                "taxon_source": "taxonomy.sources.custom",
-                "taxon_latname": "Plantae"
+                "nameUuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
+                "taxonNuid": "003",
+                "taxonAuthor": "admin",
+                "taxonSource": "taxonomy.sources.custom",
+                "taxonLatname": "Plantae"
               }
             ],
             "latname": "Plantae",
-            "is_custom": false
+            "isCustom": false
           }
         ]
       },
       "taxon": {
-        "name_uuid": "bd143912-7a66-4f7f-ad25-c3c16a361273",
-        "taxon_nuid": "00600800601d008001",
-        "taxon_author": "",
-        "taxon_source": "taxonomy.sources.col",
-        "taxon_latname": "Acer"
+        "nameUuid": "bd143912-7a66-4f7f-ad25-c3c16a361273",
+        "taxonNuid": "00600800601d008001",
+        "taxonAuthor": "",
+        "taxonSource": "taxonomy.sources.col",
+        "taxonLatname": "Acer"
       },
-      "image_url": "/media/treesofbavaria/imagestore/1/thumbnails/73c0d5e7970ab4ed9b855dc0a4535dc5_2E9oVUY-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "node_type": "node",
-      "is_visible": true,
-      "max_points": 150,
-      "meta_node_id": 7,
-      "decision_rule": "mit Blättern, im Winter kahl"
+      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/73c0d5e7970ab4ed9b855dc0a4535dc5_2E9oVUY-e40c54f70e9a62da34083d82850ac09b-400.jpg",
+      "nodeType": "node",
+      "isVisible": true,
+      "maxPoints": 150,
+      "metaNodeId": 7,
+      "decisionRule": "mit Blättern, im Winter kahl"
     },
     {
       "id": 8,
@@ -104,12 +104,12 @@
         "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
       },
       "taxon": null,
-      "image_url": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "node_type": "node",
-      "is_visible": true,
-      "max_points": 200,
-      "meta_node_id": 8,
-      "decision_rule": "mit Nadeln"
+      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
+      "nodeType": "node",
+      "isVisible": true,
+      "maxPoints": 200,
+      "metaNodeId": 8,
+      "decisionRule": "mit Nadeln"
     },
     {
       "id": 157,
@@ -128,12 +128,12 @@
         "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
       },
       "taxon": null,
-      "image_url": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "node_type": "node",
-      "is_visible": true,
-      "max_points": 150,
-      "meta_node_id": 157,
-      "decision_rule": ""
+      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
+      "nodeType": "node",
+      "isVisible": true,
+      "maxPoints": 150,
+      "metaNodeId": 157,
+      "decisionRule": ""
     },
     {
       "id": 59,
@@ -146,12 +146,12 @@
         "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
       },
       "taxon": null,
-      "image_url": "/static/noimage.png",
-      "node_type": "node",
-      "is_visible": true,
-      "max_points": 50,
-      "meta_node_id": 59,
-      "decision_rule": ""
+      "imageUrl": "/static/noimage.png",
+      "nodeType": "node",
+      "isVisible": true,
+      "maxPoints": 50,
+      "metaNodeId": 59,
+      "decisionRule": ""
     },
     {
       "id": 162,
@@ -162,46 +162,46 @@
           {
             "taxa": [
               {
-                "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
-                "taxon_nuid": "006",
-                "taxon_author": null,
-                "taxon_source": "taxonomy.sources.col",
-                "taxon_latname": "Plantae"
+                "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
+                "taxonNuid": "006",
+                "taxonAuthor": null,
+                "taxonSource": "taxonomy.sources.col",
+                "taxonLatname": "Plantae"
               },
               {
-                "name_uuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
-                "taxon_nuid": "003",
-                "taxon_author": "admin",
-                "taxon_source": "taxonomy.sources.custom",
-                "taxon_latname": "Plantae"
+                "nameUuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
+                "taxonNuid": "003",
+                "taxonAuthor": "admin",
+                "taxonSource": "taxonomy.sources.custom",
+                "taxonLatname": "Plantae"
               }
             ],
             "latname": "Plantae",
-            "is_custom": false
+            "isCustom": false
           }
         ]
       },
       "taxon": {
-        "name_uuid": "8dfdae06-8626-46ac-8611-86926973ae72",
-        "taxon_nuid": "00600800800b003002009001",
-        "taxon_author": "(Bak.) Reed",
-        "taxon_source": "taxonomy.sources.col",
-        "taxon_latname": "Schizaea malaccana robustior"
+        "nameUuid": "8dfdae06-8626-46ac-8611-86926973ae72",
+        "taxonNuid": "00600800800b003002009001",
+        "taxonAuthor": "(Bak.) Reed",
+        "taxonSource": "taxonomy.sources.col",
+        "taxonLatname": "Schizaea malaccana robustior"
       },
-      "image_url": "/static/noimage.png",
-      "node_type": "result",
-      "is_visible": true,
-      "max_points": 0,
-      "meta_node_id": 162,
-      "decision_rule": ""
+      "imageUrl": "/static/noimage.png",
+      "nodeType": "result",
+      "isVisible": true,
+      "maxPoints": 0,
+      "metaNodeId": 162,
+      "decisionRule": ""
     }
   ],
-  "matrix_filters": {
+  "matrixFilters": {
     "0c9f1e62-521e-4c09-b98e-156c3d72a9bc": {
       "name": "Test text",
       "type": "TextOnlyFilter",
       "weight": 50,
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     },
     "27c566f8-802a-47fd-8938-2e469aef22b0": {
       "name": "Dreifach Abhängig",
@@ -215,7 +215,7 @@
           ]
         ]
       },
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     },
     "2ff6f540-1676-410e-8067-1b58c3a002ed": {
       "name": "Doppelt Abhängig",
@@ -226,7 +226,7 @@
           2
         ]
       },
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     },
     "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": {
       "name": "Abhängiges Merkmal - Farbe rot",
@@ -242,19 +242,19 @@
           ]
         ]
       },
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     },
     "43b549b3-911d-4df3-8c9c-9986ed02be45": {
       "name": "Farbe",
       "type": "ColorFilter",
       "weight": 50,
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     },
     "cee8ddbc-5982-47a8-93a6-c82930acd69d": {
       "name": "Taxonomic filter",
       "type": "TaxonFilter",
       "weight": 50,
-      "allow_multiple_values": false
+      "allowMultipleValues": false
     }
   }
 }
@@ -324,7 +324,7 @@ class MatrixFilterSpace {
   bind_input_element(input_element) {
 
     if (this.input_element != null) {
-      throw new Error("[MatrixFilterSpace] " + this.space_identifier + " of " + this.matrix_filter.matrix_filter_type + " is already bound to an input element");
+      throw new Error("[MatrixFilterSpace] " + this.space_identifier + " of " + this.matrix_filter.matrixFilterType + " is already bound to an input element");
     }
 
     var self = this;
@@ -380,7 +380,7 @@ class MatrixFilterSpace {
   //  - all MatrixFilters listed in this.restricts are informed
   activate() {
 
-    console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being activated.");
+    console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " is being activated.");
 
     this.status = STATUS_ACTIVE; 
 
@@ -401,10 +401,10 @@ class MatrixFilterSpace {
 		this.input_element.dispatchEvent(turned_on_event);
 
     // deactivate all other spaces if only one is allowed
-    if (this.matrix_filter.allow_multiple_values == false){
+    if (this.matrix_filter.allowMultipleValues == false){
 
       if (this.DEBUG == true){
-        console.log("[MatrixFilterSpace] no multiple values allowed, deactivating all other spaces for " + this.matrix_filter.matrix_filter_type);
+        console.log("[MatrixFilterSpace] no multiple values allowed, deactivating all other spaces for " + this.matrix_filter.matrixFilterType);
       }
 
       for (let space_identifier in this.matrix_filter.matrix_filter_spaces){
@@ -428,7 +428,7 @@ class MatrixFilterSpace {
   deactivate() {
 
     if (this.status == STATUS_ACTIVE){
-      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being deactivated.");
+      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " is being deactivated.");
 
       this.status = STATUS_INACTIVE;
 
@@ -454,7 +454,7 @@ class MatrixFilterSpace {
   signal_restricted_matrix_filters(is_turned_on) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " restricts: ");
+      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " restricts: ");
       console.log(this.restricts);
     }
 
@@ -463,7 +463,7 @@ class MatrixFilterSpace {
       let restricted_matrix_filter = this.restricts[matrix_filter_uuid];
 
       if (this.DEBUG == true) {
-        console.log("[MatrixFilterSpace] " + this.space_identifier + " of " + this.matrix_filter.matrix_filter_type + " is signaling MatrixFilter " + restricted_matrix_filter.matrix_filter_type + " " + restricted_matrix_filter.uuid);
+        console.log("[MatrixFilterSpace] " + this.space_identifier + " of " + this.matrix_filter.matrixFilterType + " is signaling MatrixFilter " + restricted_matrix_filter.matrixFilterType + " " + restricted_matrix_filter.uuid);
       }
 
       restricted_matrix_filter.receive_restriction_update(this, is_turned_on);
@@ -482,7 +482,7 @@ class MatrixFilterSpace {
 
   signal_matching_matrix_items (){
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " is signaling matching_matrix_items");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " is signaling matching_matrix_items");
 		}
 
     for (let matrix_item_uuid in this.matching_matrix_items){
@@ -499,7 +499,7 @@ class MatrixFilterSpace {
 
   signal_mismaching_matrix_items (){
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " is signaling mismatching_matrix_items");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " is signaling mismatching_matrix_items");
 		}
 
     for (let matrix_item_uuid in this.mismatching_matrix_items){
@@ -522,7 +522,7 @@ class MatrixFilterSpace {
   activate_matching_matrix_item(matrix_item) {
     
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " now adds MatrixItem " + matrix_item.name + " to active_matching_matrix_items");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " now adds MatrixItem " + matrix_item.name + " to active_matching_matrix_items");
 		}
 
     let is_initially_possible = this.get_is_possible();
@@ -541,7 +541,7 @@ class MatrixFilterSpace {
 
   deactivate_matching_matrix_item(matrix_item) {
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " now removes MatrixItem " + matrix_item.name + " from active_matching_matrix_items");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " now removes MatrixItem " + matrix_item.name + " from active_matching_matrix_items");
 		}
 
     let is_initially_possible = this.get_is_possible();
@@ -563,7 +563,7 @@ class MatrixFilterSpace {
   // send an event if this.is_possible changes from false to true
   send_possible_event() {
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " became possible");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " became possible");
 		}
 
     const event_data = this.get_event_data();
@@ -576,7 +576,7 @@ class MatrixFilterSpace {
   // send an event if this.is_possible changes from true to false
   send_impossible_event() {
     if (this.DEBUG == true){
-			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " became impossible");
+			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrixFilterType + " " + this.space_identifier + " became impossible");
 		}
 
     const event_data = this.get_event_data();
@@ -669,18 +669,18 @@ class TaxonFilterSpace extends MatrixFilterSpace {
 
 class MatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
     this.DEBUG = true;
 
     // for firing events
     this.form_element = form_element;
 
     this.uuid = uuid;
-    this.matrix_filter_type = matrix_filter_type;
+    this.matrixFilterType = matrixFilterType;
 
     this.name = name;
 
-    this.allow_multiple_values = allow_multiple_values;
+    this.allowMultipleValues = allowMultipleValues;
 
     // {space_identifier : MatrixFilterSpace}
     // contains the spaces of this filter
@@ -738,7 +738,7 @@ class MatrixFilter {
   add_matrix_filter_space(space) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixFilter] " + this.matrix_filter_type + " adding space: ");
+      console.log("[MatrixFilter] " + this.matrixFilterType + " adding space: ");
       console.log(space);
     }
 
@@ -769,7 +769,7 @@ class MatrixFilter {
       let restrictive_matrix_filter = MATRIX_FILTERS[restrictive_matrix_filter_uuid];
 
       if (this.DEBUG == true){
-        console.log("[MatrixFilter] applying restrictions. " + this.matrix_filter_type + " is restricted by " + restrictive_matrix_filter.matrix_filter_type);
+        console.log("[MatrixFilter] applying restrictions. " + this.matrixFilterType + " is restricted by " + restrictive_matrix_filter.matrixFilterType);
       }
 
       let restriction_spaces = restrictions[restrictive_matrix_filter_uuid];
@@ -782,7 +782,7 @@ class MatrixFilter {
 
         let space_identifier = restrictive_matrix_filter.get_space_identifier_from_parsed(parsed_restriction_space);
 
-        console.log("[MatrixFilter] applying restriction to " + this.matrix_filter_type + ": " + restrictive_matrix_filter.matrix_filter_type + " " + parsed_restriction_space + " " + space_identifier);
+        console.log("[MatrixFilter] applying restriction to " + this.matrixFilterType + ": " + restrictive_matrix_filter.matrixFilterType + " " + parsed_restriction_space + " " + space_identifier);
 
         this.restricted_by[restrictive_matrix_filter_uuid][space_identifier] = false;
 
@@ -816,14 +816,14 @@ class MatrixFilter {
       if (restriction.hasOwnProperty(space_identifier)) {
 
         if (this.DEBUG == true) {
-          console.log("[MatrixFilter] " + this.matrix_filter_type + " " + this.uuid + " received restriction update from " + restricting_matrix_filter.matrix_filter_type + " " + space_identifier + " , is_turned_on : " + is_turned_on);
+          console.log("[MatrixFilter] " + this.matrixFilterType + " " + this.uuid + " received restriction update from " + restricting_matrix_filter.matrixFilterType + " " + space_identifier + " , is_turned_on : " + is_turned_on);
         }
 
         this.restricted_by[restricting_matrix_filter.uuid][space_identifier] = is_turned_on;
       }
 
       else {
-        throw new Error("[MatrixFilter] " + this.matrix_filter_type + " error in receive_restriction_update. Restrictive filter not found.");
+        throw new Error("[MatrixFilter] " + this.matrixFilterType + " error in receive_restriction_update. Restrictive filter not found.");
       }
     }
 
@@ -856,7 +856,7 @@ class MatrixFilter {
     }
 
     if (this.DEBUG == true) {
-      console.log("[MatrixFilter] " + this.matrix_filter_type + " " + this.uuid + " worked restrictions, is_active:" + is_active);
+      console.log("[MatrixFilter] " + this.matrixFilterType + " " + this.uuid + " worked restrictions, is_active:" + is_active);
     }
 
     if (is_active == true) {
@@ -876,7 +876,7 @@ class MatrixFilter {
       detail: {
         "matrix_filter": {
           "uuid": this.uuid,
-          "matrix_filter_type": this.matrix_filter_type,
+          "matrixFilterType": this.matrixFilterType,
           "status": this.status
         }
       }
@@ -940,7 +940,7 @@ class MatrixFilter {
       matrix_filter_space.bind_input_element(input_element);
     }
     else {
-      console.warn("[MatrixFilter] " + this.matrix_filter_type + " space_identifier " + space_identifier + " not found in matrix_filter_spaces.");
+      console.warn("[MatrixFilter] " + this.matrixFilterType + " space_identifier " + space_identifier + " not found in matrix_filter_spaces.");
       console.warn(this.matrix_filter_spaces);
 
       // send impossible event
@@ -970,7 +970,7 @@ class StringBasedMatrixFilter extends MatrixFilter {
   // space is the parsed space from JSON.parse
   get_space_identifier_from_parsed(space) {
     if (this.DEBUG == true) {
-      console.log("[StringBasedMatrixFilter] " + this.matrix_filter_type + "] stringifying parsed space: " + space);
+      console.log("[StringBasedMatrixFilter] " + this.matrixFilterType + "] stringifying parsed space: " + space);
     }
 
     // base64 encoded space
@@ -1005,7 +1005,7 @@ class ObjectBasedMatrixFilter extends MatrixFilter {
 
   get_space_identifier_from_parsed(space) {
     if (this.DEBUG == true) {
-      console.log("[ObjectBasedMatrixFilter] " + this.matrix_filter_type + " stringifying parsed space: " + space);
+      console.log("[ObjectBasedMatrixFilter] " + this.matrixFilterType + " stringifying parsed space: " + space);
     }
 
     // b64 encoded space identifier
@@ -1046,9 +1046,9 @@ class ObjectBasedMatrixFilter extends MatrixFilter {
 
 class DescriptiveTextAndImagesFilter extends StringBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = DescriptiveTextAndImagesSpace;
   }
@@ -1057,9 +1057,9 @@ class DescriptiveTextAndImagesFilter extends StringBasedMatrixFilter {
 
 class TextOnlyFilter extends StringBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = TextOnlySpace;
   }
@@ -1069,9 +1069,9 @@ class TextOnlyFilter extends StringBasedMatrixFilter {
 
 class ColorFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = ColorSpace;
   }
@@ -1080,9 +1080,9 @@ class ColorFilter extends ObjectBasedMatrixFilter {
 
 class NumberFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = NumberSpace;
   }
@@ -1094,9 +1094,9 @@ class NumberFilter extends ObjectBasedMatrixFilter {
 */
 class RangeFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = RangeSpace;
 
@@ -1192,9 +1192,9 @@ class RangeFilter extends ObjectBasedMatrixFilter {
 
 class TaxonFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrixFilterType, name, weight, allowMultipleValues);
 
     this.MatrixFilterSpaceClass = TaxonFilterSpace;
   }
@@ -1219,7 +1219,7 @@ const MATRIX_FILTER_CLASSES = {
 
 class MatrixItem {
 
-  constructor(uuid, name, taxon, max_points, form_element) {
+  constructor(uuid, name, taxon, maxPoints, form_element) {
 
     this.DEBUG = true;
 
@@ -1232,7 +1232,7 @@ class MatrixItem {
 
     this.points = 0;
     this.points_percentage =0;
-    this.max_points = max_points;
+    this.maxPoints = maxPoints;
 
     // matrix_filter_spaces associated with this MatrixItem
     // { matrix_filter_uuid : { space_identifier : MatrixfilterSpace } }
@@ -1276,7 +1276,7 @@ class MatrixItem {
   add_matching_matrix_filter_space(matrix_filter_space) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " is adding space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrix_filter_type);
+      console.log("[MatrixItem] " + this.name + " is adding space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrixFilterType);
     }
 
     let matrix_filter = matrix_filter_space.matrix_filter;
@@ -1294,7 +1294,7 @@ class MatrixItem {
   remove_matching_matrix_filter_space(matrix_filter_space) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " is removing space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrix_filter_type);
+      console.log("[MatrixItem] " + this.name + " is removing space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrixFilterType);
     }
 
     let matrix_filter = matrix_filter_space.matrix_filter;
@@ -1321,7 +1321,7 @@ class MatrixItem {
     }
 
     this.points = this.calculate_points();
-    this.points_percentage = this.points / this.max_points;
+    this.points_percentage = this.points / this.maxPoints;
     this.send_matrix_item_update_event();
 
     if (this.points_percentage == 1){
@@ -1336,7 +1336,7 @@ class MatrixItem {
 				"matrix_item" : {
 					"uuid" : this.uuid,
 					"points" : this.points,
-          "max_points" : this.max_points,
+          "maxPoints" : this.maxPoints,
           "points_percentage" : this.points_percentage
 				}
 			}
@@ -1388,7 +1388,7 @@ class MatrixItem {
   add_mismatching_matrix_filter_space(matrix_filter_space) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " received an added mismatch from " + matrix_filter_space.matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
+      console.log("[MatrixItem] " + this.name + " received an added mismatch from " + matrix_filter_space.matrix_filter.matrixFilterType + " : " + matrix_filter_space.space_identifier);
     }
 
     let matrix_filter = matrix_filter_space.matrix_filter;
@@ -1408,7 +1408,7 @@ class MatrixItem {
   remove_mismatching_matrix_filter_space(matrix_filter_space) {
 
     if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " received a removed mismatch from " + matrix_filter_space.matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
+      console.log("[MatrixItem] " + this.name + " received a removed mismatch from " + matrix_filter_space.matrix_filter.matrixFilterType + " : " + matrix_filter_space.space_identifier);
     }
 
     let matrix_filter = matrix_filter_space.matrix_filter;
@@ -1527,11 +1527,11 @@ class IdentificationMatrix {
       self.data = matrix_filters_and_items_json;
 
       // instantiate filters
-      for (let matrix_filter_uuid in matrix_filters_and_items_json["matrix_filters"]) {
-        let matrix_filter_data = matrix_filters_and_items_json["matrix_filters"][matrix_filter_uuid];
+      for (let matrix_filter_uuid in matrix_filters_and_items_json["matrixFilters"]) {
+        let matrix_filter_data = matrix_filters_and_items_json["matrixFilters"][matrix_filter_uuid];
         let MatrixFilterClass = MATRIX_FILTER_CLASSES[matrix_filter_data.type];
 
-        let matrix_filter = new MatrixFilterClass(self.form_element, matrix_filter_uuid, matrix_filter_data.type, matrix_filter_data.name, matrix_filter_data.weight, matrix_filter_data.allow_multiple_values);
+        let matrix_filter = new MatrixFilterClass(self.form_element, matrix_filter_uuid, matrix_filter_data.type, matrix_filter_data.name, matrix_filter_data.weight, matrix_filter_data.allowMultipleValues);
 
         MATRIX_FILTERS[matrix_filter_uuid] = matrix_filter;
       }
@@ -1541,7 +1541,7 @@ class IdentificationMatrix {
       // instantiate matrix items (tree nodes)
       for (let i = 0; i < items.length; i++) {
         let item = items[i];
-        let matrix_item = new MatrixItem(item.uuid, item.name, item.taxon, item.max_points, self.form_element);
+        let matrix_item = new MatrixItem(item.uuid, item.name, item.taxon, item.maxPoints, self.form_element);
         MATRIX_ITEMS[matrix_item.uuid] = matrix_item;
 
         // add MatrixFilterSpaces to matrix filters and to matrix items
@@ -1567,8 +1567,8 @@ class IdentificationMatrix {
       self.bind_dom_elements_to_matrix_filters();
 
       // apply restrictions - AFTER instantiating MatrixItems. MatrixItems fill
-      for (let matrix_filter_uuid in matrix_filters_and_items_json["matrix_filters"]) {
-        let data = matrix_filters_and_items_json["matrix_filters"][matrix_filter_uuid];
+      for (let matrix_filter_uuid in matrix_filters_and_items_json["matrixFilters"]) {
+        let data = matrix_filters_and_items_json["matrixFilters"][matrix_filter_uuid];
         let restrictions = data["restrictions"] || {};
 
         let matrix_filter = MATRIX_FILTERS[matrix_filter_uuid];
@@ -1740,7 +1740,7 @@ class IdentificationMatrix {
         // this does not work with ranges. the user can select a value that is not within any given range.
         // simply check if the range slider has been set
         
-        if (matrix_filter.matrix_filter_type == "RangeFilter"){
+        if (matrix_filter.matrixFilterType == "RangeFilter"){
           if (matrix_filter.input_element.value.length != 0){
             matrix_filter_has_selection = true;
           }

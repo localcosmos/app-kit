@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.generic import GenericContent
 from app_kit.models import ContentImageMixin, MetaAppGenericContent, SingleFeatureMixin
 
+from app_kit.utils import unCamelCase, camelCase_to_underscore_case
+
 from django.utils.translation import gettext_lazy as _
 
 from taxonomy.lazy import LazyTaxonList
@@ -64,7 +66,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         return frontend_settings
 
 
-
+    # fileType -> file_type
     def get_content_image_restrictions(self, namespaced_image_type='image'):
 
         frontend_settings = self.get_settings()
@@ -73,11 +75,19 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         image_type_parts = namespaced_image_type.split(':')
         image_type = image_type_parts[-1]
 
-        image_definition = frontend_settings['user_content']['images'][image_type]
+        image_definition = frontend_settings['userContent']['images'][image_type]
 
         restrictions = image_definition.get('restrictions', {})
 
-        return restrictions
+        pythonic_restrictions = {}
+
+
+        for restriction_type, restriction in restrictions.items():
+            underscore_case_restriction_type = camelCase_to_underscore_case(restriction_type)
+            pythonic_restrictions[underscore_case_restriction_type] = restriction
+
+        return pythonic_restrictions
+
 
     def texts(self):
         return FrontendText.objects.filter(frontend=self, frontend_name=self.frontend_name)

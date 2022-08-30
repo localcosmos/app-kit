@@ -627,14 +627,14 @@ class TestReleaseBuilder(WithMetaApp, WithUser, WithMedia, WithNatureGuide, Tena
         required_image_types = []
         required_text_types = ['legal_notice']
 
-        for image_type, image_definition in frontend_settings['user_content']['images'].items():
+        for image_type, image_definition in frontend_settings['userContent']['images'].items():
             
             image_is_required = image_definition['required']
 
             if image_is_required == True:
                 required_image_types.append(image_type)
 
-        for text_type, text_definition in frontend_settings['user_content']['texts'].items():
+        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
 
             text_is_required = image_definition['required']
 

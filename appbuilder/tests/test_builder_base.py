@@ -302,7 +302,7 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
         # create a few FrontendTexts
         frontend = appbuilder._get_frontend()
         frontend_settings = appbuilder._get_frontend_settings()
-        for text_type, text_definition in frontend_settings['user_content']['texts'].items():
+        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
 
             frontend_text = FrontendText(
                 frontend=frontend,
@@ -319,7 +319,7 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
             generic_content = link.generic_content
             self.assertIn(generic_content.name, self.meta_app.localizations[self.meta_app.primary_language])
 
-        for text_type, text_definition in frontend_settings['user_content']['texts'].items():
+        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
             self.assertIn(text_type, self.meta_app.localizations[self.meta_app.primary_language])
 
     

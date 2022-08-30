@@ -28,8 +28,8 @@ class TestFrontendSettingsForm(WithFrontend, TenantTestCase):
         form = FrontendSettingsForm(self.meta_app, self.frontend)
 
         self.assertIn('legal_notice', form.fields)
-        self.assertIn('app_launcher_icon', form.fields)
-        self.assertIn('app_background', form.fields)
+        self.assertIn('appLauncherIcon', form.fields)
+        self.assertIn('appBackground', form.fields)
 
     @test_settings
     def test_validate(self):
@@ -41,7 +41,7 @@ class TestFrontendSettingsForm(WithFrontend, TenantTestCase):
 
         data = {}
 
-        user_texts = frontend_settings['user_content']['texts']
+        user_texts = frontend_settings['userContent']['texts']
 
         for text_type, definition in user_texts.items():
 

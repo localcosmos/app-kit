@@ -2,12 +2,12 @@
 	<div>
 		{{#each form.fieldlist}}
 				
-			<div class="form-group {{ form_field.field_class }} {{#if errors }}is-invalid{{/if}}">
+			<div class="form-group {{ form_field.fieldClass }} {{#if errors }}is-invalid{{/if}}">
 
 				{{#if is_hidden}}
 					{{{ field }}}
 				{{ else }}
-					{{#ifequal form_field.field_class 'BooleanField'  }}
+					{{#ifequal form_field.fieldClass 'BooleanField'  }}
 						{{{ field }}}
 						<label for="id_{{ name }}">{{tp label }}</label>
 					{{ else }}

@@ -2,8 +2,8 @@
 
 var BackboneTaxonomy = {
 
-	get_taxon_by_uuid : function(name_uuid, callback){
-		var start_letters = taxon_latname.substring(0,2);
+	get_taxon_by_uuid : function(nameUuid, callback){
+		var start_letters = taxonLatname.substring(0,2);
 
 		var alphabet_folder = app_features["BackboneTaxonomy"]["alphabet"];
 
@@ -15,7 +15,7 @@ var BackboneTaxonomy = {
 
 			for (var t=0; t<taxa.length; t++){
 				var taxon_ = taxa[t];
-				if (taxon_.name_uuid = name_uuid){
+				if (taxon_.nameUuid = nameUuid){
 					taxon = taxon_;
 					break;
 				}
@@ -28,12 +28,12 @@ var BackboneTaxonomy = {
 		});
 
 	},
-	get_taxon_profile : function(taxon_source, name_uuid, callback){
+	get_taxon_profile : function(taxonSource, nameUuid, callback){
 
 		// first try to get taxon_profile
 		var profiles_folder = app_features["TaxonProfiles"]["files"];
 		
-		var profile_file = profiles_folder + "/" + taxon_source + "/" + name_uuid + ".json";
+		var profile_file = profiles_folder + "/" + taxonSource + "/" + nameUuid + ".json";
 
 		ajax.getJSON(profile_file, {}, function(taxon_profile){
 			callback(taxon_profile);
@@ -42,8 +42,8 @@ var BackboneTaxonomy = {
 		});
 
 	},
-	get_wikipedia_url : function(taxon_latname){
-		var url = "https://" + app.language + ".m.wikipedia.org/wiki/" + taxon_latname;
+	get_wikipedia_url : function(taxonLatname){
+		var url = "https://" + app.language + ".m.wikipedia.org/wiki/" + taxonLatname;
 		return url;
 	}
 };

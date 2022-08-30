@@ -12,9 +12,9 @@
 				</div>
 				<div id="alphabet-search-results" class="p-3 alphabet-search-results lg hidden" data-input-id="alphabet-search">results</div>
 			</div>
-			{{#if has_vernacular_names}}
+			{{#if has_vernacularNames}}
 				<div class="col-12 col-md-5 col-lg-7 text-right">
-				{{#if use_vernacular_names}}
+				{{#if use_vernacularNames}}
 					<button class="tap btn btn-sm btn-secondary" link="{{url 'taxon_profiles_registry' }}">{{t 'scientific names'}}</button>
 				{{else}}
 					<button class="tap btn btn-sm btn-secondary" link="{{url 'taxon_profiles_registry' }}?vernacular=1">{{t 'vernacular names'}}</button>
@@ -26,14 +26,14 @@
 		<div class="row py-3">
 			<div class="col-12">
 				<div class="taxon-profiles-alphabet">
-					{{#if use_vernacular_names}}
-						{{#each vernacular_names }}
+					{{#if use_vernacularNames}}
+						{{#each vernacularNames }}
 							<div class="alphabet-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="alphabet-{{@key}}">
 								{{@key}}
 							</div>
 						{{/each}}
 					{{ else }}
-						{{#each search_index.taxon_latname }}
+						{{#each search_index.taxonLatname }}
 							<div class="alphabet-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="alphabet-{{@key}}">
 								{{@key}}
 							</div>
@@ -49,8 +49,8 @@
 	<div class="container">
 		<div class="row pb-5">
 			<div class="col-12">
-				{{#if use_vernacular_names}}
-					{{#each vernacular_names }}
+				{{#if use_vernacularNames}}
+					{{#each vernacularNames }}
 					
 						{{#with this as | taxonProfile |}}
 
@@ -59,9 +59,9 @@
 									<h3 id="alphabet-{{@key}}">{{ @key }}</h3>
 								</div>
 								{{#each taxonProfile}}
-									<div id="alphabet-entry-{{name_uuid}}" class="col-12 mt-3">
+									<div id="alphabet-entry-{{nameUuid}}" class="col-12 mt-3">
 										<div>
-											<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxon_source name_uuid }}"><i>{{ name }}</i></a>
+											<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxonSource nameUuid }}"><i>{{ name }}</i></a>
 										</div>
 									</div>
 									
@@ -71,7 +71,7 @@
 						
 					{{/each}}
 				{{ else }}
-					{{#each search_index.taxon_latname }}
+					{{#each search_index.taxonLatname }}
 						
 						{{#with this as | taxonProfile |}}
 						
@@ -80,11 +80,11 @@
 									<h3 id="alphabet-{{@key}}">{{@key}}</h3>
 								</div>
 								{{#each taxonProfile}}
-									{{#if is_synonym}}
+									{{#if isSynonym}}
 									{{else}}
 										<div id="alphabet-entry-{{@key}}" class="col-12 mt-3">
 											<div>
-												<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxon_source name_uuid }}"><i>{{@key}}</i></a>
+												<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxonSource nameUuid }}"><i>{{@key}}</i></a>
 											</div>
 										</div>
 									{{/if}}
@@ -105,9 +105,9 @@
 		<div class="row py-3">
 			<div class="col-4 text-center">
 				<select id="alphabet-select" class="custom-select">
-					{{#if use_vernacular_names}}
+					{{#if use_vernacularNames}}
 					{{ else }}
-						{{#each search_index.taxon_latname }}
+						{{#each search_index.taxonLatname }}
 							<option value="alphabet-{{@key}}">{{@key}}</option>
 						{{/each}}
 					{{/if}}

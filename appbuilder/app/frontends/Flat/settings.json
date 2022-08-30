@@ -30,98 +30,98 @@
 		"sections" : {
 		}
 	},
-	"user_content" : {
+	"userContent" : {
 		"images" : {
-			"app_background" : {
+			"appBackground" : {
 				"restrictions" : {
-					"file_type" : ["jpg","jpeg","png"],
+					"fileType" : ["jpg","jpeg","png"],
 					"ratio" : "10:16"
 				},
-				"help_text" : "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
+				"helpText" : "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
 				"required" : false
 			},
-			"app_launcher_icon" : {
+			"appLauncherIcon" : {
 				"restrictions" : {
-					"file_type" : ["svg"],
+					"fileType" : ["svg"],
 					"ratio" : "1:1"
 				},
-				"help_text" : "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+				"helpText" : "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
 				"required" : true
 			},
-			"app_pc_background" : {
+			"appPcBackground" : {
 				"restrictions" : {
-					"file_type" : ["jpg","jpeg","png"],
+					"fileType" : ["jpg","jpeg","png"],
 					"ratio" : "2:1"
 				},
-				"help_text" : "Will be displayed in the webapp using a pc",
+				"helpText" : "Will be displayed in the webapp using a pc",
 				"required" : false
 			},
-			"app_splashscreen" : {
+			"appSplashscreen" : {
 				"restrictions" : {
-					"file_type" : ["svg"],
+					"fileType" : ["svg"],
 					"ratio" : "1:1"
 				},
-				"help_text" : "Will be displayed during app startup",
+				"helpText" : "Will be displayed during app startup",
 				"required" : true
 			},
 			"logo" : {
 				"restrictions" : {
-					"file_type" : ["svg"]
+					"fileType" : ["svg"]
 				},
-				"help_text" : "Will be displayed on the apps main page",
+				"helpText" : "Will be displayed on the apps main page",
 				"required" : true
 			},
-			"funding_partner_1" : {
+			"fundingPartner1" : {
 				"restrictions" : {
-					"file_type" : ["jpg","jpeg","png"]
+					"fileType" : ["jpg","jpeg","png"]
 				},
-				"help_text" : "Will be displayed in the funding partner sections",
+				"helpText" : "Will be displayed in the funding partner sections",
 				"required" : false
 			},
-			"funding_partner_2" : {
+			"fundingPartner2" : {
 				"restrictions" : {
-					"file_type" : ["jpg","jpeg","png"]
+					"fileType" : ["jpg","jpeg","png"]
 				},
-				"help_text" : "Will be displayed in the funding partner sections",
+				"helpText" : "Will be displayed in the funding partner sections",
 				"required" : false
 			},
-			"funding_partner_3" : {
+			"fundingPartner3" : {
 				"restrictions" : {
-					"file_type" : ["jpg","jpeg","png"]
+					"fileType" : ["jpg","jpeg","png"]
 				},
-				"help_text" : "Will be displayed in the funding partner sections",
+				"helpText" : "Will be displayed in the funding partner sections",
 				"required" : false
 			}
 		},
 		"texts" : {
-			"about_app" : {
+			"aboutApp" : {
 				"required" : false,
-				"help_text" : "Describe your app"
+				"helpText" : "Describe your app"
 			},
-			"app_sources" : {
+			"appSources" : {
 				"required" : false,
-				"help_text" : "Sources you used to build this app."
+				"helpText" : "Sources you used to build this app."
 			}
 		}
 	},
 	"android" : {
-		"launcher_icon" : {
-			"type" : "user_content",
-			"image_identifier" : "app_launcher_icon"
+		"launcherIcon" : {
+			"type" : "userContent",
+			"imageIdentifier" : "appLauncherIcon"
 		},
 		"splashscreen" : {
-			"type" : "user_content",
-			"image_identifier" : "app_splashscreen"
+			"type" : "userContent",
+			"imageIdentifier" : "appSplashscreen"
 		}
 	},
 	"ios" : {
-		"launcher_icon" : {
-			"type" : "user_content",
-			"image_identifier" : "app_launcher_icon"
+		"launcherIcon" : {
+			"type" : "userContent",
+			"imageIdentifier" : "appLauncherIcon"
 		},
 		"splashscreen" : {
-			"type" : "user_content",
-			"image_identifier" : "app_splashscreen"
+			"type" : "userContent",
+			"imageIdentifier" : "appSplashscreen"
 		}
 	}
 }

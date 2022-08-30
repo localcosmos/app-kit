@@ -5,13 +5,13 @@
 				<div class="text-center text-md-left">
 					{{#if vernacular}}
 						<h2>{{ vernacular }}</h2>
-						<i>{{ taxon_profile.taxon_latname }}</i>
+						<i>{{ taxon_profile.taxonLatname }}</i>
 					{{else}}
-						{{#if taxon_profile.node_names}}
-							<h2>{{tp taxon_profile.node_names.[0] }}</h2>
-							<i>{{ taxon_profile.taxon_latname }}</i>
+						{{#if taxon_profile.nodeNames}}
+							<h2>{{tp taxon_profile.nodeNames.[0] }}</h2>
+							<i>{{ taxon_profile.taxonLatname }}</i>
 						{{else}}
-							<h2><i>{{ taxon_profile.taxon_latname }}</i></h2>
+							<h2><i>{{ taxon_profile.taxonLatname }}</i></h2>
 						{{/if}}
 					{{/if}}
 				</div>
@@ -21,12 +21,12 @@
 		<div id="taxon-profile-images" class="row mt-3">
 			
 
-			{{#if taxon_profile.images.taxon_profile_images}}
-				{{#each taxon_profile.images.taxon_profile_images}}
-					{{#if small_url}}
+			{{#if taxon_profile.images.taxonProfileImages}}
+				{{#each taxon_profile.images.taxonProfileImages}}
+					{{#if smallUrl}}
 						<div class="col-4 col-md-3 col-lg-2">
-							<div class="tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-								<img src="{{small_url}}" class="img-fluid" />
+							<div class="tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+								<img src="{{smallUrl}}" class="img-fluid" />
 							</div>
 							{{#if text}}
 								<div class="image-text">
@@ -37,20 +37,20 @@
 					{{/if}}
 				{{/each}}
 			{{/if}}
-			{{#if taxon_profile.images.node_images}}
-				{{#each taxon_profile.images.node_images}}
-					{{#if small_url}}
-						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-							<img src="{{small_url}}" class="img-fluid" />
+			{{#if taxon_profile.images.nodeImages}}
+				{{#each taxon_profile.images.nodeImages}}
+					{{#if smallUrl}}
+						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{smallUrl}}" class="img-fluid" />
 						</div>
 					{{/if}}
 				{{/each}}
 			{{/if}}
-			{{#if taxon_profile.images.taxon_images}}
-				{{#each taxon_profile.images.taxon_images}}
-					{{#if small_url}}
-						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{large_url}}" data-image-url="{{image_url}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-							<img src="{{small_url}}" class="img-fluid" />
+			{{#if taxon_profile.images.taxonImages}}
+				{{#each taxon_profile.images.taxonImages}}
+					{{#if smallUrl}}
+						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{smallUrl}}" class="img-fluid" />
 						</div>
 					{{/if}}
 				{{/each}}
@@ -64,7 +64,7 @@
 				<div class="row action-buttons justify-content-center justify-content-md-start text-center text-md-left">
 					{{#if options.enable_observation_button}}
 						<div class="col-auto text-center">
-							<a link="{{url 'new_observation' options.enable_observation_button.uuid }}" kwargs='{"taxon_source":"{{taxon_profile.taxon_source}}","name_uuid":"{{taxon_profile.name_uuid}}","taxon_latname":"{{taxon_profile.taxon_latname}}","taxon_author":"{{taxon_profile.taxon_author}}","taxon_nuid":"{{taxon_profile.taxon_nuid}}"}' class="tap"><img src="{{themeFolder}}img/observation.svg" /></a><br>
+							<a link="{{url 'new_observation' options.enable_observation_button.uuid }}" kwargs='{"taxonSource":"{{taxon_profile.taxonSource}}","nameUuid":"{{taxon_profile.nameUuid}}","taxonLatname":"{{taxon_profile.taxonLatname}}","taxonAuthor":"{{taxon_profile.taxonAuthor}}","taxonNuid":"{{taxon_profile.taxonNuid}}"}' class="tap"><img src="{{themeFolder}}img/observation.svg" /></a><br>
 							<small class="text-secondary">{{tp 'Observation'}}</small>
 						</div>
 					{{/if}}
@@ -76,8 +76,8 @@
 					{{/if}}
 					{{#if options.enable_gbif_occurrence_map_button }}
 						<div class="col-auto text-center">
-							{{#if taxon_profile.gbif_nubKey}}
-								<a link="{{url 'occurrence_map' taxon_profile.gbif_nubKey }}" class="tap"><img src="{{themeFolder}}img/occurrence.svg" /></a><br>
+							{{#if taxon_profile.gbifNubkey}}
+								<a link="{{url 'occurrence_map' taxon_profile.gbifNubkey }}" class="tap"><img src="{{themeFolder}}img/occurrence.svg" /></a><br>
 								<small class="text-secondary">{{tp 'Occurrence'}}</small>
 							{{else}}
 								<br>
@@ -102,9 +102,9 @@
 							{{#each taxon_profile.traits}}
 								{{#if values}}
 									<div class="col-6 col-md-4 mb-5 taxon-profile-traits-container">
-										<h5>{{t matrix_filter.name}}</h5>
+										<h5>{{t matrixFilter.name}}</h5>
 										
-										{{#ifequal matrix_filter.filter_type 'ColorFilter'}}
+										{{#ifequal matrixFilter.filterType 'ColorFilter'}}
 											<div class="row">
 												{{#each values}}
 													<div class="col-12 col-md-6">
@@ -122,41 +122,41 @@
 												{{/each}}
 											</div>
 										{{/ifequal}}
-										{{#ifequal matrix_filter.filter_type 'DescriptiveTextAndImagesFilter'}}
+										{{#ifequal matrixFilter.filterType 'DescriptiveTextAndImagesFilter'}}
 											<div class="row">
 												{{#each values}}
 													<div class="col-12 col-md-6">
 														<div class="trait-property">
 															<label class="text-center">
-																<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
-																<div class="trait-property-text">{{tp encoded_space}}</div>
+																<div class="square responsiveback" style="background-image:url('{{imageUrl}}')"></div>
+																<div class="trait-property-text">{{tp encodedSpace}}</div>
 															</label>
 														</div>
 													</div>
 												{{/each}}
 											</div>
 										{{/ifequal}}
-										{{#ifequal matrix_filter.filter_type 'TextOnlyFilter'}}
+										{{#ifequal matrixFilter.filterType 'TextOnlyFilter'}}
 											<div class="row">
 												{{#each values}}
 													<div class="col-12">
 														<div class="trait-property text-only">
 															<div>
-																<div class="trait-property-text">{{t encoded_space}}</div>
+																<div class="trait-property-text">{{t encodedSpace}}</div>
 															</div>
 														</div>
 													</div>
 												{{/each}}
 											</div>
 										{{/ifequal}}
-										{{#ifequal matrix_filter.filter_type 'RangeFilter'}}
+										{{#ifequal matrixFilter.filterType 'RangeFilter'}}
 											<div class="row">
 												<div class="col-12">
 													<div class="range-display">
 														<div class="range-display-min">
 															{{ values.[0] }}
-															{{#if matrix_filter.definition.unit }}
-																{{ matrix_filter.definition.unit }}
+															{{#if matrixFilter.definition.unit }}
+																{{ matrixFilter.definition.unit }}
 															{{/if}}
 														</div>
 														<div class="range-display-bar">
@@ -164,8 +164,8 @@
 														</div>
 														<div class="range-display-max">
 															{{ values.[1] }}
-															{{#if matrix_filter.definition.unit }}
-																{{ matrix_filter.definition.unit }}
+															{{#if matrixFilter.definition.unit }}
+																{{ matrixFilter.definition.unit }}
 															{{/if}}
 														</div>
 													</div>
@@ -173,7 +173,7 @@
 												</div>
 											</div>
 										{{/ifequal}}
-										{{#ifequal matrix_filter.filter_type 'NumberFilter'}}
+										{{#ifequal matrixFilter.filterType 'NumberFilter'}}
 											<div class="row">
 												{{#each values}}
 													<div class="col-6 col-md-4">
@@ -189,7 +189,7 @@
 											</div>
 										{{/ifequal}}
 
-										{{#ifequal matrix_filter.filter_type 'TaxonFilter'}}
+										{{#ifequal matrixFilter.filterType 'TaxonFilter'}}
 											<div class="row">
 												{{#each values}}
 													<div class="col-6 col-md-4">

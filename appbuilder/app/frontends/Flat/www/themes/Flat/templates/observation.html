@@ -62,12 +62,12 @@
 
 						{{#each form.fieldlist}}
 			
-							<div data-uuid="{{ form_field.uuid }}" class="{{#ifequal form_field.field_class 'BooleanField'  }}form-check bottompadding{{else}}form-group{{/ifequal}} {{ form_field.field_class }} {{#if errors }}is-invalid{{/if}} {{#if form_field.taxonomic_restriction}} taxonomic_restriction{{/if}}" {{#if form_field.taxonomic_restriction}}disabled style="display:none;"{{/if}} data-required="{{#if form_field.required}}1{{else}}0{{/if}}">
+							<div data-uuid="{{ form_field.uuid }}" class="{{#ifequal form_field.fieldClass 'BooleanField'  }}form-check bottompadding{{else}}form-group{{/ifequal}} {{ form_field.fieldClass }} {{#if errors }}is-invalid{{/if}} {{#if form_field.taxonomic_restriction}} taxonomic_restriction{{/if}}" {{#if form_field.taxonomic_restriction}}disabled style="display:none;"{{/if}} data-required="{{#if form_field.required}}1{{else}}0{{/if}}">
 
 								{{#if is_hidden}}
 									{{{ field }}}
 								{{ else }}
-									{{#ifequal form_field.field_class 'BooleanField'  }}
+									{{#ifequal form_field.fieldClass 'BooleanField'  }}
 										{{{ field }}}
 										<label class="form-check-label" for="id_{{ name }}">{{t label }}</label>
 									{{ else }}

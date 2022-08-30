@@ -41,7 +41,7 @@ class JSONBuilder:
             'uuid' : str(self.generic_content.uuid),
             'version' : self.generic_content.current_version,
             'options' : options,
-            'global_options' : global_options,
+            'globalOptions' : global_options,
             'name' : self.generic_content.name, #{}, translated in-app
         }
 
@@ -77,24 +77,24 @@ class JSONBuilder:
             object_id = instance.id,
         )
 
-        taxonomic_restriction = []
+        taxonomic_restriction_json = []
 
         for restriction in taxonomic_restriction_query:
 
-            taxon_dic = {
-                'taxon_source' : restriction.taxon_source,
-                'taxon_latname' : restriction.taxon_latname,
-                'taxon_author' : restriction.taxon_author,
+            taxon_json = {
+                'taxonSource' : restriction.taxon_source,
+                'taxonLatname' : restriction.taxon_latname,
+                'taxonAuthor' : restriction.taxon_author,
 
-                'name_uuid' : restriction.name_uuid,
-                'taxon_nuid' : restriction.taxon_nuid,
+                'nameUuid' : restriction.name_uuid,
+                'taxonNuid' : restriction.taxon_nuid,
                 
-                'restriction_type' : restriction.restriction_type,
+                'restrictionType' : restriction.restriction_type,
             }
 
-            taxonomic_restriction.append(taxon_dic)
+            taxonomic_restriction_json.append(taxon_json)
 
-        return taxonomic_restriction
+        return taxonomic_restriction_json
 
 
     def get_fact_sheets_json_for_taxon(self, taxon):
@@ -118,3 +118,17 @@ class JSONBuilder:
         }
 
         return fact_sheet_json
+
+
+    def to_camel_case(self, string):
+
+        string_parts = string.split('_')
+        
+        for counter, string_part in enumerate(string_parts, 0):
+            if counter > 0:
+                capitalized_part = string_part.capitalize()
+                string_parts[counter] = capitalized_part
+        
+        camel_case_string = ''.join(string_parts)
+
+        return camel_case_string

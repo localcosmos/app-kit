@@ -57,18 +57,18 @@ from app_kit.app_kit_api.models import AppKitJobs
 
 import csv, uuid
 
-NO_IMAGE_URL = 'img/noimage.svg'
+NO_IMAGE_URL = None #'img/noimage.svg'
 
 # output filenames for assets required to build cordova apps
 ASSET_FILENAMES = {
     'android' : {
-        'launcher_icon' : 'launcher_icon.svg',
-        'launcher_background' : 'launcher_background.svg',
+        'launcherIcon' : 'launcher_icon.svg',
+        'launcherBackground' : 'launcher_background.svg',
         'splashscreen' : 'splashscreen.svg',
     },
     'ios' : {
-        'launcher_icon' : 'launcher_icon.svg',
-        'launcher_background' : 'launcher_background.svg',
+        'launcherIcon' : 'launcher_icon.svg',
+        'launcherBackground' : 'launcher_background.svg',
         'splashscreen' : 'splashscreen.svg',
     }
 }
@@ -594,6 +594,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         text_types = texts.values_list('identifier', flat=True)
 
+        # legal_notice is not legalNotice because it does not come from the frontends settings.json
         if 'legal_notice' not in text_types:
             error_message = _('Your app requires a legal notice.')
             error = ValidationError(self.meta_app, frontend, [error_message])
@@ -602,7 +603,7 @@ class AppReleaseBuilder(AppBuilderBase):
         # check all required images and texts - defined by the frontend settings
         frontend_settings = self._get_frontend_settings()
 
-        for image_type, image_definition in frontend_settings['user_content']['images'].items():
+        for image_type, image_definition in frontend_settings['userContent']['images'].items():
             
             image_is_required = image_definition.get('required', False)
 
@@ -619,7 +620,7 @@ class AppReleaseBuilder(AppBuilderBase):
                     result['errors'].append(error)
 
 
-        for text_type, text_definition in frontend_settings['user_content']['texts'].items():
+        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
             
             text_is_required = text_definition.get('required', False)
 
@@ -1281,26 +1282,26 @@ class AppReleaseBuilder(AppBuilderBase):
                 locale_file.write(json.dumps(locale))
 
 
-    def _create_taxon_dic_from_lazy_taxon(self, lazy_taxon, use_gbif):
+    def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
 
-        taxon_dic = {
-            'taxon_source' : lazy_taxon.taxon_source,
-            'taxon_latname' : lazy_taxon.taxon_latname,
-            'taxon_author' : lazy_taxon.taxon_author,
+        taxon_json = {
+            'taxonSource' : lazy_taxon.taxon_source,
+            'taxonLatname' : lazy_taxon.taxon_latname,
+            'taxonAuthor' : lazy_taxon.taxon_author,
             
-            'name_uuid' : str(lazy_taxon.name_uuid),
-            'taxon_nuid' : lazy_taxon.taxon_nuid,
+            'nameUuid' : str(lazy_taxon.name_uuid),
+            'taxonNuid' : lazy_taxon.taxon_nuid,
             
-            'gbif_nubKey' : None,
+            'gbifNubKey' : None,
         }
 
         if use_gbif == True:
             gbif_nubKey = self.gbiflib.get_nubKey(lazy_taxon)
             
             if gbif_nubKey :
-                taxon_dic['gbif_nubKey'] = gbif_nubKey
+                taxon_json['gbifNubKey'] = gbif_nubKey
 
-        return taxon_dic
+        return taxon_json
         
 
     # add a localization of nature guide taxa directly to the locale
@@ -1330,7 +1331,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
                     key = str(taxon.name_uuid)
 
-                    taxon_dic = self._create_taxon_dic_from_lazy_taxon(taxon, self.use_gbif)
+                    taxon_json = self._create_taxon_json_from_lazy_taxon(taxon, self.use_gbif)
 
                     vernacular = None
                     
@@ -1344,8 +1345,8 @@ class AppReleaseBuilder(AppBuilderBase):
                             vernacular = translation[node.meta_node.name]
 
                     if vernacular:
-                        taxon_dic['name'] = vernacular
-                        self.nature_guides_vernacular_names[language_code][key] = taxon_dic
+                        taxon_json['name'] = vernacular
+                        self.nature_guides_vernacular_names[language_code][key] = taxon_json
 
         return self.nature_guides_vernacular_names[language_code]
 
@@ -1404,18 +1405,21 @@ class AppReleaseBuilder(AppBuilderBase):
 
         generic_content_type = kwargs.get('generic_content_type', generic_content.__class__.__name__)
 
-        feature_entry = {
-            'generic_content_type' : generic_content_type,
+        feature_entry_json = {
+            'genericContentType' : generic_content_type,
             'uuid' : str(generic_content.uuid),
             'name' : {},
             'version' : generic_content.current_version,
         }
 
         # add localized names directly in the feature.js
+        '''
         for language_code in self.meta_app.languages():
             localized_name = self.get_localized(generic_content.name, language_code)
             
             feature_entry['name'][language_code] = localized_name
+        '''
+        feature_entry_json['name'] = generic_content.name
 
 
         # complete the settings_entry
@@ -1426,10 +1430,10 @@ class AppReleaseBuilder(AppBuilderBase):
         
         relative_generic_content_filepath = os.path.join(relative_generic_content_folder, content_filename)
 
-        feature_entry['path'] = relative_generic_content_filepath
-        feature_entry['folder'] = relative_generic_content_folder
+        feature_entry_json['path'] = relative_generic_content_filepath
+        feature_entry_json['folder'] = relative_generic_content_folder
 
-        return feature_entry
+        return feature_entry_json
 
     
     # adding a default feature, e.g. a default observation form
@@ -1485,10 +1489,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         #get the json entry for features.js
-        feature_entry = self._get_feature_entry(generic_content, generic_content_type=generic_content_type)
+        feature_entry_json = self._get_feature_entry(generic_content, generic_content_type=generic_content_type)
 
         if only_one_allowed == True:
-            self.build_features[generic_content_type] = feature_entry
+            self.build_features[generic_content_type] = feature_entry_json
 
         else:
             if generic_content_type not in self.build_features:
@@ -1503,8 +1507,8 @@ class AppReleaseBuilder(AppBuilderBase):
             self._add_default_to_features(generic_content_type, generic_content, force_add=is_default)
 
 
-            self.build_features[generic_content_type]['list'].append(feature_entry)
-            self.build_features[generic_content_type]['lookup'][filename_identifier] = feature_entry['path']
+            self.build_features[generic_content_type]['list'].append(feature_entry_json)
+            self.build_features[generic_content_type]['lookup'][filename_identifier] = feature_entry_json['path']
 
 
 
@@ -1518,7 +1522,7 @@ class AppReleaseBuilder(AppBuilderBase):
         backbone_taxonomy = app_generic_content.generic_content
 
         jsonbuilder = self.get_json_builder(app_generic_content)
-        backbone_taxonomy_json = jsonbuilder.build()
+        #backbone_taxonomy_json = jsonbuilder.build()
 
         # relative paths are used in the features.js file
         relative_generic_content_path = self._app_relative_generic_content_path(backbone_taxonomy)
@@ -1604,11 +1608,11 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         # add profiles to settings the default way
-        feature_entry = self._get_feature_entry(taxon_profiles)
-        del feature_entry['path']
+        feature_entry_json = self._get_feature_entry(taxon_profiles)
+        del feature_entry_json['path']
 
 
-        self.build_features[generic_content_type] = feature_entry
+        self.build_features[generic_content_type] = feature_entry_json
 
         self.logger.info('running TaxonProfilesJSONBuilder.build')
 
@@ -1713,11 +1717,11 @@ class AppReleaseBuilder(AppBuilderBase):
 
         for fact_sheet in linked_fact_sheets:
 
-            fact_sheets_json['localized_slugs'] = {}
+            fact_sheets_json['localizedSlugs'] = {}
 
             taxonomic_restriction = jsonbuilder.get_taxonomic_restriction(fact_sheet)
             fact_sheet_json = {
-                'taxonomic_restriction' : taxonomic_restriction,
+                'taxonomicRestriction' : taxonomic_restriction,
                 'localized' : {},
                 'title' : fact_sheet.title,
             }
@@ -1746,7 +1750,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 localized_title = plain_locale.get(fact_sheet.title, fact_sheet.title)
 
                 localized_slug = slugify(localized_title)
-                fact_sheets_json['localized_slugs'][localized_slug] = fact_sheet.id
+                fact_sheets_json['localizedSlugs'][localized_slug] = fact_sheet.id
 
                 localized_fact_sheet_json = {
                     'path' : fact_sheet_relative_path,
@@ -1767,7 +1771,7 @@ class AppReleaseBuilder(AppBuilderBase):
                     fact_sheet_file.write(html)
 
             
-            fact_sheets_json['fact_sheets'][str(fact_sheet.pk)] = fact_sheet_json
+            fact_sheets_json['factSheets'][str(fact_sheet.pk)] = fact_sheet_json
 
         
         self._add_generic_content_to_app(fact_sheets, fact_sheets_json)
@@ -1805,21 +1809,6 @@ class AppReleaseBuilder(AppBuilderBase):
     ###############################################################################################################
     # GLOSSARY
     # - there is only one glossary, with keys for translation
-
-    def get_glossary_only_terms(self):
-
-        glossary_only_terms = []
-
-        glossary_only_terms_path = self._app_glossary_only_terms_filepath(meta_app, meta_app.primary_language,
-                                                                     app_version=app_version)
-        
-        if os.path.isfile(glossary_only_terms_path):
-
-            with open(glossary_only_terms_path, 'r', encoding='utf-8') as terms_file:
-                glossary_only_terms = json.load(terms_file)
-
-        return glossary_only_terms
-
 
     def _build_Glossary(self, app_generic_content):
 
@@ -1866,7 +1855,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             used_terms_glossary_relative_path = self._app_relative_used_terms_glossary_filepath(glossary, language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['used_terms'] = used_terms_glossary_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['usedTerms'] = used_terms_glossary_relative_path
 
             # create a downloadable csv file
             used_terms_glossary_csv = jsonbuilder.create_glossary_for_csv(used_terms_glossary)
@@ -1881,7 +1870,7 @@ class AppReleaseBuilder(AppBuilderBase):
             used_terms_glossary_csv_relative_path = self._app_relative_used_terms_glossary_csv_filepath(glossary,
                 language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['used_terms_csv'] = used_terms_glossary_csv_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['usedTermsCsv'] = used_terms_glossary_csv_relative_path
 
 
             # localized glossary, all terms
@@ -1894,7 +1883,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             localized_glossary_relative_path = self._app_relative_localized_glossary_filepath(glossary, language_code)
             
-            self.build_features[generic_content_type]['localized'][language_code]['all_terms'] = localized_glossary_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['allTerms'] = localized_glossary_relative_path
 
 
             # downloadable csv file of all terms
@@ -1912,7 +1901,7 @@ class AppReleaseBuilder(AppBuilderBase):
             localized_glossary_csv_relative_path = self._app_relative_localized_glossary_csv_filepath(glossary,
                 language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['all_terms_csv'] = localized_glossary_csv_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['allTermsCsv'] = localized_glossary_csv_relative_path
 
 
     ###############################################################################################################
@@ -1995,9 +1984,9 @@ class AppReleaseBuilder(AppBuilderBase):
                 content_licence = licence.content_licence().as_dict()
 
                 registry_entry = {
-                    'creator_name' : licence.creator_name,
-                    'creator_link' : licence.creator_link,
-                    'source_link' : licence.source_link,
+                    'creatorName' : licence.creator_name,
+                    'creatorLink' : licence.creator_link,
+                    'sourceLink' : licence.source_link,
                     'licence' : content_licence,
                 }
                 
@@ -2307,12 +2296,12 @@ class AppReleaseBuilder(AppBuilderBase):
         frontend_settings = self._get_frontend_settings()
         frontend = self._get_frontend()
 
-        for image_type in ['launcher_icon', 'splashscreen']:
+        for image_type in ['launcherIcon', 'splashscreen']:
 
             image_definition = frontend_settings['android'][image_type]
 
-            if image_definition['type'] == 'user_content':
-                image_identifier = image_definition['image_identifier']
+            if image_definition['type'] == 'userContent':
+                image_identifier = image_definition['imageIdentifier']
 
                 content_image = frontend.image(image_identifier)
 

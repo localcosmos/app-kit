@@ -29,7 +29,7 @@ function _get_categories(callback){
 
 		for (let k=0; k<nature_guides.length; k++){
 			let nature_guide = nature_guides[k];
-			let button = MainMenuButton.create(nature_guide.name[app.language], "nature-guide/" + nature_guide.uuid + "/", null);
+			let button = MainMenuButton.create(nature_guide.name, "nature-guide/" + nature_guide.uuid + "/", null);
 			buttons.push(button);
 		} 
 
@@ -82,7 +82,7 @@ function _get_categories(callback){
 
 		let buttons = [];
 		let map = app_features.Map.list[0];
-		let map_button = MainMenuButton.create(map.name[app.language], "map/" + map.uuid + "/", null);
+		let map_button = MainMenuButton.create(map.name, "map/" + map.uuid + "/", null);
 		buttons.push(map_button);
 
 		let category = {
@@ -100,7 +100,7 @@ function _get_categories(callback){
 	
 		let glossary = app_features.Glossary;
 	
-		let glossary_button = MainMenuButton.create(glossary.name[app.language], "glossary/" + glossary.uuid + "/", null);
+		let glossary_button = MainMenuButton.create(glossary.name, "glossary/" + glossary.uuid + "/", null);
 	
 		let glossary_category = {
 			"submenu_id" : "glossary",
@@ -132,27 +132,27 @@ function _get_categories(callback){
 
 	/*
 	* there is only one FactSheets Feature which contains the fact sheets
-	* {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "global_options": {}, "name": "Fact Sheets",
-	*	"fact_sheets": {"1": {
-	*		"taxonomic_restriction": [{"taxon_source": "taxonomy.sources.col", "taxon_latname": "Plantae", "taxon_author": "", "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxon_nuid": "006", "restriction_type": "exists"}],
+	* {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "globalOptions": {}, "name": "Fact Sheets",
+	*	"factSheets": {"1": {
+	*		"taxonomic_restriction": [{"taxonSource": "taxonomy.sources.col", "taxonLatname": "Plantae", "taxonAuthor": "", "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxonNuid": "006", "restrictionType": "exists"}],
 	*		"localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}
 			}
 	*	},
-	*	"localized_slugs": {"baume": 1}}
+	*	"localizedSlugs": {"baume": 1}}
 	*/
 	if ("FactSheets" in app_features){
 
-		let fact_sheets_path = app_features.FactSheets.list[0].path;
+		let factSheets_path = app_features.FactSheets.list[0].path;
 
-		ajax.GET(fact_sheets_path, {}, function(content){
+		ajax.GET(factSheets_path, {}, function(content){
 
-			let fact_sheets = JSON.parse(content); //JSON.parse(atob(content));
+			let factSheets = JSON.parse(content); //JSON.parse(atob(content));
 
 			let buttons = [];
 
-			for (let fact_sheet_id in fact_sheets["fact_sheets"]){
+			for (let fact_sheet_id in factSheets["factSheets"]){
 				
-				let fact_sheet = fact_sheets["fact_sheets"][fact_sheet_id];
+				let fact_sheet = factSheets["factSheets"][fact_sheet_id];
 				let localized_title = i18next.t('plainȵ' + fact_sheet.title);
 				let localized_slug = fact_sheet["localized"][app.language]["slug"];
 
@@ -289,15 +289,15 @@ var Home = View(TemplateView, {
 var LegalNotice = View(TemplateView, {
 	identifier : "LegalNotice",
 
-	template_name : "themes/" + settings.THEME + "/templates/legal_notice.html",
+	template_name : "themes/" + settings.THEME + "/templates/legalNotice.html",
 
 	async_context : true,
 
 	get_context_data : function (self, kwargs, callback){
 
-		ajax.getJSON("legal_notice.json", {}, function(legal_notice){
+		ajax.getJSON("legalNotice.json", {}, function(legalNotice){
 			var context = {
-				"legal_notice" : legal_notice
+				"legalNotice" : legalNotice
 			};
 
 			callback(context);
@@ -397,9 +397,9 @@ var TaxonProfiles = View(TemplateView, {
 
 		var context = self.get_context_data(self, kwargs);
 		context["options"] = app_features["TaxonProfiles"]["options"];
-		context["wikipedia_url"] = BackboneTaxonomy.get_wikipedia_url(kwargs["taxon_latname"]);
+		context["wikipedia_url"] = BackboneTaxonomy.get_wikipedia_url(kwargs["taxonLatname"]);
 
-		BackboneTaxonomy.get_taxon_profile(kwargs["taxon_source"], kwargs["name_uuid"], function(taxon_profile){
+		BackboneTaxonomy.get_taxon_profile(kwargs["taxonSource"], kwargs["nameUuid"], function(taxon_profile){
 
 			if (taxon_profile == null){
 				// use minimal taxonomic information
@@ -453,7 +453,7 @@ var OccurrenceMap = View(TemplateView, {
 		var self = this;
 		window.scrollTo(0,0);
 
-		var gbif_nubKey = kwargs["gbif_nubKey"];
+		var gbifNubkey = kwargs["gbifNubkey"];
 
 		var layerSources = {
 
@@ -463,7 +463,7 @@ var OccurrenceMap = View(TemplateView, {
 					subdomains: "ab"
 				}),
 
-			"gbif": L.tileLayer('https://api.gbif.org/v1/map/density/tile?x={x}&y={y}&z={z}&type=TAXON&key=' + gbif_nubKey + '&layer=OBS_NO_YEAR&layer=SP_NO_YEAR&layer=OTH_NO_YEAR&layer=OBS_1900_1910&layer=SP_1900_1910&layer=OTH_1900_1910&layer=OBS_1910_1920&layer=SP_1910_1920&layer=OTH_1910_1920&layer=OBS_1920_1930&layer=SP_1920_1930&layer=OTH_1920_1930&layer=OBS_1930_1940&layer=SP_1930_1940&layer=OTH_1930_1940&layer=OBS_1940_1950&layer=SP_1940_1950&layer=OTH_1940_1950&layer=OBS_1950_1960&layer=SP_1950_1960&layer=OTH_1950_1960&layer=OBS_1960_1970&layer=SP_1960_1970&layer=OTH_1960_1970&layer=OBS_1970_1980&layer=SP_1970_1980&layer=OTH_1970_1980&layer=OBS_1980_1990&layer=SP_1980_1990&layer=OTH_1980_1990&layer=OBS_1990_2000&layer=SP_1990_2000&layer=OTH_1990_2000&layer=OBS_2000_2010&layer=SP_2000_2010&layer=OTH_2000_2010&layer=OBS_2010_2020&layer=SP_2010_2020&layer=OTH_2010_2020&layer=LIVING&layer=FOSSIL&palette=yellows_reds&resolution=16',
+			"gbif": L.tileLayer('https://api.gbif.org/v1/map/density/tile?x={x}&y={y}&z={z}&type=TAXON&key=' + gbifNubkey + '&layer=OBS_NO_YEAR&layer=SP_NO_YEAR&layer=OTH_NO_YEAR&layer=OBS_1900_1910&layer=SP_1900_1910&layer=OTH_1900_1910&layer=OBS_1910_1920&layer=SP_1910_1920&layer=OTH_1910_1920&layer=OBS_1920_1930&layer=SP_1920_1930&layer=OTH_1920_1930&layer=OBS_1930_1940&layer=SP_1930_1940&layer=OTH_1930_1940&layer=OBS_1940_1950&layer=SP_1940_1950&layer=OTH_1940_1950&layer=OBS_1950_1960&layer=SP_1950_1960&layer=OTH_1950_1960&layer=OBS_1960_1970&layer=SP_1960_1970&layer=OTH_1960_1970&layer=OBS_1970_1980&layer=SP_1970_1980&layer=OTH_1970_1980&layer=OBS_1980_1990&layer=SP_1980_1990&layer=OTH_1980_1990&layer=OBS_1990_2000&layer=SP_1990_2000&layer=OTH_1990_2000&layer=OBS_2000_2010&layer=SP_2000_2010&layer=OTH_2000_2010&layer=OBS_2010_2020&layer=SP_2010_2020&layer=OTH_2010_2020&layer=LIVING&layer=FOSSIL&palette=yellows_reds&resolution=16',
 				{
 					attribution: '&copy; GBIF'
 				})
@@ -636,13 +636,13 @@ var MapView = View(TemplateView, {
 	_get_marker : function(cluster){
 
 		var pinimg = cluster["pinimg"];
-		var taxon_source = cluster["taxon_source"]
+		var taxonSource = cluster["taxonSource"]
 
 		var pin_url = "anycluster/images/markers/marker_unknown.png";
 
-		for (var nuid in map_markers[taxon_source]){
+		for (var nuid in map_markers[taxonSource]){
 			if (pinimg.indexOf(nuid) == 0){
-				pin_url = map_markers[taxon_source][nuid];
+				pin_url = map_markers[taxonSource][nuid];
 				break;
 			}
 		}
@@ -1007,7 +1007,7 @@ var ObservationView = View(FormView, {
 				self.fields_taxonomic_restrictions[field.uuid] = field.taxonomic_restriction;
 			}
 
-			if (field.role == "taxonomic_reference"){
+			if (field.role == "taxonomicReference"){
 				taxon_reference_uuid = name;
 			}
 
@@ -1021,10 +1021,10 @@ var ObservationView = View(FormView, {
 		}
 
 		// kwargs might supply a taxon
-		if (self.kwargs.hasOwnProperty("taxon_source") && self.kwargs.hasOwnProperty("name_uuid") && self.kwargs.hasOwnProperty("taxon_latname") && self.kwargs.hasOwnProperty("taxon_author")){
+		if (self.kwargs.hasOwnProperty("taxonSource") && self.kwargs.hasOwnProperty("nameUuid") && self.kwargs.hasOwnProperty("taxonLatname") && self.kwargs.hasOwnProperty("taxonAuthor")){
 			if (taxon_reference_uuid != null){
 
-				var taxon = Taxon.create(self.kwargs.taxon_source, self.kwargs.name_uuid, self.kwargs.taxon_latname, self.kwargs.taxon_author, self.kwargs.taxon_nuid);
+				var taxon = Taxon.create(self.kwargs.taxonSource, self.kwargs.nameUuid, self.kwargs.taxonLatname, self.kwargs.taxonAuthor, self.kwargs.taxonNuid);
 				initial[taxon_reference_uuid] = taxon;
 			}
 		}
@@ -1290,13 +1290,13 @@ var ObservationView = View(FormView, {
 		var reported_data = {};
 		var reported_files = {};
 
-		var file_field_classes = ["FileField", "ImageField", "PictureField"];
+		var file_fieldClasses = ["FileField", "ImageField", "PictureField"];
 
 		for (let field_uuid in form.cleaned_data){
 			let data = form.cleaned_data[field_uuid];
 
 			let field = form.fields[field_uuid];
-			if (file_field_classes.indexOf(field.field_class) >= 0){
+			if (file_fieldClasses.indexOf(field.fieldClass) >= 0){
 				reported_files[field_uuid] = data;
 			}
 			else {
@@ -1523,17 +1523,17 @@ var ObservationView = View(FormView, {
 		// default for taxonomically restriced fields is: hidden and disabled
 
 		// taxonfield is a composed field with multiple inputs
-		var taxonomic_reference_field = document.getElementById("id_" + self.form_class.taxonomic_reference + "_1");
+		var taxonomicReference_field = document.getElementById("id_" + self.form_class.taxonomicReference + "_1");
 
-		if (taxonomic_reference_field.value){
-			var taxon = JSON.parse(taxonomic_reference_field.value);
+		if (taxonomicReference_field.value){
+			var taxon = JSON.parse(taxonomicReference_field.value);
 			self._work_taxonomic_restrictions(self, taxon);
 		}
 		else {
 			self._work_taxonomic_restrictions(self, null);
 		}
 
-		taxonomic_reference_field.addEventListener("change", function(event){
+		taxonomicReference_field.addEventListener("change", function(event){
 			var value = event.target.value;
 			if (value){
 				var new_taxon = JSON.parse(value);
@@ -1596,21 +1596,21 @@ var ObservationView = View(FormView, {
 			var require_field = parseInt(field_container.getAttribute("data-required"));
 
 			// if there is no "exists" in restriction type, the field is visible for all taxa
-			var restriction_types = [];
+			var restrictionTypes = [];
 			
 			for (var r=0; r<restrictions.length; r++){
 				var restriction = restrictions[r];
-				restriction_types.push(restriction.restriction_type);
+				restrictionTypes.push(restriction.restrictionType);
 
 				if (taxon){
-					if (restriction.taxon_source == taxon.taxon_source && taxon.taxon_nuid.indexOf(restriction.taxon_nuid) == 0){
+					if (restriction.taxonSource == taxon.taxonSource && taxon.taxonNuid.indexOf(restriction.taxonNuid) == 0){
 
 						enable_field = true;
 
-						if (restriction.restriction_type == "required"){
+						if (restriction.restrictionType == "required"){
 							require_field = true;
 						}
-						else if (restriction.restriction_type == "optional"){
+						else if (restriction.restrictionType == "optional"){
 							require_field = false;
 						}
 						break;
@@ -1618,7 +1618,7 @@ var ObservationView = View(FormView, {
 				}
 			}
 
-			if (restriction_types.indexOf("exists") == -1){
+			if (restrictionTypes.indexOf("exists") == -1){
 				enable_field = true;
 			}
 
@@ -2453,8 +2453,8 @@ var PositionValidator = {
 				ajax.GET(map_path, {}, function(content){
 					var map = JSON.parse(content);//JSON.parse(atob(content));
 
-					if (map.hasOwnProperty("geometries") && map["geometries"].hasOwnProperty("project_area")){
-						self._project_area_geojson = map["geometries"]["project_area"];
+					if (map.hasOwnProperty("geometries") && map["geometries"].hasOwnProperty("projectArea")){
+						self._project_area_geojson = map["geometries"]["projectArea"];
 						var is_within = self._perform_project_area_validation(lat, lng, callback);
 					}
 					else {
@@ -2788,14 +2788,14 @@ var TaxonSearch = {
 	current_start_letters : null,
 
 	current_vernacular_language : null,
-	current_vernacular_names : [],
+	current_vernacularNames : [],
 
 	search_backbone : function(searchtext, callback){
 		var self = TaxonSearch;
 
 		self._search_backbone_latnames(searchtext, function(results){
 			// search vernacular names
-			self._search_backbone_vernacular_names(searchtext, function(vernacular_results){
+			self._search_backbone_vernacularNames(searchtext, function(vernacular_results){
 				var all_results = results.concat(vernacular_results);
 
 				callback(all_results);
@@ -2813,14 +2813,14 @@ var TaxonSearch = {
 			var taxon_params = taxon_list[t];
 
 			var taxon_extra_attrs = {
-				"gbif_nubKey": taxon_params.gbif_nubKey,
+				"gbifNubkey": taxon_params.gbifNubkey,
 			};
 
 			if (taxon_params.hasOwnProperty("name")){
 				taxon_extra_attrs["name"] = taxon_params["name"];
 			}
 
-			var taxon = Taxon.create(taxon_params.taxon_source, taxon_params.name_uuid, taxon_params.taxon_latname, taxon_params.taxon_author, taxon_params.taxon_nuid, taxon_extra_attrs);
+			var taxon = Taxon.create(taxon_params.taxonSource, taxon_params.nameUuid, taxon_params.taxonLatname, taxon_params.taxonAuthor, taxon_params.taxonNuid, taxon_extra_attrs);
 
 			var search_value = taxon_params[key].toUpperCase();
 
@@ -2855,20 +2855,20 @@ var TaxonSearch = {
 			var filepath = app_features.BackboneTaxonomy.alphabet + "/" + start_letters + ".json";
 			ajax.getJSON(filepath, {}, function(content){
 				TaxonSearch.current_alphabet_content = content;
-				TaxonSearch._search_taxon_list(TaxonSearch.current_alphabet_content, searchtext, 'taxon_latname', 'startswith', callback);
+				TaxonSearch._search_taxon_list(TaxonSearch.current_alphabet_content, searchtext, 'taxonLatname', 'startswith', callback);
 			}, function(e){
 				console.log('No taxonfile found for ' + start_letters);
 				TaxonSearch.current_alphabet_content = [];
-				TaxonSearch._search_taxon_list(TaxonSearch.current_alphabet_content, searchtext, 'taxon_latname', 'startswith', callback);
+				TaxonSearch._search_taxon_list(TaxonSearch.current_alphabet_content, searchtext, 'taxonLatname', 'startswith', callback);
 			});
 		}
 		else {
-			self._search_taxon_list(self.current_alphabet_content, searchtext, 'taxon_latname', 'startswith', callback);
+			self._search_taxon_list(self.current_alphabet_content, searchtext, 'taxonLatname', 'startswith', callback);
 		}	 
 
 	},
 
-	_search_backbone_vernacular_names : function(searchtext, callback){
+	_search_backbone_vernacularNames : function(searchtext, callback){
 		var self = TaxonSearch;
 
 		if (app.language != self.current_vernacular_language){
@@ -2880,16 +2880,16 @@ var TaxonSearch = {
 				var filepath = app_features.BackboneTaxonomy.vernacular[app.language];
 				
 				ajax.getJSON(filepath, {}, function(vernacular_list){
-					TaxonSearch.current_vernacular_names = vernacular_list;
-					TaxonSearch._search_taxon_list(TaxonSearch.current_vernacular_names, searchtext, 'name', 'contains', callback);
+					TaxonSearch.current_vernacularNames = vernacular_list;
+					TaxonSearch._search_taxon_list(TaxonSearch.current_vernacularNames, searchtext, 'name', 'contains', callback);
 				});
 			}
 			else {
-				self._search_taxon_list(self.current_vernacular_names, searchtext, 'name', 'contains', callback);
+				self._search_taxon_list(self.current_vernacularNames, searchtext, 'name', 'contains', callback);
 			}
 		}
 		else {
-			self._search_taxon_list(self.current_vernacular_names, searchtext, 'name', 'contains', callback);
+			self._search_taxon_list(self.current_vernacularNames, searchtext, 'name', 'contains', callback);
 		}
 	}
 };
@@ -3704,7 +3704,7 @@ var SynchronizeObservations = View(TemplateView, {
 
 }, ModalView);
 
-if (settings.OPTIONS.hasOwnProperty("allow_anonymous_observations") && settings.OPTIONS.allow_anonymous_observations == true){
+if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
 	MyObservations.login_required = false;
 }
 
@@ -3919,9 +3919,9 @@ var LogFromMatrix = View(TemplateView, {
 			var form_class = window[form_uuid];
 
 			// find uuids for the 3 required reference fields
-			var taxonomic_reference_field_name = form_class.taxonomic_reference,
-				geographic_reference_field_name = form_class.geographic_reference,
-				temporal_reference_field_name = form_class.temporal_reference;
+			var taxonomicReference_field_name = form_class.taxonomicReference,
+				geographicReference_field_name = form_class.geographicReference,
+				temporalReference_field_name = form_class.temporalReference;
 
 			var data = {};
 
@@ -3943,15 +3943,15 @@ var LogFromMatrix = View(TemplateView, {
 
 			// create the POST data for the form
 			// taxon from button
-			var taxon = Taxon.create(button.taxon.taxon_source, button.taxon.name_uuid, button.taxon.taxon_latname, button.taxon.taxon_author, button.taxon.taxon_nuid);
-			data[taxonomic_reference_field_name + "_0"] = taxon.taxon_latname; // verbose representation
-			data[taxonomic_reference_field_name + "_1"] = JSON.stringify(taxon.as_json(taxon)); // the second widget is the json
+			var taxon = Taxon.create(button.taxon.taxonSource, button.taxon.nameUuid, button.taxon.taxonLatname, button.taxon.taxonAuthor, button.taxon.taxonNuid);
+			data[taxonomicReference_field_name + "_0"] = taxon.taxonLatname; // verbose representation
+			data[taxonomicReference_field_name + "_1"] = JSON.stringify(taxon.as_json(taxon)); // the second widget is the json
 
 			// time is always NOW
 			var temporal = TemporalJSONbuilder.create();
 			temporal.load_Date(temporal, new Date());
-			data[temporal_reference_field_name + "_0"] = temporal.verbose; // verbose representation
-			data[temporal_reference_field_name + "_1"] = temporal.as_text(temporal); // the second widget is the json
+			data[temporalReference_field_name + "_0"] = temporal.verbose; // verbose representation
+			data[temporalReference_field_name + "_1"] = temporal.as_text(temporal); // the second widget is the json
 
 			// position is constantly fetched and stored in a hidden field
 			var position_input = document.getElementById("matrix_current_position");
@@ -3961,8 +3961,8 @@ var LogFromMatrix = View(TemplateView, {
 			if (typeof geojson == "string" && geojson.length > 0){
 
 				var geojson_builder = GeoJSONbuilder.create(JSON.parse(geojson));
-				data[geographic_reference_field_name + "_0"] = geojson_builder.verbose; // verbose representation
-				data[geographic_reference_field_name + "_1"] = geojson_builder.as_text(geojson_builder); // validates and sets pos
+				data[geographicReference_field_name + "_0"] = geojson_builder.verbose; // verbose representation
+				data[geographicReference_field_name + "_1"] = geojson_builder.as_text(geojson_builder); // validates and sets pos
 			}
 			// data is ready
 			// validate the data
@@ -4014,7 +4014,7 @@ var LogFromMatrix = View(TemplateView, {
 });
 
 // set anonymous observations according to settings
-if (settings.OPTIONS.hasOwnProperty("allow_anonymous_observations") && settings.OPTIONS.allow_anonymous_observations == true){
+if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
 	ObservationView.login_required = false;
 	ButtonMatrixView.login_required = false;
 	LogFromMatrix.login_required = false;
@@ -4043,7 +4043,7 @@ var NatureGuideView = View(TemplateView, {
 
 		self._get_nature_guide(uuid, function(nature_guide){
 
-			var node_uuid = kwargs["node_uuid"] || nature_guide.start_node_uuid;
+			var node_uuid = kwargs["node_uuid"] || nature_guide.startNodeUuid;
 
 			var current_node = nature_guide.tree[node_uuid];
 
@@ -4053,13 +4053,13 @@ var NatureGuideView = View(TemplateView, {
 				"filter_available" : false
 			};
 			
-			if (current_node.matrix_filters.length > 0){
+			if (current_node.matrixFilters.length > 0){
 				self.initial_kwargs["filter_available"] = true;
 				context["filter_available"] = true;
 			}
 
-			self.initial_kwargs["children_count"] = current_node.children_count;
-			context["children_count"] = current_node.children_chount;
+			self.initial_kwargs["childrenCount"] = current_node.childrenCount;
+			context["childrenCount"] = current_node.childrenCount;
 
 
 			document.addEventListener("identification_complete", NatureGuideView.on_identification_complete);
@@ -4109,7 +4109,7 @@ var NatureGuideView = View(TemplateView, {
 
 		self._get_nature_guide(uuid, function(nature_guide){
 
-			var node_uuid = kwargs["node_uuid"] || nature_guide.start_node_uuid;
+			var node_uuid = kwargs["node_uuid"] || nature_guide.startNodeUuid;
 			self.current_node = nature_guide.tree[node_uuid];
 
 			var result_action = nature_guide.options["result_action"];
@@ -4120,7 +4120,7 @@ var NatureGuideView = View(TemplateView, {
 			ajax.GET(node_template, {}, function(template){
 			
 				var many_children = false;
-				if (self.current_node.children_count > 30){
+				if (self.current_node.childrenCount > 30){
 					many_children = true;
 				}
 
@@ -4170,7 +4170,7 @@ var NatureGuideView = View(TemplateView, {
 				
 				let input = event.currentTarget;
 			
-				if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+				if (event.detail.matrix_filter.matrixFilterType == "RangeFilter"){
 				}
 				else {
 					input.parentElement.classList.remove("matrix-filter-inactive");
@@ -4183,7 +4183,7 @@ var NatureGuideView = View(TemplateView, {
 				
 				let input = event.currentTarget;
 			
-				if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+				if (event.detail.matrix_filter.matrixFilterType == "RangeFilter"){
 				}
 				else {
 					input.parentElement.classList.add("matrix-filter-inactive");
@@ -4270,7 +4270,7 @@ var NatureGuideView = View(TemplateView, {
 			// update point percentage
 			let points_span = document.getElementById(matrix_item.uuid + "-points");
 			if (matrix_item.points > 0){
-				points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.max_points + ")";
+				points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.maxPoints + ")";
 			}
 			else {
 				points_span.textContent = "";
@@ -4302,20 +4302,20 @@ var NatureGuideView = View(TemplateView, {
 
 		self._get_nature_guide(uuid, function(nature_guide){
 
-			var node_uuid = kwargs["node_uuid"] || nature_guide.start_node_uuid;
+			var node_uuid = kwargs["node_uuid"] || nature_guide.startNodeUuid;
 			self.current_node = nature_guide.tree[node_uuid];
 
-			if (Object.keys(self.current_node.matrix_filters).length > 0){
+			if (Object.keys(self.current_node.matrixFilters).length > 0){
 
 				//self._attach_matrix_filter_listeners();
 
 				var data = {
 					"items" : self.current_node.children,
-					"matrix_filters" : self.current_node.matrix_filters
+					"matrixFilters" : self.current_node.matrixFilters
 				};
 
 				var options = {
-					"mode" : self.current_node.identification_mode
+					"mode" : self.current_node.identificationMode
 				};
 
 
@@ -4347,16 +4347,16 @@ function switchImage(self, request, args, kwargs){
 	var primary_image = document.getElementById(primary_image_id);
 
 	// check if a popover is already present
-	var primary_image_url = currentTarget.getAttribute("data-primary-image-url");
-	var secondary_image_url = currentTarget.getAttribute("data-secondary-image-url");
+	var primary_imageUrl = currentTarget.getAttribute("data-primary-image-url");
+	var secondaryImageUrl = currentTarget.getAttribute("data-secondary-image-url");
 
-	if (primary_image.style.backgroundImage.indexOf(primary_image_url) >=0){
-		primary_image.style.backgroundImage = "url(" + secondary_image_url + ")";
-		currentTarget.src = primary_image_url;
+	if (primary_image.style.backgroundImage.indexOf(primary_imageUrl) >=0){
+		primary_image.style.backgroundImage = "url(" + secondaryImageUrl + ")";
+		currentTarget.src = primary_imageUrl;
 	}
 	else {
-		primary_image.style.backgroundImage = "url(" + primary_image_url + ")";
-		currentTarget.src = secondary_image_url;
+		primary_image.style.backgroundImage = "url(" + primary_imageUrl + ")";
+		currentTarget.src = secondaryImageUrl;
 	}
 
 }
@@ -4425,7 +4425,7 @@ var NextIdentificationStep = View(TemplateView, {
 					nature_guide_item.link = node.firstElementChild.getAttribute("link");
 
 					nature_guide_item.points = matrix_item.points;
-					nature_guide_item.max_points = matrix_item.max_points;
+					nature_guide_item.maxPoints = matrix_item.maxPoints;
 					nature_guide_item.points_percentage = parseInt(matrix_item.points_percentage*100);
 
 					top_matrix_items.push(nature_guide_item);
@@ -4610,7 +4610,7 @@ var ToggleMatrixItems = View(OverlayView, {
 
 });
 
-var reset_matrix_filters = function(self, request, args, kwargs){
+var reset_matrixFilters = function(self, request, args, kwargs){
 	app.identification.reset();
 	kwargs['currentTarget'].blur();
 };
@@ -4657,19 +4657,19 @@ var FactSheetView = View(RemoteView, {
 	
 	get_local_html : function (self, onsuccess, onerror){
 		
-		let fact_sheets_path = app_features.FactSheets.list[0].path;
-		let fact_sheets_folder = app_features.FactSheets.list[0].folder;
+		let factSheets_path = app_features.FactSheets.list[0].path;
+		let factSheets_folder = app_features.FactSheets.list[0].folder;
 
-		// {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "global_options": {}, "name": "Fact Sheets", "fact_sheets": {"1": {"taxonomic_restriction": [{"taxon_source": "taxonomy.sources.col", "taxon_latname": "Plantae", "taxon_author": "", "name_uuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxon_nuid": "006", "restriction_type": "exists"}], "localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}}}, "localized_slugs": {"baume": 1}}
-		ajax.GET(fact_sheets_path, {}, function(content){
+		// {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "globalOptions": {}, "name": "Fact Sheets", "factSheets": {"1": {"taxonomic_restriction": [{"taxonSource": "taxonomy.sources.col", "taxonLatname": "Plantae", "taxonAuthor": "", "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxonNuid": "006", "restrictionType": "exists"}], "localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}}}, "localizedSlugs": {"baume": 1}}
+		ajax.GET(factSheets_path, {}, function(content){
 
-			let fact_sheets = JSON.parse(content); //JSON.parse(atob(content));
+			let factSheets = JSON.parse(content); //JSON.parse(atob(content));
 
 			let localized_slug = self.kwargs["slug"];
 
-			let fact_sheet_id = fact_sheets["localized_slugs"][localized_slug].toString();
+			let fact_sheet_id = factSheets["localizedSlugs"][localized_slug].toString();
 
-			let path = fact_sheets_folder + "/" + fact_sheets["fact_sheets"][fact_sheet_id]["localized"][app.language]["path"];
+			let path = factSheets_folder + "/" + factSheets["factSheets"][fact_sheet_id]["localized"][app.language]["path"];
 
 			ajax.GET(path, {}, function(html){
 				onsuccess(html);
@@ -4708,14 +4708,14 @@ var FactSheetModal = View(TemplateView, {
 
 
 	_set_fact_sheet : function(self, fact_sheet_id, callback){
-		let fact_sheets_path = app_features.FactSheets.list[0].path;
+		let factSheets_path = app_features.FactSheets.list[0].path;
 
-		ajax.GET(fact_sheets_path, {}, function(content){
+		ajax.GET(factSheets_path, {}, function(content){
 
-			let fact_sheets = JSON.parse(content); //JSON.parse(atob(content));
+			let factSheets = JSON.parse(content); //JSON.parse(atob(content));
 
-			self.fact_sheets = fact_sheets;
-			self.fact_sheet = fact_sheets["fact_sheets"][fact_sheet_id];
+			self.factSheets = factSheets;
+			self.fact_sheet = factSheets["factSheets"][fact_sheet_id];
 
 			callback();
 
@@ -4734,9 +4734,9 @@ var FactSheetModal = View(TemplateView, {
 
 		let context = {};
 
-		let fact_sheets_folder = app_features.FactSheets.list[0].folder;
+		let factSheets_folder = app_features.FactSheets.list[0].folder;
 
-		let path = fact_sheets_folder + "/" + self.fact_sheet["localized"][app.language]["path"];
+		let path = factSheets_folder + "/" + self.fact_sheet["localized"][app.language]["path"];
 
 		ajax.GET(path, {}, function(html){
 			context["fact_sheet_html"] = html;
@@ -5012,17 +5012,17 @@ var GlossaryView = View(TemplateView, {
 		var csv_path = null;
 		
 		if (app_features.Glossary.localized.hasOwnProperty(app.language)){
-			var show_used_terms_only = self.request.GET.used_terms == "1";
+			var show_used_terms_only = self.request.GET.usedTerms == "1";
 			
 			if (show_used_terms_only == true){
-				csv_path = app_features.Glossary.localized[app.language]["used_terms_csv"];
+				csv_path = app_features.Glossary.localized[app.language]["usedTermsCsv"];
 			}
 			else {
-				csv_path = app_features.Glossary.localized[app.language]["all_terms_csv"];
+				csv_path = app_features.Glossary.localized[app.language]["allTermsCsv"];
 			}
 		}
 	
-		var show_used_terms_only = self.request.GET.used_terms == "1";
+		var show_used_terms_only = self.request.GET.usedTerms == "1";
 		var url = self.get_glossary_url(self);
 
 		GlossaryView.super().get_context_data(self, kwargs, function(context){
@@ -5046,15 +5046,15 @@ var GlossaryView = View(TemplateView, {
 	
 	get_glossary_url : function(self){
 	
-		var show_used_terms_only = self.request.GET.used_terms == "1";
+		var show_used_terms_only = self.request.GET.usedTerms == "1";
 		
 		if (app_features.Glossary.localized.hasOwnProperty(app.language)){
 			
 			if (show_used_terms_only == true){
-				var url = app_features.Glossary.localized[app.language]["used_terms"];
+				var url = app_features.Glossary.localized[app.language]["usedTerms"];
 			}
 			else {
-				var url = app_features.Glossary.localized[app.language]["all_terms"];
+				var url = app_features.Glossary.localized[app.language]["allTerms"];
 			}
 		}
 		else {
@@ -5194,11 +5194,11 @@ var TaxonProfilesRegistry = View(TemplateView, {
 	"template_name" : "themes/" + settings.THEME + "/templates/taxon_profiles_registry.html",
 	async_context : true,
 	
-	search_results_template : '{{#if results}}{{#each results}}<div class="tap" action="TaxonProfilesRegistry.on_select" data-taxon-source="{{ taxon_source }}" data-name-uuid="{{ name_uuid }}">{{ matched_text }}</div>{{/each}}{{else}}<div>{{t "No results found"}}</div>{{/if}}',
+	search_results_template : '{{#if results}}{{#each results}}<div class="tap" action="TaxonProfilesRegistry.on_select" data-taxon-source="{{ taxonSource }}" data-name-uuid="{{ nameUuid }}">{{ matched_text }}</div>{{/each}}{{else}}<div>{{t "No results found"}}</div>{{/if}}',
 	
 	get_context_data : function(self, kwargs, callback){
 	
-		var use_vernacular_names = self.request.GET.vernacular == "1";
+		var use_vernacularNames = self.request.GET.vernacular == "1";
 
 		var search_index_url = app_features.TaxonProfiles.search;
 		
@@ -5210,14 +5210,14 @@ var TaxonProfilesRegistry = View(TemplateView, {
 			
 				self.search_index = JSON.parse(content);
 				
-				let has_vernacular_names = Object.keys(self.search_index.vernacular[app.language]).length > 0 ? true : false;
+				let has_vernacularNames = Object.keys(self.search_index.vernacular[app.language]).length > 0 ? true : false;
 
 				context["search_index"] = self.search_index;
-				context["use_vernacular_names"] = use_vernacular_names;
+				context["use_vernacularNames"] = use_vernacularNames;
 				
-				context["vernacular_names"] = self.search_index.vernacular[app.language];
+				context["vernacularNames"] = self.search_index.vernacular[app.language];
 
-				context["has_vernacular_names"] = has_vernacular_names
+				context["has_vernacularNames"] = has_vernacularNames
 				callback(context);			
 
 			});
@@ -5249,10 +5249,10 @@ var TaxonProfilesRegistry = View(TemplateView, {
 		var start_letter = searchtext[0].toUpperCase();
 	
 		if (self.search_index != null){
-			var vernacular_names = self.search_index.vernacular[app.language];
+			var vernacularNames = self.search_index.vernacular[app.language];
 			
-			if (start_letter in vernacular_names) {
-				var names_list = vernacular_names[start_letter];
+			if (start_letter in vernacularNames) {
+				var names_list = vernacularNames[start_letter];
 				
 				for (let n=0; n<names_list.length; n++){
 				
@@ -5266,10 +5266,10 @@ var TaxonProfilesRegistry = View(TemplateView, {
 					if (taxon.name.toLowerCase().startsWith(searchtext.toLowerCase())){
 						let result = {
 							"matched_text" : taxon.name,
-							"taxon_source" : taxon.taxon_source,
-							"taxon_latname" : taxon.taxon_latname,
-							"taxon_author" : taxon.taxon_author,
-							"name_uuid" : taxon.name_uuid,
+							"taxonSource" : taxon.taxonSource,
+							"taxonLatname" : taxon.taxonLatname,
+							"taxonAuthor" : taxon.taxonAuthor,
+							"nameUuid" : taxon.nameUuid,
 						};
 						results.push(result);
 						result_count++;
@@ -5277,29 +5277,29 @@ var TaxonProfilesRegistry = View(TemplateView, {
 				}
 			}
 			
-			if (start_letter in self.search_index.taxon_latname) {
+			if (start_letter in self.search_index.taxonLatname) {
 				
-				let taxa = self.search_index.taxon_latname[start_letter];
-				for (let full_taxon_latname in taxa) {
+				let taxa = self.search_index.taxonLatname[start_letter];
+				for (let full_taxonLatname in taxa) {
 				
 					if (result_count > max_results){
 						break;
 					}
 					
-					let taxon = taxa[full_taxon_latname];
+					let taxon = taxa[full_taxonLatname];
 					
-					if (taxon.is_synonym == true){
+					if (taxon.isSynonym == true){
 						continue;
 					}
 				
-					if (full_taxon_latname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
+					if (full_taxonLatname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
 					
 						let result = {
-							"matched_text" : full_taxon_latname,
-							"taxon_source" : taxon.taxon_source,
-							"taxon_latname" : taxon.taxon_latname,
-							"taxon_author" : taxon.taxon_author,
-							"name_uuid" : taxon.name_uuid,
+							"matched_text" : full_taxonLatname,
+							"taxonSource" : taxon.taxonSource,
+							"taxonLatname" : taxon.taxonLatname,
+							"taxonAuthor" : taxon.taxonAuthor,
+							"nameUuid" : taxon.nameUuid,
 						};
 						results.push(result);
 						result_count++;
@@ -5322,11 +5322,11 @@ var TaxonProfilesRegistry = View(TemplateView, {
 		var input = document.getElementById(input_id);
 		input.value = "";
 	
-		var taxon_source = target.getAttribute("data-taxon-source");
-		var name_uuid = target.getAttribute("data-name-uuid");
+		var taxonSource = target.getAttribute("data-taxon-source");
+		var nameUuid = target.getAttribute("data-name-uuid");
 		
 		
-		var kwargs = [taxon_source, name_uuid]
+		var kwargs = [taxonSource, nameUuid]
 		
 		var url = reverse("TaxonProfilesUUID", kwargs);
 

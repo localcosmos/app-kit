@@ -4,7 +4,11 @@ from django.contrib.contenttypes.models import ContentType
 
 from app_kit.appbuilder import AppBuilder
 
+from app_kit.utils import unCamelCase, camelCase_to_underscore_case
+
 from localcosmos_server.widgets import TwoStepFileInput
+
+import re
 
 
 '''
@@ -32,9 +36,11 @@ class FrontendSettingsForm(forms.Form):
 
         field_order = []
 
-        if 'images' in self.frontend_settings['user_content']:
+        if 'images' in self.frontend_settings['userContent']:
 
-            for image_type, image_definition in self.frontend_settings['user_content']['images'].items():
+            for image_type, image_definition in self.frontend_settings['userContent']['images'].items():
+
+                field_label = unCamelCase(image_type)
 
                 # frontend.image uses namespaced image_type
                 content_image = self.frontend.image(image_type)
@@ -72,10 +78,8 @@ class FrontendSettingsForm(forms.Form):
 
                     restrictions = image_definition['restrictions']
 
-                    widget_kwargs['restrictions'] = restrictions
-
                     for restriction_type, restriction in restrictions.items():
-                        restriction_name = ' '.join(restriction_type.split('_')).capitalize()
+                        restriction_name = unCamelCase(restriction_type)
 
                         if isinstance(restriction, str):
                             restriction_text = restriction
@@ -85,10 +89,16 @@ class FrontendSettingsForm(forms.Form):
                         if len(help_text) > 0:
                             help_text = '{0}, '.format(help_text)
 
-                        help_text = '{0}{1}:{2}'.format(help_text, restriction_name, restriction_text)
+                        help_text = '{0}{1}: {2}'.format(help_text, restriction_name, restriction_text)
+
+                    
+                    pythonic_restrictions = self.frontend.get_content_image_restrictions(content_image_type)
+                    print(pythonic_restrictions)
+                    widget_kwargs['restrictions'] = pythonic_restrictions
 
 
                 field_kwargs = {
+                    'label' : field_label,
                     'help_text' : help_text,
                     'required' : False,
                 }
@@ -103,15 +113,15 @@ class FrontendSettingsForm(forms.Form):
             self.order_fields(field_order)
 
         
-        if 'texts' in self.frontend_settings['user_content']:
+        if 'texts' in self.frontend_settings['userContent']:
 
-            for text_type, text_definition in self.frontend_settings['user_content']['texts'].items():
+            for text_type, text_definition in self.frontend_settings['userContent']['texts'].items():
 
-                label = ' '.join(text_type.split('_')).capitalize()
+                label = unCamelCase(text_type)
 
                 required = text_definition.get('required', False)
 
-                help_text = text_definition.get('help_text', '')
+                help_text = text_definition.get('helpText', '')
 
                 field = forms.CharField(label=label, required=required, widget=forms.Textarea, help_text=help_text)
 

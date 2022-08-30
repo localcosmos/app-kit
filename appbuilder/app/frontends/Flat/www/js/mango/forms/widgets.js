@@ -245,14 +245,14 @@ var MultiWidget = derive(BaseWidget, {
 			}
 
             if (id_ != null){
-                var widget_attrs = clone(final_attrs);
-                widget_attrs["id"] = '' + id_ + '_' + i;
+                var widgetAttrs = clone(final_attrs);
+                widgetAttrs["id"] = '' + id_ + '_' + i;
 			}
             else {
-                var widget_attrs = final_attrs;
+                var widgetAttrs = final_attrs;
 			}
 
-			var subwidget_context = widget.get_context(widget, widget_name, widget_value, widget_attrs)["widget"];
+			var subwidget_context = widget.get_context(widget, widget_name, widget_value, widgetAttrs)["widget"];
 
             subwidgets.push(subwidget_context);
 		}

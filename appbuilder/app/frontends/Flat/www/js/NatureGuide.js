@@ -11,7 +11,7 @@
 
 var NatureGuide = {
 
-	overview_search_template : '<div><div>{{ taxon.merged_name }}</div><div class="natureguide-overview-searchresult">{{#if options.enable_taxon_details_button}}<a link="{{url \'TaxonProfiles\' taxon.taxon_source taxon.name_uuid taxon.taxon_nuid taxon.taxon_latname}}" class="tap"><img src="{{themeFolder}}img/taxon_detail.svg" /></a>&nbsp;{{/if}}{{#if options.enable_wikipedia_button}}<a href="https://{{language }}.m.wikipedia.org/wiki/{{taxon.taxon_latname}}" target="_blank"><img src="{{themeFolder}}img/wikipedia_button.svg" /></a>&nbsp;{{/if}}{{#if options.enable_observation_button}}<a link="{{url \'new_observation\' options.enable_observation_button.uuid }}" kwargs=\'{"taxon_source":"{{taxon.taxon_source}}","name_uuid":"{{taxon.name_uuid}}","taxon_latname":"{{taxon.taxon_latname}}","taxon_nuid":"{{taxon.taxon_nuid}}"}\' class="tap"><img src="{{themeFolder}}img/observation.svg" /></a>{{/if}}</div></div>',
+	overview_search_template : '<div><div>{{ taxon.merged_name }}</div><div class="natureguide-overview-searchresult">{{#if options.enable_taxon_details_button}}<a link="{{url \'TaxonProfiles\' taxon.taxonSource taxon.nameUuid taxon.taxonNuid taxon.taxonLatname}}" class="tap"><img src="{{themeFolder}}img/taxon_detail.svg" /></a>&nbsp;{{/if}}{{#if options.enable_wikipedia_button}}<a href="https://{{language }}.m.wikipedia.org/wiki/{{taxon.taxonLatname}}" target="_blank"><img src="{{themeFolder}}img/wikipedia_button.svg" /></a>&nbsp;{{/if}}{{#if options.enable_observation_button}}<a link="{{url \'new_observation\' options.enable_observation_button.uuid }}" kwargs=\'{"taxonSource":"{{taxon.taxonSource}}","nameUuid":"{{taxon.nameUuid}}","taxonLatname":"{{taxon.taxonLatname}}","taxonNuid":"{{taxon.taxonNuid}}"}\' class="tap"><img src="{{themeFolder}}img/observation.svg" /></a>{{/if}}</div></div>',
 
 	create : function(nature_guide){
 		var self = this; //Object.create(this);
@@ -183,8 +183,8 @@ var NatureGuide = {
 		var indicator = document.getElementById("Active" + filtertype);
 
 		if (element.hasAttribute("data-image")){
-			var image_url = element.getAttribute("data-image");
-			indicator.style.backgroundImage = "url('" + image_url + "')";
+			var imageUrl = element.getAttribute("data-image");
+			indicator.style.backgroundImage = "url('" + imageUrl + "')";
 		}
 
 		if (element.hasAttribute("data-text")){
@@ -297,8 +297,8 @@ var NatureGuide = {
 				// first, check if it covered by the current taxonfilter
 				// currently filters cannot be combined - all other filters are reset. this behaviour is open for debate
 				/*if (self.active_taxonfilter != null){
-					var is_visible = self.check_taxonfilter(taxon);
-					if (is_visible == false) {
+					var isVisible = self.check_taxonfilter(taxon);
+					if (isVisible == false) {
 						continue;
 					}
 				}*/
@@ -308,7 +308,7 @@ var NatureGuide = {
 					var vernacular = taxon.getAttribute("data-taxon-vernacular").toLowerCase();
 				}
 				else {
-					var latname = taxon.taxon_latname.toLowerCase();
+					var latname = taxon.taxonLatname.toLowerCase();
 					var vernacular = taxon.taxon_vernacular.toLowerCase();
 				}
 
@@ -370,8 +370,8 @@ var NatureGuide = {
 					var taxon = self.taxa[c];
 
 					/*if (self.active_taxonfilter != null){
-						var is_visible = self.check_taxonfilter(taxon);
-						if (is_visible == false) {
+						var isVisible = self.check_taxonfilter(taxon);
+						if (isVisible == false) {
 							continue;
 						}
 					}*/
@@ -391,28 +391,28 @@ var NatureGuide = {
 		// checks against self.active_taxonfilter
 		var self = this;
 
-		var taxon_source = taxon.getAttribute("data-taxon-source");
+		var taxonSource = taxon.getAttribute("data-taxon-source");
 
-		var is_visible = false;
+		var isVisible = false;
 
 		// self.active_taxonfilter is a dict with taxonomic sources as key
 
-		if (taxon_source in self.active_taxonfilter){
+		if (taxonSource in self.active_taxonfilter){
 		
-			var nuids = self.active_taxonfilter[taxon_source];
+			var nuids = self.active_taxonfilter[taxonSource];
 
-			var taxon_nuid = taxon.getAttribute("data-taxon-nuid");
+			var taxonNuid = taxon.getAttribute("data-taxon-nuid");
 
 			for (var n=0; n<nuids.length; n++){
 				var nuid = nuids[n];
-				if (taxon_nuid.indexOf(nuid) == 0){
-					is_visible = true;
+				if (taxonNuid.indexOf(nuid) == 0){
+					isVisible = true;
 					break;
 				}
 			}
 		}
 
-		return is_visible;
+		return isVisible;
 
 	},
 
@@ -442,9 +442,9 @@ var NatureGuide = {
 				for (var t=0; t<self.taxa.length; t++){
 					var taxon = self.taxa[t];
 
-					var is_visible = self.check_taxonfilter(taxon);
+					var isVisible = self.check_taxonfilter(taxon);
 					
-					if (is_visible == true){
+					if (isVisible == true){
 						if (taxon.style.display != ""){
 							taxon.style.display = "";
 						}

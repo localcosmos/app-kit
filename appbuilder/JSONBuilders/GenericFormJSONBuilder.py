@@ -41,7 +41,7 @@ class GenericFormJSONBuilder(JSONBuilder):
             generic_form_json['fields'].append(generic_field_dic)
 
             if generic_field_dic['role'] in ['taxonomic_reference', 'geographic_reference', 'temporal_reference']:
-                key = generic_field_dic['role']
+                key = self.to_camel_case(generic_field_dic['role'])
                 generic_form_json[key] = generic_field_dic['uuid']
 
         return generic_form_json
@@ -59,29 +59,29 @@ class GenericFormJSONBuilder(JSONBuilder):
 
         field_dic = {
             'uuid' : str(generic_field.uuid),
-            'field_class' : generic_field.field_class,
+            'fieldClass' : generic_field.field_class,
             'version' : generic_field.version,
             'role' : generic_field.role,
             'definition' : {
                 'widget' : widget,
                 'required' : generic_field_link.is_required,
-                'is_sticky' : generic_field_link.is_sticky,
+                'isSticky' : generic_field_link.is_sticky,
                 'label' : generic_field.label,
-                'help_text' : generic_field.help_text,
+                'helpText' : generic_field.help_text,
                 'initial' : None,
             },
             'position' : generic_field_link.position,
             'options' : generic_field.options, # contains widget_attrs and other stuff
-            'widget_attrs' : {},
-            'taxonomic_restriction' : taxonomic_restriction,
+            'widgetAttrs' : {},
+            'taxonomicRestriction' : taxonomic_restriction,
         }
 
         if generic_field.field_class == 'SelectDateTime':
             # default mode
-            field_dic['widget_attrs']['mode'] = 'datetime'
+            field_dic['widgetAttrs']['mode'] = 'datetime'
 
             if generic_field.options and 'datetime_mode' in generic_field.options:
-                field_dic['widget_attrs']['mode'] = generic_field.options['datetime_mode']
+                field_dic['widgetAttrs']['mode'] = generic_field.options['datetime_mode']
 
         # generate widget_attrs from options
         if generic_field.field_class in ['DecimalField', 'FloatField', 'IntegerField']:
@@ -93,11 +93,11 @@ class GenericFormJSONBuilder(JSONBuilder):
 
                 if 'min_value' in generic_field.options:
                     min_value = generic_field.options['min_value']
-                    field_dic['widget_attrs']['min'] = min_value
+                    field_dic['widgetAttrs']['min'] = min_value
 
                 if 'max_value' in generic_field.options:
                     max_value = generic_field.options['max_value']
-                    field_dic['widget_attrs']['max'] = max_value
+                    field_dic['widgetAttrs']['max'] = max_value
 
                 # apply the step - necessary for html in-browser validation of forms
                 # default and fallback
@@ -116,7 +116,7 @@ class GenericFormJSONBuilder(JSONBuilder):
                         elif decimal_places > 0:
                             step = '0.%s1' % ('0' * (decimal_places-1))
 
-                field_dic['widget_attrs']['step'] = step
+                field_dic['widgetAttrs']['step'] = step
 
         values = GenericValues.objects.filter(generic_field=generic_field).order_by('position')
 
@@ -137,9 +137,9 @@ class GenericFormJSONBuilder(JSONBuilder):
 
             else:
                 value_dic = {
-                    'text_value' : db_value.text_value,
-                    'value_type' : db_value.value_type,
-                    'is_default' : db_value.is_default,
+                    'textValue' : db_value.text_value,
+                    'valueType' : db_value.value_type,
+                    'isDefault' : db_value.is_default,
                     'name' : db_value.name,
                 }
 

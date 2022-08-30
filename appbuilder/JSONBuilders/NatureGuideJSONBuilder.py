@@ -27,7 +27,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
         nature_guide_json.update({
             'tree' : {},
             'crosslinks' : nature_guide.crosslinks(),
-            'start_node_uuid' : str(start_node.name_uuid)
+            'startNodeUuid' : str(start_node.name_uuid)
         })
 
         # iterate over all parent nodes
@@ -59,9 +59,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'name' : parent_node.meta_node.name,
                 'taxon' : None,
                 'children' : [],
-                'matrix_filters' : {},
-                'identification_mode' : identification_mode,
-                'fact_sheets' : fact_sheets,
+                'matrixFilters' : {},
+                'identificationMode' : identification_mode,
+                'factSheets' : fact_sheets,
             }
 
             if parent_node.meta_node.taxon:
@@ -73,7 +73,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             for matrix_filter in matrix_filters:
                 matrix_filter_json = self._get_matrix_filter_json(matrix_filter)
 
-                parent_node_json['matrix_filters'][str(matrix_filter.uuid)] = matrix_filter_json
+                parent_node_json['matrixFilters'][str(matrix_filter.uuid)] = matrix_filter_json
 
             for child in parent_node.children:
 
@@ -128,17 +128,17 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 child_json = {
                     'id' : child.id,
-                    'meta_node_id' : child.meta_node.id,
-                    'node_type' : child.meta_node.node_type,
-                    'image_url' : self._get_image_url(child.meta_node),
+                    'metaNodeId' : child.meta_node.id,
+                    'nodeType' : child.meta_node.node_type,
+                    'imageUrl' : self._get_image_url(child.meta_node),
                     'uuid' : str(child.name_uuid),
                     'space' : child_space,
-                    'max_points' : child_max_points,
-                    'is_visible' : True,
+                    'maxPoints' : child_max_points,
+                    'isVisible' : True,
                     'name' : child.meta_node.name, # all langs as json
-                    'decision_rule' : child.decision_rule,
+                    'decisionRule' : child.decision_rule,
                     'taxon' : None,
-                    'fact_sheets' : child_fact_sheets,
+                    'factSheets' : child_fact_sheets,
                 }
 
                 if child.meta_node.taxon:
@@ -150,7 +150,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 parent_node_json['children'].append(child_json)
                 
-            parent_node_json['children_count'] = len(parent_node.children)
+            parent_node_json['childrenCount'] = len(parent_node.children)
 
             nature_guide_json['tree'][str(parent_node.name_uuid)] = parent_node_json
 
@@ -172,8 +172,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
             'definition' : matrix_filter.definition,
             'weight' : matrix_filter.weight,
             'restrictions' : {},
-            'is_restricted' : False,
-            'allow_multiple_values' : allow_multiple_values
+            'isRestricted' : False,
+            'allowMultipleValues' : allow_multiple_values
         }
 
         space = matrix_filter.get_space()
@@ -196,10 +196,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 space_b64 = base64.b64encode(json.dumps(subspace, separators=(',', ':')).encode('utf-8')).decode('utf-8')
                 
                 space_entry = {
-                    'short_name' : subspace['latname'][:3],
+                    'shortName' : subspace['latname'][:3],
                     'latname' : subspace['latname'],
-                    'encoded_space' : space_b64,
-                    'is_custom' : subspace['is_custom'],
+                    'encodedSpace' : space_b64,
+                    'isCustom' : subspace['is_custom'],
                 }
 
                 space.append(space_entry)
@@ -225,7 +225,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     gradient = subspace.additional_information.get('gradient', False)
                 
                 subspace_entry = {
-                    'encoded_space' : encoded_space,
+                    'encodedSpace' : encoded_space,
                     'html' : html,
                     'gradient' : gradient,
                     'description' : description,
@@ -241,15 +241,15 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             for subspace in space:
                 entry = {}
-                entry['encoded_space'] = subspace.encoded_space
-                entry['image_url'] = self._get_image_url(subspace)
+                entry['encodedSpace'] = subspace.encoded_space
+                entry['imageUrl'] = self._get_image_url(subspace)
 
                 secondary_image = self._get_content_image(subspace, image_type='secondary')
 
                 if secondary_image:
-                    entry['secondary_image_url'] = self._get_image_url(subspace, image_type='secondary')
+                    entry['secondaryImageUrl'] = self._get_image_url(subspace, image_type='secondary')
                 else:
-                    entry['secondary_image_url'] = None
+                    entry['secondaryImageUrl'] = None
                 
                 encoded_space.append(entry)
                 
@@ -263,7 +263,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             for subspace in space:
                 encoded_space = subspace.encoded_space
                 subspace_entry = {
-                    'encoded_space' : encoded_space,
+                    'encodedSpace' : encoded_space,
                 }
                 
                 spaces.append(subspace_entry)
@@ -281,8 +281,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
         for matrix_filter_restriction in matrix_filter_restrictions:
 
             # handlebars {{#if restrictions }} returns always True, even if the object is empty
-            if matrix_filter_json['is_restricted'] != True:
-                matrix_filter_json['is_restricted'] = True
+            if matrix_filter_json['isRestricted'] != True:
+                matrix_filter_json['isRestricted'] = True
 
             restrictive_matrix_filter = matrix_filter_restriction.restrictive_matrix_filter
             restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
@@ -294,5 +294,4 @@ class NatureGuideJSONBuilder(JSONBuilder):
             
 
         return matrix_filter_json
-        
         

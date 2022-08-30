@@ -26,11 +26,11 @@ var Dataset = Model(models.Model, {
 		"needs_sync" : models.BooleanField({"default":true}) // not yet uploaded Datasets
 	},
 
-	taxon_latname : function(self){
+	taxonLatname : function(self){
 		// called from template - do not pass self
 		var self = self || this;
 		if (self.hasOwnProperty(taxon)){
-			return taxon.taxon_latname;
+			return taxon.taxonLatname;
 		}
 		else {
 			return _("no taxon assigned");
@@ -67,7 +67,7 @@ var Dataset = Model(models.Model, {
 
 		// try to set self.timestamp
 		if (self.data && self.data.hasOwnProperty("dataset") && self.data.dataset.hasOwnProperty("observation_form")){
-			var temporal_field_uuid = self.data.dataset.observation_form.temporal_reference;
+			var temporal_field_uuid = self.data.dataset.observation_form.temporalReference;
 			if (self.data.dataset.reported_values.hasOwnProperty(temporal_field_uuid)){
 				var temporal_value = self.data.dataset.reported_values[temporal_field_uuid];
 				if (temporal_value.cron.type == "timestamp"){
@@ -91,16 +91,16 @@ var Dataset = Model(models.Model, {
 
 			// set self.taxon, self.datetime and self.geography if possible
 			// first, find taxon field uuid
-			var taxon_field_uuid = self.data.dataset.observation_form.taxonomic_reference;
-			var temporal_field_uuid = self.data.dataset.observation_form.temporal_reference;
-			var geographic_field_uuid = self.data.dataset.observation_form.geographic_reference;
+			var taxon_field_uuid = self.data.dataset.observation_form.taxonomicReference;
+			var temporal_field_uuid = self.data.dataset.observation_form.temporalReference;
+			var geographic_field_uuid = self.data.dataset.observation_form.geographicReference;
 
 			var values = self.data.dataset.reported_values;
 			if (values.hasOwnProperty(taxon_field_uuid)){
 				var taxon_data = values[taxon_field_uuid];
 
-				if (taxon_data.hasOwnProperty("taxon_source") && taxon_data.hasOwnProperty("name_uuid") && taxon_data.hasOwnProperty("taxon_latname") && taxon_data.hasOwnProperty("taxon_author") && taxon_data.hasOwnProperty("taxon_nuid")){
-					self.taxon = Taxon.create(taxon_data.taxon_source, taxon_data.name_uuid, taxon_data.taxon_latname, taxon_data.taxon_author, taxon_data.taxon_nuid, taxon_data);
+				if (taxon_data.hasOwnProperty("taxonSource") && taxon_data.hasOwnProperty("nameUuid") && taxon_data.hasOwnProperty("taxonLatname") && taxon_data.hasOwnProperty("taxonAuthor") && taxon_data.hasOwnProperty("taxonNuid")){
+					self.taxon = Taxon.create(taxon_data.taxonSource, taxon_data.nameUuid, taxon_data.taxonLatname, taxon_data.taxonAuthor, taxon_data.taxonNuid, taxon_data);
 				}
 			}
 
@@ -192,9 +192,9 @@ var DatasetImages = Model(models.Model, {
 		if (device.platform != "browser" && self.storage_location != "RemoteDB"){
 	
 			// remove images from disk
-			self.image.url(function(image_url){
+			self.image.url(function(imageUrl){
 
-				var path_parts = image_url.split("/");
+				var path_parts = imageUrl.split("/");
 				var filename = path_parts.pop();
 
 				each(DatasetImages.fields["image"]["thumbnails"], function(name, definition, iterate){
@@ -207,13 +207,13 @@ var DatasetImages = Model(models.Model, {
 					};
 					var thumbnail = Thumbnail.create(thumbnail_config);
 
-					thumbnail.get_thumbnail_filepath(image_url, function(thumbnail_path){
+					thumbnail.get_thumbnail_filepath(imageUrl, function(thumbnail_path){
 						FileUtil.remove(thumbnail_path, iterate);
 					}, iterate);
 
 				}, function(){
 
-					FileUtil.remove(image_url, function(){
+					FileUtil.remove(imageUrl, function(){
 
 						// remove from db
 						DatasetImages.super().remove(self, callback);

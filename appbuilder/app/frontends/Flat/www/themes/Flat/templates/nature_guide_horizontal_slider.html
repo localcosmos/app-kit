@@ -1,6 +1,6 @@
 <div id="nature-guide" class="nature-guide">
 	
-	{{#if node.matrix_filters}}
+	{{#if node.matrixFilters}}
 		<div id="identification-matrix" class="page pb-5">
 			<div>
 				<form id="matrix-filters-form">
@@ -8,21 +8,21 @@
 						<button type="button" class="btn btn-secondary tap" action="reset_matrix_filters"><i class="restart-button">&nbsp;</i> {{t 'restart'}}</button>
 					</div>
 
-					{{#each node.matrix_filters}}
-						<div id="{{uuid}}" class="matrix-filter mt-2 {{#if is_restricted}}is-restricted restriction-active{{/if}}" current-selection="">
+					{{#each node.matrixFilters}}
+						<div id="{{uuid}}" class="matrix-filter mt-2 {{#if isRestricted}}is-restricted restriction-active{{/if}}" current-selection="">
 							<div class="matrix-filter-name">
 								<strong>{{t name }}</strong>
-								{{#if definition.allow_multiple_values }}<small>({{t 'multiple choice'}})</small>{{/if}}
+								{{#if definition.allowMultipleValues }}<small>({{t 'multiple choice'}})</small>{{/if}}
 							</div>
 							{{#ifequal type 'DescriptiveTextAndImagesFilter'}}
 								<div class="horizontal-slide large">
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
-												<label for="{{../uuid}}-{{encoded_space}}" class="text-center">
-													<div class="square responsiveback" style="background-image:url('{{image_url}}')"></div>
-													<div class="slide-element-text">{{tp encoded_space}}</div>
+												<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+												<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
+													<div class="square responsiveback" style="background-image:url('{{imageUrl}}')"></div>
+													<div class="slide-element-text">{{tp encodedSpace}}</div>
 												</label>
 											</div>
 										{{/each}}
@@ -34,11 +34,11 @@
 									<div class="stretch">
 										{{#each space}}
 											<div class="text-only">
-												<input id="{{../uuid}}-{{encoded_space}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
 												<div>
-													<div class="slide-element-text">{{t encoded_space}}</div>
+													<div class="slide-element-text">{{t encodedSpace}}</div>
 													<div>
-														<label for="{{../uuid}}-{{encoded_space}}" class="text-center slide-element-indicator">
+														<label for="{{../uuid}}-{{encodedSpace}}" class="text-center slide-element-indicator">
 															&nbsp;
 														</label>
 													</div>
@@ -53,7 +53,7 @@
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encoded_space }}" data-value="{{stringify encoded_space }}" />
+												<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encodedSpace }}" data-value="{{stringify encodedSpace }}" />
 												<label for="{{../uuid}}-{{@index}}" class="text-center">
 													<div class="square responsiveback" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
 													{{#if description}}
@@ -120,10 +120,10 @@
 									<div>
 										{{#each space}}
 											<div>
-												<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encoded_space}}" data-value="{{encoded_space}}" />
+												<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
 												<label for="{{../uuid}}-{{latname}}" class="text-center">
-													<div class="square responsiveback contain taxonfilter" {{#if is_custom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
-														<div>{{#if is_custom}}{{short_name}}{{/if}}</div>
+													<div class="square responsiveback contain taxonfilter" {{#if isCustom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
+														<div>{{#if isCustom}}{{shortName}}{{/if}}</div>
 													</div>
 													<div><small><i>{{latname}}</i></small></div>
 												</label>
@@ -158,14 +158,14 @@
 
 	
 </div>
-{{#if node.matrix_filters}}
+{{#if node.matrixFilters}}
 	<div class="footer d-md-none">
 		<div class="tap text-center" action="ToggleMatrixItems.toggle">
 			<div class="footer-icon"><img src="img/identify-icon.svg" /></div>
 			<div>{{tp 'results'}}</div>
 		</div>
 		<div class="text-center"><!-- action="ToggleMatrixItems.close"> -->
-			<!--<div class="children-count text-danger">{{ node.children_count }}</div>
+			<!--<div class="children-count text-danger">{{ node.childrenCount }}</div>
 			<div>{{tp 'results'}}</div>-->
 		</div>
 		<div class="tap text-center" action="reset_matrix_filters">

@@ -8,6 +8,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
 
+from django.core import mail
+
 from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
 from .generic import AppContentTaxonomicRestriction
 
@@ -634,14 +636,14 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
 
     def send_error_report_email(self, exception, error_message):
 
-        subject = '[{0}] {1}'.format(self.__class__.__name__, error.__class__.__name__)
+        subject = '[{0}] {1}'.format(self.__class__.__name__, error_message)
 
         tenant = self.meta_app.tenant
         tenant_admin_emails = tenant.get_admin_emails()
-        tenant_text = 'Tenant schema: {0}. App uid: {1}. Admins: {2}.'.format(tenant.schema_name, meta_app.app.uid,
+        tenant_text = 'Tenant schema: {0}. App uid: {1}. Admins: {2}.'.format(tenant.schema_name, self.meta_app.app.uid,
                                                     ','.join(tenant_admin_emails))
         
-        text_content = '{0} \n\n Error type: {1} \n\n message: {2}'.format(tenant_text, exception.__class__.__name__, error_message)
+        text_content = '{0} \n\n Error type: {1} \n\n message: {2} \n\n {3}'.format(tenant_text, exception.__class__.__name__, error_message, traceback.format_exc())
 
         mail.mail_admins(subject, text_content)
 
@@ -678,9 +680,11 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
         except urllib.error.HTTPError as e:
             # use e.code
             self.send_error_report_email(e, e.code)
+            raise e
         except urllib.error.URLError as e:
             # use e.reason
             self.send_error_report_email(e, e.reason)
+            raise e
         else:
             success = True
             json_response = json.loads(response.read())

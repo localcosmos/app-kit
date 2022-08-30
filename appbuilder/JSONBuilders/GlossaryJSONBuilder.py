@@ -128,9 +128,9 @@ class GlossaryJSONBuilder(JSONBuilder):
 
             term_entry = {
                 'term' : term,
-                'localized_term' : localized_term,
-                'is_synonym' : False,
-                'word_count' : term_word_count,
+                'localizedTerm' : localized_term,
+                'isSynonym' : False,
+                'wordCount' : term_word_count,
             }
             terms_and_synonyms.append(term_entry)
 
@@ -159,17 +159,17 @@ class GlossaryJSONBuilder(JSONBuilder):
                 
                 synonym_entry = {
                     'term' : synonym.term,
-                    'localized_term' : localized_term_synonym,
-                    'real_term' : localized_term, # localized term which this word is synonym of
-                    'unlocalized_real_term' : term,
-                    'is_synonym' : True,
-                    'word_count' : synonym_word_count,
+                    'localizedTerm' : localized_term_synonym,
+                    'realTerm' : localized_term, # localized term which this word is synonym of
+                    'unlocalizedRealTerm' : term,
+                    'isSynonym' : True,
+                    'wordCount' : synonym_word_count,
                 }
 
                 terms_and_synonyms.append(synonym_entry)
                 
 
-        terms_and_synonyms = sorted(terms_and_synonyms, key = lambda k: k['word_count'])
+        terms_and_synonyms = sorted(terms_and_synonyms, key = lambda k: k['wordCount'])
         terms_and_synonyms.reverse()
         
         # key is language independant
@@ -189,7 +189,7 @@ class GlossaryJSONBuilder(JSONBuilder):
             # iterate over all terms and synonyms, add links
             for tas_entry in terms_and_synonyms:
 
-                term_lower = tas_entry['localized_term'].lower()
+                term_lower = tas_entry['localizedTerm'].lower()
 
                 term_whole_word = r'\b{0}\b'.format(term_lower)
 
@@ -252,8 +252,8 @@ class GlossaryJSONBuilder(JSONBuilder):
                             match_text = match.group(0)
 
                             # the glossarized term might be a synonym
-                            if tas_entry['is_synonym'] == True:
-                                data_term = tas_entry['real_term']
+                            if tas_entry['isSynonym'] == True:
+                                data_term = tas_entry['realTerm']
                             else:
                                 data_term = tas_entry['term']
 
@@ -272,12 +272,12 @@ class GlossaryJSONBuilder(JSONBuilder):
                             # tas_entry['term']
                             if tas_entry['term'] in occurring_glossary_terms:
 
-                                localized_term = tas_entry['localized_term']
+                                localized_term = tas_entry['localizedTerm']
                                 glossary_lookup_term = tas_entry['term']
 
-                                if tas_entry['is_synonym'] == True:
-                                    localized_term = tas_entry['real_term']
-                                    glossary_lookup_term = tas_entry['unlocalized_real_term']
+                                if tas_entry['isSynonym'] == True:
+                                    localized_term = tas_entry['realTerm']
+                                    glossary_lookup_term = tas_entry['unlocalizedRealTerm']
 
 
                                 start_letter = localized_term[0].upper()

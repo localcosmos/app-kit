@@ -49,7 +49,7 @@ var SQLite = derive(Database, {
 
 			var primary_key = model.fields[model.Meta.primary_key];
 	
-			var sql_head = "CREATE TABLE IF NOT EXISTS " + tablename + " ( " + primary_key.db_column + " " + fieldmapping[primary_key.field_class] + " PRIMARY KEY",
+			var sql_head = "CREATE TABLE IF NOT EXISTS " + tablename + " ( " + primary_key.db_column + " " + fieldmapping[primary_key.fieldClass] + " PRIMARY KEY",
 				sql_inner = "",
 				sql_tail = ");";
 			
@@ -72,7 +72,7 @@ var SQLite = derive(Database, {
 				if (column_name == model.Meta.primary_key){
 					continue;
 				}
-				else if (model_field.field_class == "ForeignKey"){
+				else if (model_field.fieldClass == "ForeignKey"){
 					if (!(model_field.hasOwnProperty("to_field"))){
 						model_field.to_field = window[model_field.to_object].Meta.primary_key;
 					}
@@ -85,20 +85,20 @@ var SQLite = derive(Database, {
 					}
 					
 					// get the datatype from the model
-					var fk_datatype = fieldmapping[window[model_field.to_object].fields[model_field.to_field].field_class];
+					var fk_datatype = fieldmapping[window[model_field.to_object].fields[model_field.to_field].fieldClass];
 
 					var constraint_name = column_name + "_" + column_name + "_fk";
 					sql_inner = "" + model_field.db_column + " " + fk_datatype + " " +  nullable + " CONSTRAINT " + constraint_name + " REFERENCES " + window[model_field.to_object].db_identifier +  "(" + model_field.to_field + "),";
 				}
 				else {
-					sql_inner = sql_inner + " " + model_field.db_column + " " + fieldmapping[model_field.field_class];
+					sql_inner = sql_inner + " " + model_field.db_column + " " + fieldmapping[model_field.fieldClass];
 
 					if (model_field["null"] != true) {
 						sql_inner = sql_inner + " NOT NULL";
 					}
 				
 					if (model_field["default"] !== null && typeof model_field["default"] !== "undefined"){
-						if (model_field.field_class == "BooleanField"){
+						if (model_field.fieldClass == "BooleanField"){
 							if (model_field["default"] == false){
 								model_field["default"] = 0;
 							}
@@ -107,7 +107,7 @@ var SQLite = derive(Database, {
 							}
 						}
 						
-						if (model_field.field_class == "CharField" || model_field.field_class == "TextField"){
+						if (model_field.fieldClass == "CharField" || model_field.fieldClass == "TextField"){
 							sql_inner = sql_inner + " DEFAULT " + "'" + model_field["default"] + "' ";
 						}
 						else {
@@ -326,7 +326,7 @@ var SQLiteModelInterface = derive(ModelInterface, {
 				if (Model.fields.hasOwnProperty(field_name)){
 					var field_definition = Model.fields[field_name];
 
-					switch (field_definition.field_class) {
+					switch (field_definition.fieldClass) {
 						case "BooleanField":
 							if (value === true){
 								value = 1;
@@ -452,13 +452,13 @@ var SQLiteModelInterface = derive(ModelInterface, {
 			column = field_definition.db_column;
 		}
 		else {
-			if (field_definition.field_class == "ForeignKey"){
+			if (field_definition.fieldClass == "ForeignKey"){
 				column = column + "_id";
 			}
 		}
 
 		// read the value
-		switch (field_definition.field_class){
+		switch (field_definition.fieldClass){
 			case "ForeignKey":
 				if (field_definition.hasOwnProperty("to_field")){
 					value = value[field_definition.to_field];
@@ -494,7 +494,7 @@ var SQLiteModelInterface = derive(ModelInterface, {
 		}
 
 		// async
-		if (field_definition.field_class == "ImageField"){
+		if (field_definition.fieldClass == "ImageField"){
 
 			function saveNewImageToDisk(){
 

@@ -6,7 +6,7 @@
 forms.JSONField = function(kwargs){
 
 	var definition = {
-		"field_class" : "JSONField",
+		"fieldClass" : "JSONField",
 		"widget" : forms.JSONWidget, // this widget is not usable - it needs to be subclassed
 		"fields" : [
 			forms.CharField(), // verbose input
@@ -34,7 +34,7 @@ forms.JSONField = function(kwargs){
 forms.DateTimeJSONField = function(kwargs){
 
 	var definition = {
-		"field_class" : "DateTimeJSONField",
+		"fieldClass" : "DateTimeJSONField",
 		"default_initial" : function(){
 			return new Date();
 		}
@@ -53,7 +53,7 @@ forms.DateTimeJSONField = function(kwargs){
 forms.TaxonField = function(kwargs){
 
 	var definition = {
-		"field_class" : "TaxonField",
+		"fieldClass" : "TaxonField",
 
 		"error_messages" : {
 			"required" : "You have to start typing and then select a Taxon from the suggestions.",
@@ -70,7 +70,7 @@ forms.TaxonField = function(kwargs){
 			// validate the taxon
 			// value is a taxon instance
 
-			var attrs = ["taxon_source", "name_uuid", "taxon_latname", "taxon_author"];
+			var attrs = ["taxonSource", "nameUuid", "taxonLatname", "taxonAuthor"];
 
 			for (var a=0; a<attrs.length; a++){
 				var attr = attrs[a];
@@ -78,7 +78,7 @@ forms.TaxonField = function(kwargs){
 				if (!(value.hasOwnProperty(attr))){
 					throw new forms.ValidationError(_(self.error_messages["taxon_error"]));
 				}
-				else if (attr != "taxon_author" && value[attr].length == 0) {
+				else if (attr != "taxonAuthor" && value[attr].length == 0) {
 					throw new forms.ValidationError(_(self.error_messages["taxon_error"]));
 				}
 			}
@@ -88,7 +88,7 @@ forms.TaxonField = function(kwargs){
 		compress : function(self, data_list){
 
 			var taxon_json = JSON.parse(data_list[1]);
-			var taxon = Taxon.create(taxon_json.taxon_source, taxon_json.name_uuid, taxon_json.taxon_latname, taxon_json.taxon_author, taxon_json.taxon_nuid);
+			var taxon = Taxon.create(taxon_json.taxonSource, taxon_json.nameUuid, taxon_json.taxonLatname, taxon_json.taxonAuthor, taxon_json.taxonNuid);
 			return taxon;
 		}
 
@@ -111,7 +111,7 @@ forms.TaxonField = function(kwargs){
 forms.PointJSONField = function(kwargs){
 
 	var definition = {
-		"field_class" : "PointJSONField",
+		"fieldClass" : "PointJSONField",
 		"error_messages" : {
 			"required": "This field is required.",
 			"invalid_geojson" : "Invalid Geojson.",
@@ -162,7 +162,7 @@ forms.PointJSONField = function(kwargs){
 forms.PictureField = function(kwargs){
 
 	var definition = {
-		"field_class" : "PictureField",
+		"fieldClass" : "PictureField",
 		"widget" : forms.CameraAndAlbumWidget,
 		"empty_values" : [null, '', []],
 

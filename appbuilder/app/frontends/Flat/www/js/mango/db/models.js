@@ -93,8 +93,8 @@ var ModelInterface = {
 				// model_field is the field how it has been defined in models.js
 				var model_field = Model.fields[field_name];
 
-				var field_class = model_field.field_class;
-				var parse_method = "" + field_class + "_to_javascript";
+				var fieldClass = model_field.fieldClass;
+				var parse_method = "" + fieldClass + "_to_javascript";
 
 				if (typeof self[parse_method] == "function"){
 					self[parse_method](model_field, value, function(parsed_value){
@@ -209,7 +209,7 @@ function Model(prototype, extension, override){
 
 		// autofill db_column if not defined
 		if (!(field.hasOwnProperty("db_column"))) {
-			switch (field.field_class)
+			switch (field.fieldClass)
 			{
 				case "ForeignKey":
 					field.db_column = field_name + "_id";
@@ -221,7 +221,7 @@ function Model(prototype, extension, override){
 
 		// if a field is foreign key, add the Object_name to Meta.referenced_by of
 		// the referenced object
-		if (field.field_class == "ForeignKey"){
+		if (field.fieldClass == "ForeignKey"){
 			object.Meta.references.push(field_name);
 
 			// if to_field is not set, it references the primary key
@@ -418,7 +418,7 @@ var BaseModel = {
 
 var ModelField = {
 
-	field_class : null,
+	fieldClass : null,
 
 	// if a value is stored in the db it might need to undergo a type change
 	to_db : function(self, value){
@@ -442,7 +442,7 @@ var ModelField = {
 			return forms.ChoiceField(kwargs);
 		}
 		else {
-			return forms[self.field_class](kwargs);
+			return forms[self.fieldClass](kwargs);
 		}
 	},
 
@@ -460,7 +460,7 @@ var models = {
 
 models.CharField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "CharField",
+		"fieldClass" : "CharField",
 		"validate" : function(self, value){
 			if (isChar(value)){
 				return value.toString();
@@ -476,7 +476,7 @@ models.CharField = function(kwargs){
 
 models.IntegerField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "IntegerField",
+		"fieldClass" : "IntegerField",
 		"validate" : function(self, value){
 			if (isInt(value)) {
 				return parseInt(value);
@@ -492,7 +492,7 @@ models.IntegerField = function(kwargs){
 
 models.FloatField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "FloatField",
+		"fieldClass" : "FloatField",
 		"validate" : function(self, value){
 			if (isFloat(value)){
 				return parseFloat(value);
@@ -508,7 +508,7 @@ models.FloatField = function(kwargs){
 
 models.DecimalField = function(kwargs){
 	var field = derive(models.FloatField, {
-		"field_class" : "DecimalField"
+		"fieldClass" : "DecimalField"
 	}, kwargs);
 
 	return field;
@@ -516,7 +516,7 @@ models.DecimalField = function(kwargs){
 
 models.BooleanField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "BooleanField",
+		"fieldClass" : "BooleanField",
 		"validate" : function(self, value){
 			if (isBool(value)){
 				return parseBool(value);
@@ -533,7 +533,7 @@ models.BooleanField = function(kwargs){
 /* accepts Date object, which is casted to unixtime for the db */
 models.DateTimeField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "DateTimeField",
+		"fieldClass" : "DateTimeField",
 		"validate" : function(self, value){
 			if (!(value instanceof Date)){
 
@@ -571,7 +571,7 @@ models.ForeignKey = function(model, kwargs){
 	kwargs["to_object"] = model.model_name;
 	
 	var field = derive(ModelField, {
-		"field_class" : "ForeignKey",
+		"fieldClass" : "ForeignKey",
 		"validate" : function(self, value){
 			if (Object.getPrototypeOf(value) === window[self.to_object] ){
 				return value;				
@@ -592,7 +592,7 @@ models.ForeignKey = function(model, kwargs){
 
 models.JSONField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "JSONField",
+		"fieldClass" : "JSONField",
 		"to_db" : function(self, value){
 			if (typeof value != "string"){
 				return JSON.stringify(value);
@@ -620,7 +620,7 @@ models.JSONField = function(kwargs){
 
 models.UUIDField = function(kwargs){
 	var field = derive(ModelField, {
-		"field_class" : "UUIDField",
+		"fieldClass" : "UUIDField",
 		"validate" : function(self, value){
 			// regex /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -916,7 +916,7 @@ var FlexImage = derive(FlexFile, {
 models.ImageField = function(kwargs){
 
 	var field = derive(ModelField, {
-		"field_class" : "ImageField",
+		"fieldClass" : "ImageField",
 		"validate" : function(self, value){
 			if (FlexImage.isPrototypeOf(value) == false){
 				throw new TypeError("ERROR: models.ImageField expected FlexImage instance, not " + value);
