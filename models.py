@@ -946,6 +946,8 @@ class ContentImageCommon:
     # add features to an image file, return a buffer
     def add_features(self, pil_image):
 
+        width, height = pil_image.size
+
         in_memory_file = io.BytesIO()
         pil_image.save(in_memory_file, format='PNG')
         in_memory_file.seek(0)
@@ -998,6 +1000,20 @@ class ContentImageCommon:
               
                     initialPoint['x'] = initialPoint['x'] + ( vector['x'] * lambda_factor )
                     initialPoint['y'] = initialPoint['y'] + ( vector['y'] * lambda_factor )
+
+
+                elif initialPoint['x'] > width or initialPoint['y'] > height:
+
+                    if initialPoint['x'] > initialPoint['y']:
+                         lambda_factor = ((initialPoint['x'] - width) / vector['x'])
+
+                    else:
+                        lambda_factor = ((initialPoint['y'] - height) / vector['y'])
+
+              
+                    initialPoint['x'] = initialPoint['x'] - ( vector['x'] * lambda_factor )
+                    initialPoint['y'] = initialPoint['y'] - ( vector['y'] * lambda_factor )
+
 
                 dx = terminalPoint['x'] - initialPoint['x']
                 dy = terminalPoint['y'] - initialPoint['y']

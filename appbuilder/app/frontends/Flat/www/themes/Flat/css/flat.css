@@ -39,13 +39,13 @@ html {
 
 @media (orientation: landscape) {
 	html {
-		background-image: url("../../../localcosmos/user_content/frontend/images/appPcBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appPcBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.svg");
+		background-image: url("../../../localcosmos/user_content/frontend/images/appPcBackground.webp"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appPcBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.svg");
 	}
 }
 
 @media (orientation: portrait) {
 	html {
-		background-image: url("../../../localcosmos/user_content/frontend/images/appBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appBackground.svg");
+		background-image: url("../../../localcosmos/user_content/frontend/images/appPcBackground.webp"), url("../../../localcosmos/user_content/frontend/images/appBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appBackground.svg");
 	}
 }
 
