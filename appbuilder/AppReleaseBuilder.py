@@ -1960,24 +1960,21 @@ class AppReleaseBuilder(AppBuilderBase):
 
             processed_image = content_image.get_in_memory_processed_image(original_image, size)
 
-            # all processed images are png
-            original_format = original_image.format
-            output_format = original_format
-            allowed_formats = ['png', 'jpg', 'jpeg']
+            # all processed images are webp
+            #original_format = original_image.format
+            #output_format = original_format
+            #allowed_formats = ['png', 'jpg', 'jpeg']
 
             #if original_format not in allowed_formats:
-            file_extension = 'jpg'
-            output_format = 'JPEG'
+            file_extension = 'webp'
+            output_format = 'WEBP'
 
 
             if filename:
                 blankname, ext = os.path.splitext(filename)
                 output_filename = '{0}.{1}'.format(blankname, file_extension)
             else:
-                source_image = content_image.image_store.source_image
-                original_filename = os.path.basename(source_image.path)
-                original_blankname, original_ext = os.path.splitext(original_filename)
-                output_filename = '{0}-{1}-{2}{3}'.format(content_image.image_type, content_image.id, size, original_ext)
+                output_filename = '{0}-{1}-{2}.{3}'.format(content_image.image_type, content_image.id, size, file_extension)
                 #output_filename = '{0}.{1}'.format(uuid.uuid4(), file_extension)
 
 
