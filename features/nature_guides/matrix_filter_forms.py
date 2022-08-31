@@ -34,8 +34,12 @@ class MatrixFilterManagementForm(LocalizeableForm):
     def clean_name(self):
         name = self.cleaned_data.get('name', None)
 
-        if name and not self.matrix_filter:
-            exists = MatrixFilter.objects.filter(meta_node=self.meta_node, name=name).exists()
+        if name:
+
+            if not self.matrix_filter:
+                exists = MatrixFilter.objects.filter(meta_node=self.meta_node, name=name).exists()
+            else:
+                exists = MatrixFilter.objects.filter(meta_node=self.meta_node, name=name).exclude(pk=self.matrix_filter.pk)
 
             if exists:
                 del self.cleaned_data['name']

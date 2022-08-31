@@ -132,7 +132,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'taxonAuthor' : synonym.taxon_author,
             }
 
-            taxon_profile_json['synonyms'] = synonym_entry
+            taxon_profile_json['synonyms'].append(synonym_entry)
 
         for language_code in languages:
             vernacular_name = profile_taxon.vernacular(language=language_code)
@@ -448,8 +448,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         image_entry = {
             'text': content_image_mixedin.text,
             'imageUrl' : self._get_image_url(content_image_mixedin),
-            'smallUrl' : self._get_image_url(content_image_mixedin, self.small_image_size),
-            'largeUrl' : self._get_image_url(content_image_mixedin, self.large_image_size),
+            'smallUrl' : self._get_image_url(content_image_mixedin, size=self.small_image_size),
+            'largeUrl' : self._get_image_url(content_image_mixedin, size=self.large_image_size),
         }
 
         return image_entry

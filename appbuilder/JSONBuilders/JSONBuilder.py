@@ -59,6 +59,9 @@ class JSONBuilder:
 
     def _get_image_url(self, content_image_mixedin, image_type='image', filename=None, size=None):
 
+        if isinstance(size, tuple):
+            size = size[0]
+
         content_image = self._get_content_image(content_image_mixedin, image_type=image_type)
 
         if content_image:

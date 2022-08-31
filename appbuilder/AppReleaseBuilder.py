@@ -1375,7 +1375,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         frontend_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(frontend, frontend_json)
+        self._add_generic_content_to_app(frontend, frontend_json, only_one_allowed=True)
 
     ###############################################################################################################
     # BUILDING GENERIC CONTENTS
@@ -1450,6 +1450,12 @@ class AppReleaseBuilder(AppBuilderBase):
     # stores the json on disk
     # adds feature_entry to features.js
     def _add_generic_content_to_app(self, generic_content, generic_content_json, only_one_allowed=False, **kwargs):
+
+        if only_one_allowed == True:
+            generic_content_json['isMulticontent'] = False
+        else:
+            generic_content_json['isMulticontent'] = True
+
 
         filename_identifier = str(generic_content.uuid)
 
@@ -1959,15 +1965,20 @@ class AppReleaseBuilder(AppBuilderBase):
             output_format = original_format
             allowed_formats = ['png', 'jpg', 'jpeg']
 
-            if original_format not in allowed_formats:
-                output_format = 'png'
+            #if original_format not in allowed_formats:
+            file_extension = 'jpg'
+            output_format = 'JPEG'
 
 
             if filename:
                 blankname, ext = os.path.splitext(filename)
-                output_filename = '{0}.{1}'.format(blankname, output_format)
+                output_filename = '{0}.{1}'.format(blankname, file_extension)
             else:
-                output_filename = '{0}.{1}'.format(uuid.uuid4(), output_format)
+                source_image = content_image.image_store.source_image
+                original_filename = os.path.basename(source_image.path)
+                original_blankname, original_ext = os.path.splitext(original_filename)
+                output_filename = '{0}-{1}-{2}{3}'.format(content_image.image_type, content_image.id, size, original_ext)
+                #output_filename = '{0}.{1}'.format(uuid.uuid4(), file_extension)
 
 
             relative_image_filepath = os.path.join(relative_path, output_filename)
@@ -1975,7 +1986,14 @@ class AppReleaseBuilder(AppBuilderBase):
             
 
             if not os.path.isfile(absolute_image_filepath):
-                processed_image.save(absolute_image_filepath, output_format)
+
+                if output_format == 'JPEG':
+                    image_with_white_background = Image.new("RGB", processed_image.size, (255, 255, 255))
+                    image_with_white_background.paste(processed_image)
+                    image_with_white_background.save(absolute_image_filepath, output_format, quality=95)
+
+                else:
+                    processed_image.save(absolute_image_filepath, output_format)
 
 
             # add image to licence_registry
