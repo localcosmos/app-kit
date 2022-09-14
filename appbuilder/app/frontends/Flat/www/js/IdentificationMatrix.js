@@ -1718,6 +1718,8 @@ class IdentificationMatrix {
   }
 
   // events when identification has finished
+  // check if all matrix filters have a selection
+  // also check if those matrix filters, which have no selection have spaces which can be activated
   evaluate_identification () {
 
     if (this.DEBUG == true){
@@ -1730,6 +1732,7 @@ class IdentificationMatrix {
       let matrix_filter = MATRIX_FILTERS[matrix_filter_uuid];
 
       let matrix_filter_has_selection = false;
+      let matrix_filter_has_selectable_space = false;
 
       if (matrix_filter.status == STATUS_INACTIVE){
         matrix_filter_has_selection = true;
@@ -1746,6 +1749,8 @@ class IdentificationMatrix {
           }
         }
         else {
+
+          // check for selection
           for (let space_identifier in matrix_filter.matrix_filter_spaces){
             let matrix_filter_space = matrix_filter.matrix_filter_spaces[space_identifier];
 
@@ -1753,11 +1758,17 @@ class IdentificationMatrix {
               matrix_filter_has_selection = true;
               break;
             }
+
+            // check if there are selectable spaces
+            if (matrix_filter_space.is_possible == true){
+              matrix_filter_has_selectable_space = true;
+            }
           }
+
         }
       }
 
-      if (matrix_filter_has_selection == false){
+      if (matrix_filter_has_selection == false && matrix_filter_has_selectable_space == true){
         all_filters_have_selection = false;
         if (this.DEBUG == true){
           console.log("[IdentificationMatrix] " + matrix_filter.name + " has no selection yet.");
