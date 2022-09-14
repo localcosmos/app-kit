@@ -4297,7 +4297,9 @@ var NatureGuideView = View(TemplateView, {
 			
 			let matrix_item_element = document.getElementById(matrix_item.uuid);
 
-			matrix_item_element.style.order = matrix_item.points * (-1);
+			let order =  Math.ceil( matrix_item.points_percentage * 100 ) * (-1);
+
+			matrix_item_element.style.order = order;
 			
 			// update point percentage
 			let points_span = document.getElementById(matrix_item.uuid + "-points");
@@ -4329,7 +4331,7 @@ var NatureGuideView = View(TemplateView, {
 			}
 		}
 
-		identificationForm.addEventListener("matrix-item-100-percent", onFinishedIdentificationStep);
+		//identificationForm.addEventListener("matrix-item-100-percent", onFinishedIdentificationStep);
 
 		identificationForm.addEventListener("identification-finished", onFinishedIdentificationStep);
 
