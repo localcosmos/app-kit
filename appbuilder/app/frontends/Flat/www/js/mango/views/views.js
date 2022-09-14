@@ -920,6 +920,11 @@ var Pagemanager = {
 			//pages[0].classList.add("faded-out");
 		}
 
+		try {
+			OverlayView.close_current_overlay();
+		}
+		catch {}
+
 		if (self.save_state_on_exit == true){
 			self._update_state();
 		}
