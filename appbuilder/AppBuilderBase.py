@@ -296,6 +296,10 @@ class AppBuilderBase:
         return os.path.join(self._frontend_root_path, 'www')
 
     @property
+    def _frontend_locales_folder_path(self):
+        return os.path.join(self._frontend_www_path, 'locales')
+
+    @property
     def _frontend_settings_json_path(self):
         return os.path.join(self._frontend_root_path, 'settings.json')
 

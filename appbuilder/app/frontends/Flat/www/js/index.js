@@ -1,5 +1,6 @@
 var app = {
 	language : null,
+	automatics: true,
 	requires_geolocation : false, 
     initialize: function() {
         this.bindEvents();

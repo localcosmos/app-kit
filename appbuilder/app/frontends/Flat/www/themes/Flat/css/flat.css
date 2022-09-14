@@ -349,18 +349,41 @@ body {
 /* page */
 .page {
 	width: 100%;
-	-webkit-opacity: 0.2;
-	opacity: 0.2;
+	-webkit-opacity: 1;
+	opacity: 1;
 	-webkit-transition: .3s ease;
 	transition: .3s ease;
-	-webkit-transform: scale3d(0.9,0.9,1);
-	transform: scale3d(0.9,0.9,1);
+	-webkit-transform :scale3d(1,1,1) translate3d(0px,0px,0px);
+	transform: scale3d(1,1,1) tanslate3d(0px,0px,0px);
+}
+
+.page.faded-out-right {
+	-webkit-transition: .3s ease;
+	transition: .3s ease;
+	-webkit-transform: translate3d(0px,0px,0px);
+    transform : tanslate3d(0px,0px,0px);
+}
+
+.page.faded-out-left {
+	-webkit-transition: .3s ease;
+	transition: .3s ease;
+	-webkit-transform: translate3d(100%,0px,0px);
+    transform : tanslate3d(100%,0px,0px);
 }
 
 .page.faded-in {
 	opacity: 1;
 	-webkit-transform :scale3d(1,1,1);
 	transform: scale3d(1,1,1);
+	-webkit-transform: translate3d(0px,0px,0px);
+    transform : tanslate3d(0px,0px,0px);
+}
+
+.page.faded-out {
+	-webkit-opacity: 0.2;
+	opacity: 0.2;
+	-webkit-transform :scale3d(.9,.9,.9) translate3d(0px,0px,0px);
+	transform: scale3d(.9,.9,.9) tanslate3d(0px,0px,0px);
 }
 
 .padding {
@@ -943,33 +966,59 @@ body {
 
 #keynodes-page {
 	position: fixed;
-	left: 0;
+	/*left: 1rem;*/
+	left: 0rem;
 	top: 2.5rem;/*appbar height*/
-	right: 0rem; bottom: 3rem; /* .footer height */
+	right: 0rem; bottom: 0rem; /* .footer height */
 	z-index: 75;
 	overflow-y: auto;
-	background: rgba(255,255,255,0.95);
+	background: rgba(255,255,255, 1);
 	-webkit-transition: -webkit-transform 0.5s;
     transition: transform 0.3s;
 	padding-left: 15px;
 	padding-right: 15px;
 	transform-style: preserve-3d;
+	/*box-shadow: -0.5rem 0 0.5rem 0 rgba(0,0,0,0.4);*/
 }
 
 .keynodes-hidden {
-	-webkit-transform: translate3d(0px, 115%, 0px);
-    transform : tanslate3d(0px, 115%, 0px);
+	-webkit-transform: translate3d(115%, 0px, 0px);
+    transform : tanslate3d(115%, 0px, 0px);
 }
 
+.keynodes-slideleft {
+	-webkit-transform: translate3d(-115%, 0px, 0px);
+    transform : tanslate3d(-115%, 0px, 0px);
+}
 
 /* identification */
+#toggleMatrixItemsButton {
+	width: 6rem;
+	height: 6rem;
+	background-color: #0785D3;
+	border-radius: 50%;
+	position:fixed;
+	right: 12vw;
+	bottom: 12vw;
+	z-index: 70;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#toggleMatrixItemsButton img {
+	width: 40%;
+	height: auto;
+}
 
 .keynode {
 	width: 100%;
-	background: #e0e0e0;
+	background: rgb(240,240,240);
 	border-radius: .5em;
-	padding: .3rem !important;
 	margin-bottom: 1rem;
+	box-shadow: 0px 3px 6px 1px rgba(0,0,0,0.15);
+	border-bottom: 1px solid #ccc;
+	transition: order .5s ease-in-out;
 }
 
 .keynode .fact-sheet-link {
@@ -985,8 +1034,9 @@ body {
 
 .choiceBoxNew {
 	display: flex;
-	align-items: center;
-	
+	flex-direction: row;
+	align-items: stretch;
+	margin: .5rem;
 }
 
 .choiceBoxNew .title {
@@ -996,12 +1046,39 @@ body {
 	padding-left: .5rem;
 	padding-right: .5rem;
 	align-items: center;
-	font-size: 1rem;
+	font-size: 1.3rem;
 	color: #303030;
 }
 
-.choiceBoxNew .image {
+.choiceBoxNew .points {
 	width: 20%;
+	background-color: #e8e8e8;
+	border-radius: .5em 0 0 .5em;
+	margin: -.5rem 0 -.5rem -.5rem;
+	display:flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: #888;
+	font-size: 1.1rem;
+}
+
+.choiceBoxNew .image {
+	width: 30%;
+}
+
+.choiceBoxNew .image > img {
+	border-radius: .5em;
+}
+
+
+.next-steps .choiceBoxNew .points {
+	margin: -.5rem 0 -.5rem -1.5rem;
+}
+
+.next-steps .choiceBoxNew img {
+	height: 5rem;
+	width: 5rem;
 }
 
 .choiceBox, .choiceBox > div {
@@ -1079,6 +1156,10 @@ input[type="range"] {
 
 .matrix-filter.is-restricted.restriction-active {
 	display: none;
+}
+
+.matrix-filter-name, #keynodes-title {
+	font-size: 1.3rem;
 }
 
 /* fix slider */
@@ -1426,27 +1507,29 @@ input[type=range]::-moz-range-track {
 }
 
 .trait-property.dtai label {
-	border-radius: 0.5em 0.5em 0 0;
-	padding-bottom: 0;
+	border-radius: 0.5em 0.5em 0.5em 0.5em;
+	/*padding-bottom: 0;*/
 	display: block;
+	box-shadow: 0px 3px 6px 1px rgba(0,0,0,0.15);
 } 
 
 .trait-property input[type='checkbox'] + label + div.trait-property-text {
-	background-color: rgba(234,234,234,1);
-	border-radius: 0 0 0.5em 0.5em;
+	/*background-color: rgba(234,234,234,1);
+	border-radius: 0 0 0.5em 0.5em;*/
 }
 
 .trait-property input[type='checkbox'], .trait-property input[type='radio'] {
 	display: none;
 }
 
-.trait-property input[type='checkbox']:checked + label, .trait-property input[type='radio']:checked + label, .trait-property input[type='checkbox']:checked + label + div.trait-property-text {
-	background-color: rgb(92,184,92);
+.trait-property input[type='checkbox']:checked + label, .trait-property input[type='radio']:checked + label/*, .trait-property input[type='checkbox']:checked + label + div.trait-property-text*/ {
+	background-color: rgb(173, 242, 166);/*rgb(92,184,92);*/
+	box-shadow: 0px 3px 6px 1px rgb(173, 242, 166);
 }
-
+/*
 .trait-property.dtai input:checked + label + div, .trait-property.dtai input:checked + label + div + div {
 	background-color: rgb(92,184,92);
-}
+}*/
 
 .trait-property-text > p {
 	margin:0;
@@ -1459,6 +1542,10 @@ input[type=range]::-moz-range-track {
 	font-weight: normal;
 	font-size: 0.9rem;
 	min-height: 2rem;
+}
+
+.trait-property.dtai .square {
+	border-radius: .5em;
 }
 
 /* text only */
@@ -1528,7 +1615,7 @@ input[type=range]::-moz-range-track {
 
 
 .trait-property.dtai .secondary-image, .trait-property-text.dtai {
-	background-color: rgba(234,234,234,1);
+	/*background-color: rgba(234,234,234,1);*/
 }
 
 .trait-property.dtai .secondary-image {
@@ -1830,6 +1917,10 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		height: 3.5rem; /* fixed top navbar */
 	}
 
+	#toggleMatrixItemsButton {
+		display: none;
+	}
+
 	.nature-guide {
 		display: flex;
 		flex-direction: row;
@@ -1853,9 +1944,10 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		left: 0;
 		right: 0;
 		bottom: 0;
-		margin-top: 3.5rem;
+		margin-top: 0rem;/*3.5rem;*/
 		margin-bottom: 3rem;
-		
+		box-shadow: none;
+		background: rgb(245, 245, 245);
 	}
 	
 	/*#keynodes-page {
@@ -1872,6 +1964,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		position: relative;
 		color: rgba(50,50,50,1);
 		overflow-y: scroll;
+		background: rgb(255,255,255);
 	}
 
 	#identification-matrix > div {

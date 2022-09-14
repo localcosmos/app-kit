@@ -4020,6 +4020,27 @@ if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OP
 	LogFromMatrix.login_required = false;
 }
 
+function calculateMatrixItemBackgroundcolor(matrix_item){
+
+	var color = "";
+
+	let max_color = -144;
+	let min_color = -255;
+
+	if (matrix_item.points_percentage >= 0.5){
+
+		let color_span = max_color - min_color;
+		let one_percent_in_points = color_span / (0.5*100);
+		let percent_points_over_50 = Math.abs( (matrix_item.points_percentage*100) - (0.5*100) );
+		let color_setter = percent_points_over_50 * one_percent_in_points;
+		
+		let r_value = Math.abs(min_color + color_setter);
+		color = "rgb(" + r_value + ",243, 74)";
+		
+	}
+
+	return color;
+}
 
 /* covers both species lists and identificatoin keys */
 var NatureGuideView = View(TemplateView, {
@@ -4030,10 +4051,20 @@ var NatureGuideView = View(TemplateView, {
 	"always_load_appbar" : true,
 
 	get : function(self, request, args, kwargs){
+		
+		if ("noautomatics" in request.GET){
+			app.automatics = false;
+		}
+		else if ("automatics" in request.GET) {
+			app.automatics = true;
+		}
 
 		var keynodes = document.getElementById("keynodes-page");
 		if (keynodes != null){
-			ToggleMatrixItems.close(ToggleMatrixItems);
+			//ToggleMatrixItems.slideleft(ToggleMatrixItems);
+			//setTimeout(function(){
+				ToggleMatrixItems.close(ToggleMatrixItems);
+			//},500)
 		}
 
 		// pass to appheader
@@ -4050,7 +4081,8 @@ var NatureGuideView = View(TemplateView, {
 			var context = {
 				"node" : current_node,
 				"uuid" : uuid,
-				"filter_available" : false
+				"filter_available" : false,
+				"automatics" : app.automatics
 			};
 			
 			if (current_node.matrixFilters.length > 0){
@@ -4270,22 +4302,30 @@ var NatureGuideView = View(TemplateView, {
 			// update point percentage
 			let points_span = document.getElementById(matrix_item.uuid + "-points");
 			if (matrix_item.points > 0){
-				points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.maxPoints + ")";
+				//points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.maxPoints + ")";
+				points_span.textContent = "" + matrix_item.points + "/" + matrix_item.maxPoints;
 			}
 			else {
-				points_span.textContent = "";
+				points_span.textContent = "0";
 			}
+
+
+			let bgcolor = calculateMatrixItemBackgroundcolor(matrix_item);
+			points_span.parentElement.parentElement.style.backgroundColor = bgcolor;
 			
 		});
 
 		function onFinishedIdentificationStep(event){
+
+			if (app.automatics == true){
 			
-			var mqList = window.matchMedia("(min-width: 768px)");
-			if (mqList.matches == true){
-				HttpResponseRedirect(reverse("next_identification_step"));
-			}
-			else {
-				ToggleMatrixItems.open(ToggleMatrixItems);
+				var mqList = window.matchMedia("(min-width: 768px)");
+				if (mqList.matches == true){
+					HttpResponseRedirect(reverse("next_identification_step"));
+				}
+				else {
+					ToggleMatrixItems.open(ToggleMatrixItems);
+				}
 			}
 		}
 
@@ -4427,6 +4467,9 @@ var NextIdentificationStep = View(TemplateView, {
 					nature_guide_item.points = matrix_item.points;
 					nature_guide_item.maxPoints = matrix_item.maxPoints;
 					nature_guide_item.points_percentage = parseInt(matrix_item.points_percentage*100);
+
+					let bgcolor = calculateMatrixItemBackgroundcolor(matrix_item);
+					nature_guide_item.bgcolor = bgcolor;
 
 					top_matrix_items.push(nature_guide_item);
 				}
@@ -4570,7 +4613,13 @@ var ToggleMatrixItems = View(OverlayView, {
 
 	toggle_class : "keynodes-hidden",
 
+	slideleft_class: "keynodes-slideleft",
+
 	open : function(self){
+
+		if (typeof self == "undefined" || self == null){
+			var self = Object.create(this);
+		}
 
 		var filters = document.getElementById(this.toggle_element_id);
 
@@ -4587,9 +4636,21 @@ var ToggleMatrixItems = View(OverlayView, {
 
 		var filters = document.getElementById(this.toggle_element_id);
 		filters.classList.add(this.toggle_class);
+		filters.classList.remove(this.slideleft_class);
 
 		document.body.classList.remove("modal-open");
 		ToggleMatrixItems.super().close();
+	},
+
+	slideleft: function(self) {
+		var filters = document.getElementById(this.toggle_element_id);
+
+		filters.scrollTo(0,0);
+
+		filters.classList.add(this.slideleft_class);
+		document.body.classList.remove("modal-open");
+		ToggleMatrixItems.super().close();
+		
 	},
 
 	toggle : function(self, request, args, kwargs){
@@ -4610,7 +4671,7 @@ var ToggleMatrixItems = View(OverlayView, {
 
 });
 
-var reset_matrixFilters = function(self, request, args, kwargs){
+var reset_matrix_filters = function(self, request, args, kwargs){
 	app.identification.reset();
 	kwargs['currentTarget'].blur();
 };

@@ -1241,6 +1241,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         primary_locale = self.meta_app.localizations[self.meta_app.primary_language]
 
+        frontend_primary_locale = self._get_frontend_locale(self.meta_app.primary_language)
+        for key, localization in frontend_primary_locale.items():
+            primary_locale[key] = localization
+
         with open(app_primary_locale_filepath, 'w') as app_primary_locale_file:
             app_primary_locale_file.write(json.dumps(primary_locale))
 
@@ -1250,7 +1254,12 @@ class AppReleaseBuilder(AppBuilderBase):
 
         for language_code in self.meta_app.secondary_languages():
             
-            locale = self.meta_app.localizations[language_code]
+            locale = self.meta_app.localizations[language_code].copy()
+
+            frontend_locale = self._get_frontend_locale(language_code)
+            for key, localization in frontend_locale.items():
+                locale[key] = localization
+
             locale_folder = self._app_locale_path(language_code)
 
             if not os.path.isdir(locale_folder):
@@ -1280,6 +1289,20 @@ class AppReleaseBuilder(AppBuilderBase):
 
             with open(locale_filepath, 'w') as locale_file:
                 locale_file.write(json.dumps(locale))
+
+
+    def _get_frontend_locale(self, language_code):
+        
+        locale = {}
+        locale_filepath = os.path.join(self._frontend_locales_folder_path, language_code, 'plain.json')
+
+        if os.path.isfile(locale_filepath):
+            with open(locale_filepath, 'r') as locale_file:
+                locale = json.load(locale_file)
+        else:
+            self.logger.warn('No locale file found for langauge {0}'.format(language_code))
+
+        return locale
 
 
     def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):

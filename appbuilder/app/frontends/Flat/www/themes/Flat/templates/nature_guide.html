@@ -1,7 +1,7 @@
 <div id="nature-guide" class="nature-guide">
 	
 	{{#if node.matrixFilters}}
-		<div id="identification-matrix" class="page pb-5">
+		<div id="identification-matrix" class="page faded-out pb-5 swipeleft" action="ToggleMatrixItems.open">
 
 			<div class="pt-5 pb-3">
 				<div class="col-12 text-center ">
@@ -12,6 +12,12 @@
 						<a class="tap" link="{{url 'fact_sheet_modal' node.factSheets.0.id}}">{{tp node.factSheets.0.title }}</a>
 					</div>
 				{{/if}}
+				<div class="col-12 text-center">
+					{{#if automatics}}
+					<hr>
+					{{/if}}
+				</div>
+				
 			</div>
 
 			<div>
@@ -21,64 +27,62 @@
 					</div>
 
 					{{#each node.matrixFilters}}
-						<div id="{{uuid}}" class="matrix-filter mt-2 {{#if isRestricted}}is-restricted restriction-active{{/if}}" current-selection="">
-							<div class="matrix-filter-name">
+						<div id="{{uuid}}" class="matrix-filter px-3 mt-2 {{#if isRestricted}}is-restricted restriction-active{{/if}}" current-selection="">
+							<div class="matrix-filter-name py-3">
 								<strong>{{t name }}</strong>
 								{{#if definition.allowMultipleValues }}<small>({{t 'multiple choice'}})</small>{{/if}}
 							</div>
 							{{#ifequal type 'DescriptiveTextAndImagesFilter'}}
-								<div class="container-fluid">
-									<div class="row">
+								<div class="row">
 
-										{{#each space}}
-											<div class="col-4 col-md-3 col-lg-3 col-xl-2 mb-3">
-												<div class="trait-property dtai">
-													<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
-													<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
-														<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{imageUrl}}')"></div>
-														
-													</label>
-													{{#if secondaryImageUrl}}
-														<div class="secondary-image">
-															<img class="secondary-dtai-image tap" action="switchImage" src="{{secondaryImageUrl}}" data-primary-image-id="{{../uuid}}-{{encodedSpace}}-primary-image" data-primary-image-url="{{ imageUrl }}" data-secondary-image-url="{{ secondaryImageUrl }}" />
-														</div>
-													{{/if}}
-													<div class="trait-property-text dtai text-center p-1">{{t encodedSpace}}</div>
-												</div>
+									{{#each space}}
+										<div class="col-6 col-md-3 col-lg-3 col-xl-2 mb-3">
+											<div class="trait-property dtai">
+												<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+												<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
+													<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl}}{{else}}img/noimage.svg{{/if}}')"></div>
+													
+												</label>
+												{{#if secondaryImageUrl}}
+													<div class="secondary-image">
+														<img class="secondary-dtai-image tap" action="switchImage" src="{{secondaryImageUrl}}" data-primary-image-id="{{../uuid}}-{{encodedSpace}}-primary-image" data-primary-image-url="{{ imageUrl }}" data-secondary-image-url="{{ secondaryImageUrl }}" />
+													</div>
+												{{/if}}
+												<div class="trait-property-text dtai text-center p-1">{{t encodedSpace}}</div>
 											</div>
-										{{/each}}
+										</div>
+									{{/each}}
 
-									</div>
 								</div>
 							{{/ifequal}}
 							{{#ifequal type 'TextOnlyFilter'}}
-								<div class="container-fluid">
-									<div class="row align-items-stretch">
-										{{#each space}}
-											<div class="col-6 col-lg-4 col-xl-2 mb-3">
 
-												<div class="trait-property text-only">
-													<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+								<div class="row align-items-stretch">
+									{{#each space}}
+										<div class="col-6 col-lg-4 col-xl-2 mb-3">
+
+											<div class="trait-property text-only">
+												<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+												<div>
+													<div class="trait-property-text">{{t encodedSpace}}</div>
 													<div>
-														<div class="trait-property-text">{{t encodedSpace}}</div>
-														<div>
-															<label for="{{../uuid}}-{{encodedSpace}}" class="text-center trait-property-indicator">
-																&nbsp;
-															</label>
-														</div>
+														<label for="{{../uuid}}-{{encodedSpace}}" class="text-center trait-property-indicator">
+															&nbsp;
+														</label>
 													</div>
 												</div>
 											</div>
-										{{/each}}
-									</div>
+										</div>
+									{{/each}}
 								</div>
+
 							{{/ifequal}}
 							{{#ifequal type 'ColorFilter'}}
 								<div class="container-fluid">
 									<div class="row">
 
 										{{#each space}}
-											<div class="col-4 col-md-3 col-lg-2 col-xl-2 mb-3">
+											<div class="col-4 col-md-3 col-lg-2 col-xl-2 col-xxl-1 mb-3">
 												<div class="trait-property">
 													<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encodedSpace }}" data-value="{{stringify encodedSpace }}" />
 													<label for="{{../uuid}}-{{@index}}" class="text-center">
@@ -176,7 +180,16 @@
 		</div>
 	{{/if}}
 
-	<div id="keynodes-page" class="keynodes-hidden">
+	<div id="keynodes-page" class="keynodes-hidden swiperight" action="ToggleMatrixItems.close">
+
+		<div id="keynodes-title" class="py-3 text-center">
+			<strong>{{t 'Evaluation'}}</strong><br>
+			<small><span>{{t 'Sorted by match'}}</span></small>
+			<div class="text-left mt-3 d-md-none">
+				{{t 'Continue with...'}}
+			</div>
+		</div>
+
 		<div id="keynodes" class="row flex-column no-gutters justify-content-center">
 
 			<div class="text-loader">...{{tp 'Loading'}}...</div>
@@ -196,18 +209,21 @@
 	
 </div>
 {{#if node.matrixFilters}}
+	<div id="toggleMatrixItemsButton" class="tap" action="ToggleMatrixItems.toggle">
+		<img src="themes/Flat/img/funnel.svg" />
+	</div>
+
+	<!--
 	<div class="footer d-md-none">
 		<div class="tap text-center" action="ToggleMatrixItems.toggle">
 			<div class="footer-icon"><img src="img/identify-icon.svg" /></div>
 			<div>{{tp 'results'}}</div>
-		</div>
-		<div class="text-center"><!-- action="ToggleMatrixItems.close"> -->
-			<!--<div class="children-count text-danger">{{ node.childrenCount }}</div>
-			<div>{{tp 'results'}}</div>-->
 		</div>
 		<div class="tap text-center" action="reset_matrix_filters">
 			<div class="footer-icon"><img src="img/restart.svg" /></div>
 			<div>{{tp 'restart'}}</div>
 		</div>
 	</div>
+-->
+
 {{/if}}

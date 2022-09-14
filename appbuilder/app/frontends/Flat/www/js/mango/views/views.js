@@ -650,7 +650,7 @@ var Pagemanager = {
 		self._on_new_page(view_identifier, args, kwargs);
     	
     	self._update_self(page_id, request_path, view_identifier, args, kwargs);
-	    	
+	    
 		self._animations.fadein();
 
     	window.scrollTo(0,0);
@@ -668,7 +668,17 @@ var Pagemanager = {
 
 			if (page.length > 0) {
 				window.getComputedStyle(page[0]).opacity;
-			    page[0].classList.add("faded-in");
+			    page[0].classList.remove("faded-out-right");
+				page[0].classList.remove("faded-out-left");
+				page[0].classList.remove("faded-out");
+			}
+		},
+		fadeout : function (){
+			var page = document.getElementsByClassName("page");
+
+			if (page.length > 0) {
+				window.getComputedStyle(page[0]).opacity;
+			    page[0].classList.add("faded-out");
 			}
 		}
 	},
@@ -905,7 +915,9 @@ var Pagemanager = {
 		// dump current state of the page to history
 		var pages = document.getElementsByClassName("page");
 		if (pages.length){
-			pages[0].classList.remove("faded-in");
+			pages[0].classList.add("faded-out");
+			//pages[0].classList.remove("faded-in");
+			//pages[0].classList.add("faded-out");
 		}
 
 		if (self.save_state_on_exit == true){

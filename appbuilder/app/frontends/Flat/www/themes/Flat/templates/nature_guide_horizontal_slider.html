@@ -10,7 +10,7 @@
 
 					{{#each node.matrixFilters}}
 						<div id="{{uuid}}" class="matrix-filter mt-2 {{#if isRestricted}}is-restricted restriction-active{{/if}}" current-selection="">
-							<div class="matrix-filter-name">
+							<div class="matrix-filter-name py-3">
 								<strong>{{t name }}</strong>
 								{{#if definition.allowMultipleValues }}<small>({{t 'multiple choice'}})</small>{{/if}}
 							</div>
@@ -21,7 +21,7 @@
 											<div>
 												<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
 												<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
-													<div class="square responsiveback" style="background-image:url('{{imageUrl}}')"></div>
+													<div class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl}}{{else}}img/noimage.svg{{/if}}')"></div>
 													<div class="slide-element-text">{{tp encodedSpace}}</div>
 												</label>
 											</div>
