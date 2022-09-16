@@ -448,10 +448,12 @@ var BackButtonManager = {
 };
 
 window.addEventListener("pagechanged", function(event){
+
 	if (typeof(OverlayView.close_current_overlay) == "function"){
 		OverlayView.close_current_overlay();
 	}
 	OverlayView.close_current_overlay = null;
+	
 }, false);
 
 

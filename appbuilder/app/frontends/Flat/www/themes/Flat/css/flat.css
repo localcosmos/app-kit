@@ -927,10 +927,47 @@ body {
 }
 
 /* nature guide */
-
-.nature-guide {
-	width: 100%;
+#nature-guide-container {
+	width: 200vw;
 	background-color: rgb(250, 250, 250);
+	display:flex;
+	flex-direction: row;
+	touch-action: pan-y;
+	-webkit-transition: .3s ease;
+	transition: .3s ease;
+	position: relative;
+	height:100vh;
+	margin-top: -2.5rem;
+	overflow: hidden;
+}
+
+#nature-guide-container.notransition {
+	-webkit-transition: none;
+	transition: none;
+}
+
+
+#identification-matrix-new, #keynodes-page-new {
+	width: 100vw;
+	height: 100vh;
+	padding-top: 2.5rem;
+	position: absolute;
+	top:0;
+	bottom:0;
+	overflow-y: scroll;
+	touch-action: pan-y;
+	padding-bottom: 20vh;
+}
+
+#identification-matrix-new {
+	left:0;
+}
+
+#keynodes-page-new {
+	background: rgba(255,255,255, 1);
+	padding-left: 15px;
+	padding-right: 15px;
+	right:0;
 }
 
 #nodes {
@@ -1917,6 +1954,25 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		height: 3.5rem; /* fixed top navbar */
 	}
 
+	#nature-guide-container {
+		width: 100vw;
+	}
+
+	#identification-matrix-new {
+		width: 60vw;
+		padding-bottom: 0;
+	}
+	
+	#keynodes-page-new {
+		width: 40vw;
+		padding-bottom: 0;
+		background: rgb(245, 245, 245);
+	}
+
+	.choiceBoxNew .image {
+		width: 20%;
+	}
+
 	#toggleMatrixItemsButton {
 		display: none;
 	}
@@ -1957,14 +2013,20 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 
 	#identification-matrix {
 		height: auto;
-		width: 73%;
-		top: auto; bottom: auto; left: auto; right: auto;
+		/*width: 73%;*/
+		width: 100%;
+		padding: 2rem;
+		/*top: auto; bottom: auto; left: auto; right: auto;
 		padding-left: 0;
 		padding-right: 0;
 		position: relative;
 		color: rgba(50,50,50,1);
-		overflow-y: scroll;
+		overflow-y: scroll;*/
 		background: rgb(255,255,255);
+	}
+
+	#keynodes {
+		padding: 2rem;
 	}
 
 	#identification-matrix > div {
@@ -1998,6 +2060,14 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	.natureguide-item .taxonimage {
 		height: auto;
 		width: 6vw;
+	}
+
+	#identification-matrix-new {
+		width: 70vw;
+	}
+	
+	#keynodes-page-new {
+		width: 30vw;
 	}
 	
 }

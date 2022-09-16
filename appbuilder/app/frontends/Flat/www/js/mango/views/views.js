@@ -267,6 +267,16 @@ var InteractionManager = {
 
 		var self = this;
 
+		/*var options = {
+			supportedGestures : [Tap],
+			DEBUG_GESTURES: true
+		};
+		var pointerListener = new PointerListener(element, options);
+
+		pointerListener.on("tap", function(event){
+			self._input_worker(event, "tap");
+		});*/
+		
 		var hammertime = new Hammer(element, {});
 		hammertime.on("tap", function(event) {
 			self._input_worker(event, "tap");			
@@ -302,6 +312,7 @@ var InteractionManager = {
 	},
 
 	_input_worker : function(event, input_type){
+
 		var self = this;
 
 		var element = event.target;
@@ -373,6 +384,19 @@ var InteractionManager = {
 	_add_swipeleft_listener : function(element){
 		var self = this;
 
+		/*var options = {
+			supportedGestures : [Pan],
+			supportedDirections: Directions.Horizontal,
+			handleTouchEvents : false,
+			DEBUG:true
+		};
+		var panListener = new PointerListener(element, options);
+
+		panListener.on("swipeleft", function(event){
+			self._launch_request("GET", event, element); 
+		});*/
+
+		
 		var hammertime = new Hammer(element, {});
 		hammertime.on("swipeleft", function(event){
 			self._launch_request("GET", event, element); 
@@ -656,6 +680,7 @@ var Pagemanager = {
     	window.scrollTo(0,0);
 
 		window.dispatchEvent(self.pagechanged_event);
+
 	},
 
 	_on_new_page : function(view_identifier, args, kwargs){

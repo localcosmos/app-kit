@@ -4042,6 +4042,16 @@ function calculateMatrixItemBackgroundcolor(matrix_item){
 	return color;
 }
 
+
+function getCurrentTranslation(element){
+
+	var style = window.getComputedStyle(element);
+	var matrix = new WebKitCSSMatrix(style.transform);
+	var translation = matrix.m41;
+
+	return translation;
+}
+
 /* covers both species lists and identificatoin keys */
 var NatureGuideView = View(TemplateView, {
 
@@ -4059,11 +4069,11 @@ var NatureGuideView = View(TemplateView, {
 			app.automatics = true;
 		}
 
-		var keynodes = document.getElementById("keynodes-page");
+		var keynodes = document.getElementById("keynodes-page-new");
 		if (keynodes != null){
 			//ToggleMatrixItems.slideleft(ToggleMatrixItems);
 			//setTimeout(function(){
-				ToggleMatrixItems.close(ToggleMatrixItems);
+				//ToggleMatrixItems.close(ToggleMatrixItems);
 			//},500)
 		}
 
@@ -4135,7 +4145,7 @@ var NatureGuideView = View(TemplateView, {
 	/* the nodes are loaded after rendering the page */
 	post_render : function(self, args, kwargs){
 
-		ToggleMatrixItems.close(ToggleMatrixItems);
+		//ToggleMatrixItems.close(ToggleMatrixItems);
 
 		var uuid = kwargs["nature_guide_uuid"];
 
@@ -4338,6 +4348,160 @@ var NatureGuideView = View(TemplateView, {
 		
 	},
 
+	_attach_pan_listeners : function(){
+		var page = document.getElementById("nature-guide-container");
+
+		var options = {
+			supportedGestures : [Pan],
+			supportedDirections: Directions.Horizontal,
+			handleTouchEvents : false
+			//DEBUG:true
+		};
+		
+		var panListener = new PointerListener(page, options);
+
+		panListener.on("swipeleft", function(event){
+			if (screen.width < 768){
+				ToggleMatrixItems.open(ToggleMatrixItems);
+			}
+		});
+
+		page.addEventListener("swiperight", function(event){
+			if (screen.width < 768){
+				ToggleMatrixItems.close();
+			}
+		});
+
+		var ticking = false;
+		var animationFrameId = null;
+		var start_x = 0;
+		var pan_active = false;		
+
+		function requestElementUpdate(transform, wait) {
+
+			wait = wait || false;
+		
+			var transformString = "translate3d(" + transform.translate.x + "px, " + "0, 0)";
+			
+			//console.log(transformString);
+			
+			if (!ticking) {
+			
+				animationFrameId = requestAnimationFrame(function (timestamp) {
+
+					//console.log("update with " + transformString)
+			
+					page.style.webkitTransform = transformString;
+					page.style.mozTransform = transformString;
+					page.style.transform = transformString;
+				
+					animationFrameId = null;
+					ticking = false;
+			
+				});
+			
+				ticking = true;
+			}
+			else if (wait == true){
+				//console.log("WAITING")
+				setTimeout(function(){
+					requestElementUpdate(transform, true);
+				}, 100);
+			}
+		
+		}
+
+		function onPan(event){
+
+			if (pan_active == true){
+
+				//console.log(event.detail.global.deltaX);
+
+				var deltaX = start_x + event.detail.global.deltaX;
+
+				var transform = {
+					translate : {
+						x: deltaX
+					}
+				};
+
+				requestElementUpdate(transform);
+			}
+		}
+
+		function onPanEnd(event){
+
+			//console.log("panend");
+
+			page.classList.remove("notransition");
+
+			var deltaX = event.detail.global.deltaX
+			//console.log(deltaX);
+			//console.log(screen.width)
+
+			if (pan_active == true){
+
+				if (event.detail.recognizer.isSwipe == false){
+
+					let translation = getCurrentTranslation(page);
+
+					if (event.detail.global.direction == "left"){
+						if (translation < (-screen.width / 3)){
+							//console.log("panend noswipe call tmi open");
+							ToggleMatrixItems.open(ToggleMatrixItems);
+						}
+						else {
+							//console.log("panend noswipe call tmi close");
+							ToggleMatrixItems.close(ToggleMatrixItems);
+						}
+					}
+					else {
+						if (translation > (-screen.width * (2/ 3))){
+							//console.log("panend noswipe call tmi open");
+							ToggleMatrixItems.close(ToggleMatrixItems);
+						}
+						else {
+							//console.log("panend noswipe call tmi close");
+							ToggleMatrixItems.open(ToggleMatrixItems);
+						}
+					}
+					
+				}
+				else {
+					//console.log("swipe detected")
+				}
+				pan_active = false;
+			}
+			else {
+
+			}
+			
+		}
+
+		function onPanStart(event){
+			//console.log(event.detail.live.direction)
+			//console.log(Directions.Horizontal)
+			
+			if (Directions.Horizontal.indexOf(event.detail.live.direction) >= 0 && screen.width < 768){
+
+				pan_active = true;
+
+				page.classList.add("notransition");
+				let style = window.getComputedStyle(page);
+				let matrix = new WebKitCSSMatrix(style.transform);
+				let translateX =  matrix.m41;
+
+				start_x = translateX;
+			}
+		}
+		
+		page.addEventListener("panleft", onPan);
+		page.addEventListener("panright", onPan);
+		page.addEventListener("panend", onPanEnd);
+		page.addEventListener("panstart", onPanStart);
+
+	},
+
 	post_finished : function(args, kwargs){
 		var self = this;
 		var uuid = kwargs["nature_guide_uuid"];
@@ -4372,6 +4536,25 @@ var NatureGuideView = View(TemplateView, {
 				app.identification = new IdentificationMatrix('matrix-filters-form', get_items, options);
 
 				self._attach_identification_event_listeners();
+				self._attach_pan_listeners();
+
+				// check if overlay is open, from history
+				var page = document.getElementById("nature-guide-container");
+				let translation = getCurrentTranslation(page);
+				
+				if (translation < 0){
+
+					// wait for pagechanged event to be finished, ugly race condition solution
+					setTimeout(function(){
+						page.setAttribute("data-is-open", 1);
+						OverlayView.close_current_overlay = function(){
+							ToggleMatrixItems.close();
+							document.body.classList.remove("noscroll");
+						}
+					}, 500);
+					
+				}
+
 
 			}
 		});
@@ -4611,15 +4794,53 @@ var ToggleMatrixItems = View(OverlayView, {
 
 	identifier : "ToggleMatrixItems",
 
-	toggle_element_id : "keynodes-page",
+	toggle_element_id : "nature-guide-container",
 
 	toggle_class : "keynodes-hidden",
 
-	slideleft_class: "keynodes-slideleft",
+	respond_to_pagechaged : false,
+
+	_animate : function(self, transformString){
+		
+		var page = document.getElementById(this.toggle_element_id);
+
+		page.classList.remove("notransition");
+			
+		var animationFrameId = requestAnimationFrame(function (timestamp) {
+
+			console.log("TMI update with " + transformString)
+	
+			page.style.webkitTransform = transformString;
+			page.style.mozTransform = transformString;
+			page.style.transform = transformString;
+		});
+
+	},
 
 	open : function(self){
 
+		console.log("TMI open");
+
+		var page = document.getElementById(this.toggle_element_id);
+		var is_open = page.getAttribute("data-is-open");
+
 		if (typeof self == "undefined" || self == null){
+			self = this;//Object.create(this);
+		}
+
+		var transformString = "translate3d(-" + screen.width + "px, " + "0, 0)";
+				
+		self._animate(self, transformString);
+
+		document.getElementById("toggleMatrixItemsButton").style.display="none";
+
+		if (is_open == "0"){
+			ToggleMatrixItems.super().open(self);
+		}
+
+		page.setAttribute("data-is-open", 1);
+		document.body.classList.remove("noscroll");
+		/*if (typeof self == "undefined" || self == null){
 			var self = Object.create(this);
 		}
 
@@ -4632,27 +4853,32 @@ var ToggleMatrixItems = View(OverlayView, {
 
 			document.body.classList.add("modal-open");
 			ToggleMatrixItems.super().open(self);
-		}
+		}*/
 	},
 	close : function(){
 
-		var filters = document.getElementById(this.toggle_element_id);
+		console.log("TMI close");
+
+		var page = document.getElementById(this.toggle_element_id);
+		var is_open = page.getAttribute("data-is-open");
+
+		var transformString = "translate3d(0, 0, 0)";
+				
+		this._animate(this, transformString);
+
+		document.getElementById("toggleMatrixItemsButton").style.display="";
+
+		if (is_open == "1"){
+			ToggleMatrixItems.super().close();
+		}
+
+		page.setAttribute("data-is-open", 0);
+		/*var filters = document.getElementById(this.toggle_element_id);
 		filters.classList.add(this.toggle_class);
 		filters.classList.remove(this.slideleft_class);
 
 		document.body.classList.remove("modal-open");
-		ToggleMatrixItems.super().close();
-	},
-
-	slideleft: function(self) {
-		var filters = document.getElementById(this.toggle_element_id);
-
-		filters.scrollTo(0,0);
-
-		filters.classList.add(this.slideleft_class);
-		document.body.classList.remove("modal-open");
-		ToggleMatrixItems.super().close();
-		
+		ToggleMatrixItems.super().close();*/
 	},
 
 	toggle : function(self, request, args, kwargs){
