@@ -1114,8 +1114,8 @@ body {
 }
 
 .next-steps .choiceBoxNew img {
-	height: 5rem;
-	width: 5rem;
+	height: 7rem;
+	width: 7rem;
 }
 
 .choiceBox, .choiceBox > div {
@@ -1972,6 +1972,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	.choiceBoxNew .image {
 		width: 20%;
 	}
+
 
 	#toggleMatrixItemsButton {
 		display: none;
