@@ -196,7 +196,7 @@ class MatrixFilterType:
         raise NotImplementedError('MatrixFilterType subclasses require a get_filter_space_as_list_with_identifiers method')
 
 
-    def get_space_identifier(space):
+    def get_space_identifier(self, space):
          raise NotImplementedError('MatrixFilterType subclasses require a get_space_identifier method')
     
     ### FORM DATA -> MatrixFilter instance
@@ -1438,6 +1438,15 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         space_b64 = base64.b64encode(json.dumps(subspace, separators=(',', ':')).encode('utf-8')).decode('utf-8')
 
         return space_b64
+
+
+    def get_space_identifier(self, taxonfilter):
+
+        name = taxonfilter['latname']
+        space_identifier = '{0}:{1}'.format(str(self.matrix_filter.uuid), name)
+
+        return space_identifier
+
 
     # taxon json
     #{"taxa": [{"taxon_nuid": "001", "name_uuid": "f61b30e9-90d3-4e87-9641-eee71506aada",
