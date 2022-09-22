@@ -1,6 +1,6 @@
 {{#each node.children }}
 	<div id="{{uuid}}" class="col-12 keynode">
-		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal nodeType 'result'}}{{url ../result_action.action taxon.taxonSource taxon.nameUuid taxon.taxonNuid taxon.taxonLatname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
+		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal nodeType 'result'}}{{url ../result_action.feature taxon.taxonSource taxon.nameUuid taxon.taxonNuid taxon.taxonLatname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
 			<div class="points">
 				<strong><span id="{{uuid}}-points">0</span></strong>
 				<div>

@@ -40,7 +40,7 @@
 											{{#each space}}
 												<div class="col-6 col-md-3 col-lg-3 col-xl-2 mb-3">
 													<div class="trait-property dtai">
-														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
 														<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
 															<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl}}{{else}}img/noimage.svg{{/if}}')"></div>
 															
@@ -64,7 +64,7 @@
 												<div class="col-6 col-lg-4 col-xl-2 mb-3">
 
 													<div class="trait-property text-only">
-														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
 														<div>
 															<div class="trait-property-text">{{t encodedSpace}}</div>
 															<div>
@@ -86,7 +86,7 @@
 												{{#each space}}
 													<div class="col-4 col-md-3 col-lg-2 col-xl-2 col-xxl-1 mb-3">
 														<div class="trait-property">
-															<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encodedSpace }}" data-value="{{stringify encodedSpace }}" />
+															<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encodedSpace }}" data-value="{{stringify encodedSpace }}" data-spaceIdentifier="{{spaceIdentifier}}" />
 															<label for="{{../uuid}}-{{@index}}" class="text-center">
 																<div class="square responsiveback" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
 																{{#if description}}
@@ -123,7 +123,7 @@
 														{{space.[0]}}
 													</div>
 													<div class="col-6 col-md-8 col-lg-10">
-														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{space.[0]}}" max="{{space.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
+														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{encodedSpace.[0]}}" max="{{encodedSpace.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
 													</div>
 													<div class="col-3 col-md-2 col-lg-1">
 														{{space.[1]}}
@@ -141,10 +141,10 @@
 												{{#each space}}
 													<div class="col-3 col-lg-2 col-xl-1 mb-3">
 														<div class="trait-property">
-															<input id="{{../uuid}}-{{this}}" type="checkbox" name="{{../uuid}}" value="{{ this }}" data-value="{{this}}" />
-															<label for="{{../uuid}}-{{this}}" class="text-center">
+															<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{ encodedSpace }}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
+															<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
 																<div class="square responsiveback numbercontainer">
-																	<span>{{this}}</span>
+																	<span>{{encodedSpace}}</span>
 																</div>
 															</label>
 														</div>
@@ -161,7 +161,7 @@
 												{{#each space}}
 													<div class="col-4 col-md-3 col-lg-2 col-xl-1 mb-3">
 														<div class="trait-property">
-															<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" />
+															<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
 															<label for="{{../uuid}}-{{latname}}" class="text-center">
 																<div class="square responsiveback contain taxonfilter" {{#if isCustom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
 																	<div>{{#if isCustom}}{{shortName}}{{/if}}</div>

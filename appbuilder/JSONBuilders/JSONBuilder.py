@@ -29,13 +29,9 @@ class JSONBuilder:
     # language independant
     def _build_common_json(self):
 
-        options = {}
-        if self.app_generic_content.options:
-            options = self.app_generic_content.options
+        options = self.get_options()
 
-        global_options = {}
-        if self.generic_content.global_options:
-            global_options = self.generic_content.global_options
+        global_options = self.get_global_options()
         
         generic_content_json = {
             'uuid' : str(self.generic_content.uuid),
@@ -135,3 +131,32 @@ class JSONBuilder:
         camel_case_string = ''.join(string_parts)
 
         return camel_case_string
+
+
+    def get_options(self):
+        
+        options = {}
+
+        if self.app_generic_content.options:
+
+            for key, value in self.app_generic_content.options.items():
+
+                camel_case_key = self.to_camel_case(key)
+                options[camel_case_key] = value
+
+        return options
+
+
+    def get_global_options(self):
+        
+        global_options = {}
+        
+        if self.generic_content.global_options:
+
+            for key, value in self.app_generic_content.global_options.items():
+
+                camel_case_key = self.to_camel_case(key)
+
+                global_options[camel_case_key] = value
+        
+        return global_options

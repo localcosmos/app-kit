@@ -88,6 +88,9 @@
 	var identificationForm = document.getElementById("matrix-filters-form");
 	var inputs = identificationForm.querySelectorAll('input[type=radio], input[type=checkbox]');
 
+	var sorted_out_container = document.getElementById("sorted-out-keynodes");
+	let sorted_in_container = document.getElementById("keynodes");
+
 	for (let i=0; i<inputs.length; i++){
 		let input = inputs[i];
 		input.addEventListener("turnedOn", function(event){
@@ -196,8 +199,10 @@
 		let matrix_item = event.detail.matrix_item;
 		
 		let matrix_item_element = document.getElementById(matrix_item.uuid);
+
+		sorted_in_container.appendChild(matrix_item_element);
 		
-		matrix_item_element.style.display = "";
+		//matrix_item_element.style.display = "";
 		
 	});
 	
@@ -207,7 +212,9 @@
 		
 		let matrix_item_element = document.getElementById(matrix_item.uuid);
 		
-		matrix_item_element.style.display = "none";
+		sorted_out_container.appendChild(matrix_item_element);
+		
+		//matrix_item_element.style.display = "none";
 		
 	});
 	

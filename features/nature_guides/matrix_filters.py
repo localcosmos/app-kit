@@ -1,3 +1,4 @@
+import base64
 from django.utils.translation import gettext_lazy as _
 from django import forms
 from django.conf import settings
@@ -188,7 +189,15 @@ class MatrixFilterType:
     # in the ChildrenJsonCache, the (child)node's matrix filter values are stored as a list of values
     # receives a NodeFilterSpace instance or a MatrixFilterRestriction instance
     def get_filter_space_as_list(self, filter_space):
-        raise NotImplementedError('MatrixFilterType subclasses need a get_filter_space_as_list')
+        raise NotImplementedError('MatrixFilterType subclasses require a get_filter_space_as_list method')
+
+
+    def get_filter_space_as_list_with_identifiers(self, filter_space):
+        raise NotImplementedError('MatrixFilterType subclasses require a get_filter_space_as_list_with_identifiers method')
+
+
+    def get_space_identifier(space):
+         raise NotImplementedError('MatrixFilterType subclasses require a get_space_identifier method')
     
     ### FORM DATA -> MatrixFilter instance
     # store definition and encoded_space
@@ -236,7 +245,6 @@ class MatrixFilterType:
     the encoded space of this one MatrixFilterSpace is the encoded space
     of the MatrixFilter
 '''
-# passing matrix_filter might have become obsolete
 class SingleSpaceFilterMixin:
 
     def set_encoded_space(self):
@@ -246,6 +254,34 @@ class SingleSpaceFilterMixin:
             self.matrix_filter.encoded_space = matrix_filter_space.encoded_space
         else:
             self.matrix_filter.encoded_space = self.get_empty_encoded_space()
+
+
+    def get_filter_space_as_list_with_identifiers(self, filter_space):
+
+        space_list = self.get_filter_space_as_list(filter_space)
+
+        space_list_with_identifiers = []
+
+        for encoded_space in space_list:
+            space_identifier = self.get_space_identifier(encoded_space)
+
+            space_json = {
+                'spaceIdentifier' : space_identifier,
+                'encodedSpace' : encoded_space,
+            }
+
+            space_list_with_identifiers.append(space_json)
+        
+        return space_list_with_identifiers
+
+
+    def get_space_identifier(self, space):
+
+        space_str = json.dumps(space, separators=(',', ':'))
+        space_b64 = base64.b64encode(space_str.encode('utf-8')).decode('utf-8')
+        space_identifier = '{0}:{1}'.format(str(self.matrix_filter.uuid), space_b64)
+
+        return space_identifier
 
 
 class MultiSpaceFilterMixin:
@@ -268,6 +304,31 @@ class MultiSpaceFilterMixin:
             
             for space in matrix_filter_spaces:
                 self.matrix_filter.encoded_space.append(space.encoded_space)
+
+
+    def get_filter_space_as_list_with_identifiers(self, filter_space):
+
+        space_list_with_identifiers = []
+
+        for space in filter_space.values.all():
+
+            space_identifier = self.get_space_identifier(space)
+
+            space_json = {
+                'spaceIdentifier' : space_identifier,
+                'encodedSpace' : space.encoded_space,
+            }
+
+            space_list_with_identifiers.append(space_json)
+        
+        return space_list_with_identifiers
+
+
+    def get_space_identifier(self, space):
+
+        space_identifier = '{0}:{1}'.format(str(self.matrix_filter.uuid), str(space.id))
+
+        return space_identifier
         
 
 '''
@@ -498,7 +559,6 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         # number filter stores [x,y,z] as encoded space
         return filter_space.encoded_space
 
-
     def validate_encoded_space(self, space):
 
         is_valid = True
@@ -514,6 +574,13 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
             is_valid = False
 
         return is_valid
+
+    # subspace is a single number
+    def get_space_identifier(self, number):
+
+        space_identifier = '{0}:{1}'.format(str(self.matrix_filter.uuid), str(number))
+
+        return space_identifier
 
 
 '''
@@ -1293,6 +1360,8 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
     def get_filter_space_as_list(self, filter_space):
         raise NotImplementedError('TaxonFilter does not support get_filter_space_as_list. Use get_space_for_node instead.')
 
+    def get_filter_space_as_list_with_identifiers(self, filter_space):
+        raise NotImplementedError('TaxonFilter does not support get_filter_space_as_list_with_identifiers. Use get_space_for_node_with_identifier instead.')
     # a node only provides the nuid, which is sufficient
     '''
     [{
@@ -1341,6 +1410,34 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
                         node_space.append(taxon_filter)
         
         return node_space
+
+    def get_space_for_node_with_identifiers(self, node):
+
+        space_list_with_identifiers = []
+
+        node_space = self.get_space_for_node(node)
+
+        # taxonfilter is an encoded subspace (python dict, describing taxa)
+        for taxonfilter in node_space:
+
+            space_identifier = self.get_space_identifier(taxonfilter)
+
+            space_b64 = self.get_taxonfilter_space_b64(taxonfilter)
+
+            space_json = {
+                'spaceIdentifier' : space_identifier,
+                'encodedSpace' : space_b64
+            }
+
+            space_list_with_identifiers.append(space_json)
+        
+        return space_list_with_identifiers
+
+
+    def get_taxonfilter_space_b64(self, subspace):
+        space_b64 = base64.b64encode(json.dumps(subspace, separators=(',', ':')).encode('utf-8')).decode('utf-8')
+
+        return space_b64
 
     # taxon json
     #{"taxa": [{"taxon_nuid": "001", "name_uuid": "f61b30e9-90d3-4e87-9641-eee71506aada",

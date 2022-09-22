@@ -4154,8 +4154,8 @@ var NatureGuideView = View(TemplateView, {
 			var node_uuid = kwargs["node_uuid"] || nature_guide.startNodeUuid;
 			self.current_node = nature_guide.tree[node_uuid];
 
-			var result_action = nature_guide.options["result_action"];
-
+			var result_action = nature_guide.options["resultAction"];
+			
 			// render and insert node template
 			var node_template = "themes/" + settings.THEME + "/templates/nature_guide_nodes.html"
 

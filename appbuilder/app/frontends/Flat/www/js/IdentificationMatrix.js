@@ -1,265 +1,4 @@
 "use strict";
-/*
-{
-  "items": [
-    {
-      "id": 7,
-      "name": "Laubbäume",
-      "uuid": "eb3eba32-1d46-4a6a-87bf-328672e2626c",
-      "space": {
-        "2ff6f540-1676-410e-8067-1b58c3a002ed": [
-          [
-            4,
-            5
-          ]
-        ],
-        "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": [
-          1,
-          3
-        ],
-        "43b549b3-911d-4df3-8c9c-9986ed02be45": [
-          [
-            241,
-            45,
-            45,
-            1
-          ],
-          [
-            [
-              76,
-              26,
-              26,
-              1
-            ],
-            [
-              146,
-              146,
-              146,
-              1
-            ]
-          ]
-        ],
-        "cee8ddbc-5982-47a8-93a6-c82930acd69d": [
-          {
-            "taxa": [
-              {
-                "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
-                "taxonNuid": "006",
-                "taxonAuthor": null,
-                "taxonSource": "taxonomy.sources.col",
-                "taxonLatname": "Plantae"
-              },
-              {
-                "nameUuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
-                "taxonNuid": "003",
-                "taxonAuthor": "admin",
-                "taxonSource": "taxonomy.sources.custom",
-                "taxonLatname": "Plantae"
-              }
-            ],
-            "latname": "Plantae",
-            "isCustom": false
-          }
-        ]
-      },
-      "taxon": {
-        "nameUuid": "bd143912-7a66-4f7f-ad25-c3c16a361273",
-        "taxonNuid": "00600800601d008001",
-        "taxonAuthor": "",
-        "taxonSource": "taxonomy.sources.col",
-        "taxonLatname": "Acer"
-      },
-      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/73c0d5e7970ab4ed9b855dc0a4535dc5_2E9oVUY-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "nodeType": "node",
-      "isVisible": true,
-      "maxPoints": 150,
-      "metaNodeId": 7,
-      "decisionRule": "mit Blättern, im Winter kahl"
-    },
-    {
-      "id": 8,
-      "name": "Nadelbäume",
-      "uuid": "6fcd3ac4-2e64-4ba4-858b-0acae18fbcfb",
-      "space": {
-        "0c9f1e62-521e-4c09-b98e-156c3d72a9bc": [
-          "<p>Text mit &gt;</p>"
-        ],
-        "2ff6f540-1676-410e-8067-1b58c3a002ed": [
-          [
-            1,
-            5
-          ]
-        ],
-        "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": [
-          3
-        ],
-        "43b549b3-911d-4df3-8c9c-9986ed02be45": [
-          [
-            241,
-            45,
-            45,
-            1
-          ]
-        ],
-        "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
-      },
-      "taxon": null,
-      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "nodeType": "node",
-      "isVisible": true,
-      "maxPoints": 200,
-      "metaNodeId": 8,
-      "decisionRule": "mit Nadeln"
-    },
-    {
-      "id": 157,
-      "name": "Nadelbaueme Kopie QV",
-      "uuid": "8727707d-aebc-4366-a46d-b7e25f1ae88e",
-      "space": {
-        "0c9f1e62-521e-4c09-b98e-156c3d72a9bc": [
-          "<p>Text mit &gt;</p>"
-        ],
-        "27c566f8-802a-47fd-8938-2e469aef22b0": [
-          "<p>Element 1</p>"
-        ],
-        "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": [
-          2
-        ],
-        "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
-      },
-      "taxon": null,
-      "imageUrl": "/media/treesofbavaria/imagestore/1/thumbnails/1659ca81b47f6be0b1b1ca8477c5f454_PkstfHA-e40c54f70e9a62da34083d82850ac09b-400.jpg",
-      "nodeType": "node",
-      "isVisible": true,
-      "maxPoints": 150,
-      "metaNodeId": 157,
-      "decisionRule": ""
-    },
-    {
-      "id": 59,
-      "name": "Unready",
-      "uuid": "960d0c2c-2c30-48a0-8ddb-7e542ee1a152",
-      "space": {
-        "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": [
-          1
-        ],
-        "cee8ddbc-5982-47a8-93a6-c82930acd69d": []
-      },
-      "taxon": null,
-      "imageUrl": "/static/noimage.png",
-      "nodeType": "node",
-      "isVisible": true,
-      "maxPoints": 50,
-      "metaNodeId": 59,
-      "decisionRule": ""
-    },
-    {
-      "id": 162,
-      "name": "Eintrag mit Synonym",
-      "uuid": "4342a9b7-5883-47f2-a22b-bd0ea0af2553",
-      "space": {
-        "cee8ddbc-5982-47a8-93a6-c82930acd69d": [
-          {
-            "taxa": [
-              {
-                "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6",
-                "taxonNuid": "006",
-                "taxonAuthor": null,
-                "taxonSource": "taxonomy.sources.col",
-                "taxonLatname": "Plantae"
-              },
-              {
-                "nameUuid": "c303f1b7-feec-45cd-b615-f0773ced2107",
-                "taxonNuid": "003",
-                "taxonAuthor": "admin",
-                "taxonSource": "taxonomy.sources.custom",
-                "taxonLatname": "Plantae"
-              }
-            ],
-            "latname": "Plantae",
-            "isCustom": false
-          }
-        ]
-      },
-      "taxon": {
-        "nameUuid": "8dfdae06-8626-46ac-8611-86926973ae72",
-        "taxonNuid": "00600800800b003002009001",
-        "taxonAuthor": "(Bak.) Reed",
-        "taxonSource": "taxonomy.sources.col",
-        "taxonLatname": "Schizaea malaccana robustior"
-      },
-      "imageUrl": "/static/noimage.png",
-      "nodeType": "result",
-      "isVisible": true,
-      "maxPoints": 0,
-      "metaNodeId": 162,
-      "decisionRule": ""
-    }
-  ],
-  "matrixFilters": {
-    "0c9f1e62-521e-4c09-b98e-156c3d72a9bc": {
-      "name": "Test text",
-      "type": "TextOnlyFilter",
-      "weight": 50,
-      "allowMultipleValues": false
-    },
-    "27c566f8-802a-47fd-8938-2e469aef22b0": {
-      "name": "Dreifach Abhängig",
-      "type": "DescriptiveTextAndImagesFilter",
-      "weight": 50,
-      "restrictions": {
-        "2ff6f540-1676-410e-8067-1b58c3a002ed": [
-          [
-            2,
-            4
-          ]
-        ]
-      },
-      "allowMultipleValues": false
-    },
-    "2ff6f540-1676-410e-8067-1b58c3a002ed": {
-      "name": "Doppelt Abhängig",
-      "type": "RangeFilter",
-      "weight": 50,
-      "restrictions": {
-        "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": [
-          2
-        ]
-      },
-      "allowMultipleValues": false
-    },
-    "3e9f0c09-a118-4d2c-9cf7-ea52fb1b80ce": {
-      "name": "Abhängiges Merkmal - Farbe rot",
-      "type": "NumberFilter",
-      "weight": 50,
-      "restrictions": {
-        "43b549b3-911d-4df3-8c9c-9986ed02be45": [
-          [
-            241,
-            45,
-            45,
-            1
-          ]
-        ]
-      },
-      "allowMultipleValues": false
-    },
-    "43b549b3-911d-4df3-8c9c-9986ed02be45": {
-      "name": "Farbe",
-      "type": "ColorFilter",
-      "weight": 50,
-      "allowMultipleValues": false
-    },
-    "cee8ddbc-5982-47a8-93a6-c82930acd69d": {
-      "name": "Taxonomic filter",
-      "type": "TaxonFilter",
-      "weight": 50,
-      "allowMultipleValues": false
-    }
-  }
-}
-*/
-
 var MATRIX_FILTERS = {};
 
 var MATRIX_ITEMS = {};
@@ -275,13 +14,14 @@ const STATUS_INACTIVE = "inactive";
 
 class MatrixFilterSpace {
 
-  constructor(matrix_filter, space_identifier) {
+  constructor(matrix_filter, space_json) {
 
     this.DEBUG = true;
 
     this.matrix_filter = matrix_filter;
 
-    this.space_identifier = space_identifier;
+    this.space_identifier = space_json["spaceIdentifier"];
+    this.encoded_space = space_json["encodedSpace"];
 
     // if a MatrixFilter is restricted by this MatrixfilterSpace, the MatrixFilter is listed in restricts{}
     //{matrix_filter_uuid:matrix_filter}
@@ -624,7 +364,7 @@ class RangeSpace extends MatrixFilterSpace {
     if (this.status == STATUS_INACTIVE){
 
       if (this.DEBUG == true){
-        let space_str = this.matrix_filter.get_space_str_from_space_identifier(this.space_identifier);
+        let space_str = JSON.stringify(this.encoded_space);//this.matrix_filter.get_space_str_from_space_identifier(this.space_identifier);
         console.log("[RangeSpace] " + space_str + " is now active");
       }
 
@@ -645,7 +385,7 @@ class RangeSpace extends MatrixFilterSpace {
     if (this.status == STATUS_ACTIVE){
 
       if (this.DEBUG == true){
-        let space_str = this.matrix_filter.get_space_str_from_space_identifier(this.space_identifier);
+        let space_str = JSON.stringify(this.encoded_space); //this.matrix_filter.get_space_str_from_space_identifier(this.space_identifier);
         console.log("[RangeSpace] " + space_str + " is now inactive");
       }
 
@@ -747,7 +487,7 @@ class MatrixFilter {
 
     // only register every space_identifier once
     if (!this.matrix_filter_spaces.hasOwnProperty(space_identifier)) {
-      matrix_filter_space = new this.MatrixFilterSpaceClass(this, space_identifier);
+      matrix_filter_space = new this.MatrixFilterSpaceClass(this, space);
       this.matrix_filter_spaces[space_identifier] = matrix_filter_space;
     }
     else {
@@ -958,8 +698,9 @@ class MatrixFilter {
   }
 
   get_space_identifier_from_input_element(input_element) {
-    let space_str = input_element.value;
-    let space_identifier = this.get_space_identifier_from_str(space_str);
+    //let space_str = input_element.value;
+    //let space_identifier = this.get_space_identifier_from_str(space_str);
+    let space_identifier = input_element.getAttribute("data-spaceIdentifier");
     return space_identifier;
   }
 
@@ -974,7 +715,8 @@ class StringBasedMatrixFilter extends MatrixFilter {
     }
 
     // base64 encoded space
-    let space_identifier = btoa(space);
+    //let space_identifier = btoa(space);
+    let space_identifier = space["spaceIdentifier"];
 
     if (this.DEBUG == true) {
       console.log(space_identifier);
@@ -1009,7 +751,8 @@ class ObjectBasedMatrixFilter extends MatrixFilter {
     }
 
     // b64 encoded space identifier
-    let space_identifier = btoa(JSON.stringify(space));
+    //let space_identifier = btoa(JSON.stringify(space));
+    let space_identifier = space["spaceIdentifier"];
 
     if (this.DEBUG == true) {
       console.log(space_identifier);
@@ -1135,6 +878,14 @@ class RangeFilter extends ObjectBasedMatrixFilter {
 
   }
 
+  get_space_from_space_identifier(space_identifier){
+    let space_parts = space_identifier.split(":");
+    let space_b64 = space_parts[1];
+    let space_str = atob(space_b64);
+    let space = JSON.parse(space_str);
+    return space;
+  }
+
   on_change(event){
 
     let value_str = this.get_value_from_input_element(event.currentTarget);
@@ -1144,8 +895,11 @@ class RangeFilter extends ObjectBasedMatrixFilter {
     }
 
     for (let space_identifier in this.matrix_filter_spaces){
+      //"spaceIdentifier": "135a384b-eba5-468b-8ae7-b65d3e38bb43:WzMuMCw3LjBd"
       let matrix_filter_space = this.matrix_filter_spaces[space_identifier];
-      let specific_range = this.get_space_from_space_identifier(space_identifier);
+
+      //let specific_range = this.get_space_from_space_identifier(space_identifier);
+      let specific_range = matrix_filter_space.encoded_space;
       
       let value_is_within_range = false;
       if (value_str.length > 0){
@@ -1201,7 +955,8 @@ class TaxonFilter extends ObjectBasedMatrixFilter {
 
   // input_element.value is the b64 encoded space
   get_space_identifier_from_input_element(input_element) {
-    let space_identifier = input_element.value;
+    //let space_identifier = input_element.value;
+    let space_identifier = input_element.getAttribute("data-spaceIdentifier");
     return space_identifier;
   }
 

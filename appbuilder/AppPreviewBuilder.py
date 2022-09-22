@@ -63,8 +63,14 @@ class AppPreviewBuilder(AppBuilderBase):
             with open(self._app_settings_json_filepath, 'w', encoding='utf-8') as settings_json_file:
                 settings_json_file.write(app_settings_string)
 
+            # STEP 5: create empty features.json, required for FactSheet preview
+            app_features_string = json.dumps({}, indent=4, ensure_ascii=False)
+            app_features_json_file = self._app_features_json_filepath
+            with open(app_features_json_file, 'w', encoding='utf-8') as f:
+                f.write(app_features_string)
 
-            # STEP 5: copy webapp specific files provided by the frontend
+
+            # STEP 6: copy webapp specific files provided by the frontend
             self.logger.info('Copying webapp assets')
             self._build_Frontend_webapp_specific_assets()
 
@@ -77,7 +83,7 @@ class AppPreviewBuilder(AppBuilderBase):
             # however, the preview frontend should work without these assets
 
 
-            # STEP 7: link to webserver
+            # STEP 8: link to webserver
             self.logger.info('Linking to webserver')
             self._link_to_webserver()
 
