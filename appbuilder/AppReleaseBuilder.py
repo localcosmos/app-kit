@@ -1305,6 +1305,19 @@ class AppReleaseBuilder(AppBuilderBase):
         return locale
 
 
+    def _add_to_locale(self, dictionary, language_code):
+        locale_filepath = self._app_locale_filepath(language_code)
+
+        with open(locale_filepath, 'r') as locale_file:
+            locale = json.loads(locale_file.read())
+
+        for key, value in dictionary.items():
+            locale[key] = value
+        
+        with open(locale_filepath, 'w') as locale_file:
+            locale_file.write(json.dumps(locale))
+
+
     def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
 
         taxon_json = {
@@ -1831,6 +1844,12 @@ class AppReleaseBuilder(AppBuilderBase):
         jsonbuilder = self.get_json_builder(app_generic_content)
 
         nature_guide_json = jsonbuilder.build()
+
+        localized_slugs = jsonbuilder.localized_slugs
+
+        for language_code, slugs in localized_slugs.items():
+            
+            self._add_to_locale(slugs, language_code)
 
         self._add_generic_content_to_app(nature_guide, nature_guide_json)
 

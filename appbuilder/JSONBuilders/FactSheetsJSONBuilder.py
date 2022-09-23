@@ -30,11 +30,13 @@ class FactSheetsJSONBuilder(JSONBuilder):
 
         localized_and_glossarized_contents = {}
 
-        for content_id, html in fact_sheet.contents.items():
+        if fact_sheet.contents:
 
-            locale_key = fact_sheet.get_locale_key(content_id)
-            html = locale[locale_key]
-            localized_and_glossarized_contents[content_id] = html
+            for content_id, html in fact_sheet.contents.items():
+
+                locale_key = fact_sheet.get_locale_key(content_id)
+                html = locale[locale_key]
+                localized_and_glossarized_contents[content_id] = html
 
         fact_sheet.contents = localized_and_glossarized_contents
 

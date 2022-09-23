@@ -20,13 +20,13 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
     def build(self):
 
-        nature_guide_json = self._build_common_json()
+        self.nature_guide_json = self._build_common_json()
 
         nature_guide = self.app_generic_content.generic_content
 
         start_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide, meta_node__node_type='root')
         
-        nature_guide_json.update({
+        self.nature_guide_json.update({
             'tree' : {},
             'crosslinks' : nature_guide.crosslinks(),
             'startNodeUuid' : str(start_node.name_uuid),
@@ -36,6 +36,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
         # iterate over all parent nodes
         parent_nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide).exclude(
             meta_node__node_type='result')
+
+        # {"de" : {key:value}}
+        self.localized_slugs = {}
 
         for parent_node in parent_nodes:
 
@@ -57,6 +60,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
             if parent_node.meta_node.taxon:
                 fact_sheets = self.get_fact_sheets_json_for_taxon(parent_node.meta_node.taxon)
 
+            primary_locale_slug = self.add_to_localized_slugs(parent_node)
+
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
                 'name' : parent_node.meta_node.name,
@@ -65,15 +70,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'matrixFilters' : {},
                 'identificationMode' : identification_mode,
                 'factSheets' : fact_sheets,
-                'slugs' : {},
-            }
-
-            # add to slugs
-            for language_code in self.meta_app.languages():
-                localized_parent_node_slug = self.get_localized_slug(language_code, parent_node.id, parent_node.meta_node.name)
-                nature_guide_json['slugs'][localized_parent_node_slug] = str(parent_node.name_uuid)
-                parent_node_json['slugs'][language_code] = localized_parent_node_slug
-
+                'slug' : primary_locale_slug,
+            }            
 
             if parent_node.meta_node.taxon:
                 parent_node_json['taxon'] = parent_node.meta_node.taxon.as_json()
@@ -139,6 +137,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 if child.meta_node.taxon:
                     child_fact_sheets = self.get_fact_sheets_json_for_taxon(child.meta_node.taxon)
 
+
+                child_primary_locale_slug = self.add_to_localized_slugs(child)
+
                 child_json = {
                     'uuid' : str(child.name_uuid),
                     #'id' : child.id,
@@ -152,14 +153,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'decisionRule' : child.decision_rule,
                     'taxon' : None,
                     'factSheets' : child_fact_sheets,
-                    'slugs' : {},
+                    'slug' : child_primary_locale_slug,
                 }
-
-                # add to slugs
-                for language_code in self.meta_app.languages():
-                    localized_child_slug = self.get_localized_slug(language_code, child.id, child.meta_node.name)
-                    nature_guide_json['slugs'][localized_child_slug] = str(child.name_uuid)
-                    child_json['slugs'][language_code] = localized_child_slug
 
                 if child.meta_node.taxon:
                     child_json['taxon'] = child.meta_node.taxon.as_json()
@@ -172,9 +167,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 
             parent_node_json['childrenCount'] = len(parent_node.children)
 
-            nature_guide_json['tree'][str(parent_node.name_uuid)] = parent_node_json
+            self.nature_guide_json['tree'][str(parent_node.name_uuid)] = parent_node_json
 
-        return nature_guide_json
+        return self.nature_guide_json
 
 
     def _get_matrix_filter_json(self, matrix_filter):
@@ -363,6 +358,33 @@ class NatureGuideJSONBuilder(JSONBuilder):
         
         slug = '{0}-{1}'.format(id, slugify(localized_text))
         return slug
+
+
+    def add_to_localized_slugs(self, node):
+
+        node_slug_primary_locale = self.get_localized_slug(self.meta_app.primary_language, node.id, node.meta_node.name)
+        self.nature_guide_json['slugs'][node_slug_primary_locale] = str(node.name_uuid)
+
+        if self.meta_app.primary_language not in self.localized_slugs:
+            self.localized_slugs[self.meta_app.primary_language] = {
+                'slugs' : {}
+            }
+
+        self.localized_slugs[self.meta_app.primary_language]['slugs'][node_slug_primary_locale] = node_slug_primary_locale            
+
+        # add to slugs
+        for language_code in self.meta_app.secondary_languages():
+            localized_node_slug = self.get_localized_slug(language_code, node.id, node.meta_node.name)
+            self.nature_guide_json['slugs'][localized_node_slug] = str(node.name_uuid)
+            
+            if language_code not in self.localized_slugs:
+                self.localized_slugs[language_code] = {
+                    'slugs' : {}
+                }
+
+            self.localized_slugs[language_code]['slugs'][node_slug_primary_locale] = localized_node_slug
+
+        return node_slug_primary_locale
 
 
     def get_options(self):

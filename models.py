@@ -47,11 +47,11 @@ LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX = 'localized_content_image'
 class ContentImageMixin:
 
     def _content_images(self, image_type='image'):
-
+        
         content_type = ContentType.objects.get_for_model(self.__class__)
         self.content_images = ContentImage.objects.filter(content_type=content_type, object_id=self.pk,
                                                           image_type=image_type)
-
+        
         return self.content_images
 
     def all_images(self):

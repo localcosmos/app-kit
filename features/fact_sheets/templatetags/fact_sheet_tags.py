@@ -35,9 +35,9 @@ def cms_get(context, microcontent_category, microcontent_type, *args, **kwargs):
             return content
 
     elif microcontent_category == 'image':
-
+        
         content = fact_sheet.image(image_type=microcontent_type)
-
+        
         return content
 
     return ''

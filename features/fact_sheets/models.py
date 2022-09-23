@@ -28,7 +28,7 @@ class FactSheets(GenericContent):
     Fact Sheets uses different kinds of layoutability wich have to be represented in the translation
     interface. thetefore, the values of the keys have to be {}, which holds the necesssary information
     _meta{} stores layoutability options and image information
-    keys in _meta aree the same as in the localization
+    keys in _meta are the same as in the localization
     '''
     def get_primary_localization(self, meta_app):
 
@@ -65,16 +65,17 @@ class FactSheets(GenericContent):
             locale[fact_sheet.navigation_link_name] = fact_sheet.navigation_link_name
 
             # contents
-            for microcontent_type, html_content in fact_sheet.contents.items():
-                locale_key = fact_sheet.get_locale_key(microcontent_type)
+            if fact_sheet.contents:
+                for microcontent_type, html_content in fact_sheet.contents.items():
+                    locale_key = fact_sheet.get_locale_key(microcontent_type)
 
-                locale[locale_key] = html_content
+                    locale[locale_key] = html_content
 
-                if microcontent_type in layoutability_map:
-                    locale['_meta'][locale_key] = {
-                        'layoutability' : layoutability_map[microcontent_type],
-                        'type' : 'html',
-                    }                    
+                    if microcontent_type in layoutability_map:
+                        locale['_meta'][locale_key] = {
+                            'layoutability' : layoutability_map[microcontent_type],
+                            'type' : 'html',
+                        }                    
 
             # fact sheet images which require translation
             fact_sheet_images = fact_sheet.all_images()
