@@ -412,17 +412,18 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         templates = []
 
         # iterate over templates shipped with the frontend
-        for filename in os.listdir(fact_sheets_templates_path):
+        if os.path.isdir(fact_sheets_templates_path):
+            for filename in os.listdir(fact_sheets_templates_path):
 
-            template_path = '{0}'.format(filename)
+                template_path = '{0}'.format(filename)
 
-            absolute_path = os.path.join(fact_sheets_templates_path, template_path)
+                absolute_path = os.path.join(fact_sheets_templates_path, template_path)
 
-            if os.path.isfile(absolute_path) and filename.endswith('.html'):
-                verbose_name = template_path
+                if os.path.isfile(absolute_path) and filename.endswith('.html'):
+                    verbose_name = template_path
 
-                templates.append((template_path, verbose_name))
-            
+                    templates.append((template_path, verbose_name))
+                
         return templates
 
     
