@@ -275,9 +275,9 @@ class SingleSpaceFilterMixin:
         return space_list_with_identifiers
 
 
-    def get_space_identifier(self, space):
+    def get_space_identifier(self, encoded_space):
 
-        space_str = json.dumps(space, separators=(',', ':'))
+        space_str = json.dumps(encoded_space, separators=(',', ':'))
         space_b64 = base64.b64encode(space_str.encode('utf-8')).decode('utf-8')
         space_identifier = '{0}:{1}'.format(str(self.matrix_filter.uuid), space_b64)
 

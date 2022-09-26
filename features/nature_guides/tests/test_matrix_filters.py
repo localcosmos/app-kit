@@ -39,7 +39,7 @@ from taxonomy.models import TaxonomyModelRouter
 from base64 import b64encode, b64decode
 from django.templatetags.static import static
 
-import json
+import json, base64
 
 
 class MatrixFilterTestCommon:
@@ -386,6 +386,48 @@ class TestRangeFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         range_filter = RangeFilter(self.matrix_filter)
         space_list = range_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [[-2,2]])
+
+
+    @test_settings
+    def test_get_space_identifier(self):
+        self.create_space()
+
+        space_identifier = self.matrix_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+            self.matrix_filter_space.encoded_space)
+        
+        space_identifier_parts = space_identifier.split(':')
+
+        self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+        encoded_space_str = base64.b64decode(space_identifier_parts[1])
+
+        encoded_space = json.loads(encoded_space_str)
+
+        self.assertEqual(encoded_space, [-4,4])
+
+    @test_settings
+    def test_get_filter_space_as_list_with_identifiers(self):
+        self.create_space()
+
+        child = self.create_node(self.root_node, 'Child')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+            encoded_space = [-2,2],
+        )
+
+        node_filter_space.save()
+
+        range_filter = RangeFilter(self.matrix_filter)
+        space_list_with_identifiers = range_filter.get_filter_space_as_list_with_identifiers(node_filter_space)
+
+        expected_output = [{
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+                node_filter_space.encoded_space),
+            'encodedSpace' : [-2,2]
+        }]
+        self.assertEqual(space_list_with_identifiers, expected_output)
         
 
     @test_settings
@@ -620,6 +662,50 @@ class TestNumberFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilter
 
         self.assertEqual(initial, expected_initial)
     
+    
+    @test_settings
+    def test_get_space_identifier(self):
+        self.create_space()
+
+        space_identifier = self.matrix_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+            3)
+        
+        space_identifier_parts = space_identifier.split(':')
+
+        self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+        encoded_space_str = space_identifier_parts[1]
+
+        encoded_space = int(encoded_space_str)
+
+        self.assertEqual(encoded_space, 3)
+
+    @test_settings
+    def test_get_filter_space_as_list_with_identifiers(self):
+        self.create_space()
+
+        child = self.create_node(self.root_node, 'Child')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+            encoded_space = [3,10],
+        )
+
+        node_filter_space.save()
+
+        number_filter = NumberFilter(self.matrix_filter)
+        space_list_with_identifiers = number_filter.get_filter_space_as_list_with_identifiers(node_filter_space)
+
+        expected_output = [{
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(3),
+            'encodedSpace' : 3
+        },
+        {
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(10),
+            'encodedSpace' : 10
+        }]
+        self.assertEqual(space_list_with_identifiers, expected_output)
 
     @test_settings
     def test_get_filter_space_as_list(self):
@@ -1115,6 +1201,52 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         
         
     @test_settings
+    def test_get_space_identifier(self):
+        space_1 = self.create_space([111,222,255,1])
+
+        space_identifier = space_1.matrix_filter.matrix_filter_type.get_space_identifier(
+            space_1)
+        
+        space_identifier_parts = space_identifier.split(':')
+
+        self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+        space_1_id_str = space_identifier_parts[1]
+
+        space_1_id = int(space_1_id_str)
+
+        self.assertEqual(space_1_id, space_1.id)
+
+    @test_settings
+    def test_get_filter_space_as_list_with_identifiers(self):
+        
+        space_1 = self.create_space([111,222,255,1])
+
+        child = self.create_node(self.root_node, 'Child')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        node_filter_space.save()
+
+        color_filter = ColorFilter(self.matrix_filter)
+        space_list_with_identifiers = color_filter.get_filter_space_as_list_with_identifiers(node_filter_space)
+
+        expected_output = [{
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+                space_1),
+            'encodedSpace' : space_1.encoded_space
+        }]
+        self.assertEqual(space_list_with_identifiers, expected_output)
+
+
+    @test_settings
     def test_get_filter_space_as_list(self):
 
         child = self.create_node(self.root_node, 'Child')
@@ -1460,7 +1592,53 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         self.assertEqual(space, space_2)
         self.assertEqual(space_2.encoded_space, text_2)
+    
+
+    @test_settings
+    def test_get_space_identifier(self):
+        space_1 = self.create_space('pattern 1')
+
+        space_identifier = space_1.matrix_filter.matrix_filter_type.get_space_identifier(
+            space_1)
         
+        space_identifier_parts = space_identifier.split(':')
+
+        self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+        space_1_id_str = space_identifier_parts[1]
+
+        space_1_id = int(space_1_id_str)
+
+        self.assertEqual(space_1_id, space_1.id)
+
+    @test_settings
+    def test_get_filter_space_as_list_with_identifiers(self):
+        
+        space_1 = self.create_space('pattern 1')
+
+        child = self.create_node(self.root_node, 'Child')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        node_filter_space.save()
+
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+        space_list_with_identifiers = dtai_filter.get_filter_space_as_list_with_identifiers(node_filter_space)
+
+        expected_output = [{
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+                space_1),
+            'encodedSpace' : space_1.encoded_space
+        }]
+        self.assertEqual(space_list_with_identifiers, expected_output)
+
 
     @test_settings
     def test_get_filter_space_as_list(self):
@@ -1694,6 +1872,52 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         self.assertTrue(isinstance(field.widget, SelectMultipleTextDescriptors))
         self.assertEqual(field.choices, expected_choices)
 
+
+    @test_settings
+    def test_get_space_identifier(self):
+        space_1 = self.create_space('text 1')
+
+        space_identifier = space_1.matrix_filter.matrix_filter_type.get_space_identifier(
+            space_1)
+        
+        space_identifier_parts = space_identifier.split(':')
+
+        self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+        space_1_id_str = space_identifier_parts[1]
+
+        space_1_id = int(space_1_id_str)
+
+        self.assertEqual(space_1_id, space_1.id)
+
+    @test_settings
+    def test_get_filter_space_as_list_with_identifiers(self):
+        
+        space_1 = self.create_space('text 1')
+
+        child = self.create_node(self.root_node, 'Child')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_filter_space.values.add(space_1)
+
+        node_filter_space.save()
+
+        text_filter = TextOnlyFilter(self.matrix_filter)
+        space_list_with_identifiers = text_filter.get_filter_space_as_list_with_identifiers(node_filter_space)
+
+        expected_output = [{
+            'spaceIdentifier' : node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+                space_1),
+            'encodedSpace' : space_1.encoded_space
+        }]
+        self.assertEqual(space_list_with_identifiers, expected_output)
+    
 
     @test_settings
     def test_get_filter_space_as_list(self):
@@ -2253,3 +2477,93 @@ class TestTaxonFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         is_valid = taxon_filter.validate_encoded_space(valid_space)
         self.assertTrue(is_valid)
 
+
+    @test_settings
+    def test_get_space_identifier(self):
+        encoded_space = self.get_encoded_space()
+
+        for taxonfilter in encoded_space:
+            space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(
+                taxonfilter)
+        
+            space_identifier_parts = space_identifier.split(':')
+
+            self.assertEqual(space_identifier_parts[0], str(self.matrix_filter.uuid))
+
+            space_1_name_str = space_identifier_parts[1]        
+
+            self.assertEqual(space_1_name_str, taxonfilter['latname'])
+
+
+    @test_settings
+    def test_get_space_for_node_with_identifiers(self):
+        
+        encoded_space = self.get_encoded_space()
+        
+        animalia_space = self.create_space(encoded_space)
+
+        animalia_filter = encoded_space[0]
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta')
+        lacerta_lazy_taxon = LazyTaxon(instance=lacerta)
+        child = self.create_node(self.root_node, 'Child')
+        child.meta_node.set_taxon(lacerta_lazy_taxon)
+        child.meta_node.save()
+
+        self.assertEqual(child.meta_node.taxon.taxon_latname, 'Lacerta')
+        
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        taxon_filter = TaxonFilter(self.matrix_filter)
+        space_list_with_identifiers = taxon_filter.get_space_for_node_with_identifiers(child)
+
+        encoded_space_b64 = self.matrix_filter.matrix_filter_type.get_taxonfilter_space_b64(animalia_filter)
+        
+        expected_identifier = node_filter_space.matrix_filter.matrix_filter_type.get_space_identifier(
+                animalia_filter)
+
+        self.assertEqual(expected_identifier, space_list_with_identifiers[0]['spaceIdentifier'])
+        
+        produced_encoded_space = space_list_with_identifiers[0]['encodedSpace']
+
+        decoded_space = json.loads(base64.b64decode(produced_encoded_space).decode('utf-8'))
+
+        self.assertEqual(decoded_space, animalia_filter)
+
+        # no orderedDict, so produced encoded spaces may differ
+        #self.assertEqual(produced_encoded_space, encoded_space_b64)
+
+    
+    @test_settings
+    def test_get_space_for_node(self):
+
+        encoded_space = self.get_encoded_space()
+
+        animalia_space = self.create_space(encoded_space)
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta')
+        lacerta_lazy_taxon = LazyTaxon(instance=lacerta)
+
+        child = self.create_node(self.root_node, 'Child')
+        child.meta_node.taxon = lacerta_lazy_taxon
+        child.meta_node.save()
+
+        node_filter_space = NodeFilterSpace(
+            node=child,
+            matrix_filter = self.matrix_filter,
+        )
+
+        node_filter_space.save()
+
+        node_space = self.matrix_filter.matrix_filter_type.get_space_for_node(child)
+
+        animalia_encoded_space = node_space[0]
+
+        self.assertEqual(animalia_encoded_space, self.get_encoded_space()[0])
