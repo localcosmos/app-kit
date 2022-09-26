@@ -117,7 +117,6 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         return content_image
 
 
-
 FeatureModel = Frontend
 
 

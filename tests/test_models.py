@@ -207,6 +207,35 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
                                           global_options=global_options)
 
         self.assertEqual(meta_app.global_options, global_options)
+
+
+    @test_settings
+    def test_create_with_non_default_frontend(self):
+
+        # make sure to use the tes folders
+        self.assertTrue(settings.APP_KIT_ROOT.startswith(TESTS_ROOT))
+
+        domain_name = 'testmetaapp.my-domain.com'
+        name = 'Test Meta App'
+        primary_language = 'en'
+
+        frontend_name = 'LakeExplorer'
+
+        kwargs = {
+            'frontend' : frontend_name
+        }
+
+        # creates App and MetaApp
+        meta_app = MetaApp.objects.create(name, primary_language, domain_name, self.tenant, self.subdomain, **kwargs)
+
+        link = MetaAppGenericContent.objects.get(
+            meta_app = meta_app,
+            content_type = ContentType.objects.get_for_model(Frontend),
+        )
+
+        frontend = link.generic_content
+
+        self.assertEqual(frontend.frontend_name, frontend_name)
         
         
 class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):

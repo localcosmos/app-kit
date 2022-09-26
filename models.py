@@ -168,16 +168,22 @@ APP_VALIDATION_STATUS = (
 class MetaAppManager(models.Manager):
 
 
-    def _create_required_features(self, meta_app):
+    def _create_required_features(self, meta_app, frontend=None):
 
         # create all required features and link them to the app
         for required_feature in REQUIRED_FEATURES:
             
             feature_module = import_module(required_feature)
             FeatureModel = feature_module.models.FeatureModel
+
+            kwargs = {}
             
             feature_name = str(FeatureModel._meta.verbose_name)
-            feature = FeatureModel.objects.create(feature_name, meta_app.primary_language)
+
+            if FeatureModel.__name__ == 'Frontend' and frontend != None:
+                kwargs['frontend_name'] = frontend
+
+            feature = FeatureModel.objects.create(feature_name, meta_app.primary_language, **kwargs)
 
             link = MetaAppGenericContent(
                 meta_app = meta_app,
@@ -191,6 +197,8 @@ class MetaAppManager(models.Manager):
 
         secondary_languages = kwargs.pop('secondary_languages', [])
         global_options = kwargs.pop('global_options', {})
+
+        frontend = kwargs.pop('frontend', None)
 
         package_name_base = 'org.localcosmos.{0}'.format(slugify(name).replace('-','').lower()[:30])
         package_name = package_name_base
@@ -248,7 +256,7 @@ class MetaAppManager(models.Manager):
                 )
                 secondary_language.save()
 
-        self._create_required_features(meta_app)
+        self._create_required_features(meta_app, frontend=frontend)
         
         return meta_app
 

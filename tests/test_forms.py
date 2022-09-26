@@ -19,6 +19,8 @@ from app_kit.models import (MetaAppGenericContent, ContentImage, LocalizedConten
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 
+from django.conf import settings
+
 import uuid, json, hashlib, base64, os
 
 
@@ -105,12 +107,23 @@ class TestCleanAppSubdomainMixin(WithMetaApp, TenantTestCase):
 class TestCreateAppForm(WithFormTest, WithMetaApp, TenantTestCase):
 
     @test_settings
+    def test_init(self):
+        form = CreateAppForm()
+
+        frontend_field = form.fields['frontend']
+        
+        choices = [c[0] for c in frontend_field.choices]
+
+        self.assertIn(settings.APP_KIT_DEFAULT_FRONTEND, choices)
+
+    @test_settings
     def test_form_no_uuid(self):
 
         post_data = {
             'name' : 'My Great App',
             'primary_language' : 'en',
             'subdomain' : 'subdomain',
+            'frontend' : 'Flat',
         }
 
         

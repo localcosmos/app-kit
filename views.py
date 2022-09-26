@@ -184,6 +184,10 @@ class CreateApp(CreateGenericContent):
 
         if 'uuid' in form.cleaned_data and form.cleaned_data['uuid']:
             meta_app_kwargs['uuid'] = form.cleaned_data['uuid']
+
+        if 'frontend' in form.cleaned_data and form.cleaned_data['frontend']:
+            meta_app_kwargs['frontend'] = form.cleaned_data['frontend']
+            
         meta_app = MetaApp.objects.create(form.cleaned_data['name'],
                                     form.cleaned_data['primary_language'], app_domain_name, self.request.tenant,
                                     form.cleaned_data['subdomain'], **meta_app_kwargs)

@@ -11,6 +11,8 @@ from localcosmos_server.widgets import (TwoStepFileInput, HiddenJSONInput)
 from localcosmos_server.forms import LocalizeableForm, FormLocalizationMixin
 from localcosmos_server.models import App
 
+from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
+
 import hashlib, base64, math
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
@@ -65,6 +67,8 @@ class CreateAppForm(CleanAppSubdomainMixin, forms.Form):
     
     primary_language = forms.ChoiceField(choices=LANGUAGE_CHOICES,
                             help_text=_('The language the app is created in. Translations can be made later.'))
+
+    frontend = forms.ChoiceField(choices=[], required=True, initial=settings.APP_KIT_DEFAULT_FRONTEND)
     
     subdomain = forms.CharField(max_length=255, required=True,
                     help_text=_('Your app will be available at subdomain.localcosmos.org, where "subdomain" is the name you configured here.'))
@@ -74,9 +78,23 @@ class CreateAppForm(CleanAppSubdomainMixin, forms.Form):
         allow_uuid = kwargs.pop('allow_uuid', False)
         
         super().__init__(*args, **kwargs)
+
+        self.fields['frontend'].choices = self.get_frontend_choices()
         
         if allow_uuid == True:
             self.fields['uuid'] = forms.UUIDField(required=False)
+
+
+    def get_frontend_choices(self):
+
+        installed_frontends = AppBuilderBase.get_installed_frontends()
+        choices = []
+
+        for frontend_name in installed_frontends:
+            choice = (frontend_name, frontend_name)
+            choices.append(choice)
+
+        return choices
                 
     
     def clean_name(self):

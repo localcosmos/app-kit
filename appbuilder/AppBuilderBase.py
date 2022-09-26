@@ -72,7 +72,7 @@ from django.core import mail
 from app_kit.models import MetaAppGenericContent
 from app_kit.features.frontend.models import Frontend
 
-import logging, os, json, shutil, traceback
+import logging, os, json, shutil, traceback, inspect
 
 # getting app specific API
 from django_tenants.utils import get_tenant_domain_model
@@ -118,9 +118,14 @@ class AppBuilderBase:
 
         self.meta_app = meta_app
 
-        self._builder_root_path = os.path.dirname(os.path.abspath(__file__))
+        self._builder_root_path = self._get_builder_root_path()#os.path.dirname(os.path.abspath(__file__))
 
         self._certificates_path = os.path.join(self._builder_root_path, 'certificates')
+
+    @classmethod
+    def _get_builder_root_path(cls):
+        builder_root_path = os.path.dirname(os.path.abspath(inspect.getfile(cls)))
+        return builder_root_path
 
 
     def validate(self):
@@ -250,6 +255,14 @@ class AppBuilderBase:
     ##########################################################################################
     # FRONTENDS
     ##########################################################################################
+    @classmethod
+    def get_installed_frontends(cls):
+        frontends = []
+        frontends_path = os.path.join(cls._get_builder_root_path(), 'app', 'frontends')
+        for frontend_name in os.listdir(frontends_path):
+            frontends.append(frontend_name)
+
+        return frontends
 
     # publicly installed frontends, provided by localcosmos.org
     @property
