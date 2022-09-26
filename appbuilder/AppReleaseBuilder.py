@@ -2114,6 +2114,10 @@ class AppReleaseBuilder(AppBuilderBase):
         # served review folder
         if os.path.islink(self._review_webapp_served_www_path):
             os.unlink(self._review_webapp_served_www_path)
+
+        if not os.path.isdir(self._review_served_root):
+            os.makedirs(self._review_served_root)
+
         os.symlink(webapp_www_folder, self._review_webapp_served_www_path)
 
         # set localcosmos_server.app.review_version_path
