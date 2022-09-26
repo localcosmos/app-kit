@@ -331,7 +331,9 @@ class AppBuilderBase:
     def _build_Frontend_webapp_specific_assets(self):
         self.logger.info('copying specific webapp assets of frontend: {0} -> {1}'.format(
                         self._frontend_webapp_assets_www_path, self._app_www_path))
-        shutil.copytree(self._frontend_webapp_assets_www_path, self._app_www_path, dirs_exist_ok=True)
+
+        if os.path.isdir(self._frontend_webapp_assets_www_path):
+            shutil.copytree(self._frontend_webapp_assets_www_path, self._app_www_path, dirs_exist_ok=True)
 
 
     #############################################################################################
