@@ -255,7 +255,13 @@ class AppReleaseBuilder(AppBuilderBase):
     # relies on correct nginx conf
     # do not use request.get_host()
     def webapp_review_url(self, request):
-        url = '{0}://{1}/review/'.format(request.scheme, self.meta_app.domain)
+
+        from django_tenants.utils import get_tenant_domain_model
+        Domain = get_tenant_domain_model()
+        
+        domain = Domain.objects.filter(tenant__schema_name='public').first()
+        url = '{0}://{1}.review.{2}/'.format(request.scheme, self.meta_app.app.uid, domain.domain)
+
         return url
 
     # the zipped webapp
