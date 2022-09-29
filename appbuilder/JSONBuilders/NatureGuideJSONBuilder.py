@@ -306,7 +306,7 @@ class MatrixFilterSerializer:
         matrix_filter_json = {
             'uuid' : str(self.matrix_filter.uuid),
             'name' : self.matrix_filter.name,
-            'filterType' : self.matrix_filter.filter_type,
+            'type' : self.matrix_filter.filter_type,
             'position' : self.matrix_filter.position,
             'description' : self.matrix_filter.description,
             'weight' : self.matrix_filter.weight,
