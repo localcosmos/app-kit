@@ -174,176 +174,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
     def _get_matrix_filter_json(self, matrix_filter):
 
-        allow_multiple_values = False
+        serializer = MatrixFilterSerializer(self, matrix_filter)
 
-        if matrix_filter.definition:
-            allow_multiple_values = matrix_filter.definition.get('allow_multiple_values', False)
-
-        matrix_filter_json = {
-            'uuid' : str(matrix_filter.uuid),
-            'name' : matrix_filter.name,
-            'type' : matrix_filter.filter_type,
-            'position' : matrix_filter.position,
-            'description' : matrix_filter.description,
-            #'definition' : matrix_filter.definition,
-            'weight' : matrix_filter.weight,
-            'restrictions' : {},
-            'isRestricted' : False,
-            'allowMultipleValues' : allow_multiple_values
-        }
-
-        space = matrix_filter.get_space()
-
-        if matrix_filter.filter_type == 'NumberFilter':
-            
-            encoded_space = space.first().encoded_space
-
-            spaces = []
-
-            for subspace in encoded_space:
-
-                space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(subspace)   
-
-                space_entry = {
-                    'spaceIdentifier' : space_identifier,
-                    'encodedSpace' : subspace,
-                }
-
-                spaces.append(space_entry)
-            
-            matrix_filter_json['space'] = spaces
-        
-        elif matrix_filter.filter_type == 'RangeFilter':
-
-            encoded_space = space.first().encoded_space            
-
-            matrix_filter_json['encodedSpace'] = encoded_space
-
-
-        elif matrix_filter.filter_type == 'TaxonFilter':
-            # encoded_space is json
-            encoded_space = space.first().encoded_space
-
-            spaces = []
-
-            for subspace in encoded_space:
-
-                #json.dumps(encoded_space, separators=(',', ':'))
-                # no whitespace in encoded space for compatibility with javascript
-                space_b64 = matrix_filter.matrix_filter_type.get_taxonfilter_space_b64(subspace)
-                
-                space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(subspace)
-
-                space_entry = {
-                    'spaceIdentifier' : space_identifier,
-                    'shortName' : subspace['latname'][:3],
-                    'latname' : subspace['latname'],
-                    'encodedSpace' : space_b64,
-                    'isCustom' : subspace['is_custom'],
-                }
-
-                spaces.append(space_entry)
-
-
-            matrix_filter_json['space'] = spaces
-            
-
-        elif matrix_filter.filter_type == 'ColorFilter':
-            spaces = []
-
-            for subspace in space:
-                
-                encoded_space = subspace.encoded_space
-
-                html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
-
-                space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(subspace)
-
-                description = None
-                gradient = False
-
-                if subspace.additional_information:
-                    description = subspace.additional_information.get('description', None)
-                    gradient = subspace.additional_information.get('gradient', False)
-                
-                subspace_entry = {
-                    'spaceIdentifier' : space_identifier,
-                    'encodedSpace' : encoded_space,
-                    'html' : html,
-                    'gradient' : gradient,
-                    'description' : description,
-                }
-                spaces.append(subspace_entry)
-                
-            matrix_filter_json['space'] = spaces
-
-
-        elif matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
-
-            spaces = []
-
-            for subspace in space:
-
-                space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(subspace)
-
-                entry = {
-                    'spaceIdentifier' : space_identifier,
-                    'encodedSpace' : subspace.encoded_space,
-                    'imageUrl' : self._get_image_url(subspace),
-                }
-
-                secondary_image = self._get_content_image(subspace, image_type='secondary')
-
-                if secondary_image:
-                    entry['secondaryImageUrl'] = self._get_image_url(subspace, image_type='secondary')
-                else:
-                    entry['secondaryImageUrl'] = None
-                
-                spaces.append(entry)
-                
-            matrix_filter_json['space'] = spaces
-
-
-        elif matrix_filter.filter_type == 'TextOnlyFilter':
-            
-            spaces = []
-
-            for subspace in space:
-
-                space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(subspace)
-                encoded_space = subspace.encoded_space
-
-                subspace_entry = {
-                    'spaceIdentifier' : space_identifier,
-                    'encodedSpace' : encoded_space,
-                }
-                
-                spaces.append(subspace_entry)
-                
-            matrix_filter_json['space'] = spaces
-
-        else:
-            raise ValueError('Unsupported filter_type: {0}'.format(matrix_filter.filter_type))
-
-
-        # get restrictions
-        matrix_filter_restrictions = MatrixFilterRestriction.objects.filter(
-            restricted_matrix_filter=matrix_filter)
-
-        for matrix_filter_restriction in matrix_filter_restrictions:
-
-            # handlebars {{#if restrictions }} returns always True, even if the object is empty
-            if matrix_filter_json['isRestricted'] != True:
-                matrix_filter_json['isRestricted'] = True
-
-            restrictive_matrix_filter = matrix_filter_restriction.restrictive_matrix_filter
-            restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
-
-            restrictive_space = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
-                matrix_filter_restriction)
-
-            matrix_filter_json['restrictions'][restrictive_matrix_filter_uuid] = restrictive_space
-            
+        matrix_filter_json = serializer.serialize()
 
         return matrix_filter_json
 
@@ -417,3 +250,245 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         return options
         
+
+
+
+class MatrixFilterSerializer:
+
+    def __init__(self, jsonbuilder, matrix_filter):
+        self.matrix_filter = matrix_filter
+        self.jsonbuilder = jsonbuilder
+
+
+    def serialize(self):
+
+        matrix_filter_json = self.serialize_matrix_filter()
+
+        space = self.matrix_filter.get_space()
+        space_list = self.get_space_list(self.matrix_filter, space)
+
+        matrix_filter_json['space'] = space_list
+
+        # get restrictions
+        matrix_filter_restrictions = MatrixFilterRestriction.objects.filter(
+            restricted_matrix_filter=self.matrix_filter)
+
+        for matrix_filter_restriction in matrix_filter_restrictions:
+
+            # handlebars {{#if restrictions }} returns always True, even if the object is empty
+            if matrix_filter_json['isRestricted'] != True:
+                matrix_filter_json['isRestricted'] = True
+
+            restrictive_matrix_filter = matrix_filter_restriction.restrictive_matrix_filter
+            restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
+
+            if restrictive_matrix_filter.filter_type in ['RangeFilter', 'NumberFilter']:
+                space_list = [matrix_filter_restriction]
+            else:
+                space_list = matrix_filter_restriction.values.all()
+
+            space_list_json = self.get_space_list(restrictive_matrix_filter, space, simple=True)
+
+
+            matrix_filter_json['restrictions'][restrictive_matrix_filter_uuid] = space_list_json
+            
+
+        return matrix_filter_json
+
+
+    def serialize_matrix_filter(self):
+
+        allow_multiple_values = False
+
+        if self.matrix_filter.definition:
+            allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
+
+        matrix_filter_json = {
+            'uuid' : str(self.matrix_filter.uuid),
+            'name' : self.matrix_filter.name,
+            'filterType' : self.matrix_filter.filter_type,
+            'position' : self.matrix_filter.position,
+            'description' : self.matrix_filter.description,
+            'weight' : self.matrix_filter.weight,
+            'restrictions' : {},
+            'isRestricted' : False,
+            'allowMultipleValues' : allow_multiple_values,
+            'space' : [],
+            'definition' : {},
+        }
+
+
+        if self.matrix_filter.filter_type == 'RangeFilter':
+
+            if self.matrix_filter.definition:
+                
+                matrix_filter_json['definition'].update({
+                    'min' : self.matrix_filter.definition.get('min', None),
+                    'max' : self.matrix_filter.definition.get('max', None),
+                    'step' : self.matrix_filter.definition.get('step', None),
+                })
+
+        if self.matrix_filter.filter_type in ['RangeFilter', 'NumberFilter']:
+
+            if self.matrix_filter.definition:
+                
+                matrix_filter_json['definition'].update({
+                    'unit' : self.matrix_filter.definition.get('unit', None),
+                    'unit_verbose' : self.matrix_filter.definition.get('unit_verbose', None),
+                })
+        
+        return matrix_filter_json
+
+
+    def get_space_list(self, matrix_filter, space_list, simple=False):
+        
+        list_serializer = MatrixFilterSpaceListSerializer(self.jsonbuilder, matrix_filter, space_list)
+
+        space_list_json = list_serializer.serialize(simple=simple)
+
+        return space_list_json
+        
+
+
+class MatrixFilterSpaceListSerializer:
+
+    def __init__(self, jsonbuilder, matrix_filter, space_list):
+        self.jsonbuilder = jsonbuilder
+        self.matrix_filter = matrix_filter
+        self.space_list = space_list
+
+    def serialize(self, simple=False):
+
+        space_list_json = []
+
+        if self.matrix_filter.filter_type == 'NumberFilter':
+            
+            encoded_space = self.space_list[0].encoded_space
+
+            for subspace in encoded_space:
+
+                space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)   
+
+                space_json = {
+                    'spaceIdentifier' : space_identifier,
+                    'encodedSpace' : subspace,
+                }
+
+                space_list_json.append(space_json)
+            
+
+        elif self.matrix_filter.filter_type == 'RangeFilter':
+
+            encoded_space = self.space_list[0].encoded_space
+            space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(encoded_space)
+
+            space_list_json = [
+                {
+                    'encodedSpace' : encoded_space,
+                    'spaceIdentifier' : space_identifier,
+                }
+            ]
+
+
+        elif self.matrix_filter.filter_type == 'TaxonFilter':
+            # encoded_space is json
+            encoded_space = self.space_list[0].encoded_space
+
+            for subspace in encoded_space:
+
+                #json.dumps(encoded_space, separators=(',', ':'))
+                # no whitespace in encoded space for compatibility with javascript
+                space_b64 = self.matrix_filter.matrix_filter_type.get_taxonfilter_space_b64(subspace)
+                
+                space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
+
+                space_json = {
+                    'spaceIdentifier' : space_identifier,
+                    'encodedSpace' : space_b64,
+                }
+
+                if simple == False:
+                    space_json.update({
+                        'shortName' : subspace['latname'][:3],
+                        'latname' : subspace['latname'],
+                        'isCustom' : subspace['is_custom'],
+                    })
+
+                space_list_json.append(space_json)
+            
+
+        elif self.matrix_filter.filter_type == 'ColorFilter':
+
+            for subspace in self.space_list:
+                
+                encoded_space = subspace.encoded_space
+
+                html = self.matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
+
+                space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
+
+                description = None
+                gradient = False
+
+                if subspace.additional_information:
+                    description = subspace.additional_information.get('description', None)
+                    gradient = subspace.additional_information.get('gradient', False)
+                
+                space_json = {
+                    'spaceIdentifier' : space_identifier,
+                    'encodedSpace' : encoded_space,
+                }
+
+                if simple == False:
+                    space_json.update({
+                        'html' : html,
+                        'gradient' : gradient,
+                        'description' : description,
+                    })
+
+                space_list_json.append(space_json)
+
+
+        elif self.matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+
+            for subspace in self.space_list:
+
+                space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
+
+                space_json = {
+                    'spaceIdentifier' : space_identifier,
+                    'encodedSpace' : subspace.encoded_space,
+                }
+
+                if simple == False:
+                    space_json['imageUrl'] = self.jsonbuilder._get_image_url(subspace)
+
+                    secondary_image = self.jsonbuilder._get_content_image(subspace, image_type='secondary')
+
+                    if secondary_image:
+                        space_json['secondaryImageUrl'] = self.jsonbuilder._get_image_url(subspace, image_type='secondary')
+                    else:
+                        space_json['secondaryImageUrl'] = None
+                
+                space_list_json.append(space_json)
+
+
+        elif self.matrix_filter.filter_type == 'TextOnlyFilter':
+
+            for subspace in self.space_list:
+
+                space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
+                encoded_space = subspace.encoded_space
+
+                space_json = {
+                    'spaceIdentifier' : space_identifier,
+                    'encodedSpace' : encoded_space,
+                }
+                
+                space_list_json.append(space_json)
+
+        else:
+            raise ValueError('Unsupported filter_type: {0}'.format(self.matrix_filter.filter_type))
+
+        
+        return space_list_json

@@ -520,7 +520,7 @@ class MatrixFilter {
 
         let parsed_restriction_space = restriction_spaces[v];
 
-        let space_identifier = restrictive_matrix_filter.get_space_identifier_from_parsed(parsed_restriction_space);
+        let space_identifier = parsed_restriction_space['spaceIdentifier']; //restrictive_matrix_filter.get_space_identifier_from_parsed(parsed_restriction_space);
 
         console.log("[MatrixFilter] applying restriction to " + this.matrixFilterType + ": " + restrictive_matrix_filter.matrixFilterType + " " + parsed_restriction_space + " " + space_identifier);
 

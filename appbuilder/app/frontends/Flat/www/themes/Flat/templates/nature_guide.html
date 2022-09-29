@@ -120,13 +120,13 @@
 											<div class="clearable-range-slider">
 												<div class="row">
 													<div>
-														{{space.[0]}}
+														{{space.[0].encodedSpace.[0]}}
 													</div>
 													<div class="col-6 col-md-8 col-lg-10">
-														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{encodedSpace.[0]}}" max="{{encodedSpace.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
+														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{space.[0].encodedSpace.[0]}}" max="{{space.[0].encodedSpace.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
 													</div>
 													<div class="col-3 col-md-2 col-lg-1">
-														{{space.[1]}}
+														{{space.[0].encodedSpace.[1]}}
 													</div>
 												</div>
 												

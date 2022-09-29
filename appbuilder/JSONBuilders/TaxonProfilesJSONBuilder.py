@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
+from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import MatrixFilterSerializer
 
 from app_kit.features.taxon_profiles.models import TaxonProfile
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
@@ -43,53 +44,30 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             matrix_filters = MatrixFilter.objects.filter(meta_node=node.parent.meta_node)
 
             for matrix_filter in matrix_filters:
-                node_spaces = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter)
 
+                # unique_together: node,matrix_filter
+                node_space = NodeFilterSpace.objects.filter(node=node, matrix_filter=matrix_filter).first()
 
-                node_trait = {
-                    'matrixFilter' : {
-                        'name' : matrix_filter.name,
-                        'isMultispace' : matrix_filter.matrix_filter_type.is_multispace,
-                        'description' : matrix_filter.description,
-                        'filterType' : matrix_filter.filter_type,
-                        'definition' : matrix_filter.definition,
-                    },
-                }
+                if node_space:
 
-                if matrix_filter.matrix_filter_type.is_multispace == True:
-                    node_trait['values'] = []
+                    serializer = MatrixFilterSerializer(self, matrix_filter)
 
-                for node_space in node_spaces:
+                    matrix_filter_json = serializer.serialize_matrix_filter()
 
-                    if matrix_filter.matrix_filter_type.is_multispace == True:
-                        
-                        for value in node_space.values.all():
-                            values_entry = {
-                                'encodedSpace': value.encoded_space,
-                                'imageUrl' : self._get_image_url(value),
-                            }
-
-                            if matrix_filter.filter_type == 'ColorFilter':
-                                encoded_space = value.encoded_space
-                                gradient = False
-                                description = None
-
-                                if value.additional_information:
-                                    description = value.additional_information.get('description', None)
-                                    gradient = value.additional_information.get('gradient', False)
-                                    
-
-                                html = matrix_filter.matrix_filter_type.encoded_space_to_html(encoded_space)
-                                values_entry['html'] = html
-                                values_entry['gradient'] = gradient
-                                values_entry['description'] = description
-                                
-                            node_trait['values'].append(values_entry)
-
+                    if matrix_filter.filter_type in ['RangeFilter', 'NumberFilter']:
+                        space_list = [node_space]
                     else:
-                        node_trait['values'] = node_space.encoded_space
+                        space_list = node_space.values.all()
 
-                node_traits.append(node_trait)
+                    node_space_json = serializer.get_space_list(matrix_filter, space_list)
+
+                    matrix_filter_json['space'] = node_space_json
+
+                    node_trait = {
+                        'matrixFilter' : matrix_filter_json
+                    }
+
+                    node_traits.append(node_trait)
 
             self.trait_cache[node.taxon_nuid] = node_traits
 
