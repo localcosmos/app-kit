@@ -283,14 +283,14 @@ class MatrixFilterSerializer:
             restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
 
             if restrictive_matrix_filter.filter_type in ['RangeFilter', 'NumberFilter']:
-                space_list = [matrix_filter_restriction]
+                restrictive_space_list = [matrix_filter_restriction]
             else:
-                space_list = matrix_filter_restriction.values.all()
+                restrictive_space_list = matrix_filter_restriction.values.all()
 
-            space_list_json = self.get_space_list(restrictive_matrix_filter, space, simple=True)
+            restrictive_space_list_json = self.get_space_list(restrictive_matrix_filter, restrictive_space_list, simple=True)
 
 
-            matrix_filter_json['restrictions'][restrictive_matrix_filter_uuid] = space_list_json
+            matrix_filter_json['restrictions'][restrictive_matrix_filter_uuid] = restrictive_space_list_json
             
 
         return matrix_filter_json
@@ -306,7 +306,7 @@ class MatrixFilterSerializer:
         matrix_filter_json = {
             'uuid' : str(self.matrix_filter.uuid),
             'name' : self.matrix_filter.name,
-            'filterType' : self.matrix_filter.filter_type,
+            'type' : self.matrix_filter.filter_type,
             'position' : self.matrix_filter.position,
             'description' : self.matrix_filter.description,
             'weight' : self.matrix_filter.weight,

@@ -39,7 +39,7 @@
         "required": true
       }
     },
-    "texts" : {
+    "texts": {
       "aboutApp": {
         "required": false,
         "helpText": "Describe your app"

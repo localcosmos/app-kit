@@ -9,6 +9,7 @@
 #
 ###################################################################################################################
 
+from xml.sax.handler import property_xml_string
 from . import AppBuilderBase
 
 from django.conf import settings
@@ -188,6 +189,11 @@ class AppReleaseBuilder(AppBuilderBase):
     @property
     def _frontend_android_www_path(self):
         return os.path.join(self._frontend_root_path, 'android', 'www')
+
+
+    @property
+    def _frontend_config_xml_path(self):
+        return os.path.join(self._frontend_root_path, 'cordova', 'config.xml')
 
     # PACKAGES
     # webapp zip
@@ -2385,6 +2391,21 @@ class AppReleaseBuilder(AppBuilderBase):
                 raise NotImplementedError('[Frontend settings] android {0} of type {1} is not supported'.format(
                     image_type, image_definition['type']))
 
+
+    def _build_config_xml(self, platform):
+
+        if os.path.isfile(self._frontend_config_xml_path):
+
+            filename = 'config.xml'
+
+            if platform == 'android':
+                target_config_xml_path = os.path.join(self._build_android_root, filename)
+            elif platform == 'ios':
+                target_config_xml_path = os.path.join(self._build_ios_root, filename)
+
+            shutil.copyfile(self._frontend_config_xml_path, target_config_xml_path)
+
+
     # 1. symlink common www. 2. symlink android specific files
     def _build_android_www(self):
 
@@ -2412,6 +2433,8 @@ class AppReleaseBuilder(AppBuilderBase):
         self.logger.info('Building Android')
 
         self._build_android_assets()
+
+        self._build_config_xml(platform='android')
 
         self._build_android_www()
 
