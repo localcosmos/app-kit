@@ -124,16 +124,21 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
     def form_valid(self, form):
 
         # iterate over all text types and save them
-        for key, value in form.cleaned_data.items():
+        for field_name, value in form.cleaned_data.items():
 
-            if key in form.text_type_fields:
-            
-                taxon_text_type = TaxonTextType.objects.get(taxon_profiles=self.taxon_profiles, text_type=key)
+            if field_name in form.short_text_fields or field_name in form.long_text_fields:
+
+                taxon_text_type = form.text_type_map[field_name]
 
                 taxon_text, created = TaxonText.objects.get_or_create(taxon_profile=self.taxon_profile,
                                                                       taxon_text_type=taxon_text_type)
 
-                taxon_text.text = value
+                if field_name in form.short_text_fields:
+                    taxon_text.text = value
+
+                elif  field_name in form.long_text_fields:
+                    taxon_text.long_text = value
+
                 taxon_text.save()
         
         context = self.get_context_data(**self.kwargs)

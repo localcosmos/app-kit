@@ -93,8 +93,11 @@ class TaxonProfiles(GenericContent):
                     # text.text are long texts, so use a different key which survives text changes
                     # locale[text.text] = text.text
 
-                    text_key = self.get_text_key(text)
-                    locale[text_key] = text.text
+                    short_text_key = self.get_short_text_key(text)
+                    locale[short_text_key] = text.text
+
+                    long_text_key = self.get_long_text_key(text)
+                    locale[long_text_key] = text.long_text
 
 
                 content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
@@ -104,10 +107,14 @@ class TaxonProfiles(GenericContent):
         return locale
 
 
-    def get_text_key(self, text):
+    def get_short_text_key(self, text):
         text_key = 'taxon_text_{0}_{1}'.format(text.taxon_text_type.id, text.id)
         return text_key
+
         
+    def get_long_text_key(self, text):
+        text_key = 'taxon_text_{0}_{1}_long'.format(text.taxon_text_type.id, text.id)
+        return text_key
 
 
     class Meta:
@@ -169,7 +176,9 @@ class TaxonText(models.Model):
     taxon_profile = models.ForeignKey(TaxonProfile, on_delete=models.CASCADE)
     taxon_text_type = models.ForeignKey(TaxonTextType, on_delete=models.CASCADE)
 
-    text = models.TextField()
+    text = models.TextField(null=True)
+
+    long_text = models.TextField(null=True)
 
     position = models.IntegerField(default=0)
 

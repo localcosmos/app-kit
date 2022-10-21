@@ -381,11 +381,14 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         text_type = self.create_text_type('Test text type')
 
         text_content = 'Test text content'
+        long_text_content = 'Test long text'
+        long_text_key = '{0}:longtext'.format(text_type.text_type)
 
         post_data = {
             'input_language' : self.generic_content.primary_language,
         }
         post_data[text_type.text_type] = text_content
+        post_data[long_text_key] = long_text_content
 
         form = ManageTaxonTextsForm(self.generic_content, data=post_data)
         form.is_valid()
@@ -399,10 +402,13 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
         taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
         self.assertEqual(taxon_text.text, text_content)
+        self.assertEqual(taxon_text.long_text, long_text_content)
 
         # test update
         text_content_2 = 'Update text content'
+        long_text_content_2 = 'Updated long text content'
         post_data[text_type.text_type] = text_content_2
+        post_data[long_text_key] = long_text_content_2
 
         form_2 = ManageTaxonTextsForm(self.generic_content, data=post_data)
         form_2.is_valid()
@@ -418,6 +424,7 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
         taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
         self.assertEqual(taxon_text.text, text_content_2)
+        self.assertEqual(taxon_text.long_text, long_text_content_2)
 
 
 class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,

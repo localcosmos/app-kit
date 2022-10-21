@@ -18,6 +18,9 @@ from taxonomy.models import TaxonomyModelRouter
 
 class WithTaxonProfiles:
 
+    short_text_content = 'Lacerta agilis test text'
+    long_text_content = 'Lacerta agilis test text long text'
+
     def get_taxon_profiles(self):
         taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
         taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
@@ -26,7 +29,7 @@ class WithTaxonProfiles:
         return taxon_profiles_link.generic_content
 
 
-    def create_taxon_profile_with_text(self, taxon, text_type, text):
+    def create_taxon_profile_with_text(self, taxon, text_type, text, long_text):
 
         taxon_profiles = self.get_taxon_profiles()
 
@@ -44,6 +47,7 @@ class WithTaxonProfiles:
             taxon_profile=profile,
             taxon_text_type=text_type,
             text=text,
+            long_text=long_text,
         )
 
         taxon_text.save()
@@ -128,20 +132,22 @@ class TestTaxonProfiles(WithTaxonProfiles, WithMetaApp, WithNatureGuide, TenantT
         lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
 
         text_type_name = 'Test Text Type'
-        text_content = 'Lacerta agilis test text'
         taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
-                                                            text_type_name, text_content)
+                                            text_type_name, self.short_text_content, self.long_text_content)
 
         locale = taxon_profiles.get_primary_localization()
         self.assertEqual(locale[taxon_profiles.name], taxon_profiles.name)
         self.assertEqual(locale[text_type_name], text_type_name)
 
-        text_key = taxon_profiles.get_text_key(taxon_text)
-        self.assertEqual(locale[text_key], text_content)
+        short_text_key = taxon_profiles.get_short_text_key(taxon_text)
+        self.assertEqual(locale[short_text_key], self.short_text_content)
+
+        long_text_key = taxon_profiles.get_long_text_key(taxon_text)
+        self.assertEqual(locale[long_text_key], self.long_text_content)
         
 
     @test_settings
-    def get_text_key(self):
+    def test_get_text_keys(self):
 
         taxon_profiles = self.get_taxon_profiles()
 
@@ -150,13 +156,14 @@ class TestTaxonProfiles(WithTaxonProfiles, WithMetaApp, WithNatureGuide, TenantT
         lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
 
         text_type_name = 'Test Text Type'
-        text_content = 'Lacerta agilis test text'
         taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
-                                                                        text_type_name, text_content)
+                                            text_type_name, self.short_text_content, self.long_text_content)
 
-        text_key = taxon_profiles.get_text_key(taxon_text)
+        short_text_key = taxon_profiles.get_short_text_key(taxon_text)
+        self.assertEqual(short_text_key, 'taxon_text_{0}_{1}'.format(text_type.id, taxon_text.id))
 
-        self.assertEqual(text_key, 'taxon_text_{0}_{1}'.format(text_type.id, taxon_text.id))
+        long_text_key = taxon_profiles.get_long_text_key(taxon_text)
+        self.assertEqual(long_text_key, 'taxon_text_{0}_{1}_long'.format(text_type.id, taxon_text.id))
 
 
 class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
@@ -171,9 +178,8 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
 
         text_type_name = 'Test Text Type'
-        text_content = 'Lacerta agilis test text'
         taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
-                                                                        text_type_name, text_content)
+                                            text_type_name, self.short_text_content, self.long_text_content)
 
 
         texts = taxon_profile.texts()
@@ -192,9 +198,8 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
 
         text_type_name = 'Test Text Type'
-        text_content = 'Lacerta agilis test text'
         taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
-                                                                        text_type_name, text_content)
+                                            text_type_name, self.short_text_content, self.long_text_content)
 
 
         texts = taxon_profile.texts()
@@ -227,9 +232,8 @@ class TestTaxonTextType(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
 
         text_type_name = 'Test Text Type'
-        text_content = 'Lacerta agilis test text'
         taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
-                                                                        text_type_name, text_content)
+                                            text_type_name, self.short_text_content, self.long_text_content)
 
         self.assertEqual(str(text_type), text_type_name)
 
@@ -262,5 +266,26 @@ class TestTaxonText(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         )
 
         taxon_text.save()
+
+        taxon_text.delete()
+
+        taxon_text_only_long = TaxonText(
+            taxon_profile=profile,
+            taxon_text_type=text_type,
+            long_text='Test Lacerta agilis text',
+        )
+
+        taxon_text_only_long.save()
+
+        taxon_text_only_long.delete()
+
+        taxon_text_full = TaxonText(
+            taxon_profile=profile,
+            taxon_text_type=text_type,
+            text='Text Lacerta agilis short',
+            long_text='Test Lacerta agilis text',
+        )
+
+        taxon_text_full.save()
 
         

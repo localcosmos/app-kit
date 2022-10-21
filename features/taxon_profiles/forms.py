@@ -52,7 +52,9 @@ class ManageTaxonTextTypeForm(LocalizeableModelForm):
 class ManageTaxonTextsForm(LocalizeableForm):
 
     localizeable_fields = []
-    text_type_fields = []
+    text_type_map = {}
+    short_text_fields = []
+    long_text_fields = []
     
     def __init__(self, taxon_profiles, taxon_profile=None, *args, **kwargs):
         self.localizeable_fields = []
@@ -66,24 +68,51 @@ class ManageTaxonTextsForm(LocalizeableForm):
 
         for text_type in types:
 
-            field_name = text_type.text_type
+            short_text_field_name = text_type.text_type
+            long_text_field_name = self.get_long_text_form_field_name(text_type)
 
-            self.text_type_fields.append(field_name)
-            field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
-                                    required=False, label=text_type.text_type)
-            field.taxon_text_type = text_type
+            self.text_type_map[short_text_field_name] = text_type
+            self.text_type_map[long_text_field_name] = text_type
+
+            self.short_text_fields.append(short_text_field_name)
+            self.long_text_fields.append(long_text_field_name)
+
+            short_text_field_label = _('%(text_type)s (short version)') % {'text_type': text_type.text_type}
+            short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
+                                    required=False, label=short_text_field_label)
+            short_text_field.taxon_text_type = text_type
+
+            long_text_field_label = _('%(text_type)s (long version)') % {'text_type': text_type.text_type}
+            long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
+                                    required=False, label=long_text_field_label)
+            long_text_field.taxon_text_type = text_type
 
             if taxon_profile:
                 content = TaxonText.objects.filter(taxon_text_type=text_type,
                                 taxon_profile=taxon_profile).first()
                 if content:
-                    field.initial = content.text
+                    short_text_field.initial = content.text
+                    long_text_field.initial = content.long_text
             
-            self.fields[field_name] = field
-            self.localizeable_fields.append(text_type.text_type)
-            self.fields[field_name].language = self.language
+            self.fields[short_text_field_name] = short_text_field
+            self.fields[long_text_field_name] = long_text_field
+
+            self.localizeable_fields.append(short_text_field_name)
+            self.localizeable_fields.append(long_text_field_name)
+
+            self.fields[short_text_field_name].language = self.language
+            self.fields[long_text_field_name].language = self.language
             
-            self.layoutable_simple_fields.append(field_name)
+            self.layoutable_simple_fields.append(short_text_field_name)
+            self.layoutable_simple_fields.append(long_text_field_name)
+    
+    
+    def get_long_text_form_field_name(self, text_type):
+
+        long_text_field_name = '{0}:longtext'.format(text_type.text_type)
+
+        return long_text_field_name
+
 
 
 ''' currently unused

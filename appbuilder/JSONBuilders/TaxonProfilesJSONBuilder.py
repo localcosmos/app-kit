@@ -262,8 +262,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     text_json = {
                         'taxonTextType' : text.taxon_text_type.text_type,
-                        'text' : text.text,
-                        'textKey' : self.generic_content.get_text_key(text),
+                        'shortText' : text.text,
+                        'shortTextKey' : self.generic_content.get_short_text_key(text),
+                        'longText' : text.text,
+                        'longTextKey' : self.generic_content.get_long_text_key(text),
                     }
 
                     taxon_profile_json['texts'].append(text_json)

@@ -138,7 +138,8 @@ class TestManageTaxonTextsForm(WithMetaApp, WithFormTest, TenantTestCase):
             taxon_text = TaxonText(
                 taxon_profile=taxon_profile,
                 taxon_text_type=text_type,
-                text='{0} {1}'.format(text_type.text_type, taxon_profile.taxon_latname)
+                text='{0} {1}'.format(text_type.text_type, taxon_profile.taxon_latname),
+                long_text='{0} {1} long'.format(text_type.text_type, taxon_profile.taxon_latname),
             )
 
             taxon_text.save()
@@ -146,8 +147,16 @@ class TestManageTaxonTextsForm(WithMetaApp, WithFormTest, TenantTestCase):
         form = ManageTaxonTextsForm(taxon_profiles, taxon_profile=taxon_profile)
 
         for text_type in text_types:
+            long_text_field_name = '{0}:longtext'.format(text_type.text_type)
+
+            self.assertIn(text_type.text_type, form.short_text_fields)
             self.assertIn(text_type.text_type, form.fields)
+            self.assertIn(long_text_field_name, form.fields)
+
             self.assertIn(text_type.text_type, form.localizeable_fields)
+            self.assertIn(long_text_field_name, form.localizeable_fields)
+            self.assertIn(long_text_field_name, form.long_text_fields)
 
             expected_initial = TaxonText.objects.get(taxon_profile=taxon_profile, taxon_text_type=text_type)
             self.assertEqual(form.fields[text_type.text_type].initial, expected_initial.text)
+            self.assertEqual(form.fields[long_text_field_name].initial, expected_initial.long_text)
