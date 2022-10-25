@@ -94,11 +94,14 @@ class TaxonProfiles(GenericContent):
                     # locale[text.text] = text.text
 
                     short_text_key = self.get_short_text_key(text)
-                    locale[short_text_key] = text.text
+
+                    if text.text:
+                        locale[short_text_key] = text.text
 
                     long_text_key = self.get_long_text_key(text)
-                    locale[long_text_key] = text.long_text
 
+                    if text.long_text:
+                        locale[long_text_key] = text.long_text
 
                 content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
                 locale.update(content_images_primary_localization)

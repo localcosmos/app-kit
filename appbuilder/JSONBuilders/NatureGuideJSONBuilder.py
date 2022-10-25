@@ -1,7 +1,7 @@
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
-                                                   MatrixFilterRestriction, IDENTIFICATION_MODE_FLUID)
+                                                   MatrixFilterRestriction, IDENTIFICATION_MODE_STRICT)
 
 
 from app_kit.features.fact_sheets.models import FactSheet
@@ -50,10 +50,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
             if is_active == False:
                 continue
 
-            identification_mode = IDENTIFICATION_MODE_FLUID
+            identification_mode = IDENTIFICATION_MODE_STRICT
 
             if parent_node.meta_node.settings:
-                identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_FLUID)
+                identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
             fact_sheets = []
 

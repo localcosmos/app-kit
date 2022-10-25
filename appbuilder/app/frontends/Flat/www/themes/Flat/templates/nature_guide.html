@@ -33,6 +33,7 @@
 									<div class="matrix-filter-name py-3">
 										<strong>{{t name }}</strong>
 										{{#if definition.allowMultipleValues }}<small>({{t 'multiple choice'}})</small>{{/if}}
+										{{#if definition.unit}}<span>({{definition.unit}})</span>{{/if}}
 									</div>
 									{{#ifequal type 'DescriptiveTextAndImagesFilter'}}
 										<div class="row">
@@ -121,12 +122,14 @@
 												<div class="row">
 													<div>
 														{{space.[0].encodedSpace.[0]}}
+														{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
 													</div>
 													<div class="col-6 col-md-8 col-lg-10">
 														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{space.[0].encodedSpace.[0]}}" max="{{space.[0].encodedSpace.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
 													</div>
 													<div class="col-3 col-md-2 col-lg-1">
 														{{space.[0].encodedSpace.[1]}}
+														{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
 													</div>
 												</div>
 												

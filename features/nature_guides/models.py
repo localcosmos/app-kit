@@ -216,10 +216,10 @@ class ChildrenCacheManager:
 
         data = self.get_data(empty=True)
 
-        identification_mode = IDENTIFICATION_MODE_FLUID
+        identification_mode = IDENTIFICATION_MODE_STRICT
 
         if self.meta_node.settings:
-            identification_mode = self.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_FLUID)
+            identification_mode = self.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
         data['identification_mode'] = identification_mode
         

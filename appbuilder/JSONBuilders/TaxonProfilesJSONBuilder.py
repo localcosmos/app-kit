@@ -258,13 +258,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
             for text in db_profile.texts():
 
-                if text.text:
+                if text.text or text.long_text:
 
                     text_json = {
                         'taxonTextType' : text.taxon_text_type.text_type,
                         'shortText' : text.text,
                         'shortTextKey' : self.generic_content.get_short_text_key(text),
-                        'longText' : text.text,
+                        'longText' : text.long_text,
                         'longTextKey' : self.generic_content.get_long_text_key(text),
                     }
 

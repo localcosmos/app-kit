@@ -218,11 +218,19 @@
 
 	<div class="container">
 		{{#each taxon_profile.texts }}
-			{{#if text}}
+			{{#if shortText}}
 				<div class="row">
 					<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
 						<h4>{{t taxonTextType }}</h4>
-						{{t textKey }}
+						{{t shortTextKey }}
+					</div>
+				</div>
+			{{/if}}
+			{{#if longText}}
+				<div class="row">
+					<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
+						<h4>{{t taxonTextType }}</h4>
+						{{t longTextKey }}
 					</div>
 				</div>
 			{{/if}}
