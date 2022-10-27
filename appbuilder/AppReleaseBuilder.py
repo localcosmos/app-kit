@@ -833,12 +833,12 @@ class AppReleaseBuilder(AppBuilderBase):
             
 
         nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide,
-                                                     meta_node__node_type__in=['node', 'root'])
+                                                     meta_node__node_type__in=['node', 'root']).order_by('taxon_nuid')
 
         inactive_branch_nuids = []
         
         for parent in nodes:
-
+            
             is_active = True
 
             if parent.additional_data:
@@ -850,7 +850,7 @@ class AppReleaseBuilder(AppBuilderBase):
                         is_active = False
                         break
             
-            else:
+            if is_active == False:
                 inactive_branch_nuids.append(parent.taxon_nuid)
                 continue
 
