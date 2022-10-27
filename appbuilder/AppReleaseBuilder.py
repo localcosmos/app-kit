@@ -844,15 +844,15 @@ class AppReleaseBuilder(AppBuilderBase):
             if parent.additional_data:
                 is_active = parent.additional_data.get('is_active', True)
 
-            if is_active == False:
-                inactive_branch_nuids.append(parent.taxon_nuid)
-                continue
-
             if is_active == True:
                 for inactive_taxon_nuid in inactive_branch_nuids:
                     if parent.taxon_nuid.startswith(inactive_taxon_nuid):
                         is_active = False
                         break
+            
+            else:
+                inactive_branch_nuids.append(parent.taxon_nuid)
+                continue
 
             # check for image, except for the start node
             if not parent.meta_node.node_type == 'root':
