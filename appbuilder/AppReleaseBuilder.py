@@ -889,7 +889,7 @@ class AppReleaseBuilder(AppBuilderBase):
                     # future: check if the space makes sense
                     pass
                 else:
-                    error_message = _('This filter is empty.')
+                    error_message = _('[%(name)s] This filter is empty.') % {'name':parent}
                     error = ValidationError(nature_guide, matrix_filter, [error_message])
                     result['errors'].append(error)
                     
