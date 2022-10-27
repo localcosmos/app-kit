@@ -1,11 +1,12 @@
-{% load i18n %}
+{% load i18n localcosmos_tags %}
 <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-	{% trans 'Add entry' %} <span class="caret"></span>
+	{% trans 'Add' %} <span class="caret"></span>
 </button>
  <div class="dropdown-menu {% if menualign == 'alignright' %}dropdown-menu-right{% endif %}">
 	<a data-url="{% url 'add_existing_nodes' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add existing result or step' %}</a>
 	<a data-url="{% url 'create_nodelink' 'node' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification step' %}</a>
 	<a data-url="{% url 'create_nodelink' 'result' meta_app.id parent_node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add new identification result' %}</a>
+	<a data-url="{% url 'manage_overview_image' parent_node.meta_node|ctype_id parent_node.meta_node.id 'overview' %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add overview image' %}</a>
 	<div class="dropdown-divider"></div>
 	<a class="sort-alpha dropdown-item">{% trans 'Sort alphabetically' %}</a>
 </div>

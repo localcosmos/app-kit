@@ -834,6 +834,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide,
                                                      meta_node__node_type__in=['node', 'root'])
+
+        inactive_branch_nuids = []
         
         for parent in nodes:
 
@@ -843,7 +845,14 @@ class AppReleaseBuilder(AppBuilderBase):
                 is_active = parent.additional_data.get('is_active', True)
 
             if is_active == False:
+                inactive_branch_nuids.append(parent.taxon_nuid)
                 continue
+
+            if is_active == True:
+                for inactive_taxon_nuid in inactive_branch_nuids:
+                    if parent.taxon_nuid.startswith(inactive_taxon_nuid):
+                        is_active = False
+                        break
 
             # check for image, except for the start node
             if not parent.meta_node.node_type == 'root':

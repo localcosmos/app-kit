@@ -1,0 +1,5 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% block base_url %}{% url 'manage_overview_image' content_type.id content_instance.id 'overview' %}{% endblock %}
+
+{% block delete_url %}{% url 'delete_overview_image' content_image.pk %}{% endblock %}

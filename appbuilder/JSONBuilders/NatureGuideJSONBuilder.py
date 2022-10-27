@@ -71,6 +71,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'identificationMode' : identification_mode,
                 'factSheets' : fact_sheets,
                 'slug' : primary_locale_slug,
+                'overviewImage' : self._get_image_url(parent_node.meta_node, image_type='overview', size=(1500,1500)),
             }            
 
             if parent_node.meta_node.taxon:

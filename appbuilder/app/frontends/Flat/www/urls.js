@@ -35,6 +35,7 @@ var urlpatterns = urlpatterns.concat([
 	path("online-content/<str:slug>/<str:preview_token>/", OnlineContentView.as_view(), {"name" : "online_content_preview"}),
 	path("fact-sheet/<str:slug>/", FactSheetView.as_view(), {"name" : "fact_sheet"}),
 	path("fact-sheet-modal/<str:fact_sheet_id>/", FactSheetModal.as_view(), {"name" : "fact_sheet_modal"}),
+	path("overview-image-modal/", OverviewImageModal.as_view(), {"name" : "overview_image_modal"}),
 	path("map/<uuid:map_uuid>/", MapView.as_view(), {"name" : "map"}),
 	path("glossary/<uuid:glossary_uuid>/", GlossaryView.as_view(), {"name" : "glossary"}),
 	path("taxon-profiles-registry/", TaxonProfilesRegistry.as_view(), {"name" : "taxon_profiles_registry"}),

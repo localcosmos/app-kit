@@ -5036,14 +5036,43 @@ var FactSheetModal = View(TemplateView, {
 
 
 	modal_title : function(self){
-		i18next.t('plainȵ' + self.fact_sheet.title);
+		return i18next.t('plainȵ' + self.fact_sheet.title);
 	},
 
 	close : function(self, args, kwargs){
 		OverlayView.close_current_overlay();
 	}
 
-}, ModalView)
+}, ModalView);
+
+
+
+var OverviewImageModal = View(TemplateView, {
+
+	"identifier" : "OverviewImageModal",
+	
+	template_name : "themes/" + settings.THEME + "/templates/overview_image_modal.html",
+
+
+	get_context_data : function(self, kwargs){
+		const element = document.getElementById("overview-img");
+
+		let context = {
+			"overviewImageURL" : element.getAttribute("data-overview-image-url")
+		};
+	
+		return context;		
+	},
+
+	modal_title : function(self){
+		return "Overview";
+	},
+
+	close : function(self, args, kwargs){
+		OverlayView.close_current_overlay();
+	}
+
+}, ModalView);
 
 // header views
 var BaseHeaderView = View(TemplateView, {

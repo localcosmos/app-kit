@@ -1940,6 +1940,12 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	overflow-y: scroll;
 }
 
+
+.overview-img {
+	width: 3rem;
+	height: auto;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 	.natureguide-item .taxonimage {

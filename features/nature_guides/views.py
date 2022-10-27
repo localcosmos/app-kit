@@ -1593,3 +1593,14 @@ class StoreIdentificationMode(TemplateView):
         }
         
         return JsonResponse(response, safe=False)
+
+
+'''
+    overview images are attached to a MetaNode
+'''
+class ManageOverviewImage(ManageContentImage):
+    template_name = 'nature_guides/ajax/manage_overview_image.html'
+
+
+class DeleteOverviewImage(DeleteContentImage):
+    template_name = 'nature_guides/ajax/delete_overview_image.html'
