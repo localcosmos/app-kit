@@ -1,0 +1,74 @@
+{
+  "frontend": "LakeExplorer",
+  "version": "0.1",
+  "API_URL": "http://localhost:8000",
+  "online_content": {
+    "verbose_template_names": {},
+    "max_flag_levels": 2,
+    "flags": {},
+    "sections": {}
+  },
+  "userContent": {
+    "images": {
+      "appLauncherIcon": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+        "required": true
+      },
+      "appSplashscreen": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Will be displayed during app startup",
+        "required": true
+      },
+      "logo": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ]
+        },
+        "helpText": "Will be displayed on the apps main page",
+        "required": true
+      }
+    },
+    "texts": {
+      "aboutApp": {
+        "required": false,
+        "helpText": "Describe your app"
+      },
+      "appSources": {
+        "required": false,
+        "helpText": "Sources you used to build this app."
+      }
+    }
+  },
+  "android": {
+    "launcherIcon": {
+      "type": "userContent",
+      "imageIdentifier": "appLauncherIcon"
+    },
+    "splashscreen": {
+      "type": "userContent",
+      "imageIdentifier": "appSplashscreen"
+    }
+  },
+  "ios": {
+    "launcherIcon": {
+      "type": "userContent",
+      "imageIdentifier": "appLauncherIcon"
+    },
+    "splashscreen": {
+      "type": "userContent",
+      "imageIdentifier": "appSplashscreen"
+    }
+  }
+}
