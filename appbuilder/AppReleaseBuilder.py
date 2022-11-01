@@ -838,7 +838,7 @@ class AppReleaseBuilder(AppBuilderBase):
         inactive_branch_nuids = []
         
         for parent in nodes:
-            
+
             is_active = True
 
             if parent.additional_data:
@@ -1700,7 +1700,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         collected_taxa = taxon_profiles.collected_taxa()
 
-        self.logger.info('Building taxon profiles for collected taxa')
+        self.logger.info('Building taxon profiles for {0} collected taxa'.format(collected_taxa.count()))
         
         for profile_taxon in collected_taxa:
             

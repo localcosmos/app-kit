@@ -28,18 +28,17 @@ from localcosmos_cordova_builder.MetaAppDefinition import MetaAppDefinition
 from app_kit.appbuilder import  AppReleaseBuilder
 
 from localcosmos_server.models import App
-from localcosmos_server.api.authentication import LCTokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from app_kit.multi_tenancy.models import Domain
 
-from rest_framework.authtoken.serializers import AuthTokenSerializer
 from .permissions import IsApiUser
 
 import os
 
 
 class AppKitApiMixin:
-    authentication_classes = (LCTokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsApiUser,)
 
 
