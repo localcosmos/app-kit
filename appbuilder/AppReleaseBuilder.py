@@ -1477,6 +1477,7 @@ class AppReleaseBuilder(AppBuilderBase):
             feature_entry['name'][language_code] = localized_name
         '''
         feature_entry_json['name'] = generic_content.name
+        feature_entry_json['slug'] = self.get_generic_content_slug(generic_content)
 
 
         # complete the settings_entry
@@ -1491,6 +1492,21 @@ class AppReleaseBuilder(AppBuilderBase):
         feature_entry_json['folder'] = relative_generic_content_folder
 
         return feature_entry_json
+        
+
+    def get_generic_content_slug(self, generic_content):
+        content_type = ContentType.objects.get_for_model(generic_content)
+        app_generic_content = MetaAppGenericContent.objects.get(meta_app=self.meta_app, content_type=content_type,
+            object_id=generic_content.id)
+        slug = '{0}-{1}'.format(app_generic_content.id, slugify(generic_content.name))
+
+        # slugs
+        if 'slugs' not in self.build_features:
+            self.build_features['slugs'] = {}
+        
+        self.build_features['slugs'][slug] = str(generic_content.uuid)
+
+        return slug
 
     
     # adding a default feature, e.g. a default observation form
@@ -1585,7 +1601,6 @@ class AppReleaseBuilder(AppBuilderBase):
             self._add_default_to_features(generic_content_type, generic_content, force_add=is_default)
 
 
-
     ###############################################################################################################
     # BACKBONE TAXONOMY
     # - dump taxonomic trees as json
@@ -1652,12 +1667,15 @@ class AppReleaseBuilder(AppBuilderBase):
             # remove duplicates
             vernacular_names_distinct = [dict(t) for t in {tuple(d.items()) for d in vernacular_names_list}]
 
+            # sort vernacular names alphabetially
+            sorted_vernacular_names_distinct = sorted(vernacular_names_distinct, key=lambda i: i['name'])
+
             # dump the language specific file
             # one file per language for vernacular names for search
             locale_filename = '{0}.json'.format(language_code)
             language_file = os.path.join(vernacular_absolute_path, locale_filename)
             with open(language_file, 'w', encoding='utf-8') as f:
-                json.dump(vernacular_names_distinct, f, indent=4, ensure_ascii=False)
+                json.dump(sorted_vernacular_names_distinct, f, indent=4, ensure_ascii=False)
 
             vernacular_language_specific_path = os.path.join(vernacular_relative_path, locale_filename)
             feature_entry['vernacular'][language_code] = vernacular_language_specific_path

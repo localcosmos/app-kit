@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from app_kit.features.fact_sheets.models import FactSheet
 
+from django.utils.text import slugify
 
 class JSONBuilder:
 
@@ -39,6 +40,7 @@ class JSONBuilder:
             'options' : options,
             'globalOptions' : global_options,
             'name' : self.generic_content.name, #{}, translated in-app
+            'slug' : self.app_release_builder.get_generic_content_slug(self.generic_content),
         }
 
         return generic_content_json

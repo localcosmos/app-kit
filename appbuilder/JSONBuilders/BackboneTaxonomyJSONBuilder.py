@@ -134,7 +134,9 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                         vernacular_names.append(vernacular_dic)
 
             # collect and add vernacular nams from nature guides
-            vernacular_names_from_nature_guides = self.app_release_builder._collect_vernacular_names_from_nature_guides(language_code)
+            vernacular_names_from_nature_guides = self.app_release_builder._collect_vernacular_names_from_nature_guides(
+                language_code)
+                
             for name_uuid, vernacular_dic in vernacular_names_from_nature_guides.items():
                 vernacular_names.append(vernacular_dic)
 
