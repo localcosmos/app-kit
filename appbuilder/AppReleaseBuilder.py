@@ -1498,7 +1498,19 @@ class AppReleaseBuilder(AppBuilderBase):
         if generic_content_type in ['GenericForm', 'ButtonMatrix']:
 
             if force_add == True or 'default' not in self.build_features[generic_content_type]:
-                option_entry = generic_content.make_option_from_instance(generic_content)
+
+                data = self.build_features[generic_content_type]
+                for generic_content_json in data['list']:
+
+                    if generic_content_json['uuid'] == str(generic_content.uuid):
+                        generic_content_json['isDefault'] = True
+                    else:
+                        generic_content_json['isDefault'] = False
+
+                option_entry = {
+                    'uuid' : str(generic_content.uuid),
+                    'name' : generic_content.name,
+                }
                 self.build_features[generic_content_type]['default'] = option_entry
 
 
@@ -1564,14 +1576,13 @@ class AppReleaseBuilder(AppBuilderBase):
                     'lookup' : {},
                 }
 
-            # always add the first entry as default
-            # replace the first entry if an entry with is_default is passed
-            is_default = generic_content_json['options'].get('is_default', False)
-            self._add_default_to_features(generic_content_type, generic_content, force_add=is_default)
-
-
             self.build_features[generic_content_type]['list'].append(feature_entry_json)
             self.build_features[generic_content_type]['lookup'][filename_identifier] = feature_entry_json['path']
+
+            # always add the first entry as default
+            # replace the first entry if an entry with is_default is passed
+            is_default = generic_content_json['options'].get('isDefault', False)
+            self._add_default_to_features(generic_content_type, generic_content, force_add=is_default)
 
 
 
@@ -1784,7 +1795,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             taxonomic_restriction = jsonbuilder.get_taxonomic_restriction(fact_sheet)
             fact_sheet_json = {
-                'taxonomicRestriction' : taxonomic_restriction,
+                'taxonomicRestrictions' : taxonomic_restriction,
                 'localized' : {},
                 'title' : fact_sheet.title,
             }

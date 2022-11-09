@@ -143,13 +143,11 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 child_json = {
                     'uuid' : str(child.name_uuid),
-                    #'id' : child.id,
-                    #'metaNodeId' : child.meta_node.id,
                     'nodeType' : child.meta_node.node_type,
                     'imageUrl' : self._get_image_url(child.meta_node),
                     'space' : child_space,
                     'maxPoints' : child_max_points,
-                    'isVisible' : True,
+                    'isPossible' : True,
                     'name' : child.meta_node.name, # all langs as json
                     'decisionRule' : child.decision_rule,
                     'taxon' : None,

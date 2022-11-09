@@ -84,10 +84,8 @@ class JSONBuilder:
                 'taxonSource' : restriction.taxon_source,
                 'taxonLatname' : restriction.taxon_latname,
                 'taxonAuthor' : restriction.taxon_author,
-
-                'nameUuid' : restriction.name_uuid,
+                'nameUuid' : str(restriction.name_uuid),
                 'taxonNuid' : restriction.taxon_nuid,
-                
                 'restrictionType' : restriction.restriction_type,
             }
 
