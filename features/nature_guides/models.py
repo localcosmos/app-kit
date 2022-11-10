@@ -1447,7 +1447,7 @@ class NodeFilterSpace(models.Model):
     # there can be more than 1 encoded space
     values = models.ManyToManyField(MatrixFilterSpace)
 
-    weight = models.IntegerField(default=50) # 0-100: how discriminative the trait is for this node
+    weight = models.IntegerField(null=True, default=None) # 0-10: how discriminative the trait is for this node, overrides MatrixFilter.weight
 
 
     def save(self, *args, **kwargs):
