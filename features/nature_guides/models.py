@@ -1233,7 +1233,7 @@ class MatrixFilter(models.Model):
     # allow_multiple_values = models.BooleanField(default=False)
 
     position = models.IntegerField(default=0)
-    weight = models.IntegerField(default=5) # 0-10: how discriminative the trait is for this node
+    weight = models.IntegerField(default=1) # 0-10: how discriminative the trait is for this node
 
     ### NON_MODEL_FIELD ATTRIBUTES
     # the class from .matrix_filters - the type of the filter as a class
