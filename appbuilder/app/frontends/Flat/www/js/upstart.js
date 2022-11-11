@@ -135,6 +135,15 @@ var upstart = {
 			}
 
 			//alert(JSON.stringify(settings));
+			if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
+				MyObservations.login_required = false;
+			}
+
+			if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
+				ObservationView.login_required = false;
+				ButtonMatrixView.login_required = false;
+				LogFromMatrix.login_required = false;
+			}
 
 			callback();
 		});

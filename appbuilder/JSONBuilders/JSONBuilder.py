@@ -9,6 +9,7 @@ from app_kit.features.fact_sheets.models import FactSheet
 
 from django.utils.text import slugify
 
+
 class JSONBuilder:
 
     def __init__(self, app_release_builder, app_generic_content):
@@ -120,17 +121,7 @@ class JSONBuilder:
 
 
     def to_camel_case(self, string):
-
-        string_parts = string.split('_')
-        
-        for counter, string_part in enumerate(string_parts, 0):
-            if counter > 0:
-                capitalized_part = string_part.capitalize()
-                string_parts[counter] = capitalized_part
-        
-        camel_case_string = ''.join(string_parts)
-
-        return camel_case_string
+        return self.app_release_builder.to_camelcase(string)
 
 
     def get_options(self):

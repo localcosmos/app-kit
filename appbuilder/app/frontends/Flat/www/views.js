@@ -3704,10 +3704,6 @@ var SynchronizeObservations = View(TemplateView, {
 
 }, ModalView);
 
-if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
-	MyObservations.login_required = false;
-}
-
 var ButtonMatrixView = View(TemplateView, {
 
 	"identifier" : "ButtonMatrixView",
@@ -4014,11 +4010,7 @@ var LogFromMatrix = View(TemplateView, {
 });
 
 // set anonymous observations according to settings
-if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
-	ObservationView.login_required = false;
-	ButtonMatrixView.login_required = false;
-	LogFromMatrix.login_required = false;
-}
+
 
 function calculateMatrixItemBackgroundcolor(matrix_item){
 
