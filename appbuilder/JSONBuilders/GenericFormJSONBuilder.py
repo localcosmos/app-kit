@@ -28,7 +28,7 @@ class GenericFormJSONBuilder(JSONBuilder):
 
         generic_form_json.update({
             'fields' : [],
-            'taxonomic_restriction' : taxonomic_restriction,
+            'taxonomicRestrictions' : taxonomic_restriction,
         })
 
         field_links = GenericFieldToGenericForm.objects.filter(generic_form=generic_form).order_by('position')
@@ -71,9 +71,9 @@ class GenericFormJSONBuilder(JSONBuilder):
                 'initial' : None,
             },
             'position' : generic_field_link.position,
-            'options' : generic_field.options, # contains widget_attrs and other stuff
+            # 'options' : generic_field.options, # moved to widgetAttrs
             'widgetAttrs' : {},
-            'taxonomicRestriction' : taxonomic_restriction,
+            'taxonomicRestrictions' : taxonomic_restriction,
         }
 
         if generic_field.field_class == 'SelectDateTime':
@@ -114,7 +114,7 @@ class GenericFormJSONBuilder(JSONBuilder):
                         if decimal_places == 0:
                             step = '1'
                         elif decimal_places > 0:
-                            step = '0.%s1' % ('0' * (decimal_places-1))
+                            step = '0.{0}1'.format('0' * (decimal_places-1))
 
                 field_dic['widgetAttrs']['step'] = step
 

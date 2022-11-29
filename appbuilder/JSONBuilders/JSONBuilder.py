@@ -7,6 +7,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from app_kit.features.fact_sheets.models import FactSheet
 
+from django.utils.text import slugify
+
 
 class JSONBuilder:
 
@@ -39,6 +41,7 @@ class JSONBuilder:
             'options' : options,
             'globalOptions' : global_options,
             'name' : self.generic_content.name, #{}, translated in-app
+            'slug' : self.app_release_builder.get_generic_content_slug(self.generic_content),
         }
 
         return generic_content_json
@@ -84,10 +87,8 @@ class JSONBuilder:
                 'taxonSource' : restriction.taxon_source,
                 'taxonLatname' : restriction.taxon_latname,
                 'taxonAuthor' : restriction.taxon_author,
-
-                'nameUuid' : restriction.name_uuid,
+                'nameUuid' : str(restriction.name_uuid),
                 'taxonNuid' : restriction.taxon_nuid,
-                
                 'restrictionType' : restriction.restriction_type,
             }
 
@@ -120,17 +121,7 @@ class JSONBuilder:
 
 
     def to_camel_case(self, string):
-
-        string_parts = string.split('_')
-        
-        for counter, string_part in enumerate(string_parts, 0):
-            if counter > 0:
-                capitalized_part = string_part.capitalize()
-                string_parts[counter] = capitalized_part
-        
-        camel_case_string = ''.join(string_parts)
-
-        return camel_case_string
+        return self.app_release_builder.to_camelcase(string)
 
 
     def get_options(self):

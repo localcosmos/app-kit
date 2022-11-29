@@ -324,6 +324,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'vernacular' : {},
         }
 
+        used_taxon_full_latnames = set([])
+
         for lazy_taxon in taxon_list:
 
             name_uuid = str(lazy_taxon.name_uuid)
@@ -333,37 +335,41 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 taxon_full_latname = '{0} {1}'.format(lazy_taxon.taxon_latname, lazy_taxon.taxon_author)
             else:
                 taxon_full_latname = lazy_taxon.taxon_latname
+
+            if taxon_full_latname not in used_taxon_full_latnames:
+
+                used_taxon_full_latnames.add(taxon_full_latname)
+                    
+                taxon_latname_start_letter = lazy_taxon.taxon_latname[0].upper()
                 
-            taxon_latname_start_letter = lazy_taxon.taxon_latname[0].upper()
-            
-            if taxon_latname_start_letter not in search_indices_json['taxonLatname']:
-                search_indices_json['taxonLatname'][taxon_latname_start_letter] = {}
+                if taxon_latname_start_letter not in search_indices_json['taxonLatname']:
+                    search_indices_json['taxonLatname'][taxon_latname_start_letter] = []
 
-            taxon_latname_entry_json = {
-                'taxonLatname' : lazy_taxon.taxon_latname,
-                'taxonAuthor' : lazy_taxon.taxon_author,
-                'taxonSource' : lazy_taxon.taxon_source, # for looking up the original taxon
-                'nameUuid' : name_uuid, # for looking up the original taxon
-                'isSynonym' : False,
-            }
-            search_indices_json['taxonLatname'][taxon_latname_start_letter][taxon_full_latname] = taxon_latname_entry_json
-
-            # add synonyms
-            synonyms = lazy_taxon.synonyms()
-            for synonym in synonyms:
-
-                synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
-
-                synonym_entry_json = {
-                    'taxonLatname' : synonym.taxon_latname,
-                    'taxonAuthor' : synonym.taxon_author,
-                    'taxonSource' : lazy_taxon.taxon_source,
-                    'nameUuid' : name_uuid, # name_uuid of accepted name
-                    'synonymNameUuid' : str(synonym.name_uuid),
-                    'isSynonym' : True,
+                taxon_latname_entry_json = {
+                    'taxonLatname' : lazy_taxon.taxon_latname,
+                    'taxonAuthor' : lazy_taxon.taxon_author,
+                    'taxonSource' : lazy_taxon.taxon_source, # for looking up the original taxon
+                    'nameUuid' : name_uuid, # for looking up the original taxon
+                    'isSynonym' : False,
                 }
+                search_indices_json['taxonLatname'][taxon_latname_start_letter].append(taxon_latname_entry_json)
 
-                search_indices_json['taxonLatname'][taxon_latname_start_letter][synonym_full_latname] = synonym_entry_json
+                # add synonyms
+                synonyms = lazy_taxon.synonyms()
+                for synonym in synonyms:
+
+                    synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
+
+                    synonym_entry_json = {
+                        'taxonLatname' : synonym.taxon_latname,
+                        'taxonAuthor' : synonym.taxon_author,
+                        'taxonSource' : lazy_taxon.taxon_source,
+                        'nameUuid' : name_uuid, # name_uuid of accepted name
+                        'synonymNameUuid' : str(synonym.name_uuid),
+                        'isSynonym' : True,
+                    }
+
+                    search_indices_json['taxonLatname'][taxon_latname_start_letter].append(synonym_entry_json)
 
 
             # add vernacular names - these might not be unique, therefore use a list
@@ -414,11 +420,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         search_indices_json['taxonLatname'] = OrderedDict(taxon_latnames_sorted_start_letters)
 
-        for taxon_latname_start_letter, taxon_latname_entries in search_indices_json['taxonLatname'].items():
-            sorted_taxon_latname_entries = OrderedDict(sorted(taxon_latname_entries.items(),
-                                                              key=lambda x: x[0]))
+        for taxon_latname_start_letter, taxon_latname_list in search_indices_json['taxonLatname'].items():
+            sorted_taxon_latname_list = sorted(taxon_latname_list, key=lambda i: i['taxonLatname'])
             
-            search_indices_json['taxonLatname'][taxon_latname_start_letter] = sorted_taxon_latname_entries
+            search_indices_json['taxonLatname'][taxon_latname_start_letter] = sorted_taxon_latname_list
             
         return search_indices_json
 

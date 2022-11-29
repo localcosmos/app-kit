@@ -13,7 +13,7 @@ function createFieldFromJSON(field_definition){
 	var field_kwargs = {
 		"uuid" : field_definition.uuid,
 		"role" : field_definition.role,
-		"taxonomic_restriction" : field_definition.taxonomic_restriction
+		"taxonomic_restriction" : field_definition.taxonomicRestrictions
 	};
 
 	var widgetAttrs = field_definition["widgetAttrs"];

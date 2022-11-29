@@ -16,7 +16,7 @@ class MatrixFilterManagementForm(LocalizeableForm):
                            help_text=_("What is described by the filter, e.g. 'length of nose'"))
     filter_type = forms.ChoiceField(choices=MATRIX_FILTER_TYPES, widget=forms.HiddenInput)
 
-    weight = forms.IntegerField(min_value=0, max_value=10, initial=5,
+    weight = forms.IntegerField(min_value=0, max_value=10, initial=1,
                                 help_text=_('0-10. Use a high value if the trait is easily recoginzed, and a low one if it is more difficult.'))
 
     localizeable_fields = ['name'] #, 'description']

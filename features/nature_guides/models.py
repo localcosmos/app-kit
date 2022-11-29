@@ -1233,7 +1233,7 @@ class MatrixFilter(models.Model):
     # allow_multiple_values = models.BooleanField(default=False)
 
     position = models.IntegerField(default=0)
-    weight = models.IntegerField(default=5) # 0-10: how discriminative the trait is for this node
+    weight = models.IntegerField(default=1) # 0-10: how discriminative the trait is for this node
 
     ### NON_MODEL_FIELD ATTRIBUTES
     # the class from .matrix_filters - the type of the filter as a class
@@ -1447,7 +1447,7 @@ class NodeFilterSpace(models.Model):
     # there can be more than 1 encoded space
     values = models.ManyToManyField(MatrixFilterSpace)
 
-    weight = models.IntegerField(default=50) # 0-100: how discriminative the trait is for this node
+    weight = models.IntegerField(null=True, default=None) # 0-10: how discriminative the trait is for this node, overrides MatrixFilter.weight
 
 
     def save(self, *args, **kwargs):

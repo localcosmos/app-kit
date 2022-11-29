@@ -151,6 +151,19 @@ class AppBuilderBase:
             os.makedirs(folder)
 
 
+    def to_camelcase(self, string):
+        string_parts = string.split('_')
+            
+        for counter, string_part in enumerate(string_parts, 0):
+            if counter > 0:
+                capitalized_part = string_part.capitalize()
+                string_parts[counter] = capitalized_part
+        
+        camel_case_string = ''.join(string_parts)
+
+        return camel_case_string
+
+
     #############################################################################################
     # LOGGING
     #############################################################################################
@@ -551,8 +564,10 @@ class AppBuilderBase:
         }
 
         if self.meta_app.global_options:
-            settings["OPTIONS"].update(self.meta_app.global_options)
-
+            
+            for key, value in self.meta_app.global_options.items():
+                camel_case_key = self.to_camelcase(key)
+                settings["OPTIONS"][camel_case_key] = value
         
         return settings
 

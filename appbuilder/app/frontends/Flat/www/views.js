@@ -3704,10 +3704,6 @@ var SynchronizeObservations = View(TemplateView, {
 
 }, ModalView);
 
-if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
-	MyObservations.login_required = false;
-}
-
 var ButtonMatrixView = View(TemplateView, {
 
 	"identifier" : "ButtonMatrixView",
@@ -4014,11 +4010,7 @@ var LogFromMatrix = View(TemplateView, {
 });
 
 // set anonymous observations according to settings
-if (settings.OPTIONS.hasOwnProperty("allowAnonymousObservations") && settings.OPTIONS.allowAnonymousObservations == true){
-	ObservationView.login_required = false;
-	ButtonMatrixView.login_required = false;
-	LogFromMatrix.login_required = false;
-}
+
 
 function calculateMatrixItemBackgroundcolor(matrix_item){
 
@@ -5598,22 +5590,24 @@ var TaxonProfilesRegistry = View(TemplateView, {
 			if (start_letter in self.search_index.taxonLatname) {
 				
 				let taxa = self.search_index.taxonLatname[start_letter];
-				for (let full_taxonLatname in taxa) {
+				for (let t=0; t<taxa.length; t++) {
 				
 					if (result_count > max_results){
 						break;
 					}
+
+					let taxon = taxa[t];
 					
-					let taxon = taxa[full_taxonLatname];
+					//let taxon = taxa[full_taxonLatname];
 					
 					if (taxon.isSynonym == true){
 						continue;
 					}
 				
-					if (full_taxonLatname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
+					if (taxon.taxonLatname.toLowerCase().startsWith(searchtext.toLowerCase()) ){
 					
 						let result = {
-							"matched_text" : full_taxonLatname,
+							"matched_text" : taxon.taxonLatname,
 							"taxonSource" : taxon.taxonSource,
 							"taxonLatname" : taxon.taxonLatname,
 							"taxonAuthor" : taxon.taxonAuthor,
