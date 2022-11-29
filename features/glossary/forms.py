@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from localcosmos_server.forms import LocalizeableModelForm
 
+
 class GlossaryEntryForm(LocalizeableModelForm):
 
     localizeable_fields = ('term', 'synonyms', 'definition',)

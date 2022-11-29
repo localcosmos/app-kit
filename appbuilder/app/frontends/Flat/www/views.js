@@ -1061,7 +1061,7 @@ var ObservationView = View(FormView, {
 
 			var entry = {
 				"uuid" : generic_form["uuid"],
-				"name" : generic_form["name"][settings.PRIMARY_LANGUAGE],
+				"name" : generic_form["name"],
 				"selected" : false
 			};
 

@@ -1,5 +1,6 @@
 from django.views.generic import FormView, TemplateView
 from django.utils.decorators import method_decorator
+from django.contrib.contenttypes.models import ContentType
 
 from localcosmos_server.decorators import ajax_required
 
@@ -37,8 +38,14 @@ class AddGlossaryEntry(FormView):
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
         self.glossary = Glossary.objects.get(pk=kwargs['glossary_id'])
+        self.set_glossary_entry(**kwargs)
         return super().dispatch(request, *args, **kwargs)
+        
+    
+    def set_glossary_entry(self, **kwargs):
+        self.glossary_entry = None
 
+            
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['generic_content'] = self.glossary
@@ -85,7 +92,6 @@ class AddGlossaryEntry(FormView):
                     )
 
                     synonym.save()
-                
 
         return self.render_to_response(context)
 
@@ -94,10 +100,8 @@ class ManageGlossaryEntry(AddGlossaryEntry):
 
     template_name = 'glossary/ajax/manage_glossary_entry.html'
 
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
+    def set_glossary_entry(self, **kwargs):
         self.glossary_entry = GlossaryEntry.objects.get(pk=kwargs['glossary_entry_id'])
-        return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()
