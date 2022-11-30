@@ -4,9 +4,9 @@
 {% block generic_content_specific %}
 	<div class="card">
 		<div class="card-body">
-			<h4>{% trans 'Add entry' %}</h4>
+			
 			<div>
-				{% include 'glossary/ajax/add_glossary_entry_form.html' %}
+				<button type="button" data-url="{% url 'add_glossary_entry' generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Add glossary entry' %}</button>
 			</div>
 		</div>
 	</div>

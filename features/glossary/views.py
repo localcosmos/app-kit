@@ -6,7 +6,7 @@ from localcosmos_server.decorators import ajax_required
 
 from app_kit.views import ManageGenericContent
 
-from .forms import GlossaryEntryForm
+from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm
 
 from .models import Glossary, GlossaryEntry, TermSynonym
 
@@ -30,32 +30,47 @@ class ManageGlossary(ManageGenericContent):
         return context
 
 
-class AddGlossaryEntry(FormView):
+from app_kit.views import ManageContentImageMixin
+class AddGlossaryEntry(ManageContentImageMixin, FormView):
 
-    template_name = 'glossary/ajax/add_glossary_entry_form.html'
-    form_class = GlossaryEntryForm
+    template_name = 'glossary/ajax/add_glossary_entry.html'
+    form_class = GlossaryEntryWithImageForm
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
         self.glossary = Glossary.objects.get(pk=kwargs['glossary_id'])
         self.set_glossary_entry(**kwargs)
+        self.set_content_image()
         return super().dispatch(request, *args, **kwargs)
         
     
     def set_glossary_entry(self, **kwargs):
         self.glossary_entry = None
 
+    def set_content_image(self):
+        self.object_content_type = ContentType.objects.get_for_model(GlossaryEntry)
+        self.content_image = None
+        self.content_instance = self.glossary_entry
+        self.new = True
+        self.licence_registry_entry = None
+        self.image_type = None
+        self.taxon = None
+
             
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['generic_content'] = self.glossary
-        context['glossary_entry_form'] = context['form']
         return context
 
     def get_initial(self):
         initial = super().get_initial()
         initial['glossary'] = self.glossary
         return initial
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['language'] = self.glossary.primary_language
+        return form_kwargs
 
 
     def form_valid(self, form):
@@ -64,7 +79,7 @@ class AddGlossaryEntry(FormView):
 
         context = self.get_context_data(**self.kwargs)
         context['saved_glossary_entry'] = True
-        context['glossary_entry_form'] = self.form_class(initial=self.get_initial(),
+        context['form'] = self.form_class(initial=self.get_initial(),
                                                          language=self.glossary.primary_language)
         context['glossary_entry'] = glossary_entry
 
@@ -93,12 +108,18 @@ class AddGlossaryEntry(FormView):
 
                     synonym.save()
 
+        # save the image, if any
+        if 'source_image' in form.cleaned_data and form.cleaned_data['source_image']:
+            self.content_instance = glossary_entry
+            self.save_image(form)
+
         return self.render_to_response(context)
 
 
 class ManageGlossaryEntry(AddGlossaryEntry):
 
     template_name = 'glossary/ajax/manage_glossary_entry.html'
+    form_class = GlossaryEntryForm
 
     def set_glossary_entry(self, **kwargs):
         self.glossary_entry = GlossaryEntry.objects.get(pk=kwargs['glossary_entry_id'])

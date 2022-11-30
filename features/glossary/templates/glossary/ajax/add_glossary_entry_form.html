@@ -1,7 +1,7 @@
 {% load i18n localcosmos_tags %}
 <form class="xhr" method="POST" action="{% url 'add_glossary_entry' generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
 
-	{% render_bootstrap_form glossary_entry_form %}
+	{% include 'app_kit/ajax/form_extended_with_content_image.html' %}
 
 	{% if saved_glossary_entry %}
 		<div class="alert alert-success">{% blocktrans with term=glossary_entry.term %}Successfully saved glossary entry for the term {{ term }}.{% endblocktrans %}</div>

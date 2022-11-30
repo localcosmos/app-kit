@@ -23,3 +23,32 @@ class GlossaryEntryForm(LocalizeableModelForm):
         widgets = {
             'glossary' : forms.HiddenInput,
         }
+
+
+
+from app_kit.forms import OptionalContentImageForm
+class GlossaryEntryWithImageForm(OptionalContentImageForm, GlossaryEntryForm):
+
+    localizeable_fields = ('term', 'synonyms', 'definition',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        field_order = [
+            'glossary',
+            'term',
+            'synonyms',
+            'definition',
+            'source_image',
+            'image_type',
+            'crop_parameters',
+            'features',
+            'md5',
+            'creator_name',
+            'creator_link',
+            'source_link',
+            'licence',
+            'requires_translation',
+        ]
+
+        self.order_fields(field_order)
