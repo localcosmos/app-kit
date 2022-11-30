@@ -1,7 +1,6 @@
 {
   "frontend": "LakeExplorer",
   "version": "0.1",
-  "API_URL": "http://localhost:8000",
   "online_content": {
     "verbose_template_names": {},
     "max_flag_levels": 2,
@@ -31,12 +30,31 @@
         "required": true
       },
       "logo": {
+        "RESOLVED_URLS": {
+          "1x": "/localcosmos/user_content/frontend/images/logo.svg",
+          "2x": "/localcosmos/user_content/frontend/images/logo.svg",
+          "3x": "/localcosmos/user_content/frontend/images/logo.svg"
+        },
         "restrictions": {
           "fileType": [
             "svg"
           ]
         },
         "helpText": "Will be displayed on the apps main page",
+        "required": true
+      },
+      "favicon": {
+        "RESOLVED_URLS": {
+          "1x": "/localcosmos/user_content/frontend/images/appBackground.webp"
+        },
+        "restrictions": {
+          "fileType": [
+            "png",
+            "webp"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Will be displayed in the browser tab",
         "required": true
       }
     },

@@ -1,0 +1,1 @@
+import{a,b as s,w as n,e as r,f as _,o as c}from"./entry.c86999db.js";const i={class:"container mx-auto"},l=_("h1",null," LakeExplorer ",-1),u=[l],h=a({__name:"index",async setup(d){let e,t;const o=s();return[e,t]=n(()=>o.loadFeatures()),await e,t(),(p,m)=>(c(),r("div",i,u))}});export{h as default};
