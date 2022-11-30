@@ -31,6 +31,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             'crosslinks' : nature_guide.crosslinks(),
             'startNodeUuid' : str(start_node.name_uuid),
             'slugs' : {},
+            'imageUrl' : self._get_image_url(nature_guide)
         })
 
         # iterate over all parent nodes
