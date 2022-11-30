@@ -127,6 +127,15 @@ footer {
 	background: none;
 }
 
+.generic-content-image {
+	position: absolute;
+	left: .5rem;
+	bottom: .5rem;
+	height: 3rem;
+	width: 3rem;
+	background-size: contain;
+}
+
 .dropdown-menu > li > form > button {
   display: block;
   padding: 3px 20px;

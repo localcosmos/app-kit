@@ -9,6 +9,9 @@
 					<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
 					<div class="dropdown-menu">
 						<a class="dropdown-item xhr" data-url="{% url 'remove_app_generic_content' link.id %}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+						{% if link.generic_content|generic_content_may_have_image %}
+							<a data-url="{% url 'manage_content_image' link.generic_content|ctype_id link.generic_content.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+						{% endif %}
 					</div>
 				</div>
 			{% endif %}
@@ -16,6 +19,7 @@
 		</div>
 		<div class="card-body" style="position:relative;">
 			<h5 class="card-title">{{ link.generic_content }}</h5>
+			<div id="content_image_{{ link.generic_content|ctype_id }}_{{ link.generic_content.id }}" class="generic-content-image" {% if link.generic_content.image %}style="background-image:url('{{ link.generic_content.image_url }}')"{% endif %}></div>
 			<div class="text-right">
 				<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
 			</div>

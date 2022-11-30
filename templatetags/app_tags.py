@@ -179,6 +179,15 @@ def generic_content_link_deletable(generic_content_link):
     return False
 
 
+@register.filter
+def generic_content_may_have_image(generic_content):
+    
+    if generic_content.__class__.__name__ == 'NatureGuide':
+        return True
+
+    return False
+
+
 '''
     this is currently ununsed, but might be useful in the future
 '''
