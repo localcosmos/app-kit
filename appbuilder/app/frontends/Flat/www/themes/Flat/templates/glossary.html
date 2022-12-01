@@ -67,7 +67,16 @@
 										
 									</div>
 									<div>
-										{{ this.definition }}
+										<div class="row">
+											<div class="col-8 col-md-10">
+												{{ this.definition }}
+											</div>
+											<div class="col-10 col-md-2">
+												{{#if this.imageUrl}}
+													<img src="{{ this.imageUrl }}" class="img-fluid" />
+												{{/if}}
+											</div>
+										</div>
 									</div>
 									<hr>
 								</div>

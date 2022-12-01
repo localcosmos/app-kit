@@ -261,6 +261,25 @@ class DeleteTaxonTextType(AjaxDeleteView):
     template_name = 'taxon_profiles/ajax/delete_taxon_text_type.html'
 
 
+class ManageTaxonTextTypesOrder(TemplateView):
+
+    template_name = 'taxon_profiles/ajax/manage_text_types_order.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profiles(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_taxon_profiles(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['text_types'] = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles)
+        context['text_types_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
+        return context
+
+
 class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
 
     template_name = 'taxon_profiles/ajax/collected_taxon_images.html'
@@ -407,5 +426,3 @@ class ManageTaxonProfileImage(ManageContentImageWithText):
 
 class DeleteTaxonProfileImage(DeleteContentImage):
     template_name = 'taxon_profiles/ajax/delete_taxon_profile_image.html'
-
-

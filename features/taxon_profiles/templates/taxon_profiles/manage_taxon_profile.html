@@ -69,6 +69,7 @@
 		<div class="row">
 			<div class="col-12">
 				<a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
+				<a href data-url="{% url 'manage_taxon_text_types_order' taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage text order' %}</a>
 			</div>
 		</div>
 	</div>

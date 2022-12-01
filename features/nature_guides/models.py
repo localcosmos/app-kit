@@ -58,7 +58,7 @@ RESULT_ACTIONS = (
 )
 
 
-class NatureGuide(GenericContent):
+class NatureGuide(ContentImageMixin, GenericContent):
 
     zip_import_supported = True
 

@@ -11,6 +11,7 @@ urlpatterns = [
     path('manage-taxon-text-type/<int:meta_app_id>/<int:taxon_text_type_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
         views.ManageTaxonTextType.as_view(), name='manage_taxon_text_type'),
     path('delete-taxon-text-type/<int:pk>/', views.DeleteTaxonTextType.as_view(), name='delete_taxon_text_type'),
+    path('manage-taxon-text-types-order/<int:taxon_profiles_id>/', views.ManageTaxonTextTypesOrder.as_view(), name='manage_taxon_text_types_order'),
     # this one is only for the autocomplete redirect
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/',
         views.ManageTaxonProfile.as_view(), name='manage_taxon_profile_baseurl'),

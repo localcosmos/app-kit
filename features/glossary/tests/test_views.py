@@ -14,7 +14,7 @@ from app_kit.features.glossary.views import (ManageGlossary, AddGlossaryEntry, M
 
 from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym
 
-from app_kit.features.glossary.forms import GlossaryEntryForm
+from app_kit.features.glossary.forms import GlossaryEntryForm, GlossaryEntryWithImageForm
 
 
 from app_kit.models import MetaAppGenericContent
@@ -95,6 +95,8 @@ class TestAddGlossaryEntry(WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithU
     def get_view(self):
         view = super().get_view()
         view.glossary = self.generic_content
+        view.set_glossary_entry()
+        view.set_content_image()
         return view
 
     @test_settings
@@ -103,7 +105,27 @@ class TestAddGlossaryEntry(WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithU
         
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['generic_content'], self.generic_content)
-        self.assertEqual(context['glossary_entry_form'].__class__, GlossaryEntryForm)
+        self.assertEqual(context['form'].__class__, GlossaryEntryWithImageForm)
+
+
+    @test_settings
+    def test_set_glossary_entry(self):
+        view = super().get_view()
+        view.set_glossary_entry()
+        self.assertEqual(view.glossary_entry, None)
+
+    @test_settings
+    def test_set_content_image(self):
+        view = super().get_view()
+        view.set_glossary_entry()
+        view.set_content_image()
+        self.assertEqual(view.content_image, None)
+        self.assertEqual(view.content_instance, None)
+        self.assertEqual(view.licence_registry_entry, None)
+        self.assertEqual(view.image_type, None)
+        self.assertEqual(view.taxon, None)
+        self.assertEqual(view.object_content_type, ContentType.objects.get_for_model(GlossaryEntry))
+        self.assertTrue(view.new)
 
 
     @test_settings
@@ -136,7 +158,7 @@ class TestAddGlossaryEntry(WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithU
         response = view.form_valid(form)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context_data['saved_glossary_entry'], True)
-        self.assertEqual(response.context_data['glossary_entry_form'].is_bound, False)
+        self.assertEqual(response.context_data['form'].is_bound, False)
         glossary_entry = GlossaryEntry.objects.all().last()
         self.assertEqual(response.context_data['glossary_entry'], glossary_entry)
 
@@ -187,6 +209,8 @@ class TestManageGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
     def get_view(self):
         view = super().get_view()
         view.glossary = self.generic_content
+        view.set_glossary_entry(**view.kwargs)
+        view.set_content_image()
         return view
 
     @test_settings
@@ -207,6 +231,7 @@ class TestManageGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
 
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['glossary_entry'], self.glossary_entry)
+        self.assertEqual(context['form'].__class__, GlossaryEntryForm)
 
 
     @test_settings

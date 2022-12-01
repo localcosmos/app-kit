@@ -5,6 +5,8 @@
 	{% url 'edit_glossary_entry' generic_content.id glossary_entry.id  %}
 {% endblock %}
 
+{% block enctype %}multipart/form-data{% endblock %}
+
 {% block title %}
 	{% trans 'Edit glossary entry' %}
 {% endblock %}

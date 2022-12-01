@@ -1,10 +1,16 @@
 {% load i18n localcosmos_tags %}
-<form class="xhr" method="POST" action="{% url 'add_glossary_entry' generic_content.id %}">
-	{% render_bootstrap_form glossary_entry_form %}
+<form class="xhr" method="POST" action="{% url 'add_glossary_entry' generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
+
+	{% include 'app_kit/ajax/form_extended_with_content_image.html' %}
+
 	{% if saved_glossary_entry %}
 		<div class="alert alert-success">{% blocktrans with term=glossary_entry.term %}Successfully saved glossary entry for the term {{ term }}.{% endblocktrans %}</div>
 	{% endif %}
-	<button type="submit" class="btn btn-outline-primary">{% trans 'Add' %}</button>
+	<div class="row mt-3">
+		<div class="col-12">
+			<button type="submit" class="btn btn-outline-primary">{% trans 'Add' %}</button>
+		</div>
+	</div>
 </form>
 {% if saved_glossary_entry %}
 	<script>

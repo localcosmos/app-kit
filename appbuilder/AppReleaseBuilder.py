@@ -1469,6 +1469,14 @@ class AppReleaseBuilder(AppBuilderBase):
             'version' : generic_content.current_version,
         }
 
+        if generic_content.__class__.__name__ == 'NatureGuide':
+            image_url = None
+            if generic_content.image:
+                content_image = generic_content.image()
+                image_url = self.save_content_image(content_image)
+
+            feature_entry_json['imageUrl'] = image_url
+
         # add localized names directly in the feature.js
         '''
         for language_code in self.meta_app.languages():

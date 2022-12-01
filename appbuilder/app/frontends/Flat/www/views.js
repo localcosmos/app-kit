@@ -412,6 +412,34 @@ var TaxonProfiles = View(TemplateView, {
 			self.render_to_response(self, context);
 
 		});
+	},
+
+	post_render : function(self, args, kwargs){
+		const show_longtext_buttons = document.getElementsByClassName('show-longtext');
+		for (let b=0; b<show_longtext_buttons.length; b++){
+			let button = show_longtext_buttons[b];
+			button.addEventListener("click", function(event){
+				let text_type = event.currentTarget.getAttribute("data-text-type");
+				let hide = document.getElementById("" + text_type + ":short");
+				let show = document.getElementById("" + text_type + ":long");
+
+				hide.style.display = "none";
+				show.style.display = "";
+			});
+		}
+
+		const show_shorttext_buttons = document.getElementsByClassName('show-shorttext');
+		for (let b=0; b<show_shorttext_buttons.length; b++){
+			let button = show_shorttext_buttons[b];
+			button.addEventListener("click", function(event){
+				let text_type = event.currentTarget.getAttribute("data-text-type");
+				let show = document.getElementById("" + text_type + ":short");
+				let hide = document.getElementById("" + text_type + ":long");
+
+				hide.style.display = "none";
+				show.style.display = "";
+			});
+		}
 	}
 });
 
@@ -1061,7 +1089,7 @@ var ObservationView = View(FormView, {
 
 			var entry = {
 				"uuid" : generic_form["uuid"],
-				"name" : generic_form["name"][settings.PRIMARY_LANGUAGE],
+				"name" : generic_form["name"],
 				"selected" : false
 			};
 
