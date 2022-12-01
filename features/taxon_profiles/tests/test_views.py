@@ -17,7 +17,7 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTaxonProfile, ManageTaxonTextType,
                                                    DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits,
                                                    ManageTaxonProfileImage, DeleteTaxonProfileImage,
-                                                   GetManageOrCreateTaxonProfileURL)
+                                                   GetManageOrCreateTaxonProfileURL, ManageTaxonTextTypesOrder)
 
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
@@ -621,6 +621,60 @@ class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
 
         self.taxon_text_type.refresh_from_db()
         self.assertEqual(self.taxon_text_type.text_type, new_name)
+
+
+
+
+class TestManageTaxonTextTypesOrder(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_taxon_text_types_order'
+    view_class = ManageTaxonTextTypesOrder
+
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        text_type_name = 'Test text type'
+        second_text_type_name = 'Second text type'
+
+        self.taxon_text_type = self.create_text_type(text_type_name)
+        self.second_taxon_text_type = self.create_text_type(second_text_type_name)
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'taxon_profiles_id' : self.generic_content.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_taxon_profiles(self):
+
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(len(context['text_types']), 2)
+        self.assertIn('text_types_content_type', context)
 
 
 

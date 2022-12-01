@@ -173,6 +173,7 @@ class TaxonTextType(models.Model):
 
     class Meta:
         unique_together = ('taxon_profiles', 'text_type')
+        ordering = ['position']
 
 
 class TaxonText(models.Model):

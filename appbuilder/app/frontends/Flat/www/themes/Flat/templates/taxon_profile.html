@@ -219,21 +219,44 @@
 	<div class="container">
 		{{#each taxon_profile.texts }}
 			{{#if shortText}}
-				<div class="row">
-					<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
+				<div class="row" {{#if @last}}mb-5{{else}}mb-3{{/if}}>
+					<div class="col-12 mt-3">
 						<h4>{{t taxonTextType }}</h4>
-						{{t shortTextKey }}
+						
+						<div id="{{ taxonTextType }}:short">
+							<div>
+								{{t shortTextKey }}
+							</div>
+							{{#if longText}}
+								<div>
+									<button type="button" class="btn btn-sm btn-primary show-longtext" data-text-type="{{ taxonTextType }}">{{t 'read more'}}</button>
+								</div>
+							{{/if}}
+						</div>
+						{{#if longText}}
+							
+							<div id="{{ taxonTextType }}:long" style="display:none;">
+								<div>
+									{{t longTextKey }}
+								</div>
+								<div>
+									<button type="button" class="btn btn-sm btn-primary show-shorttext" data-text-type="{{ taxonTextType }}">{{t 'read less'}}</button>
+								</div>
+							</div>
+						{{/if}}
 					</div>
 				</div>
-			{{/if}}
-			{{#if longText}}
-				<div class="row">
-					<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
-						<h4>{{t taxonTextType }}</h4>
-						{{t longTextKey }}
+			{{ else }}
+				{{#if longText}}
+					<div class="row">
+						<div class="col-12 mt-3 {{#if @last}}mb-5{{/if}}">
+							<h4>{{t taxonTextType }}</h4>
+							{{t longTextKey }}
+						</div>
 					</div>
-				</div>
+				{{/if}}
 			{{/if}}
+			<hr>
 		{{/each}}
 	</div>
 

@@ -136,6 +136,22 @@ footer {
 	background-size: contain;
 }
 
+.text-type-order-entry {
+	font-size: 1.2rem;
+	background: #efefef;
+	border-radius: .5em;
+	-webkit-border-radius: .5em;
+	text-align: center;
+	width: 100%;
+	border: none;
+	border-collapse: collapse;
+}
+
+#text-types-form-fields {
+	display:flex;
+	flex-direction: column;
+}
+
 .dropdown-menu > li > form > button {
   display: block;
   padding: 3px 20px;

@@ -30,11 +30,7 @@ class ManageGlossary(ManageGenericContent):
         return context
 
 
-from app_kit.views import ManageContentImageMixin
-class AddGlossaryEntry(ManageContentImageMixin, FormView):
-
-    template_name = 'glossary/ajax/add_glossary_entry.html'
-    form_class = GlossaryEntryWithImageForm
+class ManageGlossaryEntryCommon:
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
@@ -42,36 +38,6 @@ class AddGlossaryEntry(ManageContentImageMixin, FormView):
         self.set_glossary_entry(**kwargs)
         self.set_content_image()
         return super().dispatch(request, *args, **kwargs)
-        
-    
-    def set_glossary_entry(self, **kwargs):
-        self.glossary_entry = None
-
-    def set_content_image(self):
-        self.object_content_type = ContentType.objects.get_for_model(GlossaryEntry)
-        self.content_image = None
-        self.content_instance = self.glossary_entry
-        self.new = True
-        self.licence_registry_entry = None
-        self.image_type = None
-        self.taxon = None
-
-            
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['generic_content'] = self.glossary
-        return context
-
-    def get_initial(self):
-        initial = super().get_initial()
-        initial['glossary'] = self.glossary
-        return initial
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        form_kwargs['language'] = self.glossary.primary_language
-        return form_kwargs
-
 
     def form_valid(self, form):
 
@@ -115,14 +81,54 @@ class AddGlossaryEntry(ManageContentImageMixin, FormView):
 
         return self.render_to_response(context)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['generic_content'] = self.glossary
+        return context
 
-class ManageGlossaryEntry(AddGlossaryEntry):
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['glossary'] = self.glossary
+        return initial
+
+
+from app_kit.views import ManageContentImageMixin
+class AddGlossaryEntry(ManageContentImageMixin, ManageGlossaryEntryCommon, FormView):
+
+    template_name = 'glossary/ajax/add_glossary_entry.html'
+    form_class = GlossaryEntryWithImageForm        
+    
+    def set_glossary_entry(self, **kwargs):
+        self.glossary_entry = None
+
+    def set_content_image(self):
+        self.object_content_type = ContentType.objects.get_for_model(GlossaryEntry)
+        self.content_image = None
+        self.content_instance = self.glossary_entry
+        self.new = True
+        self.licence_registry_entry = None
+        self.image_type = None
+        self.taxon = None
+
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['language'] = self.glossary.primary_language
+        return form_kwargs
+
+
+
+
+class ManageGlossaryEntry(ManageGlossaryEntryCommon, FormView):
 
     template_name = 'glossary/ajax/manage_glossary_entry.html'
     form_class = GlossaryEntryForm
 
     def set_glossary_entry(self, **kwargs):
         self.glossary_entry = GlossaryEntry.objects.get(pk=kwargs['glossary_entry_id'])
+
+    def set_content_image(self):
+        pass
+
 
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()

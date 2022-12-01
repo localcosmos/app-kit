@@ -64,7 +64,7 @@ class ManageTaxonTextsForm(LocalizeableForm):
         super().__init__(*args, **kwargs)
 
         
-        types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles)
+        types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles).order_by('position')
 
         for text_type in types:
 
@@ -77,15 +77,17 @@ class ManageTaxonTextsForm(LocalizeableForm):
             self.short_text_fields.append(short_text_field_name)
             self.long_text_fields.append(long_text_field_name)
 
-            short_text_field_label = _('%(text_type)s (short version)') % {'text_type': text_type.text_type}
+            short_text_field_label = text_type.text_type
             short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
                                     required=False, label=short_text_field_label)
             short_text_field.taxon_text_type = text_type
+            short_text_field.is_short_version = True
 
-            long_text_field_label = _('%(text_type)s (long version)') % {'text_type': text_type.text_type}
+            long_text_field_label = text_type.text_type
             long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
                                     required=False, label=long_text_field_label)
             long_text_field.taxon_text_type = text_type
+            long_text_field.is_short_version = False
 
             if taxon_profile:
                 content = TaxonText.objects.filter(taxon_text_type=text_type,
