@@ -498,10 +498,15 @@ class AppBuilderBase:
     #- these have to be in sync with nginx config
     #- eg nginx maps http://demo.localcosmos.org/ to {settings.LOCALCOSMOS_APPS_ROOT}/{meta_app.app.uid}/published/www
     
+    # location settings.LOCALCOSMOS_APPS_ROOT is served by nginx
+    @property
+    def _app_nginx_served_root(self):
+        return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid)
+
     # webapp preview
     @property
     def _preview_webapp_served_path(self):
-        return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid, 'preview')
+        return os.path.join(self._app_nginx_served_root, 'preview')
 
     @property
     def _preview_webapp_served_www_path(self):

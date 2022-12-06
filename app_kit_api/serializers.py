@@ -3,17 +3,28 @@ from rest_framework import serializers
 from django.utils import timezone
 
 from .models import AppKitJobs
-from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework import exceptions
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 import json
 
-class ApiTokenSerializer(AuthTokenSerializer):
+class ApiTokenSerializer(TokenObtainPairSerializer):
 
-    def validate_username(self, value):
-        if value != 'APPKITAPIUSER':
-            raise serializers.ValidationError('this api is restricted to a specific user')
 
-        return value
+    def validate(self, attrs):
+        username = attrs[self.username_field]
+
+        if username != 'APPKITAPIUSER':
+
+            error_message = 'No valid account given'
+
+            raise exceptions.AuthenticationFailed(
+                error_message,
+                "invalid_account",
+            )
+
+        return super().validate(attrs)
+
     
 
 class AppKitJobSerializer(serializers.ModelSerializer):

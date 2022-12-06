@@ -53,8 +53,8 @@ class APIHome(AppKitApiMixin, APIView):
 
 
 
-from rest_framework.authtoken.views import ObtainAuthToken
-class ObtainLCAuthToken(ObtainAuthToken):
+from rest_framework_simplejwt.views import TokenObtainPairView
+class ObtainLCAuthToken(TokenObtainPairView):
     serializer_class = ApiTokenSerializer
 
 
