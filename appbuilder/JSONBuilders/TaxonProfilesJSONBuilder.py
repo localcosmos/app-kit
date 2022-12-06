@@ -159,12 +159,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 name_uuid = profile_taxon.name_uuid).values_list('pk', flat=True)
 
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
-                       meta_node_id__in=meta_nodes).order_by('pk')
+                       meta_node_id__in=meta_nodes).order_by('pk').distinct('pk')
         else:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         meta_node__node_type='result',
                         taxon_latname=profile_taxon.taxon_latname,
-                        taxon_author=profile_taxon.taxon_author).order_by('pk')
+                        taxon_author=profile_taxon.taxon_author).order_by('pk').distinct('pk')
 
 
         # collect traits of upward branch in tree (higher taxa)
