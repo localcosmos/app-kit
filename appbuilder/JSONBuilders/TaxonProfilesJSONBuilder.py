@@ -34,7 +34,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
     def collect_node_traits(self, node):
 
-        return []
+        #self.app_release_builder.logger.info('collecting node traits for {0}'.format(node.meta_node.name))
 
         if node.taxon_nuid in self.trait_cache:
             node_traits = self.trait_cache[node.taxon_nuid]
@@ -72,6 +72,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     node_traits.append(node_trait)
 
             self.trait_cache[node.taxon_nuid] = node_traits
+
+        #self.app_release_builder.logger.info('finished collecting')
 
         return node_traits
     
@@ -130,11 +132,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get taxon_profile_images
         if db_profile:
             for content_image in db_profile.images():
-                image_entry = self.get_image_entry(content_image)
 
-                taxon_profile_json['images']['taxonProfileImages'].append(image_entry)
+                if content_image.id not in collected_content_image_ids:
+                    image_entry = self.get_image_entry(content_image)
 
-                collected_content_image_ids.add(content_image.id)
+                    taxon_profile_json['images']['taxonProfileImages'].append(image_entry)
+
+                    collected_content_image_ids.add(content_image.id)
 
         
         # get information (traits, node_names) from nature guides if possible
@@ -155,12 +159,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 name_uuid = profile_taxon.name_uuid).values_list('pk', flat=True)
 
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
-                       meta_node__id__in=meta_nodes).order_by('pk').distinct('pk')
+                       meta_node_id__in=meta_nodes).order_by('pk')
         else:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         meta_node__node_type='result',
                         taxon_latname=profile_taxon.taxon_latname,
-                        taxon_author=profile_taxon.taxon_author).order_by('pk').distinct('pk')
+                        taxon_author=profile_taxon.taxon_author).order_by('pk')
 
 
         # collect traits of upward branch in tree (higher taxa)
@@ -233,8 +237,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         
                         taxon_profile_json['traits'].append(parent_node_trait)
         
-        
-                
 
         # get taxonomic images
         taxon_images = ContentImage.objects.filter(image_store__taxon_source=profile_taxon.taxon_source,

@@ -92,6 +92,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
     nature_guides_vernacular_names = {}
 
+    content_images_cache = {}
+
     def get_empty_result(self):
 
         result = {
@@ -2058,9 +2060,12 @@ class AppReleaseBuilder(AppBuilderBase):
         if size == None:
             size = 500
 
+        key = '{0}-{1}'.format(content_image.id, size)
+        if key in self.content_images_cache:
+            return self.content_images_cache[key]
+
         if not os.path.isdir(absolute_path):
             os.makedirs(absolute_path)
-
 
         source_image_path = content_image.image_store.source_image.path
 
@@ -2127,6 +2132,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 
                 self.licence_registry['licences'][relative_image_filepath] = registry_entry
             
+        self.content_images_cache[key] = relative_image_filepath
 
         return relative_image_filepath
 
@@ -2145,7 +2151,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     def save_content_image(self, content_image, filename=None, size=None):
-        
+
         absolute_path = self._app_content_images_path
         relative_path = self._app_relative_content_images_path
 

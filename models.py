@@ -1145,8 +1145,12 @@ class ContentImageCommon:
             canvas.paste(original_image, (offset_x, offset_y))
 
         # plot features and creator name
-        image_source = self.plot_features(canvas)
-        canvas_with_features = Image.open(image_source)
+        # matplotlib is awfully slow - only use it if absolutely necessary
+        if self.features:
+            image_source = self.plot_features(canvas)
+            canvas_with_features = Image.open(image_source)
+        else:
+            canvas_with_features = canvas
 
         # ATTENTION: crop_parameters are relative to the top-left corner of the original image
         # -> make them relative to the top left corner of square

@@ -65,6 +65,7 @@ class JSONBuilder:
 
         if content_image:
             image_url = self.app_release_builder.save_content_image(content_image, filename=filename, size=size)
+
         else:
             image_url = self.app_release_builder.no_image_url
             
