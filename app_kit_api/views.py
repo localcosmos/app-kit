@@ -53,8 +53,8 @@ class APIHome(AppKitApiMixin, APIView):
 
 
 
-from rest_framework.authtoken.views import ObtainAuthToken
-class ObtainLCAuthToken(ObtainAuthToken):
+from rest_framework_simplejwt.views import TokenObtainPairView
+class ObtainLCAuthToken(TokenObtainPairView):
     serializer_class = ApiTokenSerializer
 
 
@@ -159,10 +159,10 @@ class CompletedAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        app_kit_job = self.get_object()
 
         # get the app
-        app = App.objects.get(uuid=instance.meta_app_uuid)
+        app = App.objects.get(uuid=app_kit_job.meta_app_uuid)
 
         # get the domain
         domain = Domain.objects.filter(app=app).first()
@@ -172,57 +172,54 @@ class CompletedAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView
         
         # switch to correct db schema, and refetch the instance
         connection.set_tenant(domain.tenant)
-        instance = self.get_object()
+        app_kit_job = self.get_object()
         
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(app_kit_job, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
+        if getattr(app_kit_job, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-
+            app_kit_job._prefetched_objects_cache = {}
 
         response_data = serializer.data.copy()
 
-        
         # save the ipa file if necessary
-        if instance.platform == 'ios' and instance.job_type == 'build' and instance.job_result['success'] == True:
+        if app_kit_job.platform == 'ios' and app_kit_job.job_type == 'build' and app_kit_job.job_result['success'] == True:
             
             # The MetaApp db instance might already be the next version
-            meta_app_definition_json = instance.meta_app_definition
-            meta_app_definition = MetaAppDefinition(meta_app_definition_json['current_version'],
-                                                    meta_app_definition = meta_app_definition_json)
+            meta_app_definition_json = app_kit_job.meta_app_definition
+            meta_app_definition = MetaAppDefinition(meta_app_definition = meta_app_definition_json)
             
+            meta_app = MetaApp.objects.get(app__uuid=app_kit_job.meta_app_uuid)
+            app_release_builder = meta_app.get_release_builder()
 
-            app_release_builder = AppReleaseBuilder()
-
-            meta_app = MetaApp.objects.get(app__uuid=instance.meta_app_uuid)
-            
-            cordova_builder = app_release_builder.get_cordova_builder(meta_app, instance.app_version)
+            cordova_builder = app_release_builder.get_cordova_builder()
 
             # the cordova builder defines where to upload the .ipa file to
-            ipa_folder = cordova_builder.get_ipa_folder()
+            # the cordova builder also defines where the android .aab is located, which is where cordova itself creates it
+            # /{AppReleaseBuilder._cordova_build_path}/{MetaApp.package_name}/platforms/ios/build/device/
+            ipa_folder = cordova_builder._ipa_folder
             if not os.path.isdir(ipa_folder):
                 os.makedirs(ipa_folder)
                 
-            ipa_filepath = cordova_builder.get_ipa_filepath()
+            ipa_filepath = cordova_builder._ipa_filepath
 
             with open(ipa_filepath, 'wb') as ipa_file:
-                ipa_file.write(instance.ipa_file.read())
+                ipa_file.write(app_kit_job.ipa_file.read())
 
             # make the ipa preview available, use instance.app_version
-            app_release_builder.serve_preview_ipa(meta_app, instance.app_version, ipa_filepath)
+            app_release_builder.serve_review_ipa(ipa_filepath)
 
             response_data['ipa_file'] = os.path.basename(ipa_filepath)
 
-        if instance.job_result['success'] == True:
-            instance.job_status = 'success'
+        if app_kit_job.job_result['success'] == True:
+            app_kit_job.job_status = 'success'
         else:
-            instance.job_status = 'failed'
+            app_kit_job.job_status = 'failed'
 
-        instance.save()
+        app_kit_job.save()
 
         return Response(response_data)
 

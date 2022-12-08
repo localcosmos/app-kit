@@ -1,7 +1,12 @@
 from localcosmos_server.taxonomy.generic import ModelWithTaxon
 from .settings import ADDABLE_FEATURES, REQUIRED_FEATURES
-import matplotlib.image as mpimg
+
+import matplotlib
+matplotlib.use('Agg')
+#import matplotlib.style as mplstyle
+#mplstyle.use('fast')
 import matplotlib.pyplot as plt
+
 import io
 from django.conf import settings
 from django.db import connection, models
@@ -986,7 +991,7 @@ class ContentImageCommon:
 
         dpi = plt.rcParams['figure.dpi']
 
-        img = mpimg.imread(in_memory_file)
+        img = matplotlib.image.imread(in_memory_file)
 
         img_height, img_width, bands = img.shape
 
@@ -1145,8 +1150,12 @@ class ContentImageCommon:
             canvas.paste(original_image, (offset_x, offset_y))
 
         # plot features and creator name
-        image_source = self.plot_features(canvas)
-        canvas_with_features = Image.open(image_source)
+        # matplotlib is awfully slow - only use it if absolutely necessary
+        if self.features:
+            image_source = self.plot_features(canvas)
+            canvas_with_features = Image.open(image_source)
+        else:
+            canvas_with_features = canvas
 
         # ATTENTION: crop_parameters are relative to the top-left corner of the original image
         # -> make them relative to the top left corner of square

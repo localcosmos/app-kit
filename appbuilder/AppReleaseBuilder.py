@@ -92,6 +92,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
     nature_guides_vernacular_names = {}
 
+    content_images_cache = {}
+
     def get_empty_result(self):
 
         result = {
@@ -112,8 +114,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         meta_app_definition = MetaAppDefinition(meta_app=self.meta_app)
 
-        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, self._app_packages_path,
-                                            self._app_build_sources_path)
+        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, 
+            self._app_build_sources_path)
 
         return cordova_builder
 
@@ -123,11 +125,12 @@ class AppReleaseBuilder(AppBuilderBase):
     # - webapp
     # - www folder for android and ios app
 
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/
     @property
     def _app_build_sources_path(self):
         return os.path.join(self._app_release_path, 'sources')
 
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/common/www/
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/common/www/
     # www content for browser, android, ios
     @property
     def _app_www_path(self):
@@ -148,9 +151,17 @@ class AppReleaseBuilder(AppBuilderBase):
     def _build_webapp_www_path(self):
         return os.path.join(self._build_webapp_path, 'www')
 
+
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/cordova
     @property
     def _cordova_build_path(self):
         return os.path.join(self._app_release_path, 'cordova')
+
+    
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/build_jobs
+    @property
+    def _build_jobs_path(self):
+        return os.path.join(self._app_release_path, 'build_jobs')
 
     # platform specific assets that have to be passed to CordovaAppbuilder
     # android
@@ -180,6 +191,16 @@ class AppReleaseBuilder(AppBuilderBase):
     @property
     def _build_ios_www_path(self):
         return os.path.join(self._build_ios_root, 'www')
+
+    # iOS zip
+    @property
+    def _build_ios_zipfile_name(self):
+        return '{0}-ios-{1}-{2}.zip'.format(self.meta_app.app.uid, self.meta_app.current_version, self.meta_app.build_number)
+
+    @property
+    def _build_ios_zipfile_filepath(self):
+        # sources/ios/cordova_ios.zip
+        return os.path.join(self._build_jobs_path, self._build_ios_zipfile_name)
 
     # assets supplied by frontend
     @property
@@ -248,14 +269,12 @@ class AppReleaseBuilder(AppBuilderBase):
     # the webapp is serverd here for reviewing - after building but before release
 
     def aab_review_url(self, request):
-        cordova_builder = self.get_cordova_builder()
-        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, cordova_builder._aab_filename)
+        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, self._aab_filename)
         return url
 
     # does not return scheme and host
     def aab_published_url(self):
-        cordova_builder = self.get_cordova_builder()
-        url = '/packages/published/android/{0}'.format(cordova_builder._aab_filename)
+        url = '/packages/published/android/{0}'.format(self._aab_filename)
         return url
 
     # relies on correct nginx conf
@@ -286,9 +305,7 @@ class AppReleaseBuilder(AppBuilderBase):
                                         platform='ios', job_type='build').first()
 
         if job and job.job_result and job.job_result.get('success') == True:
-            meta_app_definition = MetaAppDefinition(self.meta_app)
-            url = '{0}://{1}/packages/review/ios/{2}'.format(request.scheme, self.meta_app.domain,
-                                                    CordovaAppBuilder.get_ipa_filename(meta_app_definition))
+            url = '{0}://{1}/packages/review/ios/{2}'.format(request.scheme, self.meta_app.domain, self._ipa_filename)
             return url
 
         return None
@@ -301,8 +318,7 @@ class AppReleaseBuilder(AppBuilderBase):
                                         platform='ios', job_type='build').first()
 
         if job and job.job_result and job.job_result.get('success') == True:
-            meta_app_definition = MetaAppDefinition(self.meta_app)
-            url = '/packages/published/ios/{0}'.format(CordovaAppBuilder.get_ipa_filename(meta_app_definition))
+            url = '/packages/published/ios/{0}'.format(self._ipa_filename)
             return url
 
         return None
@@ -1471,8 +1487,9 @@ class AppReleaseBuilder(AppBuilderBase):
 
         if generic_content.__class__.__name__ == 'NatureGuide':
             image_url = None
-            if generic_content.image:
-                content_image = generic_content.image()
+
+            content_image = generic_content.image()
+            if content_image:
                 image_url = self.save_content_image(content_image)
 
             feature_entry_json['imageUrl'] = image_url
@@ -2038,9 +2055,12 @@ class AppReleaseBuilder(AppBuilderBase):
         if size == None:
             size = 500
 
+        key = '{0}-{1}'.format(content_image.id, size)
+        if key in self.content_images_cache:
+            return self.content_images_cache[key]
+
         if not os.path.isdir(absolute_path):
             os.makedirs(absolute_path)
-
 
         source_image_path = content_image.image_store.source_image.path
 
@@ -2107,6 +2127,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 
                 self.licence_registry['licences'][relative_image_filepath] = registry_entry
             
+        self.content_images_cache[key] = relative_image_filepath
 
         return relative_image_filepath
 
@@ -2125,7 +2146,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     def save_content_image(self, content_image, filename=None, size=None):
-        
+
         absolute_path = self._app_content_images_path
         relative_path = self._app_relative_content_images_path
 
@@ -2234,15 +2255,24 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_webapp_served_www_path(self):
         return os.path.join(self._published_served_root, 'www')
 
-
+    ####################################################################################################
+    # PATHS WHICH ARE SERVED BY NGINX
+    # these paths usually contain symlinks to the built packages, which are stored elsewhere
+    #
     # PACKAGES
     # do not make explicit nginx mappings for each package
     # nginx map: location /packages {
     #            alias /var/www/localcosmos/apps/$1/packages;
     # }
+
     @property
     def _served_packages_root(self):
         return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid, 'packages')
+
+    @property
+    def _build_jobs_served_zips_root(self):
+        # /var/www/localcosmos/apps/{APP_UID}/build_jobs
+        return os.path.join(self._served_packages_root, 'build-jobs')
 
     @property
     def _review_served_packages_path(self):
@@ -2252,7 +2282,13 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_served_packages_path(self):
         return os.path.join(self._served_packages_root, 'published')
 
-    # android, review and published
+    #######################################################################################################
+    # NGINX android, review and published
+    @property
+    def _aab_filename(self):
+        cordova_builder = self.get_cordova_builder()
+        return cordova_builder._aab_filename
+
     @property
     def _review_android_served_path(self):
         return os.path.join(self._review_served_packages_path, 'android')
@@ -2263,25 +2299,47 @@ class AppReleaseBuilder(AppBuilderBase):
 
     @property
     def _review_android_served_aab_filepath(self):
-        cordova_builder = self.get_cordova_builder()
-        aab_filename = cordova_builder._aab_filename
-        return os.path.join(self._review_android_served_path, aab_filename)
+        return os.path.join(self._review_android_served_path, self._aab_filename)
 
     @property
     def _published_android_served_aab_filepath(self):
-        cordova_builder = self.get_cordova_builder()
-        aab_filename = cordova_builder._aab_filename
-        return os.path.join(self._published_android_served_path, aab_filename)
+        return os.path.join(self._published_android_served_path, self._aab_filename)
+
+    #######################################################################################################
+    # NGINX ios, review and published
+    @property
+    def _ipa_filename(self):
+        meta_app_definition = MetaAppDefinition(self.meta_app)
+        return CordovaAppBuilder.get_ipa_filename(meta_app_definition)
+
+    @property
+    def _ios_build_job_zip_served_path(self):
+        return os.path.join(self._build_jobs_served_zips_root, 'ios')
+
+    @property
+    def _ios_build_job_zip_served_filepath(self):
+        return os.path.join(self._ios_build_job_zip_served_path, self._build_ios_zipfile_name)
+
+    @property
+    def _ios_build_job_zipfile_url(self):
+        # relies on nginx conf
+        relative_path = 'apps/{0}/packages/build-jobs/ios/{1}'.format(self.meta_app.app.uid, self._build_ios_zipfile_name)
+
+        if not self._ios_build_job_zip_served_filepath.endswith(relative_path):
+            msg = 'wrong relative path. {0} does not end with {1}'.format(self._ios_build_job_zip_served_filepath,
+                relative_path)
+            raise AppBuildFailed(msg)
+        
+        return relative_path
 
     # ios, review and published
     @property
     def _review_ios_served_path(self):
-        return os.path.join(self._review_served_packages_path, 'ios')
+        return os.path.join(self._review_served_packages_path, 'ios')        
 
     @property
     def _published_ios_served_path(self):
         return os.path.join(self._published_served_packages_path, 'ios')
-
 
     # webapp
     @property
@@ -2307,49 +2365,132 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     ###############################################################################################################
+    # BUILDING installable android, iOS apps
+    ###############################################################################################################
+
+    # bulding assets like launcherIcon and splashscreen
+    # build_platform_assets_path is either self._build_ios_assets_path or self._build_android_assets_path
+    def _build_app_assets(self, platform, build_platform_assets_path):
+
+        self.logger.info('Building {0} assets'.format(platform))
+
+        if not os.path.isdir(build_platform_assets_path):
+            os.makedirs(build_platform_assets_path)
+
+        frontend_settings = self._get_frontend_settings()
+        frontend = self._get_frontend()
+
+        for image_type in ['launcherIcon', 'splashscreen']:
+
+            image_definition = frontend_settings[platform][image_type]
+
+            if image_definition['type'] == 'userContent':
+                image_identifier = image_definition['imageIdentifier']
+
+                content_image = frontend.image(image_identifier)
+
+                image_filepath = content_image.image_store.source_image.path
+
+                filename = self.get_asset_filename(platform, image_type)
+
+                destination_filepath = os.path.join(build_platform_assets_path, filename)
+                shutil.copyfile(image_filepath, destination_filepath)
+
+            else:
+                raise NotImplementedError('[Frontend settings] {0} {1} of type {2} is not supported'.format(
+                    platform, image_type, image_definition['type']))
+
+    # build_platform_www_path is either self._build_ios_www_path or self._build_android_www_path
+    # frontend_platform_www_path is either self._frontend_ios_www_path or self._frontend_android_www_path
+    def _build_app_www(self, platform, build_platform_www_path, frontend_platform_www_path):
+        self.logger.info('Building {0} www'.format(platform))
+        
+        # symlink common www
+        common_www_folder = self._app_www_path
+        platform_www_folder = build_platform_www_path
+
+        if not os.path.isdir(platform_www_folder):
+            os.makedirs(platform_www_folder)
+
+        for content in os.listdir(common_www_folder):
+            source_path = os.path.join(common_www_folder, content)
+            dest_path = os.path.join(platform_www_folder, content)
+            os.symlink(source_path, dest_path)
+
+        # add android specific files, if any
+        # the android folder does not have to be present
+        if os.path.isdir(frontend_platform_www_path):
+            shutil.copytree(frontend_platform_www_path, build_platform_www_path, dirs_exist_ok=True)
+
+
+    ###############################################################################################################
     # BUILDING iOS
     # - use BuildJobs, Mac queries BuildJobs and does Jobs
-    # - tha actual build is done on a MAC
+    # - the actual build is done on a MAC
     ###############################################################################################################
-        
+
+    def _build_ios_assets(self):
+        self._build_app_assets('ios', self._build_ios_assets_path)
+
+    def _build_ios_www(self):
+        self._build_app_www('ios', self._build_ios_www_path, self._frontend_ios_www_path)
+    
+    
+    def create_ios_zipfile(self):
+
+        self.logger.info('Creating zipfile for ios')
+
+        with zipfile.ZipFile(self._build_ios_zipfile_filepath, 'w', zipfile.ZIP_DEFLATED) as www_zip:
+
+            # add www
+            for root, dirs, files in os.walk(self._build_ios_root, followlinks=True):
+
+                for filename in files:
+                    # Create the full filepath by using os module.
+                    app_file_path = os.path.join(root, filename)
+                    arcname = app_file_path.split(self._build_ios_root)[-1]
+                    www_zip.write(app_file_path, arcname=arcname)
+
+
+
+        self.logger.info('Successfully created zipfile.')
+    
+
     def _create_ios_build_job(self):
 
-        # create a zipfile for cordova
-        cordova_builder = self.get_cordova_builder(self.meta_app, self.app_version)
+        self.deletecreate_folder(self._build_jobs_path)
+
+        self._build_ios_assets()
+        self._build_config_xml(platform='ios')
+        self._build_ios_www()
         
-        zipfile_path = cordova_builder.create_zipfile()
+        self.create_ios_zipfile()
 
         # make the zipfile available
-        zipfile_served_folder = self._build_job_zipfile_served_folder(self.meta_app, self.app_version)
+        zipfile_served_folder = self._ios_build_job_zip_served_path
 
         self.deletecreate_folder(zipfile_served_folder)
-
-        zipfile_name = '{0}.zip'.format(self.meta_app.app.uid)
-        zipfile_served_path = os.path.join(zipfile_served_folder, zipfile_name)
         
-        os.symlink(zipfile_path, zipfile_served_path)
-
-        # relies on nginx conf
-        zipfile_url = self._get_build_job_zipfile_url(self.meta_app, self.app_version, zipfile_name)
+        os.symlink(self._build_ios_zipfile_filepath, self._ios_build_job_zip_served_filepath)
 
         # remember: AppKitJobs lies in the public schema
         # create a BuildJob so the Mac can download and build app
         build_jobs = AppKitJobs.objects.filter(meta_app_uuid=str(self.meta_app.uuid), platform='ios',
-                                               app_version=self.app_version, job_type__in=['build', 'release'])
+                                               app_version=self.meta_app.current_version, job_type__in=['build', 'release'])
 
         for build_job in build_jobs:
             build_job.delete()
 
         parameters = {
-            'zipfile_url' : zipfile_url,
+            'zipfile_url' : self._ios_build_job_zipfile_url,
         }
 
-        meta_app_definition = MetaAppDefinition.to_dict(self.app_version, self.meta_app)
+        meta_app_definition_dict = MetaAppDefinition.meta_app_to_dict(self.meta_app)
 
         build_job = AppKitJobs(
             meta_app_uuid = str(self.meta_app.uuid),
-            meta_app_definition = meta_app_definition,
-            app_version = self.app_version,
+            meta_app_definition = meta_app_definition_dict,
+            app_version = self.meta_app.current_version,
             platform = 'ios',
             job_type = 'build',
             parameters = parameters,
@@ -2359,36 +2500,19 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     ##############################################################################################################
-    # serving ipas
-    # ._ipa_folder() is the served folder for ipas
-    def _served_review_ipa_folder(self, meta_app):
-        return os.path.join(self._ipa_folder(meta_app), 'review')
-
-    def _served_published_ipa_folder(self, meta_app):
-        return os.path.join(self._ipa_folder(meta_app), 'published')
+    # serving review ipa
+    # ipa_filepath is the path of an already built and stored ipa
+    # make this file downloadable using nginx by symlinking the ipa from a served location
+    def serve_review_ipa(self, ipa_filepath):
         
-    def _served_review_ipa_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        ipa_filename = CordovaBuilderClass.get_ipa_filename(meta_app_definition)
-        return os.path.join(self._served_review_ipa_folder(meta_app), ipa_filename)
-
-    def _served_published_ipa_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        ipa_filename = CordovaBuilderClass.get_ipa_filename(meta_app_definition)
-        return os.path.join(self._served_published_ipa_folder(meta_app), ipa_filename)
-
-
-    def serve_preview_ipa(self, meta_app, app_version, ipa_source):
-        # symlink the ipa file
-        ipa_review_folder = self._served_review_ipa_folder(meta_app)
+        ipa_review_folder = self._review_ios_served_path
         self.deletecreate_folder(ipa_review_folder)
 
-        ipa_dest = self._served_review_ipa_filepath(meta_app, app_version)
-        os.symlink(ipa_source, ipa_dest)
+        ipa_filename = os.path.basename(ipa_filepath)
 
-        # logger not available
+        ipa_symlink_dest = os.path.join(ipa_review_folder, ipa_filename)
+
+        os.symlink(ipa_filepath, ipa_symlink_dest)
         
 
     ###############################################################################################################
@@ -2408,34 +2532,7 @@ class AppReleaseBuilder(AppBuilderBase):
     
 
     def _build_android_assets(self):
-
-        self.logger.info('Building Android assets')
-
-        if not os.path.isdir(self._build_android_assets_path):
-            os.makedirs(self._build_android_assets_path)
-
-        frontend_settings = self._get_frontend_settings()
-        frontend = self._get_frontend()
-
-        for image_type in ['launcherIcon', 'splashscreen']:
-
-            image_definition = frontend_settings['android'][image_type]
-
-            if image_definition['type'] == 'userContent':
-                image_identifier = image_definition['imageIdentifier']
-
-                content_image = frontend.image(image_identifier)
-
-                image_filepath = content_image.image_store.source_image.path
-
-                filename = self.get_asset_filename('android', image_type)
-
-                destination_filepath = os.path.join(self._build_android_assets_path, filename)
-                shutil.copyfile(image_filepath, destination_filepath)
-
-            else:
-                raise NotImplementedError('[Frontend settings] android {0} of type {1} is not supported'.format(
-                    image_type, image_definition['type']))
+        self._build_app_assets('android', self._build_android_assets_path)
 
 
     def _build_config_xml(self, platform):
@@ -2454,25 +2551,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
     # 1. symlink common www. 2. symlink android specific files
     def _build_android_www(self):
+        self._build_app_www('android', self._build_android_www_path, self._frontend_android_www_path)
 
-        self.logger.info('Building Android www')
-        
-        # symlink common www
-        common_www_folder = self._app_www_path
-        android_www_folder = self._build_android_www_path
-
-        if not os.path.isdir(android_www_folder):
-            os.makedirs(android_www_folder)
-
-        for content in os.listdir(common_www_folder):
-            source_path = os.path.join(common_www_folder, content)
-            dest_path = os.path.join(android_www_folder, content)
-            os.symlink(source_path, dest_path)
-
-        # add android specific files, if any
-        # the android folder does not have to be present
-        if os.path.isdir(self._frontend_android_www_path):
-            shutil.copytree(self._frontend_android_www_path, self._build_android_www_path, dirs_exist_ok=True)
 
     def _build_android(self):
 
@@ -2498,16 +2578,6 @@ class AppReleaseBuilder(AppBuilderBase):
         os.symlink(aab_source, aab_dest)
 
         self.logger.info('Successfully built Android')
-
-    ##############################################################################################################
-    # serving aabs
-
-
-    def _served_published_aab_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        aab_filename = CordovaBuilderClass.get_aab_filename(meta_app_definition)
-        return os.path.join(self._served_published_aab_folder(meta_app), aab_filename)
     
 
     ##############################################################################################################
@@ -2670,7 +2740,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
     def _create_ios_release_job(self, meta_app, app_version):
 
-        meta_app_definition = MetaAppDefinition.to_dict(app_version, meta_app)
+        meta_app_definition = MetaAppDefinition.meta_app_to_dict(app_version, meta_app)
 
         existing_release_job = AppKitJobs.objects.filter(meta_app_uuid=meta_app.uuid, app_version=app_version,
                                                          job_type='release').first()
