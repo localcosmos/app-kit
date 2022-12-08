@@ -1,7 +1,12 @@
 from localcosmos_server.taxonomy.generic import ModelWithTaxon
 from .settings import ADDABLE_FEATURES, REQUIRED_FEATURES
-import matplotlib.image as mpimg
+
+import matplotlib
+matplotlib.use('Agg')
+#import matplotlib.style as mplstyle
+#mplstyle.use('fast')
 import matplotlib.pyplot as plt
+
 import io
 from django.conf import settings
 from django.db import connection, models
@@ -986,7 +991,7 @@ class ContentImageCommon:
 
         dpi = plt.rcParams['figure.dpi']
 
-        img = mpimg.imread(in_memory_file)
+        img = matplotlib.image.imread(in_memory_file)
 
         img_height, img_width, bands = img.shape
 

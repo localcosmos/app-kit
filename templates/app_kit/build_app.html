@@ -176,8 +176,15 @@
 									{% block release_app %}
 										<div class="col-12 text-left mt-3">
 											<h4>{% trans 'App packages' %}</h4>
-											<strong>Android .aab:</strong> <a href="{{ aab_review_url }}" class="" download>{% trans 'Download' %}</a>
-										</div>								
+											<div>
+												<strong>Android .aab:</strong> <a href="{{ aab_review_url }}" class="" download>{% trans 'Download' %}</a>
+											</div>
+											{% if ipa_review_url %}
+											<div>
+												<strong>iOS .ipa:</strong> <a href="{{ ipa_review_url }}" class="" download>{% trans 'Download' %}</a>
+											</div>
+										{% endif %}	
+										</div>					
 									{% endblock %}
 								</div>
 							</div>

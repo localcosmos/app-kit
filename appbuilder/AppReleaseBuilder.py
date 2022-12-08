@@ -114,8 +114,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         meta_app_definition = MetaAppDefinition(meta_app=self.meta_app)
 
-        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, self._app_packages_path,
-                                            self._app_build_sources_path)
+        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, 
+            self._app_build_sources_path)
 
         return cordova_builder
 
@@ -269,14 +269,12 @@ class AppReleaseBuilder(AppBuilderBase):
     # the webapp is serverd here for reviewing - after building but before release
 
     def aab_review_url(self, request):
-        cordova_builder = self.get_cordova_builder()
-        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, cordova_builder._aab_filename)
+        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, self._aab_filename)
         return url
 
     # does not return scheme and host
     def aab_published_url(self):
-        cordova_builder = self.get_cordova_builder()
-        url = '/packages/published/android/{0}'.format(cordova_builder._aab_filename)
+        url = '/packages/published/android/{0}'.format(self._aab_filename)
         return url
 
     # relies on correct nginx conf
@@ -307,9 +305,7 @@ class AppReleaseBuilder(AppBuilderBase):
                                         platform='ios', job_type='build').first()
 
         if job and job.job_result and job.job_result.get('success') == True:
-            meta_app_definition = MetaAppDefinition(self.meta_app)
-            url = '{0}://{1}/packages/review/ios/{2}'.format(request.scheme, self.meta_app.domain,
-                                                    CordovaAppBuilder.get_ipa_filename(meta_app_definition))
+            url = '{0}://{1}/packages/review/ios/{2}'.format(request.scheme, self.meta_app.domain, self._ipa_filename)
             return url
 
         return None
@@ -322,8 +318,7 @@ class AppReleaseBuilder(AppBuilderBase):
                                         platform='ios', job_type='build').first()
 
         if job and job.job_result and job.job_result.get('success') == True:
-            meta_app_definition = MetaAppDefinition(self.meta_app)
-            url = '/packages/published/ios/{0}'.format(CordovaAppBuilder.get_ipa_filename(meta_app_definition))
+            url = '/packages/published/ios/{0}'.format(self._ipa_filename)
             return url
 
         return None
@@ -2260,12 +2255,16 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_webapp_served_www_path(self):
         return os.path.join(self._published_served_root, 'www')
 
-
+    ####################################################################################################
+    # PATHS WHICH ARE SERVED BY NGINX
+    # these paths usually contain symlinks to the built packages, which are stored elsewhere
+    #
     # PACKAGES
     # do not make explicit nginx mappings for each package
     # nginx map: location /packages {
     #            alias /var/www/localcosmos/apps/$1/packages;
     # }
+
     @property
     def _served_packages_root(self):
         return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid, 'packages')
@@ -2283,7 +2282,13 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_served_packages_path(self):
         return os.path.join(self._served_packages_root, 'published')
 
-    # android, review and published
+    #######################################################################################################
+    # NGINX android, review and published
+    @property
+    def _aab_filename(self):
+        cordova_builder = self.get_cordova_builder()
+        return cordova_builder._aab_filename
+
     @property
     def _review_android_served_path(self):
         return os.path.join(self._review_served_packages_path, 'android')
@@ -2294,15 +2299,18 @@ class AppReleaseBuilder(AppBuilderBase):
 
     @property
     def _review_android_served_aab_filepath(self):
-        cordova_builder = self.get_cordova_builder()
-        aab_filename = cordova_builder._aab_filename
-        return os.path.join(self._review_android_served_path, aab_filename)
+        return os.path.join(self._review_android_served_path, self._aab_filename)
 
     @property
     def _published_android_served_aab_filepath(self):
-        cordova_builder = self.get_cordova_builder()
-        aab_filename = cordova_builder._aab_filename
-        return os.path.join(self._published_android_served_path, aab_filename)
+        return os.path.join(self._published_android_served_path, self._aab_filename)
+
+    #######################################################################################################
+    # NGINX ios, review and published
+    @property
+    def _ipa_filename(self):
+        meta_app_definition = MetaAppDefinition(self.meta_app)
+        return CordovaAppBuilder.get_ipa_filename(meta_app_definition)
 
     @property
     def _ios_build_job_zip_served_path(self):
@@ -2327,7 +2335,7 @@ class AppReleaseBuilder(AppBuilderBase):
     # ios, review and published
     @property
     def _review_ios_served_path(self):
-        return os.path.join(self._review_served_packages_path, 'ios')
+        return os.path.join(self._review_served_packages_path, 'ios')        
 
     @property
     def _published_ios_served_path(self):
@@ -2492,38 +2500,19 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     ##############################################################################################################
-    # serving ipas
-    # ._ipa_folder() is the served folder for ipas
-    #def _served_review_ipa_folder(self, meta_app):
-    #    return os.path.join(self._ipa_folder(meta_app), 'review')
-
-    #def _served_published_ipa_folder(self, meta_app):
-    #    return os.path.join(self._ipa_folder(meta_app), 'published')
-
-    '''    
-    def _served_review_ipa_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        ipa_filename = CordovaBuilderClass.get_ipa_filename(meta_app_definition)
-        return os.path.join(self._served_review_ipa_folder(meta_app), ipa_filename)
-
-    def _served_published_ipa_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        ipa_filename = CordovaBuilderClass.get_ipa_filename(meta_app_definition)
-        return os.path.join(self._served_published_ipa_folder(meta_app), ipa_filename)
-
-
-    def serve_preview_ipa(self, meta_app, app_version, ipa_source):
-        # symlink the ipa file
-        ipa_review_folder = self._served_review_ipa_folder(meta_app)
+    # serving review ipa
+    # ipa_filepath is the path of an already built and stored ipa
+    # make this file downloadable using nginx by symlinking the ipa from a served location
+    def serve_review_ipa(self, ipa_filepath):
+        
+        ipa_review_folder = self._review_ios_served_path
         self.deletecreate_folder(ipa_review_folder)
 
-        ipa_dest = self._served_review_ipa_filepath(meta_app, app_version)
-        os.symlink(ipa_source, ipa_dest)
+        ipa_filename = os.path.basename(ipa_filepath)
 
-        # logger not available
-    '''
+        ipa_symlink_dest = os.path.join(ipa_review_folder, ipa_filename)
+
+        os.symlink(ipa_filepath, ipa_symlink_dest)
         
 
     ###############################################################################################################
@@ -2589,16 +2578,6 @@ class AppReleaseBuilder(AppBuilderBase):
         os.symlink(aab_source, aab_dest)
 
         self.logger.info('Successfully built Android')
-
-    ##############################################################################################################
-    # serving aabs
-
-
-    def _served_published_aab_filepath(self, meta_app, app_version):
-        meta_app_definition = MetaAppDefinition(app_version, meta_app=meta_app)
-        CordovaBuilderClass = self._get_cordova_builder_class()
-        aab_filename = CordovaBuilderClass.get_aab_filename(meta_app_definition)
-        return os.path.join(self._served_published_aab_folder(meta_app), aab_filename)
     
 
     ##############################################################################################################
