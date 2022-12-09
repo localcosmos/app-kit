@@ -84,7 +84,7 @@ class AppIsLockedError(Exception):
 
 class AppReleaseBuilder(AppBuilderBase):
 
-    use_gbif = False
+    use_gbif = True
 
     no_image_url = NO_IMAGE_URL
 

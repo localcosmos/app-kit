@@ -258,7 +258,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         # get the gbif nubKey
         if self.app_release_builder.use_gbif == True:
-            self.logger.info('[TaxonPofiles] querying gbif')
             gbif_nubKey = gbiflib.get_nubKey(profile_taxon)
             if gbif_nubKey :
                 taxon_profile_json['gbifNubKey'] = gbif_nubKey
