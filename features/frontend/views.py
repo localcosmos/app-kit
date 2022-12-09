@@ -62,7 +62,7 @@ class FrontendSettingsMixin:
         for text_type in text_types:
 
             frontend_text = FrontendText.objects.filter(frontend=self.generic_content,
-                                frontend_name=self.generic_content.frontend_name, identifier=text_type).first()
+                                identifier=text_type).first()
 
             if frontend_text:
                 initial[text_type] = frontend_text.text
@@ -118,7 +118,7 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
 
                 text = form.cleaned_data[text_type]
 
-                frontend_text = FrontendText.objects.filter(frontend=self.frontend, frontend_name=self.frontend.frontend_name, identifier=text_type).first()
+                frontend_text = FrontendText.objects.filter(frontend=self.frontend, identifier=text_type).first()
 
                 if not frontend_text:
                     frontend_text = FrontendText(
