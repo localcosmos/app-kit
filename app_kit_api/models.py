@@ -68,6 +68,10 @@ class AppKitJobs(models.Model):
     # job_status is used eg to give the user a feedback in the frontend
     job_status = models.CharField(max_length=50, choices=JOB_STATUS, default='waiting_for_assignment')
     job_result = models.JSONField(null=True)
+
+    def __str__(self):
+        name = self.meta_app_definition.get('name', str(self.uuid))
+        return '{0} - {1}'.format(name, self.job_type)
         
 
     class Meta:
