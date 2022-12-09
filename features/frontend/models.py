@@ -90,7 +90,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
 
 
     def texts(self):
-        return FrontendText.objects.filter(frontend=self, frontend_name=self.frontend_name)
+        return FrontendText.objects.filter(frontend=self)
 
 
     @property
