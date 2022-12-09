@@ -277,6 +277,11 @@ class AppReleaseBuilder(AppBuilderBase):
         url = '/packages/published/android/{0}'.format(self._aab_filename)
         return url
 
+    # apk review url
+    def apk_review_url(self, request):
+        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, self._apk_filename)
+        return url
+
     # relies on correct nginx conf
     # do not use request.get_host()
     def webapp_review_url(self, request):
@@ -2286,8 +2291,15 @@ class AppReleaseBuilder(AppBuilderBase):
     # NGINX android, review and published
     @property
     def _aab_filename(self):
-        cordova_builder = self.get_cordova_builder()
-        return cordova_builder._aab_filename
+        filename = '{0}-{1}-{2}.aab'.format(self.meta_app.package_name, self.meta_app.current_version,
+            self.meta_app.build_number)
+        return filename
+
+    @property
+    def _apk_filename(self):
+        filename = '{0}-{1}-{2}.apk'.format(self.meta_app.package_name, self.meta_app.current_version,
+            self.meta_app.build_number)
+        return filename
 
     @property
     def _review_android_served_path(self):
@@ -2304,6 +2316,11 @@ class AppReleaseBuilder(AppBuilderBase):
     @property
     def _published_android_served_aab_filepath(self):
         return os.path.join(self._published_android_served_path, self._aab_filename)
+
+    # debug apk
+    @property
+    def _review_android_served_apk_filepath(self):
+        return os.path.join(self._review_android_served_path, self._apk_filename)
 
     #######################################################################################################
     # NGINX ios, review and published
@@ -2568,14 +2585,17 @@ class AppReleaseBuilder(AppBuilderBase):
         
         cordova_builder = self.get_cordova_builder()
         
-        aab_source = cordova_builder.build_android(keystore_path, settings.APP_KIT_ANDROID_KEYSTORE_PASS,
-                                                   settings.APP_KIT_ANDROID_KEY_PASS)
+        aab_source_filepath, apk_source_filepath = cordova_builder.build_android(keystore_path,
+                        settings.APP_KIT_ANDROID_KEYSTORE_PASS, settings.APP_KIT_ANDROID_KEY_PASS)
 
         # symlink the aab into a browsable location
         self.deletecreate_folder(self._review_android_served_path)
 
         aab_dest = self._review_android_served_aab_filepath
-        os.symlink(aab_source, aab_dest)
+        os.symlink(aab_source_filepath, aab_dest)
+
+        apk_dest = self._review_android_served_apk_filepath
+        os.symlink(apk_source_filepath, apk_dest)
 
         self.logger.info('Successfully built Android')
     
