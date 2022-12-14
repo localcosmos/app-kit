@@ -142,7 +142,7 @@
 								{% if meta_app.published_version == meta_app.current_version %}
 									<ul id="appbar-items" class="navbar-nav">
 										<li class="nav-item">
-											<a class="nav-link" href="{% url 'manage_onlinecontent' meta_app.app.uid %}">{% trans 'Online content' %}</a>
+											<a class="nav-link" href="{% url 'manage_templatecontent' meta_app.app.uid %}">{% trans 'Template content' %}</a>
 										</li>
 									</ul>
 								{% else %}

@@ -1,0 +1,26 @@
+{
+    "templateName" : "Neobiota",
+    "version" : 1,
+    "templateFileName": "filename.xy",
+    "templateUrl": "/#/fact-sheet/{slug}/",
+    "contents": {
+      "headline": {
+        "type": "text",
+        "widget": "TextInput"
+      },
+      "titleImage": {
+        "type": "image"
+      },
+      "description": {
+        "type": "text",
+        "format": "layoutable-full"
+      },
+      "addendum": {
+        "type": "text",
+        "format": "layoutable-simple"
+      },
+      "images": {
+        "type": "multi-image"
+      }
+    }
+  }

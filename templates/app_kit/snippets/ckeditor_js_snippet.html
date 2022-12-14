@@ -26,7 +26,7 @@
     {% for field_name in form.layoutable_full_fields %}
         var field = document.getElementById('id_{{ field_name }}');
 
-		ClassicEditor.create( field, {% include 'online_content/ckeditor/layout-complex.js' %}).then(editor => {
+		ClassicEditor.create( field, {% include 'template_content/ckeditor/layout-complex.js' %}).then(editor => {
         
             editor.model.document.on('change:data', (evt, data) => {
             

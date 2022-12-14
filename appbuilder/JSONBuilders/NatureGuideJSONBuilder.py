@@ -3,14 +3,7 @@ from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace,
                                                    MatrixFilterRestriction, IDENTIFICATION_MODE_STRICT)
 
-
-from app_kit.features.fact_sheets.models import FactSheet
-
 from django.utils.text import slugify
-
-import base64, json
-
-
 
 '''
     build one file for all languages, only keys for translation
@@ -56,11 +49,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
             if parent_node.meta_node.settings:
                 identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
-            fact_sheets = []
-
-            if parent_node.meta_node.taxon:
-                fact_sheets = self.get_fact_sheets_json_for_taxon(parent_node.meta_node.taxon)
-
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 
             parent_node_json = {
@@ -70,7 +58,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'children' : [],
                 'matrixFilters' : {},
                 'identificationMode' : identification_mode,
-                'factSheets' : fact_sheets,
                 'slug' : primary_locale_slug,
                 'overviewImage' : self._get_image_url(parent_node.meta_node, image_type='overview', size=(1500,1500)),
             }            
@@ -134,12 +121,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     weight = matrix_filter.weight
                     child_max_points = child_max_points + weight
 
-
-                child_fact_sheets = []
-                if child.meta_node.taxon:
-                    child_fact_sheets = self.get_fact_sheets_json_for_taxon(child.meta_node.taxon)
-
-
                 child_primary_locale_slug = self.add_to_localized_slugs(child)
 
                 child_json = {
@@ -152,7 +133,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'name' : child.meta_node.name, # all langs as json
                     'decisionRule' : child.decision_rule,
                     'taxon' : None,
-                    'factSheets' : child_fact_sheets,
                     'slug' : child_primary_locale_slug,
                 }
 
@@ -180,10 +160,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         return matrix_filter_json
 
+    @classmethod
+    def get_localized_slug(cls, app_release_builder, language_code, id, text):
 
-    def get_localized_slug(self, language_code, id, text):
-
-        localized_text = self.app_release_builder.get_localized(text, language_code)
+        localized_text = app_release_builder.get_localized(text, language_code)
 
         if not localized_text:
             raise ValueError('[NatureGuideJSONBuilder] did not find localized text to create slug for language {0}: {1}'.format(
@@ -195,7 +175,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
     def add_to_localized_slugs(self, node):
 
-        node_slug_primary_locale = self.get_localized_slug(self.meta_app.primary_language, node.id, node.meta_node.name)
+        node_slug_primary_locale = self.get_localized_slug(self.app_release_builder, self.meta_app.primary_language,
+            node.id, node.meta_node.name)
         self.nature_guide_json['slugs'][node_slug_primary_locale] = str(node.name_uuid)
 
         if self.meta_app.primary_language not in self.localized_slugs:
@@ -207,7 +188,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         # add to slugs
         for language_code in self.meta_app.secondary_languages():
-            localized_node_slug = self.get_localized_slug(language_code, node.id, node.meta_node.name)
+            localized_node_slug = self.get_localized_slug(self.app_release_builder, language_code, node.id,
+                node.meta_node.name)
             self.nature_guide_json['slugs'][localized_node_slug] = str(node.name_uuid)
             
             if language_code not in self.localized_slugs:

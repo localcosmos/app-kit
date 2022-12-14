@@ -108,20 +108,20 @@
 {% endblock %}
 
 {% block extra_script %}
-	<script src="{% static 'online_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
+	<script src="{% static 'template_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
 	<script>
 
 		var editors = {};
 		let editor;
 		{% for field in form %}
 			{% if field.field.layoutability == 'layoutable-full' %}
-				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-complex.js' %}).then( editor => {
+				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'template_content/ckeditor/layout-complex.js' %}).then( editor => {
 					editors['id_{{ field.name }}'] = editor;
 				});
 				
 			{% else %}
 				{% if field.field.layoutability == 'layoutable-simple' %}
-					ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'online_content/ckeditor/layout-simple.js' %});
+					ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'template_content/ckeditor/layout-simple.js' %});
 				{% endif %}
 			{% endif %}
 		{% endfor %}

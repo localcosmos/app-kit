@@ -54,75 +54,13 @@ LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX = 'localized_content_image'
     MIXINS
 --------------------------------------------------------------------------------------------------------------'''
 
+from localcosmos_server.models import ServerContentImageMixin
 
-class ContentImageMixin:
+class ContentImageMixin (ServerContentImageMixin):
 
-    def _content_images(self, image_type='image'):
-
-        content_type = ContentType.objects.get_for_model(self.__class__)
-        self.content_images = ContentImage.objects.filter(content_type=content_type, object_id=self.pk,
-                                                          image_type=image_type)
-
-        return self.content_images
-
-    def all_images(self):
-
-        content_type = ContentType.objects.get_for_model(self.__class__)
-        self.content_images = ContentImage.objects.filter(
-            content_type=content_type, object_id=self.pk)
-
-        return self.content_images
-
-    def images(self, image_type='image'):
-        return self._content_images(image_type=image_type)
-
-    def image(self, image_type='image'):
-        content_image = self._content_images(image_type=image_type).first()
-
-        if content_image:
-            return content_image
-
-        return None
-
-    def image_url(self, size=400):
-
-        content_image = self.image()
-
-        if content_image:
-            return content_image.image_url(size)
-
-        return static('noimage.png')
-
-    # this also deletes ImageStore entries and images on disk
-
-    def delete_images(self):
-        content_type = ContentType.objects.get_for_model(self.__class__)
-        content_images = ContentImage.objects.filter(
-            content_type=content_type, object_id=self.pk)
-
-        for image in content_images:
-            # delete model db entries
-            image_store = image.image_store
-            image.delete()
-
-            image_is_used = ContentImage.objects.filter(
-                image_store=image_store).exists()
-
-            if not image_is_used:
-                image_store.delete()
-
-    def get_content_images_primary_localization(self):
-
-        locale = {}
-
-        content_images = self.images()
-
-        for content_image in content_images:
-
-            if content_image.text and len(content_image.text) > 0:
-                locale[content_image.text] = content_image.text
-
-        return locale
+    def get_model(self):
+        return ContentImage
+    
 
 
 '''
@@ -417,40 +355,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             feature_models.append(FeatureModel)
 
         return feature_models
-
-    # depends on frontend
-    def get_fact_sheet_templates_path(self):
-
-        app_state = 'preview'
-
-        app_path = self.app.get_installed_app_path(app_state)
-
-        fact_sheets_templates_path = os.path.join(
-            app_path, 'fact_sheets', 'templates')
-
-        return fact_sheets_templates_path
-
-    def get_fact_sheet_templates(self):
-
-        fact_sheets_templates_path = self.get_fact_sheet_templates_path()
-
-        templates = []
-
-        # iterate over templates shipped with the frontend
-        if os.path.isdir(fact_sheets_templates_path):
-            for filename in os.listdir(fact_sheets_templates_path):
-
-                template_path = '{0}'.format(filename)
-
-                absolute_path = os.path.join(
-                    fact_sheets_templates_path, template_path)
-
-                if os.path.isfile(absolute_path) and filename.endswith('.html'):
-                    verbose_name = template_path
-
-                    templates.append((template_path, verbose_name))
-
-        return templates
 
     # BUILDING
 
@@ -907,19 +811,11 @@ def get_image_store_path(instance, filename):
     return path
 
 
-class ImageStore(ModelWithTaxon):
+from localcosmos_server.models import ImageStoreAbstract
+class ImageStore(ImageStoreAbstract):
 
     LazyTaxonClass = LazyTaxon
-
-    # null Foreignkey means the user does not exist anymore
-    uploaded_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
-
     source_image = models.ImageField(upload_to=get_image_store_path)
-    md5 = models.CharField(max_length=255)
-
-    # enables on delete cascade
-    licences = GenericRelation(ContentLicenceRegistry)
 
 
 '''
@@ -927,33 +823,10 @@ class ImageStore(ModelWithTaxon):
 '''
 # Contentimagecommon is for both ContentImage, LocalizedContentImage
 
+from localcosmos_server.models import ContentImageProcessing
+class ContentImageCommon(ContentImageProcessing):
 
-class ContentImageCommon:
-
-    def get_thumb_filename(self, size=400):
-
-        if self.image_store.source_image:
-            filename = os.path.basename(self.image_store.source_image.path)
-            blankname, ext = os.path.splitext(filename)
-
-            suffix = 'uncropped'
-            if self.crop_parameters:
-                suffix = hashlib.md5(
-                    self.crop_parameters.encode('utf-8')).hexdigest()
-
-            feature_suffix = 'nofeatures'
-            if self.features:
-                features_str = json.dumps(self.features)
-                feature_suffix = hashlib.md5(
-                    features_str.encode('utf-8')).hexdigest()
-
-            thumbname = '{0}-{1}-{2}-{3}{4}'.format(
-                blankname, suffix, feature_suffix, size, ext)
-            return thumbname
-
-        else:
-            return 'noimage.png'
-
+    
     def get_arrow_stroke_width(self):
 
         # {"x":3,"y":3,"width":1130,"height":1130,"rotate":0,"scaleX":1,"scaleY":1}
@@ -1103,120 +976,6 @@ class ContentImageCommon:
 
         return buf
 
-    # apply features and cropping, return pil image
-    # original_image has to be Pil.Image instance
-    # CASE 1: crop parameters given.
-    #   - make a canvas according to crop_parameters.width and crop_parameters.height
-    #
-    # CASE 2: no crop parameters given
-    #   1. apply features
-    #   2. thumbnail
-    def get_in_memory_processed_image(self, original_image, size):
-
-        # scale the image to match size
-        original_width, original_height = original_image.size
-
-        larger_original_side = max(original_width, original_height)
-        if larger_original_side < size:
-            size = larger_original_side
-
-        # fill color for the background, if the selection expands the original image
-        fill_color = (255, 255, 255, 255)
-
-        # offset of the image on the canvas
-        offset_x = 0
-        offset_y = 0
-
-        if self.crop_parameters:
-
-            square_size = max(original_width, original_height)
-            offset_x = int((square_size - original_width) / 2)
-            offset_y = int((square_size - original_height) / 2)
-            width = size
-            height = size
-
-            canvas = Image.new('RGBA', (square_size, square_size), fill_color)
-            canvas.paste(original_image, (offset_x, offset_y))
-
-        else:
-
-            # define width and height
-            width = size
-            scaling_factor = original_width / size
-            height = original_height * scaling_factor
-
-            canvas = Image.new(
-                'RGBA', (original_width, original_height), fill_color)
-            canvas.paste(original_image, (offset_x, offset_y))
-
-        # plot features and creator name
-        # matplotlib is awfully slow - only use it if absolutely necessary
-        if self.features:
-            image_source = self.plot_features(canvas)
-            canvas_with_features = Image.open(image_source)
-        else:
-            canvas_with_features = canvas
-
-        # ATTENTION: crop_parameters are relative to the top-left corner of the original image
-        # -> make them relative to the top left corner of square
-        if self.crop_parameters:
-            # {"x":253,"y":24,"width":454,"height":454,"rotate":0,"scaleX":1,"scaleY":1}
-            crop_parameters = json.loads(self.crop_parameters)
-
-            # first crop, then resize
-            # box: (left, top, right, bottom)
-            box = (
-                crop_parameters['x'] + offset_x,
-                crop_parameters['y'] + offset_y,
-                crop_parameters['x'] + offset_x + crop_parameters['width'],
-                crop_parameters['y'] + offset_y + crop_parameters['height'],
-            )
-
-            cropped_canvas = canvas_with_features.crop(box)
-
-        else:
-            cropped_canvas = canvas_with_features
-
-        cropped_canvas.thumbnail([width, height], Image.ANTIALIAS)
-
-        if original_image.format != 'PNG':
-            cropped_canvas = cropped_canvas.convert('RGB')
-
-        return cropped_canvas
-
-    # compile features during thumbnail creation
-
-    def image_url(self, size=400, force=False):
-
-        if self.image_store.source_image.path.endswith('.svg'):
-            thumburl = self.image_store.source_image.url
-
-        else:
-
-            image_path = self.image_store.source_image.path
-            folder_path = os.path.dirname(image_path)
-
-            thumbname = self.get_thumb_filename(size)
-
-            thumbfolder = os.path.join(folder_path, 'thumbnails')
-            if not os.path.isdir(thumbfolder):
-                os.makedirs(thumbfolder)
-
-            thumbpath = os.path.join(thumbfolder, thumbname)
-
-            if not os.path.isfile(thumbpath) or force == True:
-
-                original_image = Image.open(self.image_store.source_image.path)
-
-                processed_image = self.get_in_memory_processed_image(
-                    original_image, size)
-
-                processed_image.save(thumbpath, original_image.format)
-
-            thumburl = os.path.join(os.path.dirname(
-                self.image_store.source_image.url), 'thumbnails', thumbname)
-
-        return thumburl
 
     def get_image_locale_key(self):
         locale_key = '{0}_{1}_{2}_{3}'.format(LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, self.content_type.id,
@@ -1241,34 +1000,11 @@ RELATIVE_ARROW_STROKE_WIDTH = 0.02
 RELATIVE_ARROW_LENGTH = 0.5
 REALTIVE_FONT_SIZE = 0.05
 
-
-class ContentImage(ContentImageCommon, models.Model):
-
+from localcosmos_server.models import ContentImageAbstract
+class ContentImage(ContentImageCommon, ContentImageAbstract):
+    
     image_store = models.ForeignKey(ImageStore, on_delete=models.CASCADE)
-
-    crop_parameters = models.TextField(null=True)
-
-    # for things like arrows/vectors on the image
-    # arrows are stored as [{"type" : "arrow" , "initialPoint": {x:1, y:1}, "terminalPoint": {x:2,y:2}, color: string}]
-    features = models.JSONField(null=True)
-
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.IntegerField()
-    content = GenericForeignKey('content_type', 'object_id')
-
-    # a content can have different images
-    # eg an image of type 'background' and an image of type 'logo'
-    image_type = models.CharField(max_length=100, default='image')
-
-    position = models.IntegerField(default=0)
-    is_primary = models.BooleanField(default=False)
-
-    # only primary language
-    text = models.CharField(max_length=355, null=True)
-
-    # flag if a translation is needed
-    requires_translation = models.BooleanField(
-        default=False)  # not all images require a translation
+    
 
 
 '''

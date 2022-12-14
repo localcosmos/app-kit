@@ -4961,37 +4961,34 @@ var OnlineContentView = View(RemoteView, {
 var FactSheetView = View(RemoteView, {
 
 	"identifier" : "FactSheetView",
-	"template_name" : "themes/" + settings.THEME + "/templates/fact_sheet.html",
+	"template_name" : "template_content/Neobiota/neobiota.html",
+
+
+	get : function(self, request, args, kwargs){
+		self.get_html(self, function(data){
+
+			// render page
+			var context = self.get_context_data(self, kwargs);
+			context["data"] = data;
+
+			self.render_to_response(self, context);
+
+		}, self.on_error);
+	},
 	
 	
 	get_local_html : function (self, onsuccess, onerror){
 		
-		let factSheets_path = app_features.FactSheets.list[0].path;
-		let factSheets_folder = app_features.FactSheets.list[0].folder;
-
-		// {"uuid": "aa4e46fb-474a-4126-b0c5-6a7fdcce49e1", "version": 1, "options": {}, "globalOptions": {}, "name": "Fact Sheets", "factSheets": {"1": {"taxonomic_restriction": [{"taxonSource": "taxonomy.sources.col", "taxonLatname": "Plantae", "taxonAuthor": "", "nameUuid": "151d41f5-5941-4169-b77b-175ab0876ca6", "taxonNuid": "006", "restrictionType": "exists"}], "localized": {"de": {"path": "1-baume/de.html", "slug": "baume"}}}}, "localizedSlugs": {"baume": 1}}
-		ajax.GET(factSheets_path, {}, function(content){
-
-			let factSheets = JSON.parse(content); //JSON.parse(atob(content));
-
-			let localized_slug = self.kwargs["slug"];
-
-			let fact_sheet_id = factSheets["localizedSlugs"][localized_slug].toString();
-
-			let path = factSheets_folder + "/" + factSheets["factSheets"][fact_sheet_id]["localized"][app.language]["path"];
-
-			ajax.GET(path, {}, function(html){
-				onsuccess(html);
-			})
-			
-		});
+		let slug = self.kwargs["slug"];
+		let contents_path = app_features.TemplateContent.slugs[slug];
+		self.perform_request(self, contents_path, 'GET', 'JSON', {}, onsuccess, onerror);
 		
 	},
 	
 	get_preview_html : function(self, onsuccess, onerror){
 		// settings.API_URL points to the app kit if settings.PREVIEW == true
-		var url = '' + settings.API_URL + 'fact-sheet-preview/' + self.kwargs["slug"] + "/" + self.request.GET["meta_app_id"] + "/";
-		self.perform_request(self, url, 'GET', 'HTML', {}, onsuccess, onerror);
+		var url = '' + settings.API_URL + 'template-content-preview/' + self.kwargs["slug"] + "/";
+		self.perform_request(self, url, 'GET', 'JSON', {}, onsuccess, onerror);
 	},
 	
 	get_html : function(self, onsuccess, onerror){

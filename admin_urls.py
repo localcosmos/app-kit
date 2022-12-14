@@ -8,14 +8,13 @@ urlpatterns = [
     #path('', include('app_kit.features.buttonmatrix.urls')),
     path('', include('app_kit.features.backbonetaxonomy.urls')),
     path('', include('taxonomy.urls')),
-    path('online-content/', include('localcosmos_server.online_content.urls')),
+    path('template-content/', include('localcosmos_server.template_content.urls')),
     path('observation-forms/', include('app_kit.features.generic_forms.urls')),
     path('taxon-profiles/', include('app_kit.features.taxon_profiles.urls')),
     path('nature-guides/', include('app_kit.features.nature_guides.urls')),
     path('custom-taxonomy/', include('taxonomy.sources.custom.urls')),
     path('glossary/', include('app_kit.features.glossary.urls')),
     path('maps/', include('app_kit.features.maps.urls')),
-    path('fact-sheets/', include('app_kit.features.fact_sheets.urls')),
     path('frontend/', include('app_kit.features.frontend.urls')),
     # apps
     # create apps

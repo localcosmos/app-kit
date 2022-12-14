@@ -106,7 +106,6 @@ class AppBuilderBase:
 		'app_kit.features.taxon_profiles',
 		'app_kit.features.glossary',
 		'app_kit.features.maps',
-		'app_kit.features.fact_sheets',
 	]
 
     delete_on_app_delete = [
@@ -335,7 +334,7 @@ class AppBuilderBase:
         return os.path.join(self._frontend_root_path, 'webapp', 'www')
 
 
-    # building the frontend has to be possible on both AppPreviewBuilder (for OnlineContent preview) and AppReleaseBuilder
+    # building the frontend has to be possible on both AppPreviewBuilder (for TemplateContent preview) and AppReleaseBuilder
     def _build_Frontend(self):
         # copy the frontends www folder to /preview
         shutil.copytree(self._frontend_www_path, self._app_www_path, dirs_exist_ok=True)
@@ -561,7 +560,7 @@ class AppBuilderBase:
             "APP_VERSION" : self.meta_app.current_version,
             "API_URL" : api_url,
             "REMOTEDB_API_URL" : remotedb_api_url,
-            "PREVIEW" : preview, # True is only needed for previewing online_content
+            "PREVIEW" : preview, # True is only needed for previewing template_content
         }
 
         settings["OPTIONS"] = {

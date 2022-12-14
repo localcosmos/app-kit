@@ -5,7 +5,7 @@ from app_kit.models import ContentImage
 from app_kit.generic import AppContentTaxonomicRestriction
 from django.contrib.contenttypes.models import ContentType
 
-from app_kit.features.fact_sheets.models import FactSheet
+from localcosmos_server.template_content.models import TemplateContent
 
 from django.utils.text import slugify
 
@@ -98,27 +98,29 @@ class JSONBuilder:
         return taxonomic_restriction_json
 
 
-    def get_fact_sheets_json_for_taxon(self, taxon):
+    def get_template_content_json_for_taxon(self, taxon):
 
-        fact_sheets = []
+        template_contents = []
 
-        fact_sheets_query = FactSheet.objects.filter_by_taxon(taxon)
+        template_contents_query = TemplateContent.objects.filter_by_taxon(taxon)
 
-        for fact_sheet in fact_sheets_query:
-            fact_sheet_json = self.get_fact_sheet_json(fact_sheet)
-            fact_sheets.append(fact_sheet_json)
+        for template_content in template_contents_query:
+            template_content_json = self.get_template_content_json(template_content)
+            template_contents.append(template_content_json)
 
-        return fact_sheets
+        return template_contents
 
 
-    def get_fact_sheet_json(self, fact_sheet):
+    def get_template_content_json(self, template_content):
 
-        fact_sheet_json = {
-            'id' : fact_sheet.id,
-            'title' : fact_sheet.title,
+        ltc = template_content.get_locale(self.meta_app.primary_language)
+
+        template_content_json = {
+            'slug' : ltc.slug,
+            'title' : ltc.published_title,
         }
 
-        return fact_sheet_json
+        return template_content_json
 
 
     def to_camel_case(self, string):

@@ -1,5 +1,5 @@
 {% spaceless %}
-{% load i18n static localcosmos_tags app_tags fact_sheet_tags %}
+{% load i18n static localcosmos_tags app_tags %}
 <div id="{{ node.name_uuid }}" data-object-id="{{ node.id }}" class="nature-guide-node col-12 mb-2">
 
 	<div class="row">
@@ -13,10 +13,6 @@
 						<strong>{{ node.meta_node.name }}</strong> {% if node.is_crosslink is True %}&nbsp; <span class="badge badge-xs badge-info">{% trans 'crosslink' %}</span>
 						{% endif %} {% if not node.is_active %}&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>{% endif %}
 					</div>
-					{% get_fact_sheet node.meta_node.taxon as fact_sheet %}
-					{% if fact_sheet %}
-						<small>{% trans 'Fact Sheet' %}: {% include 'fact_sheets/ajax/fact_sheet_button.html' %}</small>
-					{% endif %}
 				</div>
 				
 				<div class="col-12">

@@ -1,5 +1,5 @@
 {% extends 'nature_guides/manage_node.html' %}
-{% load i18n static localcosmos_tags app_tags fact_sheet_tags %}
+{% load i18n static localcosmos_tags app_tags %}
 
 {% block extra_style %}{% endblock %}
 {% block extra_head_script %}
@@ -115,12 +115,6 @@
 					</div>
 					
 					<hr />
-
-					{% get_fact_sheet parent_node.meta_node.taxon as fact_sheet %}
-					{% if fact_sheet %}
-						{% trans 'Fact Sheet' %}: {% include 'fact_sheets/ajax/fact_sheet_button.html' %}
-						<hr />
-					{% endif %}
 					
 					<div>
 						Mode: 

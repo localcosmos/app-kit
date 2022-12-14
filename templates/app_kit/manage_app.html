@@ -9,17 +9,17 @@
 		<div class="col-12 col-md-6 col-lg-4 mb-4">
 			<div class="card">
 				<div class="card-header">
-					<img src="{% get_static_prefix %}app_kit/images/features/online_content.svg" alt="Online Content" width="30" height="auto"/>
-					<small>{% trans 'Online content' %}</small>
-					<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large float-right"  data-toggle="popover" title="{% trans 'Online content' %}" data-content="{% trans 'Online content is instantly available on your app without the need for building it. Like with a content management system.' %}" data-placement="left" />
+					<img src="{% get_static_prefix %}app_kit/images/features/template_content.svg" alt="Template Content" width="30" height="auto"/>
+					<small>{% trans 'Template content' %}</small>
+					<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large float-right"  data-toggle="popover" title="{% trans 'Template content' %}" data-content="{% trans 'Template content supplies layouted templates and pages can be made available instantly. Similar to a content management system.' %}" data-placement="left" />
 				</div>
 				<div class="card-body" style="position:relative;">
-					<h5 class="card-title">{% trans 'Online content' %}</h5>
+					<h5 class="card-title">{% trans 'Template content' %}</h5>
 					<div class="text-right">
 						{% if meta_app.is_localcosmos_private %}
 							<strong><span class="text-danger">{% trans 'Managed on your private server.' %}</span></strong>
 						{% else %}
-							<strong><a class="stretched-link" href="{% url 'manage_onlinecontent' meta_app.app.uid %}">{% trans 'Edit' %}</a></strong>
+							<strong><a class="stretched-link" href="{% url 'template_content_home' meta_app.app.uid %}">{% trans 'Edit' %}</a></strong>
 						{% endif %}
 					</div>
 				</div>

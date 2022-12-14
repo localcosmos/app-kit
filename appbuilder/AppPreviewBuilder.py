@@ -2,7 +2,7 @@
 #
 # APP PREVIEW BUILDER
 # - builds a preview webapp without localcosmos features
-# - used to provide a preview for OnlineContent and FactSheets
+# - used to provide a preview for TemplateContent
 # - can only be built if the user provided all required assets defined in config.json
 # - manages the preview folder, eg {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.version}/preview/
 # - manages locales and the locale files
@@ -63,7 +63,7 @@ class AppPreviewBuilder(AppBuilderBase):
             with open(self._app_settings_json_filepath, 'w', encoding='utf-8') as settings_json_file:
                 settings_json_file.write(app_settings_string)
 
-            # STEP 5: create empty features.json, required for FactSheet preview
+            # STEP 5: create empty features.json, required for TemplateContent preview
             app_features_string = json.dumps({}, indent=4, ensure_ascii=False)
             app_features_json_file = self._app_features_json_filepath
             with open(app_features_json_file, 'w', encoding='utf-8') as f:

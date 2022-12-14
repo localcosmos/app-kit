@@ -1,35 +1,6 @@
 {
 	"frontend" : "Flat",
 	"version" : "0.1",
-	"online_content" : {
-		"verbose_template_names" : {
-			"page/free_page.html" : {
-				"de" : "Freie Seite",
-				"en" : "Free Page"
-			},
-			"page/test.html" : {
-				"de" : "Test Seite",
-				"en" : "Test Page"
-			},
-			"page/factsheet.html" : {
-				"de" : "Fact Sheet",
-				"en" : "Fact Sheet"
-			},
-			"feature/news.html" : {
-				"de" : "News Eintrag",
-				"en" : "News entry"
-			}
-		},
-		"max_flag_levels" : 2,
-		"flags" : {
-			"main_navigation" : {
-				"template_name" : "flag/main_navigation.html",
-				"name" : "Main Navigation"
-			}
-		},
-		"sections" : {
-		}
-	},
 	"userContent" : {
 		"images" : {
 			"appBackground" : {

@@ -6,31 +6,6 @@
 	"css" : ["bootstrap-4.5.3-dist/css/bootstrap.css", "css/flat.css", "horizontal-slide/horizontal-slide.css"],
 	"js" : ["js/jquery-3.5.0.min.js", "bootstrap-4.5.3-dist/js/bootstrap.bundle.min.js", "js/listeners.js"],
 	"name" : "Flat",
-	"online_content" : {
-		"verbose_template_names" : {
-			"page/free_page.html" : {
-				"de" : "Freie Seite",
-				"en" : "Free Page"
-			},
-			"page/test.html" : {
-				"de" : "Test Seite",
-				"en" : "Test Page"
-			},
-			"feature/news.html" : {
-				"de" : "News Eintrag",
-				"en" : "News entry"
-			}
-		},
-		"max_flag_levels" : 2,
-		"flags" : {
-			"main_navigation" : {
-				"template_name" : "flag/main_navigation.html",
-				"name" : "Main Navigation"
-			}
-		},
-		"sections" : {
-		}
-	},
 	"user_content" : {
 		"images" : {
 			"app_background" : {

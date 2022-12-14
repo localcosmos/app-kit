@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.templatetags.static import static
 from django.contrib.staticfiles import finders
-from django.contrib.staticfiles.storage import staticfiles_storage
 
 from app_kit.models import MetaApp
 
@@ -24,27 +23,9 @@ def get_build_parameters():
 
 
 from django.contrib.contenttypes.models import ContentType
-from app_kit.generic import AppContentTaxonomicRestriction
-from taxonomy.lazy import LazyTaxon, LazyTaxonList
+from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.templatetags.localcosmos_tags import get_taxonomic_restriction_context
-
-@register.inclusion_tag('app_kit/ajax/taxonomic_restrictions.html')
-def render_taxonomic_restriction(content, typed=None):
-
-    content_type = ContentType.objects.get_for_model(content)
-
-    restrictions = AppContentTaxonomicRestriction.objects.filter(
-        content_type=content_type,
-        object_id=content.id,
-    )
-
-    taxon_search_url = reverse('search_taxon')
-
-    context = get_taxonomic_restriction_context(content, content_type, restrictions, taxon_search_url, typed)
-
-    return context
-
 
 @register.filter
 def verbose_name(obj):
@@ -57,7 +38,6 @@ def ranged(number):
 
 
 from app_kit.models import ContentImage
-from PIL import Image
 @register.simple_tag
 def content_image(instance, image_type=None):
 
@@ -256,7 +236,6 @@ GENERIC_CONTENT_HELP_TEXTS = {
     'Map' : _('The map feature plots your observations on a map.'),
     'TaxonProfiles' : _('Describe the species of your app using taxon profiles.'),
     'GenericForm': _('An observation form is used to collect data.'),
-    'FactSheets' : _('Create pages for certain groups of species.'),
     'Frontend' : _('Defines the visual appearance of your app'),
     'App' : '',
 }

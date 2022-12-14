@@ -31,8 +31,10 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
 from app_kit.features.glossary.models import Glossary
 from app_kit.features.taxon_profiles.models import TaxonProfile
 from app_kit.features.frontend.models import Frontend
+from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
+from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
 
-from app_kit.features.fact_sheets.models import FactSheet
+from localcosmos_server.template_content.models import TemplateContent
 
 
 # TAXONOMY
@@ -964,16 +966,6 @@ class AppReleaseBuilder(AppBuilderBase):
         return result
 
 
-    def validate_FactSheets(self, fact_sheets):
-        
-        result = {
-            'warnings' : [],
-            'errors' : [],
-        }
-
-        return result
-    
-
     def validate_GenericForm(self, generic_form):
         '''
            Things that need checking:
@@ -1244,7 +1236,9 @@ class AppReleaseBuilder(AppBuilderBase):
             # options are on the link, pass the link
             build_method = getattr(self, '_build_{0}'.format(generic_content.__class__.__name__))
             build_method(link)
-            
+
+        # build TemplateContent
+        self._build_TemplateContent()
 
         # store settings as json
         
@@ -1498,6 +1492,15 @@ class AppReleaseBuilder(AppBuilderBase):
                 image_url = self.save_content_image(content_image)
 
             feature_entry_json['imageUrl'] = image_url
+
+            start_node = NatureGuidesTaxonTree.objects.get(nature_guide=generic_content, meta_node__node_type='root')
+            feature_entry_json['startNodeUuid'] = str(start_node.name_uuid)
+
+            start_node_slug = NatureGuideJSONBuilder.get_localized_slug(self, self.meta_app.primary_language,
+                start_node.id, start_node.meta_node.name)
+            
+            feature_entry_json['startNodeSlug'] = start_node_slug
+            
 
         # add localized names directly in the feature.js
         '''
@@ -1805,98 +1808,58 @@ class AppReleaseBuilder(AppBuilderBase):
         self.logger.info('finished building TaxonProfiles')
 
     ###############################################################################################################
-    # FACT SHEETS
-    # - one file per fact sheet and locale
-    # - respect taxonomic restriction if any
-
-    def _app_relative_fact_sheet_locale_filepath(self, fact_sheet, language_code):
-
-        filename = '{0}.html'.format(language_code)
-        folder = '{0}-{1}'.format(str(fact_sheet.pk), slugify(fact_sheet.title))
-
-        path = os.path.join(folder, filename)
-
-        return path
+    # Template Content
+    # - one file per localized template content
+    # - respect taxonomic restriction if any    
     
-    
-    def _build_FactSheets(self, app_generic_content):
+    def _build_TemplateContent(self):
 
-        fact_sheets = app_generic_content.generic_content
+        jsonbuilder = TemplateContentJSONBuilder(self, self.meta_app)
 
-        jsonbuilder = self.get_json_builder(app_generic_content)
+        template_contents_json = jsonbuilder.build()
 
-        fact_sheets_json = jsonbuilder.build()
+        template_contents = TemplateContent.objects.filter(app=self.meta_app.app, template_type='page')
 
-        linked_fact_sheets = FactSheet.objects.filter(fact_sheets=fact_sheets)
+        app_relative_template_contents_path = os.path.join(self._app_relative_localcosmos_content_path,
+            'features/', 'TemplateContent')
 
-        # path for storing fact sheets
-        # features/fact_sheets/str(fact_sheets.uuid)/
-        app_absolute_fact_sheets_folder = self._app_absolute_generic_content_path(fact_sheets)
+        app_absolute_template_contents_path = os.path.join(self._app_www_path, app_relative_template_contents_path)
 
-        # create the content folder
-        if not os.path.isdir(app_absolute_fact_sheets_folder):
-            os.makedirs(app_absolute_fact_sheets_folder)
+        languages = self.meta_app.languages()
+        for template_content in template_contents:
 
-        for fact_sheet in linked_fact_sheets:
+            template = template_content.template
 
-            fact_sheets_json['localizedSlugs'] = {}
+            template_folder_name = template.name
 
-            taxonomic_restriction = jsonbuilder.get_taxonomic_restriction(fact_sheet)
-            fact_sheet_json = {
-                'taxonomicRestrictions' : taxonomic_restriction,
-                'localized' : {},
-                'title' : fact_sheet.title,
-            }
-            
-            for language_code in self.meta_app.languages():
+            for language_code in languages:
+                localized_template_content = template_content.get_locale(language_code)
 
-                # there are two locale files: plain.json and glossarized.json
-                plain_locale_path = self._app_locale_filepath(language_code)
-                glossarized_locale_path = self._app_glossarized_locale_filepath(language_code)
+                if localized_template_content:
+                    localized_template_content_json = jsonbuilder.build_localized_template_content(
+                        localized_template_content)
 
-                with open(plain_locale_path, 'r') as f:
-                    plain_locale = json.loads(f.read())
+                    filename = '{0}.json'.format(localized_template_content.slug)
 
-                if os.path.isfile(glossarized_locale_path):
-                    with open(glossarized_locale_path, 'r') as f:
-                        glossarized_locale = json.loads(f.read())
-                else:
-                    glossarized_locale = None
+                    template_content_template_path = os.path.join(app_absolute_template_contents_path,
+                        template_folder_name)
 
-                fact_sheet_relative_path = self._app_relative_fact_sheet_locale_filepath(fact_sheet,
-                                                                                               language_code)
+                    if not os.path.isdir(template_content_template_path):
+                        os.makedirs(template_content_template_path)
 
-                html = jsonbuilder.render_localized_fact_sheet(fact_sheet, language_code,
-                                                               plain_locale, glossarized_locale)
+                    absolute_json_filepath = os.path.join(template_content_template_path, filename)
 
-                localized_title = plain_locale.get(fact_sheet.title, fact_sheet.title)
+                    with open(absolute_json_filepath, 'w') as template_content_file:
+                        template_content_file.write(json.dumps(localized_template_content_json, indent=4,
+                            ensure_ascii=False))
 
-                localized_slug = slugify(localized_title)
-                fact_sheets_json['localizedSlugs'][localized_slug] = fact_sheet.id
+                    relative_json_filepath = os.path.join(app_relative_template_contents_path, template_folder_name,
+                        filename)
 
-                localized_fact_sheet_json = {
-                    'path' : fact_sheet_relative_path,
-                    'slug' : localized_slug,
-                }
-
-                fact_sheet_json['localized'][language_code] = localized_fact_sheet_json
-
-                absolute_fact_sheet_path = os.path.join(app_absolute_fact_sheets_folder,
-                                                        fact_sheet_relative_path)
-
-                fact_sheet_folder = os.path.dirname(absolute_fact_sheet_path)
-                if not os.path.isdir(fact_sheet_folder):
-                    os.makedirs(fact_sheet_folder)
-
-                # store the fact sheet
-                with  open(absolute_fact_sheet_path, 'w') as fact_sheet_file:
-                    fact_sheet_file.write(html)
-
-            
-            fact_sheets_json['factSheets'][str(fact_sheet.pk)] = fact_sheet_json
-
+                    template_contents_json['lookup'][str(template_content.uuid)] = relative_json_filepath
+                    template_contents_json['slugs'][localized_template_content.slug] = relative_json_filepath
         
-        self._add_generic_content_to_app(fact_sheets, fact_sheets_json)
+        self.build_features['TemplateContent'] = template_contents_json
         
     ###############################################################################################################
     # GENERIC FORMS

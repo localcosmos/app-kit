@@ -8,7 +8,7 @@
 			<h4 class="card-title">{% trans 'Taxonomic restriction' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large" data-toggle="popover" data-placement="top" title="{% trans 'Taxonomic restriction' %}" data-content="{% trans 'You can optionally define which taxa your observation form can be used for. If you add a higher taxon (e.g. birds/aves) only descendants of that taxon can use this form. You can also restrict only certain fields to taxa.' %}" /></h4>
 			<!--<div id="formcontainer">
 			
-				{% render_taxonomic_restriction generic_content %}
+				{% render_taxonomic_restriction meta_app.app generic_content %}
 			
 			</div>-->
 		</div>	
