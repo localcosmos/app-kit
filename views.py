@@ -1075,7 +1075,7 @@ class RemoveTaxonomicRestriction(AjaxDeleteView):
 from localcosmos_server.view_mixins import ContentImageViewMixin
 class ManageContentImageMixin(ContentImageViewMixin):
     ContentImageClass = ContentImage
-    ImageStoreClsas = ImageStore
+    ImageStoreClass = ImageStore
     LazyTaxonClass = LazyTaxon
 
     '''
