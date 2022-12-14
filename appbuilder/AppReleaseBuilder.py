@@ -1828,36 +1828,38 @@ class AppReleaseBuilder(AppBuilderBase):
         languages = self.meta_app.languages()
         for template_content in template_contents:
 
-            template = template_content.template
+            if template_content.is_published == True:
 
-            template_folder_name = template.name
+                for language_code in languages:
+                    localized_template_content = template_content.get_locale(language_code)
 
-            for language_code in languages:
-                localized_template_content = template_content.get_locale(language_code)
+                    if localized_template_content:
 
-                if localized_template_content:
-                    localized_template_content_json = jsonbuilder.build_localized_template_content(
-                        localized_template_content)
+                        template = template_content.template
+                        template_folder_name = template.name
 
-                    filename = '{0}.json'.format(localized_template_content.slug)
+                        localized_template_content_json = jsonbuilder.build_localized_template_content(
+                            localized_template_content)
 
-                    template_content_template_path = os.path.join(app_absolute_template_contents_path,
-                        template_folder_name)
+                        filename = '{0}.json'.format(localized_template_content.slug)
 
-                    if not os.path.isdir(template_content_template_path):
-                        os.makedirs(template_content_template_path)
+                        template_content_template_path = os.path.join(app_absolute_template_contents_path,
+                            template_folder_name)
 
-                    absolute_json_filepath = os.path.join(template_content_template_path, filename)
+                        if not os.path.isdir(template_content_template_path):
+                            os.makedirs(template_content_template_path)
 
-                    with open(absolute_json_filepath, 'w') as template_content_file:
-                        template_content_file.write(json.dumps(localized_template_content_json, indent=4,
-                            ensure_ascii=False))
+                        absolute_json_filepath = os.path.join(template_content_template_path, filename)
 
-                    relative_json_filepath = os.path.join(app_relative_template_contents_path, template_folder_name,
-                        filename)
+                        with open(absolute_json_filepath, 'w') as template_content_file:
+                            template_content_file.write(json.dumps(localized_template_content_json, indent=4,
+                                ensure_ascii=False))
 
-                    template_contents_json['lookup'][str(template_content.uuid)] = relative_json_filepath
-                    template_contents_json['slugs'][localized_template_content.slug] = relative_json_filepath
+                        relative_json_filepath = os.path.join(app_relative_template_contents_path, template_folder_name,
+                            filename)
+
+                        template_contents_json['lookup'][str(template_content.uuid)] = relative_json_filepath
+                        template_contents_json['slugs'][localized_template_content.slug] = relative_json_filepath
         
         self.build_features['TemplateContent'] = template_contents_json
         
