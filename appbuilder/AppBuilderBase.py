@@ -121,6 +121,8 @@ class AppBuilderBase:
 
         self._certificates_path = os.path.join(self._builder_root_path, 'certificates')
 
+        self.logger = None
+
     @classmethod
     def _get_builder_root_path(cls):
         builder_root_path = os.path.dirname(os.path.abspath(inspect.getfile(cls)))
@@ -169,8 +171,11 @@ class AppBuilderBase:
     #- used during the build() and validate() process
 
     def _get_logger(self, process_name):
-        logger_name = 'AppBuilder-{0}'.format(process_name)
-        logger = logging.getLogger(logger_name)
+
+        if self.logger:
+            return self.logger
+
+        logger = logging.getLogger(__name__)
         logging_path = '/var/log/localcosmos/apps/{0}/'.format(process_name)
 
         if not os.path.isdir(logging_path):
@@ -183,7 +188,9 @@ class AppBuilderBase:
         logger.addHandler(hdlr)
         logger.setLevel(logging.INFO)
 
-        return logger
+        self.logger = logger
+
+        return self.logger
     
     
     # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.version}/log/

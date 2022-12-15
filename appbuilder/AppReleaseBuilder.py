@@ -1591,6 +1591,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         # create the content folder
         if not os.path.isdir(absolute_generic_content_folder):
+            self.logger.info('creating directory {0}'.format(absolute_generic_content_folder))
             os.makedirs(absolute_generic_content_folder)
         
         '''
@@ -2030,6 +2031,7 @@ class AppReleaseBuilder(AppBuilderBase):
             return self.content_images_cache[key]
 
         if not os.path.isdir(absolute_path):
+            self.logger.info('creating directory {0}'.format(absolute_path))
             os.makedirs(absolute_path)
 
         source_image_path = content_image.image_store.source_image.path

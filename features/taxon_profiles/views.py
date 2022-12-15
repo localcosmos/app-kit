@@ -26,6 +26,18 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
 
+
+def get_taxon(taxon_source, name_uuid):
+    models = TaxonomyModelRouter(taxon_source)
+
+    # use the names model to support synonyms
+    if taxon_source == 'taxonomy.sources.custom':
+        taxon = models.TaxonTreeModel.objects.get(name_uuid=name_uuid)
+    else:    
+        taxon = models.TaxonNamesModel.objects.get(name_uuid=name_uuid)
+
+    return taxon
+    
 '''
     profiles can occur in NatureGuides or IdentificationKeys, check these in the validation method
 '''
@@ -66,12 +78,10 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         
         self.taxon_profiles =  TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
 
-        models = TaxonomyModelRouter(kwargs['taxon_source'])
-
+        taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
-        # use the names model to support synonyms
-        
-        taxon = models.TaxonNamesModel.objects.get(name_uuid=name_uuid)
+
+        taxon = get_taxon(taxon_source, name_uuid)
 
         self.taxon = LazyTaxon(instance=taxon)
 
@@ -165,7 +175,7 @@ class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
         name_uuid = request.GET['name_uuid']
         
         #taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)
-        taxon = models.TaxonNamesModel.objects.get(name_uuid=name_uuid)
+        taxon = get_taxon(taxon_source, name_uuid)
 
         self.taxon = LazyTaxon(instance=taxon)
 
@@ -205,8 +215,9 @@ class ManageTaxonTextType(MetaAppFormLanguageMixin, FormView):
     def set_taxon_text_type(self, **kwargs):
 
         # get the taxon
-        models = TaxonomyModelRouter(kwargs['taxon_source'])
-        taxon = models.TaxonNamesModel.objects.get(name_uuid=kwargs['name_uuid'])
+        taxon_source = kwargs['taxon_source']
+        name_uuid = kwargs['name_uuid']
+        taxon = get_taxon(taxon_source, name_uuid)
         self.taxon = LazyTaxon(instance=taxon)
         
         self.taxon_profiles =  TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
@@ -292,8 +303,9 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
 
     def set_taxon(self, **kwargs):
         self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['pk'])
-        models = TaxonomyModelRouter(kwargs['taxon_source'])
-        taxon = models.TaxonNamesModel.objects.get(name_uuid=kwargs['name_uuid'])
+        taxon_source = kwargs['taxon_source']
+        name_uuid = kwargs['name_uuid']
+        taxon = get_taxon(taxon_source, name_uuid)
         self.taxon = LazyTaxon(instance=taxon)
 
 
@@ -381,8 +393,11 @@ class CollectTaxonTraits(TemplateView):
 
 
     def set_taxon(self, **kwargs):
-        models = TaxonomyModelRouter(kwargs['taxon_source'])
-        taxon = models.TaxonNamesModel.objects.get(name_uuid=kwargs['name_uuid'])
+        taxon_source = kwargs['taxon_source']
+        name_uuid = kwargs['name_uuid']
+
+        taxon = get_taxon(taxon_source, name_uuid)
+
         self.taxon = LazyTaxon(instance=taxon)
 
 
