@@ -1,7 +1,6 @@
 {
     "templateName" : "Neobiota",
     "version" : 1,
-    "templateFileName": "filename.xy",
     "templateUrl": "/#/fact-sheet/{slug}/",
     "contents": {
       "headline": {

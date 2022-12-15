@@ -169,7 +169,8 @@ class AppBuilderBase:
     #- used during the build() and validate() process
 
     def _get_logger(self, process_name):
-        logger = logging.getLogger(__name__)
+        logger_name = 'AppBuilder-{0}'.format(process_name)
+        logger = logging.getLogger(logger_name)
         logging_path = '/var/log/localcosmos/apps/{0}/'.format(process_name)
 
         if not os.path.isdir(logging_path):

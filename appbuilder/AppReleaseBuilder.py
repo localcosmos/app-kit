@@ -1833,7 +1833,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 for language_code in languages:
                     localized_template_content = template_content.get_locale(language_code)
 
-                    if localized_template_content:
+                    if localized_template_content and localized_template_content.published_version:
 
                         template = template_content.template
                         template_folder_name = template.name
