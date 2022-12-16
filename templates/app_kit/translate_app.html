@@ -174,7 +174,7 @@
 
 						if (response["success"] === true){
 							try {
-								translated_text = response["translation"]["translations"][0]["text"];
+								translated_text = response["translation"];
 							}
 							catch(e){
 								console.log("[AppKit] error in getting translation from DeepL:");

@@ -38,6 +38,7 @@ from content_licencing.view_mixins import LicencingFormViewMixin
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
+import deepl
 
 import json, urllib.request, urllib.parse, urllib.error, traceback, threading
 from django.db import connection
@@ -626,10 +627,16 @@ class TranslateApp(MetaAppMixin, FormView):
         }]
     }
 '''
+LANGUAGE_TERRITORIES = {
+    'de' : 'DE-DE',
+    'en' : 'EN-US',
+}
+
 class GetDeepLTranslation(MetaAppMixin, TemplateView):
 
     template_name = 'app_kit/ajax/get_translation.html'
 
+    @method_decorator(csrf_exempt)
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
@@ -655,54 +662,36 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
 
     def get_translation(self, text, target_language):
 
-        url = settings.DEEPL_API_URL
-        auth_key = settings.DEEPL_AUTH_KEY
-        
-        values = {
-            'auth_key' : auth_key,
-            'text': text,
-            'target_lang' : target_language,
-        }
-
-        # according to https://www.deepl.com/docs-api
-        headers = {
-            'Accept ': '*/*',
-            #'Content-Length': [length],
-            'Content-Type': 'application/x-www-form-urlencoded',
-        }
-
-        data = urllib.parse.urlencode(values)
-        data = data.encode('ascii') # data should be bytes
-
-        # passing the data argument will result in a POST request
-        req = urllib.request.Request(url, data, headers)
-
         translation = None
         success = False
 
+        if target_language not in LANGUAGE_TERRITORIES:
+            raise ValueError('DEEPL: Language territory not found for language code {0}'.format(target_language))
+
+        language_with_territory = LANGUAGE_TERRITORIES[target_language]
+
+        auth_key = settings.DEEPL_AUTH_KEY
+
         try:
-            response = urllib.request.urlopen(req)
-        except urllib.error.HTTPError as e:
-            # use e.code
-            self.send_error_report_email(e, e.code)
-            raise e
-        except urllib.error.URLError as e:
-            # use e.reason
-            self.send_error_report_email(e, e.reason)
+            translator = deepl.Translator(auth_key)
+            result = translator.translate_text(text, target_lang=language_with_territory)
+            
+        except Exception as e:
+            self.send_error_report_email(e, 'DeepL error')
             raise e
         else:
             success = True
-            json_response = json.loads(response.read())
+            translated_text = result.text
+
 
         result = {
-            'translation' : json_response,
+            'translation' : translated_text,
             'success' : success,
         }
 
         return result
+     
 
-
-        # e-mail to admin if request fails
     def post(self, request, *args, **kwargs):
 
         text = request.POST.get('text', None)

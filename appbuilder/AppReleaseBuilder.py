@@ -2098,7 +2098,8 @@ class AppReleaseBuilder(AppBuilderBase):
                 }
                 
                 self.licence_registry['licences'][relative_image_filepath] = registry_entry
-            
+        
+        relative_image_filepath = os.path.join('/', relative_image_filepath)
         self.content_images_cache[key] = relative_image_filepath
 
         return relative_image_filepath
