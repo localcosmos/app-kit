@@ -175,7 +175,7 @@ class AppBuilderBase:
         if self.logger:
             return self.logger
 
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger(process_name)
         logging_path = '/var/log/localcosmos/apps/{0}/'.format(process_name)
 
         if not os.path.isdir(logging_path):

@@ -92,9 +92,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
     android_keystore_name = 'localcosmos_android.keystore'
 
-    nature_guides_vernacular_names = {}
-
-    content_images_cache = {}
+    def __init__(self, meta_app):
+        super().__init__(meta_app)
+        self.nature_guides_vernacular_names = {}
+        self.content_images_cache = {}
 
     def get_empty_result(self):
 
@@ -1198,6 +1199,9 @@ class AppReleaseBuilder(AppBuilderBase):
     def _build_common_www(self):
 
         ### STARTING TO BUILD GENERIC CONTENTS ###
+
+        self.logger.info('vernacular names cache length: {0}'.format(len(self.nature_guides_vernacular_names)))
+        self.logger.info('content images cache length: {0}'.format(len(self.content_images_cache)))
 
         # build the frontend first
         self.logger.info('Building the Frontend')

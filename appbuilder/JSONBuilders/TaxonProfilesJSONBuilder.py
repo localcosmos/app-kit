@@ -11,6 +11,8 @@ from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, Matrix
 
 from app_kit.models import ContentImage, MetaAppGenericContent
 
+from localcosmos_server.template_content.models import TemplateContent
+
 from collections import OrderedDict
 
 '''
@@ -105,6 +107,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             },
             'synonyms' : [],
             'gbifNubKey' : None,
+            'template_contents' : []
         }
 
         synonyms = profile_taxon.synonyms()
@@ -279,6 +282,17 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     taxon_profile_json['texts'].append(text_json)
 
+        # template_contents
+        template_contents = TemplateContent.objects.filter_by_taxon(profile_taxon)
+
+        for template_content in template_contents:
+
+            if template_content.is_published:
+                template_content_json = {}
+                ltc = template_content.get_locale(self.meta_app.primary_language)
+                template_content_json['template_name'] = template_content.template.name
+                template_content_json['slug'] = ltc.slug
+                taxon_profile_json['template_contents'].append(template_content_json)
 
         return taxon_profile_json
 

@@ -72,10 +72,10 @@ class JSONBuilder:
         return image_url        
 
 
-    def get_taxonomic_restriction(self, instance):
+    def get_taxonomic_restriction(self, instance, restriction_model=AppContentTaxonomicRestriction):
 
         content_type = ContentType.objects.get_for_model(instance)
-        taxonomic_restriction_query = AppContentTaxonomicRestriction.objects.filter(
+        taxonomic_restriction_query = restriction_model.objects.filter(
             content_type = content_type,
             object_id = instance.id,
         )
