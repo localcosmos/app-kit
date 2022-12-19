@@ -24,6 +24,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         super().__init__(app_release_builder, app_generic_content)
 
         self.trait_cache = {}
+        self.built_taxon_profiles_cache = {}
 
 
     small_image_size = (200,200)
@@ -79,6 +80,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         return node_traits
     
+
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, gbiflib, languages):
 
@@ -107,7 +109,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             },
             'synonyms' : [],
             'gbifNubKey' : None,
-            'template_contents' : []
+            'templateContents' : []
         }
 
         synonyms = profile_taxon.synonyms()
@@ -132,16 +134,21 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 
 
         collected_content_image_ids = set([])
+        collected_image_store_ids = set([])
         # get taxon_profile_images
         if db_profile:
-            for content_image in db_profile.images():
 
-                if content_image.id not in collected_content_image_ids:
+            taxon_profile_images = db_profile.images().order_by('position')
+
+            for content_image in taxon_profile_images:
+
+                if content_image.id not in collected_content_image_ids and content_image.image_store.id not in collected_image_store_ids:
                     image_entry = self.get_image_entry(content_image)
 
                     taxon_profile_json['images']['taxonProfileImages'].append(image_entry)
 
                     collected_content_image_ids.add(content_image.id)
+                    collected_image_store_ids.add(content_image.image_store.id)
 
         
         # get information (traits, node_names) from nature guides if possible
@@ -188,11 +195,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                 node_image = node.meta_node.image()
 
-                if node_image is not None and node_image.id not in collected_content_image_ids:
+                if node_image is not None and node_image.id not in collected_content_image_ids and node_image.image_store.id not in collected_image_store_ids:
                     collected_content_image_ids.add(node_image.id)
                     image_entry = self.get_image_entry(node_image)
 
                     collected_content_image_ids.add(node_image.id)
+                    collected_image_store_ids.add(node_image.image_store.id)
 
                     taxon_profile_json['images']['nodeImages'].append(image_entry)
 
@@ -251,12 +259,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         for taxon_image in taxon_images:
 
-            if taxon_image is not None and taxon_image.id not in collected_content_image_ids:
+            if taxon_image is not None and taxon_image.id not in collected_content_image_ids and taxon_image.image_store.id not in collected_image_store_ids:
 
                 image_entry = self.get_image_entry(taxon_image)
                 taxon_profile_json['images']['taxonImages'].append(image_entry)
 
                 collected_content_image_ids.add(taxon_image.id)
+                collected_image_store_ids.add(taxon_image.image_store.id)
             
 
         # get the gbif nubKey
@@ -274,11 +283,21 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     text_json = {
                         'taxonTextType' : text.taxon_text_type.text_type,
-                        'shortText' : text.text,
-                        'shortTextKey' : self.generic_content.get_short_text_key(text),
-                        'longText' : text.long_text,
-                        'longTextKey' : self.generic_content.get_long_text_key(text),
+                        'shortText' : None,
+                        'shortTextKey' : None,
+                        'longText' : None,
+                        'longTextKey' : None
                     }
+
+                    if text.text:
+                        text_json['shortText'] = text.text
+                        text_json['shortTextKey']  = self.generic_content.get_short_text_key(text)
+
+                    if text.long_text:
+                        text_json['longText'] = text.long_text
+                        text_json['longTextKey'] = self.generic_content.get_long_text_key(text)
+
+
 
                     taxon_profile_json['texts'].append(text_json)
 
@@ -290,9 +309,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             if template_content.is_published:
                 template_content_json = {}
                 ltc = template_content.get_locale(self.meta_app.primary_language)
-                template_content_json['template_name'] = template_content.template.name
+                template_content_json['templateName'] = template_content.template.name
                 template_content_json['slug'] = ltc.slug
-                taxon_profile_json['template_contents'].append(template_content_json)
+                taxon_profile_json['templateContents'].append(template_content_json)
+
+        self.built_taxon_profiles_cache[str(profile_taxon.name_uuid)] = taxon_profile_json
 
         return taxon_profile_json
 
@@ -311,6 +332,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'taxonAuthor' : lazy_taxon.taxon_author,
                 'vernacularNames' : {},
                 'alternativeVernacularNames' : {},
+                'images' : {
+                    'taxonProfileImages' : [],
+                    'nodeImages' : [],
+                    'taxonImages' : [],
+                }
             }
 
             for language_code in languages:
@@ -319,7 +345,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if vernacular_name:
                     registry_entry['vernacularNames'][language_code] = vernacular_name
 
+            # images
+            built_taxon_profile = self.built_taxon_profiles_cache.get(str(lazy_taxon.name_uuid), None)
+            if built_taxon_profile:
+                registry_entry['images'] = built_taxon_profile['images']
+
             registry[str(lazy_taxon.name_uuid)] = registry_entry
+
 
         return registry
             

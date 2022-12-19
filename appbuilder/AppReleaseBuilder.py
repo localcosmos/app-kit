@@ -1357,6 +1357,35 @@ class AppReleaseBuilder(AppBuilderBase):
         with open(locale_filepath, 'w') as locale_file:
             locale_file.write(json.dumps(locale))
 
+    # this has to be removed
+    def _get_image_url(self, content_image_mixedin, image_type='image', filename=None, size=None):
+
+        if isinstance(size, tuple):
+            size = size[0]
+
+        content_image = content_image = content_image_mixedin.image(image_type=image_type)
+
+        if content_image:
+            image_url = self.save_content_image(content_image, filename=filename, size=size)
+
+        else:
+            image_url = self.no_image_url
+            
+        return image_url 
+
+
+    def _get_image_url_for_lazy_taxon(self, lazy_taxon):
+
+        image_url = None
+
+        taxon_profile = TaxonProfile.objects.filter(taxon_source=lazy_taxon.taxon_source,
+            taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author).first()
+
+        if taxon_profile and taxon_profile.image():
+            image_url = self._get_image_url(taxon_profile)
+
+        return image_url
+
 
     def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
 
@@ -1367,7 +1396,7 @@ class AppReleaseBuilder(AppBuilderBase):
             
             'nameUuid' : str(lazy_taxon.name_uuid),
             'taxonNuid' : lazy_taxon.taxon_nuid,
-            
+            'imageUrl' : self._get_image_url_for_lazy_taxon(lazy_taxon),
             'gbifNubKey' : None,
         }
 

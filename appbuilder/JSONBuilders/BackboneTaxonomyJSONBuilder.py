@@ -6,6 +6,8 @@ from taxonomy.lazy import LazyTaxon
 
 from app_kit.generic import AppContentTaxonomicRestriction
 
+from app_kit.features.taxon_profiles.models import TaxonProfile
+
 
 '''
     App Backbone Taxonomy builder
@@ -118,6 +120,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
         for language_code in self.meta_app.languages():
             
+            occurred_names = {}
             vernacular_names = []
 
             for lazy_taxon in self.meta_app.taxa():
@@ -126,19 +129,37 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                     for d_taxon in lazy_taxon.descendants():
                         lazy_d_taxon = LazyTaxon(instance=d_taxon)
                         vernacular_dic = self._create_vernacular_dic(lazy_d_taxon, language_code, use_gbif)
+
                         if vernacular_dic:
-                            vernacular_names.append(vernacular_dic)
+                            vernacular_name = vernacular_dic['name']
+                            name_uuid = vernacular_dic['nameUuid']
+                            if vernacular_name not in occurred_names:
+                                vernacular_names.append(vernacular_dic)
+                                occurred_names[vernacular_name] = vernacular_dic['nameUuid']
                 else:
                     vernacular_dic = self._create_vernacular_dic(lazy_taxon, language_code, use_gbif)
+
                     if vernacular_dic:
-                        vernacular_names.append(vernacular_dic)
+                        vernacular_name = vernacular_dic['name']
+                        name_uuid = vernacular_dic['nameUuid']
+                        if vernacular_name not in occurred_names:
+                            vernacular_names.append(vernacular_dic)
+                            occurred_names[vernacular_name] = vernacular_dic['nameUuid']
+
 
             # collect and add vernacular nams from nature guides
             vernacular_names_from_nature_guides = self.app_release_builder._collect_vernacular_names_from_nature_guides(
                 language_code)
                 
             for name_uuid, vernacular_dic in vernacular_names_from_nature_guides.items():
-                vernacular_names.append(vernacular_dic)
+
+                vernacular_name = vernacular_dic['name']
+                name_uuid = vernacular_dic['nameUuid']
+
+                if vernacular_name not in occurred_names:
+                    vernacular_dic['imageUrl'] = self.get_image_url_for_lazy_taxon(lazy_taxon)
+                    vernacular_names.append(vernacular_dic)
+                    occurred_names[vernacular_name] = vernacular_dic['nameUuid']
 
             yield language_code, vernacular_names
 
@@ -150,10 +171,14 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         if vernacular_name:
 
             vernacular_dic = self._create_taxon_json_from_lazy_taxon(lazy_taxon, use_gbif)
-
+            vernacular_dic['imageUrl'] = self.get_image_url_for_lazy_taxon(lazy_taxon)
             vernacular_dic['name'] = vernacular_name
 
             return vernacular_dic
 
         return None
+
+    def get_image_url_for_lazy_taxon(self, lazy_taxon):
+        return self.app_release_builder._get_image_url_for_lazy_taxon(lazy_taxon)
+
 
