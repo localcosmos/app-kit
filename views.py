@@ -1032,8 +1032,8 @@ class DeleteAppLanguage(AjaxDeleteView):
         return context
 
         
-from localcosmos_server.taxonomy.views import ManageTaxonomicRestrictions
-class AddTaxonomicRestriction(ManageTaxonomicRestrictions):
+from localcosmos_server.taxonomy.views import ManageTaxonomicRestrictionsCommon
+class AddTaxonomicRestriction(ManageTaxonomicRestrictionsCommon, FormView):
     template_name = 'localcosmos_server/taxonomy/taxonomic_restrictions.html'
 
     restriction_model = AppContentTaxonomicRestriction

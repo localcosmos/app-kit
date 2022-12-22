@@ -33,7 +33,7 @@ var OnlineContentMixin = {
 
 		var internet_status = getNetworkState();
 
-		online_contents.forEach(function(oc){
+		/*online_contents.forEach(function(oc){
 
 			if (internet_status == "online") {
 
@@ -50,7 +50,7 @@ var OnlineContentMixin = {
 					oc.innerHTML = '<div class="alert alert-warning p-0">' + i18next.t('You are offline.') + '</div>';
 				}
 			}
-		});
+		});*/
 		
 	},
 

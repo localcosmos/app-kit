@@ -1946,6 +1946,14 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 	height: auto;
 }
 
+.keynodes-divider {
+	width: 80%;
+	margin: 0 auto;
+	height: .5rem;
+	background-color: #afafaf;
+	border-radius: .5em;
+}
+
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
 	.natureguide-item .taxonimage {
@@ -2032,7 +2040,7 @@ a:not([href]):not([tabindex]):focus, a:not([href]):not([tabindex]):hover {
 		background: rgb(255,255,255);
 	}
 
-	#keynodes {
+	#keynodes, #sorted-out-keynodes {
 		padding: 2rem;
 	}
 

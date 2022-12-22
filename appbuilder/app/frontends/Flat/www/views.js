@@ -4211,6 +4211,9 @@ var NatureGuideView = View(TemplateView, {
 		var identificationForm = document.getElementById("matrix-filters-form");
 		var inputs = identificationForm.querySelectorAll('input[type=radio], input[type=checkbox]');
 
+		const keynodes_container = document.getElementById("keynodes");
+		const sorted_out_keynodes_container = document.getElementById("sorted-out-keynodes");
+
 		for (let i=0; i<inputs.length; i++){
 			let input = inputs[i];
 
@@ -4317,6 +4320,26 @@ var NatureGuideView = View(TemplateView, {
 			let matrix_filter = event.detail.matrix_filter;
 			let container = document.getElementById(matrix_filter.uuid);
 			container.classList.add("restriction-active");
+			
+		});
+
+		identificationForm.addEventListener("activate-matrix-item", function(event){
+
+			let matrix_item = event.detail.matrix_item;
+			let matrix_item_element = document.getElementById(matrix_item.uuid);
+			matrix_item_element.style.opacity = 1;
+
+			keynodes_container.appendChild(matrix_item_element);
+			
+		});
+
+		identificationForm.addEventListener("deactivate-matrix-item", function(event){
+
+			let matrix_item = event.detail.matrix_item;
+			let matrix_item_element = document.getElementById(matrix_item.uuid);
+			matrix_item_element.style.opacity = 0.3;
+
+			sorted_out_keynodes_container.appendChild(matrix_item_element);
 			
 		});
 

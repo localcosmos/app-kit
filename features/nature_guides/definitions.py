@@ -1,3 +1,5 @@
+from django.conf import settings
+
 TEXT_LENGTH_RESTRICTIONS = {
     'MetaNode' : {
         'name' : 40,
@@ -9,7 +11,7 @@ TEXT_LENGTH_RESTRICTIONS = {
         'name' : 150,
     },
     'DescriptiveTextAndImages' : {
-        'name' : 100,
+        'description' : 100,
     },
     'TextOnlyFilter' : {
         'text' : 200,
@@ -18,3 +20,8 @@ TEXT_LENGTH_RESTRICTIONS = {
         'description' : 40,
     }
 }
+
+settings_text_lengths = getattr(settings, 'APP_KIT_TEXT_LENGTH_RESTRICTIONS', {})
+descriptive_text = settings_text_lengths.get('DescriptiveTextAndImages', {})
+if 'description' in descriptive_text:
+    TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description'] = descriptive_text['description']

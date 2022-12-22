@@ -25,7 +25,7 @@ from app_kit.forms import OptionalContentImageForm
 class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFilterSpaceForm):
 
     text = forms.CharField(label=_('Text'), widget=forms.Textarea,
-                           max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'])
+                           max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description'])
     
     localizeable_fields = ['text']
     layoutable_simple_fields = ['text']

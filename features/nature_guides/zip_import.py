@@ -395,10 +395,10 @@ class NatureGuideZipImporter(GenericContentZipImporter):
 
                                 space_name = space_name.strip()
 
-                                if space_name and len(space_name) > TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name']:
+                                if space_name and len(space_name) > TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description']:
                                     message = _('Length of value is too long: %(value)s. Maximum length is %(max_length)s' % {
                                         'value' : space_name,
-                                        'max_length' : TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['name'],
+                                        'max_length' : TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description'],
                                     })
                                     self.add_cell_error(self.workbook_filename, matrix_sheet.name, column_letter, r, message)
                         
