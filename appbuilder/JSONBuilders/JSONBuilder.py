@@ -22,10 +22,32 @@ class JSONBuilder:
 
     '''
     build the json representation of the actual content
-    the feature entry for features.js is built by the appbuilder class
     '''
     def build(self):
         raise NotImplementedError('JSONBuilder subclasses do need a build method')
+
+    def build_features_json_entry(self):
+
+        generic_content_type = self.generic_content.__class__.__name__
+
+        features_json_entry = {
+            'genericContentType' : generic_content_type,
+            'uuid' : str(self.generic_content.uuid),
+            'name' : self.generic_content.name,
+            'slug' : self.app_release_builder.get_generic_content_slug(self.generic_content),
+            'version' : self.generic_content.current_version,
+        }
+ 
+        # add localized names directly in the feature.js
+        '''
+        for language_code in self.meta_app.languages():
+            localized_name = self.get_localized(generic_content.name, language_code)
+            
+            feature_entry['name'][language_code] = localized_name
+        '''
+
+        return features_json_entry
+
 
 
     # language independant
@@ -56,20 +78,17 @@ class JSONBuilder:
         return content_image
 
 
-    def _get_image_url(self, content_image_mixedin, image_type='image', filename=None, size=None):
-
-        if isinstance(size, tuple):
-            size = size[0]
+    def _get_image_urls(self, content_image_mixedin, image_type='image', image_sizes='regular'):
 
         content_image = self._get_content_image(content_image_mixedin, image_type=image_type)
 
         if content_image:
-            image_url = self.app_release_builder.save_content_image(content_image, filename=filename, size=size)
+            image_urls = self.app_release_builder.build_content_image(content_image, image_sizes=image_sizes)
 
         else:
-            image_url = self.app_release_builder.no_image_url
+            image_urls = self.app_release_builder.no_image_url
             
-        return image_url        
+        return image_urls     
 
 
     def get_taxonomic_restriction(self, instance, restriction_model=AppContentTaxonomicRestriction):

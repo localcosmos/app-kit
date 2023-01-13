@@ -9,7 +9,6 @@
 #
 ###################################################################################################################
 
-from xml.sax.handler import property_xml_string
 from . import AppBuilderBase
 
 from django.conf import settings
@@ -22,6 +21,8 @@ from django.template.defaultfilters import slugify
 import ssl
 from urllib import request
 from urllib.error import HTTPError, URLError
+
+from app_kit.appbuilder.ContentImageBuilder import ContentImageBuilder
 
 ### FEATURES
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MatrixFilter
@@ -95,7 +96,8 @@ class AppReleaseBuilder(AppBuilderBase):
     def __init__(self, meta_app):
         super().__init__(meta_app)
         self.nature_guides_vernacular_names = {}
-        self.content_images_cache = {}
+        
+        self.content_image_builder = ContentImageBuilder()
 
     def get_empty_result(self):
 
@@ -1201,7 +1203,6 @@ class AppReleaseBuilder(AppBuilderBase):
         ### STARTING TO BUILD GENERIC CONTENTS ###
 
         self.logger.info('vernacular names cache length: {0}'.format(len(self.nature_guides_vernacular_names)))
-        self.logger.info('content images cache length: {0}'.format(len(self.content_images_cache)))
 
         # build the frontend first
         self.logger.info('Building the Frontend')
@@ -1319,9 +1320,9 @@ class AppReleaseBuilder(AppBuilderBase):
                 localized_content_image = LocalizedContentImage.objects.get(content_image=content_image,
                     language_code=language_code)
 
-                relative_url = self.save_localized_content_image(localized_content_image)
+                relative_urls = self.build_localized_content_image(localized_content_image)
 
-                image_definition['media_url'] = relative_url
+                image_definition['mediaUrl'] = relative_urls
 
                 locale[locale_key] = image_definition
 
@@ -1357,34 +1358,20 @@ class AppReleaseBuilder(AppBuilderBase):
         with open(locale_filepath, 'w') as locale_file:
             locale_file.write(json.dumps(locale))
 
-    # this has to be removed
-    def _get_image_url(self, content_image_mixedin, image_type='image', filename=None, size=None):
 
-        if isinstance(size, tuple):
-            size = size[0]
+    def _get_image_urls_for_lazy_taxon(self, lazy_taxon):
 
-        content_image = content_image = content_image_mixedin.image(image_type=image_type)
-
-        if content_image:
-            image_url = self.save_content_image(content_image, filename=filename, size=size)
-
-        else:
-            image_url = self.no_image_url
-            
-        return image_url 
-
-
-    def _get_image_url_for_lazy_taxon(self, lazy_taxon):
-
-        image_url = None
+        image_urls = None
 
         taxon_profile = TaxonProfile.objects.filter(taxon_source=lazy_taxon.taxon_source,
             taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author).first()
 
         if taxon_profile and taxon_profile.image():
-            image_url = self._get_image_url(taxon_profile)
 
-        return image_url
+            content_image = taxon_profile.image(image_type='image')
+            image_urls = self.build_content_image(content_image)
+
+        return image_urls
 
 
     def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
@@ -1396,7 +1383,7 @@ class AppReleaseBuilder(AppBuilderBase):
             
             'nameUuid' : str(lazy_taxon.name_uuid),
             'taxonNuid' : lazy_taxon.taxon_nuid,
-            'imageUrl' : self._get_image_url_for_lazy_taxon(lazy_taxon),
+            'imageUrl' : self._get_image_urls_for_lazy_taxon(lazy_taxon),
             'gbifNubKey' : None,
         }
 
@@ -1480,7 +1467,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         frontend_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(frontend, frontend_json, only_one_allowed=True)
+        self._add_generic_content_to_app(frontend_link, frontend_json, only_one_allowed=True)
 
     ###############################################################################################################
     # BUILDING GENERIC CONTENTS
@@ -1506,45 +1493,13 @@ class AppReleaseBuilder(AppBuilderBase):
     # feature entry of a generic content
     # build the entry for features.js which is used by the app to recognize which features are installed
     # and where to find them on the disk
-    def _get_feature_entry(self, generic_content, **kwargs):
+    def _get_features_json_entry(self, app_generic_content):
 
-        generic_content_type = kwargs.get('generic_content_type', generic_content.__class__.__name__)
+        generic_content = app_generic_content.generic_content
 
-        feature_entry_json = {
-            'genericContentType' : generic_content_type,
-            'uuid' : str(generic_content.uuid),
-            'name' : {},
-            'version' : generic_content.current_version,
-        }
+        jsonbuilder = self.get_json_builder(app_generic_content)
 
-        if generic_content.__class__.__name__ == 'NatureGuide':
-            image_url = None
-
-            content_image = generic_content.image()
-            if content_image:
-                image_url = self.save_content_image(content_image)
-
-            feature_entry_json['imageUrl'] = image_url
-
-            start_node = NatureGuidesTaxonTree.objects.get(nature_guide=generic_content, meta_node__node_type='root')
-            feature_entry_json['startNodeUuid'] = str(start_node.name_uuid)
-
-            start_node_slug = NatureGuideJSONBuilder.get_localized_slug(self, self.meta_app.primary_language,
-                start_node.id, start_node.meta_node.name)
-            
-            feature_entry_json['startNodeSlug'] = start_node_slug
-            
-
-        # add localized names directly in the feature.js
-        '''
-        for language_code in self.meta_app.languages():
-            localized_name = self.get_localized(generic_content.name, language_code)
-            
-            feature_entry['name'][language_code] = localized_name
-        '''
-        feature_entry_json['name'] = generic_content.name
-        feature_entry_json['slug'] = self.get_generic_content_slug(generic_content)
-
+        features_json_entry = jsonbuilder.build_features_json_entry()
 
         # complete the settings_entry
         # one file per form, absolute path in webapp features.js
@@ -1554,10 +1509,10 @@ class AppReleaseBuilder(AppBuilderBase):
         
         relative_generic_content_filepath = os.path.join(relative_generic_content_folder, content_filename)
 
-        feature_entry_json['path'] = relative_generic_content_filepath
-        feature_entry_json['folder'] = relative_generic_content_folder
+        features_json_entry['path'] = relative_generic_content_filepath
+        features_json_entry['folder'] = relative_generic_content_folder
 
-        return feature_entry_json
+        return features_json_entry
         
 
     def get_generic_content_slug(self, generic_content):
@@ -1599,8 +1554,10 @@ class AppReleaseBuilder(AppBuilderBase):
     
     # one content dump per language OR one file for all languages
     # stores the json on disk
-    # adds feature_entry to features.js
-    def _add_generic_content_to_app(self, generic_content, generic_content_json, only_one_allowed=False, **kwargs):
+    # adds feature_entry to features.json
+    def _add_generic_content_to_app(self, app_generic_content, generic_content_json, only_one_allowed=False, **kwargs):
+
+        generic_content = app_generic_content.generic_content
 
         if only_one_allowed == True:
             generic_content_json['isMulticontent'] = False
@@ -1617,7 +1574,7 @@ class AppReleaseBuilder(AppBuilderBase):
             if not key in generic_content_json['options']:
                 generic_content_json['options'][key] = value
 
-        generic_content_type = kwargs.get('generic_content_type', generic_content.__class__.__name__)
+        generic_content_type = generic_content.__class__.__name__
 
         # first make the folder
         absolute_generic_content_folder = self._app_absolute_generic_content_path(generic_content, **kwargs)
@@ -1647,7 +1604,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         #get the json entry for features.js
-        feature_entry_json = self._get_feature_entry(generic_content, generic_content_type=generic_content_type)
+        feature_entry_json = self._get_features_json_entry(app_generic_content)
 
         if only_one_allowed == True:
             self.build_features[generic_content_type] = feature_entry_json
@@ -1685,7 +1642,7 @@ class AppReleaseBuilder(AppBuilderBase):
         alphabet_relative_path = os.path.join(relative_generic_content_path, 'alphabet')
         vernacular_relative_path = os.path.join(relative_generic_content_path, 'vernacular')
 
-        feature_entry = self._get_feature_entry(backbone_taxonomy)
+        feature_entry = self._get_features_json_entry(app_generic_content)
 
         feature_entry.update({
             'alphabet' : alphabet_relative_path, # a folder
@@ -1714,7 +1671,14 @@ class AppReleaseBuilder(AppBuilderBase):
             letters_taxa_merged = existing_letters_taxa + letters_taxa
 
             # remove duplicates
-            letters_taxa_distinct = [dict(t) for t in {tuple(d.items()) for d in letters_taxa_merged}]
+            letters_taxa_distinct = []
+            contained_name_uuids = []
+
+            for taxon_json in letters_taxa_merged:
+                
+                if taxon_json['nameUuid'] not in contained_name_uuids:
+                    letters_taxa_distinct.append(taxon_json)
+                    contained_name_uuids.append(taxon_json['nameUuid'])
             
             with open(letter_file, 'w', encoding='utf-8') as f:
                 json.dump(letters_taxa_distinct, f, indent=4, ensure_ascii=False)
@@ -1732,7 +1696,14 @@ class AppReleaseBuilder(AppBuilderBase):
         for language_code, vernacular_names_list in jsonbuilder.build_vernacular_names(self.use_gbif):
 
             # remove duplicates
-            vernacular_names_distinct = [dict(t) for t in {tuple(d.items()) for d in vernacular_names_list}]
+            vernacular_names_distinct = []
+            contained_name_uuids = []
+            #vernacular_names_distinct = [dict(t) for t in {tuple(d.items()) for d in vernacular_names_list}]
+            for taxon_json in vernacular_names_list:
+                
+                if taxon_json['nameUuid'] not in contained_name_uuids:
+                    vernacular_names_distinct.append(taxon_json)
+                    contained_name_uuids.append(taxon_json['nameUuid'])
 
             # sort vernacular names alphabetially
             sorted_vernacular_names_distinct = sorted(vernacular_names_distinct, key=lambda i: i['name'])
@@ -1767,7 +1738,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         # add profiles to settings the default way
-        feature_entry_json = self._get_feature_entry(taxon_profiles)
+        feature_entry_json = self._get_features_json_entry(app_generic_content)
         del feature_entry_json['path']
 
 
@@ -1909,7 +1880,7 @@ class AppReleaseBuilder(AppBuilderBase):
         jsonbuilder = self.get_json_builder(app_generic_content)
         generic_form_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(generic_form, generic_form_json)
+        self._add_generic_content_to_app(app_generic_content, generic_form_json)
 
 
     ###############################################################################################################
@@ -1930,7 +1901,7 @@ class AppReleaseBuilder(AppBuilderBase):
             
             self._add_to_locale(slugs, language_code)
 
-        self._add_generic_content_to_app(nature_guide, nature_guide_json)
+        self._add_generic_content_to_app(app_generic_content, nature_guide_json)
 
 
     ###############################################################################################################
@@ -1946,7 +1917,7 @@ class AppReleaseBuilder(AppBuilderBase):
         # only contains the primary language
         glossary_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(glossary, glossary_json, only_one_allowed=True)
+        self._add_generic_content_to_app(app_generic_content, glossary_json, only_one_allowed=True)
 
         generic_content_type = glossary.__class__.__name__
         self.build_features[generic_content_type]['localized'] = {}
@@ -2043,7 +2014,7 @@ class AppReleaseBuilder(AppBuilderBase):
         
         map_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(lc_map, map_json)
+        self._add_generic_content_to_app(app_generic_content, map_json)
 
 
     ###############################################################################################################
@@ -2054,6 +2025,7 @@ class AppReleaseBuilder(AppBuilderBase):
     # - respect features
     # 
     ###############################################################################################################
+    ''' moved to ContentImageBuilder
     def _save_content_image(self, content_image, absolute_path, relative_path, filename=None, size=None):
 
         if size == None:
@@ -2136,31 +2108,46 @@ class AppReleaseBuilder(AppBuilderBase):
         self.content_images_cache[key] = relative_image_filepath
 
         return relative_image_filepath
+    '''
 
 
-    def save_localized_content_image(self, localized_content_image, filename=None, size=None):
+    def build_localized_content_image(self, localized_content_image):
         
         language_code = localized_content_image.language_code
         
         absolute_path = self._app_localized_content_images_path(language_code)
         relative_path = self._app_relative_localized_content_images_path(language_code)
 
-        relative_filepath = self._save_content_image(localized_content_image, absolute_path, relative_path,
-                                                        filename=filename, size=size)
+        image_urls = self.content_image_builder.build_content_image(localized_content_image, absolute_path, relative_path)
 
-        return relative_filepath
+        return image_urls
 
 
-    def save_content_image(self, content_image, filename=None, size=None):
+    def build_content_image(self, content_image, image_sizes='regular'):
 
         absolute_path = self._app_content_images_path
         relative_path = self._app_relative_content_images_path
 
-        relative_filepath = self._save_content_image(content_image, absolute_path, relative_path, filename=filename,
-                                                        size=size)
+        image_urls = self.content_image_builder.build_content_image(content_image, absolute_path, relative_path,
+            image_sizes=image_sizes)
 
-        return relative_filepath
-        
+        if image_urls:
+
+            licence = content_image.image_store.licences.first()
+            if licence:
+                content_licence = licence.content_licence().as_dict()
+
+                registry_entry = {
+                    'creatorName' : licence.creator_name,
+                    'creatorLink' : licence.creator_link,
+                    'sourceLink' : licence.source_link,
+                    'licence' : content_licence,
+                }
+                
+                for size_name, image_url in image_urls.items():
+                    self.licence_registry['licences'][image_url] = registry_entry
+
+        return image_urls
 
     ###############################################################################################################
     # BUILDING WEBAPP

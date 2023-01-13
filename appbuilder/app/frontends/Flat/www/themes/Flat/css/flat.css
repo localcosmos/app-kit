@@ -37,18 +37,6 @@ html {
 	background-attachment: fixed;
 }
 
-@media (orientation: landscape) {
-	html {
-		background-image: url("../../../localcosmos/user_content/frontend/images/appPcBackground.webp"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appPcBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appPcBackground.svg");
-	}
-}
-
-@media (orientation: portrait) {
-	html {
-		background-image: url("../../../localcosmos/user_content/frontend/images/appPcBackground.webp"), url("../../../localcosmos/user_content/frontend/images/appBackground.png"), url( "../../../localcosmos/user_content/frontend/images/appBackground.jpg"), url("../../../localcosmos/user_content/frontend/images/appBackground.jpeg"), url("../../../localcosmos/user_content/frontend/images/appBackground.svg");
-	}
-}
-
 body {
 	background-color: transparent !important;
 	-webkit-touch-callout: none;                /* prevent callout to copy image, etc when tap to hold */
@@ -523,7 +511,6 @@ body {
 	background-size: auto 80%;
 	background-repeat: no-repeat;
 	background-position: center center;
-	background-image: url("../../../localcosmos/user_content/frontend/images/logo.png"), url( "../../../localcosmos/user_content/frontend/images/logo.jpg"), url("../../../localcosmos/user_content/frontend/images/logo.jpeg"), url("../../../localcosmos/user_content/frontend/images/logo.svg");
 }
 
 
@@ -533,7 +520,6 @@ body {
 	height: 30px;
 	background-size: contain;
 	background-position: center center;
-	background-image: url("../../../localcosmos/user_content/frontend/images/logo.png"), url( "../../../localcosmos/user_content/frontend/images/logo.jpg"), url("../../../localcosmos/user_content/frontend/images/logo.jpeg"), url("../../../localcosmos/user_content/frontend/images/logo.svg");
 }
 
 .image-text {

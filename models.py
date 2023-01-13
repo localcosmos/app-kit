@@ -7,7 +7,6 @@ matplotlib.use('Agg')
 #mplstyle.use('fast')
 import matplotlib.pyplot as plt
 
-import io
 from django.conf import settings
 from django.db import connection, models
 from django.contrib.contenttypes.models import ContentType
@@ -19,10 +18,7 @@ from django.urls import reverse
 
 from django.contrib.contenttypes.fields import GenericRelation
 
-import os
-import io
-import json
-import hashlib
+import os, io, json, numpy, cv2
 
 from django.template.defaultfilters import slugify  # package_name
 
@@ -42,7 +38,7 @@ from app_kit.app_kit_api.models import AppKitJobs
 
 from localcosmos_server.models import App, SecondaryAppLanguages
 
-from PIL import Image, ImageFile
+from PIL import Image, ImageFile, ImageColor
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # draw features on image
@@ -849,9 +845,43 @@ class ContentImageCommon(ContentImageProcessing):
 
         return name_initials
 
-    # add features to a square pil canvas, return a buffer
 
+    # plotting features using opencv
+    # opencv is much faster than matplotlib
     def plot_features(self, pil_image):
+        
+        numpy_array = numpy.array(pil_image)
+
+        opencv_image = cv2.cvtColor(numpy_array, cv2.COLOR_RGB2BGR)
+
+        if self.features:
+            for feature in self.features:
+
+                if feature['type'] == 'arrow':
+
+                    arrow = feature
+
+                    initial_point = (arrow['initialPoint']['x'], arrow['initialPoint']['y'])
+                    terminal_point = (arrow['terminalPoint']['x'], arrow['terminalPoint']['y'])
+
+                    linewidth = self.get_arrow_stroke_width()
+
+                    # color in bgr
+                    # color is #123456
+                    hex_color = arrow['color']
+                    rgb_color = ImageColor.getcolor(hex_color, "RGB")
+                    bgr_color = (rgb_color[2], rgb_color[1], rgb_color[0])
+
+                    cv2.arrowedLine(opencv_image, initial_point, terminal_point, bgr_color, round(linewidth))
+
+        # encode
+        is_success, buffer = cv2.imencode(".png", opencv_image)
+        io_buf = io.BytesIO(buffer)
+
+        return io_buf
+
+    # add features to a square pil canvas, return a buffer
+    def plot_features_matplotlib(self, pil_image):
 
         width, height = pil_image.size
 
@@ -937,7 +967,7 @@ class ContentImageCommon(ContentImageProcessing):
                     head_width = linewidth * 3
 
                     plt.arrow(arrow['initialPoint']['x'], arrow['initialPoint']['y'], dx, dy, linewidth=linewidth,
-                              head_width=head_width, head_length=head_width, fill=True, length_includes_head=True, color=arrow["color"])
+                              head_width=head_width, head_length=head_width, fill=True, length_includes_head=True, color=arrow['color'])
 
         # plot name initials
         # plot creator on image

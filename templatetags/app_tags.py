@@ -25,7 +25,6 @@ def get_build_parameters():
 from django.contrib.contenttypes.models import ContentType
 from taxonomy.lazy import LazyTaxon
 
-from localcosmos_server.templatetags.localcosmos_tags import get_taxonomic_restriction_context
 
 @register.filter
 def verbose_name(obj):

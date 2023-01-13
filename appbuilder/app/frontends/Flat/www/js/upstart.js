@@ -15,107 +15,111 @@ var upstart = {
 
 			self._load_features(function(){
 
-				// disable context menus, especially on Android
-				if (device.platform != "browser"){
-					window.oncontextmenu = function(event) {
-						event.preventDefault();
-						event.stopPropagation();
-						return false;
-					};
-				}
+				self._load_frontend(function(){
 
-				// localize from a json dict
-				Handlebars.registerHelper('localize', function (obj) {
-					var result = obj[app.language];
-					return new Handlebars.SafeString(result);
-				});
-
-				Handlebars.registerHelper('vernacular', function (i18n_key) {
-
-					// ȵ is the namespace separator
-					var lookup_key = 'plainȵ' + i18n_key;
-
-					var result = i18next.t(lookup_key);
-
-					if (result == i18n_key){
-						return "";
+					// disable context menus, especially on Android
+					if (device.platform != "browser"){
+						window.oncontextmenu = function(event) {
+							event.preventDefault();
+							event.stopPropagation();
+							return false;
+						};
 					}
-					return new Handlebars.SafeString(result);
-				});
-				
-				
-				Handlebars.registerHelper('stringify', function (json) {
 
-					let json_string = JSON.stringify(json);
+					// localize from a json dict
+					Handlebars.registerHelper('localize', function (obj) {
+						var result = obj[app.language];
+						return new Handlebars.SafeString(result);
+					});
+
+					Handlebars.registerHelper('vernacular', function (i18n_key) {
+
+						// ȵ is the namespace separator
+						var lookup_key = 'plainȵ' + i18n_key;
+
+						var result = i18next.t(lookup_key);
+
+						if (result == i18n_key){
+							return "";
+						}
+						return new Handlebars.SafeString(result);
+					});
 					
-					return new Handlebars.SafeString(json_string);
-				});
+					
+					Handlebars.registerHelper('stringify', function (json) {
 
-				Handlebars.registerHelper('date', function (date_obj) {
-					if (!date_obj){
-						return '';
+						let json_string = JSON.stringify(json);
+						
+						return new Handlebars.SafeString(json_string);
+					});
+
+					Handlebars.registerHelper('date', function (date_obj) {
+						if (!date_obj){
+							return '';
+						}
+						return new Handlebars.SafeString(date_obj.toLocaleDateString());
+					});
+
+					Handlebars.registerHelper('verbose_datetime', function (str) {
+
+						var date = new Date(str);
+
+						return new Handlebars.SafeString(date.toLocaleString());
+					});
+
+					// first check requirements
+					if ("GenericForm" in app_features || "ButtonMatrix" in app_features){
+						app.requires_geolocation = true;	
 					}
-					return new Handlebars.SafeString(date_obj.toLocaleDateString());
-				});
 
-				Handlebars.registerHelper('verbose_datetime', function (str) {
+					self._load_theme(function(){
 
-					var date = new Date(str);
+						console.log("[UPSTART] theme initialized");
 
-					return new Handlebars.SafeString(date.toLocaleString());
-				});
+						document.title = settings.NAME;
 
-				// first check requirements
-				if ("GenericForm" in app_features || "ButtonMatrix" in app_features){
-					app.requires_geolocation = true;	
-				}
+						self._load_language(function(){
 
-				self._load_theme(function(){
+							self._load_handlebars_helpers();
 
-					console.log("[UPSTART] theme initialized");
+							self._render_skeleton(function(){
 
-					document.title = settings.NAME;
+								// load ModalDialog immediately after the skeleton
+								window.modalDialog = ModalDialog.create("ModalDialog");
 
-					self._load_language(function(){
+								// load ModalProgress
+								window.modalProgress = ModalProgress.create("ModalProgress");
 
-						self._load_handlebars_helpers();
+								// observation forms
+								if ("GenericForm" in app_features){
+									self._init_observation_forms();
+								}
 
-						self._render_skeleton(function(){
+								// init geolocation
+								if (app.requires_geolocation == true){
+									AppGeolocation.start_watching();
+								}
 
-							// load ModalDialog immediately after the skeleton
-							window.modalDialog = ModalDialog.create("ModalDialog");
+								self._load_mango(function(){
 
-							// load ModalProgress
-							window.modalProgress = ModalProgress.create("ModalProgress");
+									// sponsors require mango.storage
+									//self._load_sponsors();
 
-							// observation forms
-							if ("GenericForm" in app_features){
-								self._init_observation_forms();
-							}
+									// sidemenu requires mango_session.user
+									load_sidemenu();
 
-							// init geolocation
-							if (app.requires_geolocation == true){
-								AppGeolocation.start_watching();
-							}
+									// load the template
+									//load_footer_sponsors();
 
-							self._load_mango(function(){
+									console.log("[UPSTART] finished loading LC app");
 
-								// sponsors require mango.storage
-								//self._load_sponsors();
+								});
 
-								// sidemenu requires mango_session.user
-								load_sidemenu();
+							});	
 
-								// load the template
-								//load_footer_sponsors();
-
-								console.log("[UPSTART] finished loading LC app");
-
-							});
-
-						});	
-
-					});		
+						});
+						
+					});
 
 				});
 
@@ -155,6 +159,37 @@ var upstart = {
 			for (let key in features){
 				app_features[key] = features[key];
 			}
+
+			callback();
+		});
+	},
+
+	_load_frontend : function(callback){
+		var path = app_features["Frontend"]["path"];
+		ajax.getJSON(path, {}, function(frontend){
+
+			const style = document.createElement('style');
+			style.innerHTML = `@media (orientation: landscape) { 
+				html {	
+					background-image: url('${frontend.userContent.images.appPcBackground.imageUrl['8x']}');
+				}
+			}
+			@media (orientation: portrait) {
+				html {
+					background-image: url('${frontend.userContent.images.appBackground.imageUrl['8x']}');
+				}
+			}
+			.logo-home > div {
+				background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
+
+			}
+			.navbar-logo {
+				background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
+
+			}
+			`;
+
+			document.head.appendChild(style);
 
 			callback();
 		});

@@ -11,7 +11,7 @@
 							{{# if node.overviewImage}}
 							<div id="overview-images" class="row mt-3 justify-content-center">
 
-									<div class="tap" data-hd-url="{{node.overviewImage}}" data-image-url="{{node.overviewImage}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="overview-images">
+									<div class="tap" data-hd-url="{{node.overviewImage.8x}}" data-image-url="{{node.overviewImage.4x}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="overview-images">
 										<img id="overview-img" class="overview-img"  src="/img/overview-round.svg" />
 									</div>
 
@@ -53,12 +53,12 @@
 													<div class="trait-property dtai">
 														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
 														<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
-															<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl}}{{else}}img/noimage.svg{{/if}}')"></div>
+															<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl.2x}}{{else}}img/noimage.svg{{/if}}')"></div>
 															
 														</label>
 														{{#if secondaryImageUrl}}
 															<div class="secondary-image">
-																<img class="secondary-dtai-image tap" action="switchImage" src="{{secondaryImageUrl}}" data-primary-image-id="{{../uuid}}-{{encodedSpace}}-primary-image" data-primary-image-url="{{ imageUrl }}" data-secondary-image-url="{{ secondaryImageUrl }}" />
+																<img class="secondary-dtai-image tap" action="switchImage" src="{{secondaryImageUrl.2x}}" data-primary-image-id="{{../uuid}}-{{encodedSpace}}-primary-image" data-primary-image-url="{{ imageUrl.2x }}" data-secondary-image-url="{{ secondaryImageUrl.2x }}" />
 															</div>
 														{{/if}}
 														<div class="trait-property-text dtai text-center p-1">{{t encodedSpace}}</div>

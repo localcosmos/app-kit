@@ -33,7 +33,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         include_full_tree = backbone_taxonomy.include_full_tree()
 
         if include_full_tree:
-            raise ValueError('Fulltree not coded yet')
+            raise ValueError('Fulltree support not implemented yet')
 
         else:
             # respect taxon_include_descendants, using the lazytaxon.descendants() method
@@ -157,7 +157,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                 name_uuid = vernacular_dic['nameUuid']
 
                 if vernacular_name not in occurred_names:
-                    vernacular_dic['imageUrl'] = self.get_image_url_for_lazy_taxon(lazy_taxon)
+                    vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_taxon)
                     vernacular_names.append(vernacular_dic)
                     occurred_names[vernacular_name] = vernacular_dic['nameUuid']
 
@@ -171,14 +171,14 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         if vernacular_name:
 
             vernacular_dic = self._create_taxon_json_from_lazy_taxon(lazy_taxon, use_gbif)
-            vernacular_dic['imageUrl'] = self.get_image_url_for_lazy_taxon(lazy_taxon)
+            vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_taxon)
             vernacular_dic['name'] = vernacular_name
 
             return vernacular_dic
 
         return None
 
-    def get_image_url_for_lazy_taxon(self, lazy_taxon):
-        return self.app_release_builder._get_image_url_for_lazy_taxon(lazy_taxon)
+    def get_image_urls_for_lazy_taxon(self, lazy_taxon):
+        return self.app_release_builder._get_image_urls_for_lazy_taxon(lazy_taxon)
 
 

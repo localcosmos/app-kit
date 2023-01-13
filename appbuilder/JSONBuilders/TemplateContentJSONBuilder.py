@@ -48,8 +48,8 @@ class TemplateContentJSONBuilder(JSONBuilder):
             image_type = '{0}{1}'.format(PUBLISHED_IMAGE_TYPE_PREFIX, content_key)
 
             if content_definition['type'] == 'image':
-                image_url = self._get_image_url(localized_template_content, image_type=image_type)
-                content_json['contents'][content_key]['value']['imageUrl'] = image_url
+                image_urls = self._get_image_urls(localized_template_content, image_type=image_type)
+                content_json['contents'][content_key]['value']['imageUrl'] = image_urls
 
 
             elif content_definition['type'] == 'multi-image':
@@ -57,12 +57,12 @@ class TemplateContentJSONBuilder(JSONBuilder):
                 value = []
                 content_images = localized_template_content.images(image_type=image_type)
                 for content_image in content_images:
-                    image_url = self.app_release_builder.save_content_image(content_image)
+                    image_urls = self.app_release_builder.build_content_image(content_image)
                     licence = content_image.image_store.licences.first()
                     licence_serializer = ContentLicenceSerializer(licence)
 
                     image_json = {
-                        'imageUrl' : image_url,
+                        'imageUrl' : image_urls,
                         'licence' : licence_serializer.data,
                     }
 

@@ -25,8 +25,8 @@
 				{{#each taxon_profile.images.taxonProfileImages}}
 					{{#if smallUrl}}
 						<div class="col-4 col-md-3 col-lg-2">
-							<div class="tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-								<img src="{{smallUrl}}" class="img-fluid" />
+							<div class="tap" data-hd-url="{{imageUrl.4x}}" data-image-url="{{imageUrl.2x}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+								<img src="{{imageUrl.1x}}" class="img-fluid" />
 							</div>
 							{{#if text}}
 								<div class="image-text">
@@ -40,8 +40,8 @@
 			{{#if taxon_profile.images.nodeImages}}
 				{{#each taxon_profile.images.nodeImages}}
 					{{#if smallUrl}}
-						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-							<img src="{{smallUrl}}" class="img-fluid" />
+						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{imageUrl.4x}}" data-image-url="{{imageUrl.2x}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{imageUrl.1x}}" class="img-fluid" />
 						</div>
 					{{/if}}
 				{{/each}}
@@ -49,8 +49,8 @@
 			{{#if taxon_profile.images.taxonImages}}
 				{{#each taxon_profile.images.taxonImages}}
 					{{#if smallUrl}}
-						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{largeUrl}}" data-image-url="{{imageUrl}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
-							<img src="{{smallUrl}}" class="img-fluid" />
+						<div class="col-4 col-md-3 col-lg-2 tap" data-hd-url="{{imageUrl.4x}}" data-image-url="{{imageUrl.2x}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="taxon-profile-images">
+							<img src="{{imageUrl.1x}}" class="img-fluid" />
 						</div>
 					{{/if}}
 				{{/each}}
@@ -128,7 +128,7 @@
 													<div class="col-12 col-md-6">
 														<div class="trait-property">
 															<label class="text-center">
-																<div class="square responsiveback" style="background-image:url('{{imageUrl}}')"></div>
+																<div class="square responsiveback" style="background-image:url('{{imageUrl.2x}}')"></div>
 																<div class="trait-property-text">{{tp encodedSpace}}</div>
 															</label>
 														</div>

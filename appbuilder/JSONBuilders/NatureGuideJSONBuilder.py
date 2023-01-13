@@ -11,6 +11,29 @@ from django.utils.text import slugify
 class NatureGuideJSONBuilder(JSONBuilder):
 
 
+    def build_features_json_entry(self):
+        features_json_entry = super().build_features_json_entry()
+
+
+        image_urls = None
+
+        content_image = self.generic_content.image()
+        if content_image:
+            image_urls = self.app_release_builder.build_content_image(content_image)
+
+        features_json_entry['imageUrl'] = image_urls
+
+        start_node = NatureGuidesTaxonTree.objects.get(nature_guide=self.generic_content, meta_node__node_type='root')
+        features_json_entry['startNodeUuid'] = str(start_node.name_uuid)
+
+        start_node_slug = self.get_localized_slug(self.app_release_builder, self.meta_app.primary_language,
+            start_node.id, start_node.meta_node.name)
+        
+        features_json_entry['startNodeSlug'] = start_node_slug
+
+        return features_json_entry
+
+
     def build(self):
 
         self.nature_guide_json = self._build_common_json()
@@ -24,7 +47,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             'crosslinks' : nature_guide.crosslinks(),
             'startNodeUuid' : str(start_node.name_uuid),
             'slugs' : {},
-            'imageUrl' : self._get_image_url(nature_guide)
+            'imageUrl' : self._get_image_urls(nature_guide)
         })
 
         # iterate over all parent nodes
@@ -51,6 +74,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 
+            # the overview image should not be square
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
                 'name' : parent_node.meta_node.name,
@@ -59,7 +83,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'matrixFilters' : {},
                 'identificationMode' : identification_mode,
                 'slug' : primary_locale_slug,
-                'overviewImage' : self._get_image_url(parent_node.meta_node, image_type='overview', size=(1500,1500)),
+                'overviewImage' : self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes='large'),
             }            
 
             if parent_node.meta_node.taxon:
@@ -126,7 +150,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 child_json = {
                     'uuid' : str(child.name_uuid),
                     'nodeType' : child.meta_node.node_type,
-                    'imageUrl' : self._get_image_url(child.meta_node),
+                    'imageUrl' : self._get_image_urls(child.meta_node),
                     'space' : child_space,
                     'maxPoints' : child_max_points,
                     'isPossible' : True,
@@ -443,12 +467,12 @@ class MatrixFilterSpaceListSerializer:
                 }
 
                 if simple == False:
-                    space_json['imageUrl'] = self.jsonbuilder._get_image_url(subspace)
+                    space_json['imageUrl'] = self.jsonbuilder._get_image_urls(subspace)
 
                     secondary_image = self.jsonbuilder._get_content_image(subspace, image_type='secondary')
 
                     if secondary_image:
-                        space_json['secondaryImageUrl'] = self.jsonbuilder._get_image_url(subspace, image_type='secondary')
+                        space_json['secondaryImageUrl'] = self.jsonbuilder._get_image_urls(subspace, image_type='secondary')
                     else:
                         space_json['secondaryImageUrl'] = None
                 

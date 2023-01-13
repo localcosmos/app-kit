@@ -9,6 +9,8 @@ from app_kit.features.taxon_profiles.models import TaxonProfile
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace, MetaNode,
                                                    NatureGuide)
 
+from app_kit.features.generic_forms.models import GenericForm
+
 from app_kit.models import ContentImage, MetaAppGenericContent
 
 from localcosmos_server.template_content.models import TemplateContent
@@ -109,7 +111,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             },
             'synonyms' : [],
             'gbifNubKey' : None,
-            'templateContents' : []
+            'templateContents' : [],
+            'genericForms' : self.collect_usable_generic_forms(profile_taxon),
         }
 
         synonyms = profile_taxon.synonyms()
@@ -487,9 +490,69 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         image_entry = {
             'text': content_image_mixedin.text,
-            'imageUrl' : self._get_image_url(content_image_mixedin),
-            'smallUrl' : self._get_image_url(content_image_mixedin, size=self.small_image_size),
-            'largeUrl' : self._get_image_url(content_image_mixedin, size=self.large_image_size),
+            'imageUrl' : self._get_image_urls(content_image_mixedin),
         }
 
         return image_entry
+
+
+    def collect_usable_generic_forms(self, profile_taxon):
+
+        usable_forms = []
+
+        forms_with_nuid = []
+        forms_without_nuid = []
+
+        generic_forms_type = ContentType.objects.get_for_model(GenericForm)
+        generic_form_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app, content_type=generic_forms_type)
+
+        for link in generic_form_links:
+            generic_form = link.generic_content
+            taxonomic_restrictions = self.get_taxonomic_restriction(generic_form)
+
+            generic_form_for_sorting = {
+                'uuid' : str(generic_form.uuid),
+                'generic_form' : generic_form,
+                'taxonNuid' : None,
+                'taxonomicRestrictions' : taxonomic_restrictions
+            }
+
+            if taxonomic_restrictions:
+                for taxonomic_restriction in taxonomic_restrictions:
+                    if taxonomic_restriction['taxonSource'] == profile_taxon.taxon_source and profile_taxon.taxon_nuid.startswith(taxonomic_restriction['taxonNuid']):
+                        generic_form_for_sorting['taxonNuid'] = taxonomic_restriction['taxonNuid']
+                        forms_with_nuid.append(generic_form_for_sorting)
+                        break
+            else:
+                forms_without_nuid.append(generic_form_for_sorting)
+
+
+        sorted_forms_with_nuid = sorted(forms_with_nuid, key=lambda d: d['taxonNuid'], reverse=True)
+
+        for generic_form_for_sorting in sorted_forms_with_nuid:
+            generic_form_json = self._get_generic_form_entry(generic_form_for_sorting)
+            usable_forms.append(generic_form_json)
+
+        for generic_form_for_sorting in forms_without_nuid:
+            generic_form_json = self._get_generic_form_entry(generic_form_for_sorting)
+            usable_forms.append(generic_form_json)
+        
+        return usable_forms
+
+    def _get_generic_form_entry(self, generic_form_for_sorting):
+
+        generic_form = generic_form_for_sorting['generic_form']
+
+        generic_form_json = {
+            'uuid': str(generic_form.uuid),
+            'name': generic_form.name,
+            'slug': self.app_release_builder.get_generic_content_slug(generic_form),
+            'isDefault': False,
+            'taxonomicRestrictions' : generic_form_for_sorting['taxonomicRestrictions']
+        }
+
+        is_default = generic_form.get_option(self.meta_app, 'is_default')
+        if is_default:
+            generic_form_json['isDefault'] = True
+
+        return generic_form_json

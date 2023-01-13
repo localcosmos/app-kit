@@ -12,11 +12,11 @@
     {{{ data.contents.addendum.value }}}
 
     <h4>An Image:</h4>
-    <img src="{{ data.contents.titleImage.value.imageUrl }}" class="img-thumbnail" />
+    <img src="{{ data.contents.titleImage.value.imageUrl.2x }}" class="img-thumbnail" />
 
     <h4>Multiple images:</h4>
     {{#each data.contents.images.value }}
-        <img src="{{ this.imageUrl }}" class="img-thumbnail"/>
+        <img src="{{ this.imageUrl.2x }}" class="img-thumbnail"/>
     {{/each}}
 
 </div>

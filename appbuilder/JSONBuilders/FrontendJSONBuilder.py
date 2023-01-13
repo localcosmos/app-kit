@@ -51,14 +51,14 @@ class FrontendJSONBuilder(JSONBuilder):
                 absolute_path = self.app_release_builder._app_absolute_frontend_images_path
                 relative_path = self.app_release_builder._app_relative_frontend_images_path
 
-                
-                filename = '{0}{1}'.format(image_type, ext)
-                relative_content_image_url = self.app_release_builder._save_content_image(content_image, absolute_path,
-                                            relative_path, filename, size=2000)
+                image_urls = self.app_release_builder.content_image_builder.build_content_image(content_image, absolute_path,
+                                            relative_path, image_sizes='all')
             else:
-                relative_content_image_url = None
+                image_urls = None
             
-            frontend_json['userContent']['images'][image_type] = relative_content_image_url
+            frontend_json['userContent']['images'][image_type] = {
+                'imageUrl' : image_urls,
+            }
 
         return frontend_json
 

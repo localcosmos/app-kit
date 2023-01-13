@@ -43,7 +43,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         entry_json = {
             'definition' : glossary_entry.definition,
             'synonyms' : synonyms,
-            'imageUrl' : self._get_image_url(glossary_entry),
+            'imageUrl' : self._get_image_urls(glossary_entry),
         }
 
         return entry_json

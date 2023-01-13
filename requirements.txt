@@ -11,3 +11,5 @@ localcosmos_cordova_builder
 xlrd==1.2.0
 openpyxl==3.0.3
 deepl
+opencv-python
+opencv-python-headless

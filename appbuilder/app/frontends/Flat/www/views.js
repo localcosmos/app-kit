@@ -275,8 +275,7 @@ var Home = View(TemplateView, {
 		Home.super().get_context_data(self, kwargs, function(context){
 
 			_get_categories(function(categories){
-				context["categories"] = categories;
-				
+				context["categories"] = categories;				
 				callback(context);
 			});
 		

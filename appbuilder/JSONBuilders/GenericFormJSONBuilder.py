@@ -11,6 +11,15 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericField, Ge
 '''
 class GenericFormJSONBuilder(JSONBuilder):
 
+    def build_features_json_entry(self):
+        
+        features_json_entry = super().build_features_json_entry()
+
+        taxonomic_restrictions = self.get_taxonomic_restriction(self.generic_content)
+        features_json_entry['taxonomicRestrictions'] = taxonomic_restrictions
+
+        return features_json_entry
+
     
     def build(self):
 
@@ -24,11 +33,11 @@ class GenericFormJSONBuilder(JSONBuilder):
 
     def _add_json_fields(self, generic_form, generic_form_json):
 
-        taxonomic_restriction = self.get_taxonomic_restriction(generic_form)
+        taxonomic_restrictions = self.get_taxonomic_restriction(generic_form)
 
         generic_form_json.update({
             'fields' : [],
-            'taxonomicRestrictions' : taxonomic_restriction,
+            'taxonomicRestrictions' : taxonomic_restrictions,
         })
 
         field_links = GenericFieldToGenericForm.objects.filter(generic_form=generic_form).order_by('position')
