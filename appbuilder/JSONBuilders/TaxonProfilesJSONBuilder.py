@@ -114,7 +114,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'gbifNubKey' : None,
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
-            'tags' : [tag.name for tag in db_profile.tags.all()]
+            'tags' : [],
         }
 
         synonyms = profile_taxon.synonyms()
@@ -142,6 +142,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         collected_image_store_ids = set([])
         # get taxon_profile_images
         if db_profile:
+
+            taxon_profile_json['tags'] = [tag.name for tag in db_profile.tags.all()]
 
             taxon_profile_images = db_profile.images().order_by('position')
 
