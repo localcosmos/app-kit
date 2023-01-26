@@ -50,7 +50,7 @@ class TestManageBackboneTaxonomy(ViewTestMixin, WithAdminOnly, WithLoggedInUser,
     def test_get_context_data(self):
 
         view = self.get_view()
-        self.assertFalse(view.request.is_ajax())
+        self.assertFalse(view.request.headers.get('x-requested-with') == 'XMLHttpRequest')
         view.meta_app = self.meta_app
         view.generic_content = self.generic_content
         view.generic_content_type = self.content_type
@@ -68,7 +68,7 @@ class TestManageBackboneTaxonomy(ViewTestMixin, WithAdminOnly, WithLoggedInUser,
     def test_context_data_ajax(self):
 
         view = self.get_view(ajax=True)
-        self.assertTrue(view.request.is_ajax())
+        self.assertTrue(view.request.headers.get('x-requested-with') == 'XMLHttpRequest')
 
         view.meta_app = self.meta_app
         view.generic_content = self.generic_content

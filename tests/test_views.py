@@ -1,34 +1,35 @@
 from django.test import RequestFactory
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 from django.urls import reverse
 
-from app_kit.tests.common import test_settings, TEST_BACKGROUND_IMAGE_PATH
+from app_kit.tests.common import test_settings
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, WithImageStore, WithFormTest, ViewTestMixin,
-                                  WithMedia)
+                                  WithMedia, WithPublicDomain)
 
 from app_kit.views import (TenantPasswordResetView, CreateGenericContent, CreateApp, GetAppCard,
             AppLimitReached, DeleteApp, CreateGenericAppContent, GetGenericContentCard, ManageGenericContent,
             EditGenericContentName, ManageApp, TranslateApp, BuildApp, StartNewAppVersion,
             AddExistingGenericContent, ListManageApps, RemoveAppGenericContent, ManageAppLanguages,
             DeleteAppLanguage, AddTaxonomicRestriction, RemoveTaxonomicRestriction, ManageContentImageMixin,
-            ManageContentImage, ManageContentImageWithText, DeleteContentImage,
-            StoreObjectOrder, MockButton, DeleteLocalizedContentImage,
+            ManageContentImage, ManageContentImageWithText, DeleteContentImage, ReloadTags,
+            StoreObjectOrder, MockButton, DeleteLocalizedContentImage, TagAnyElement,
             ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
             ManageLocalizedContentImage)
 
 from app_kit.forms import (CreateGenericContentForm, CreateAppForm, EditGenericContentNameForm,
                            TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm,
-                           ManageContentImageForm, ManageContentImageWithTextForm)
+                           ManageContentImageForm, ManageContentImageWithTextForm, TagAnyElementForm)
 
 from app_kit.models import MetaApp, MetaAppGenericContent, ContentImage, LocalizedContentImage
 from app_kit.features.nature_guides.models import NatureGuide
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
 from app_kit.features.generic_forms.models import GenericForm, GenericField, GenericFieldToGenericForm
+from app_kit.features.frontend.models import Frontend
+from app_kit.features.taxon_profiles.models import TaxonProfile, TaxonProfiles
 
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
@@ -205,6 +206,7 @@ class TestCreateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser
             'input_language' : 'en',
             'primary_language' : 'en',
             'subdomain' : 'testapp',
+            'frontend' : 'Flat',
         }
 
         form = CreateAppForm(post_data)
@@ -250,6 +252,7 @@ class TestCreateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser
             'input_language' : 'en',
             'primary_language' : 'en',
             'subdomain' : 'testapp',
+            'frontend' : 'Flat',
         }
 
         form = CreateAppForm(post_data)
@@ -313,13 +316,13 @@ class TestDeleteApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser
         
 
     @test_settings
-    def test_delete(self):
+    def test_post(self):
 
         meta_app_id = self.meta_app.pk
 
         view = self.get_view()
-
-        response = view.delete(view.request)
+        view.request.method = 'POST'
+        response = view.post(view.request, **view.kwargs)
         self.assertEqual(response.status_code, 200)
 
         exists = MetaApp.objects.filter(pk=meta_app_id).exists()
@@ -879,6 +882,10 @@ class TestBuildApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
 
     url_name = 'build_app'
     view_class = BuildApp
+
+    def setUp(self):
+        super().setUp()
+        self.create_public_domain()
 
     def get_url_kwargs(self):
         url_kwargs = {
@@ -2323,3 +2330,176 @@ class TestDeleteLocalizedContentimage(ViewTestMixin, WithAjaxAdminOnly, WithLogg
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['content_image'], self.content_image)
         self.assertEqual(context['language_code'], self.language_code)
+
+
+class TestTagAnyElement(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
+            WithUser, WithTenantClient, WithMetaApp, WithFormTest, TenantTestCase):
+
+    url_name = 'tag_any_element'
+    view_class = TagAnyElement
+    
+    def setUp(self):
+        super().setUp()
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        taxon_profiles_link = MetaAppGenericContent.objects.get(content_type=taxon_profiles_ctype)
+        self.taxon_profiles = taxon_profiles_link.generic_content
+
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=self.taxon_profiles,
+            taxon=lazy_taxon,
+        )
+
+        self.taxon_profile.save()
+
+        self.content_type = ContentType.objects.get_for_model(TaxonProfile)
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.taxon_profile.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+
+        view = super().get_view()
+        view.set_content_object(**view.kwargs)
+    
+        return view
+
+    @test_settings
+    def test_set_content_object(self):
+        
+        view = super().get_view()
+        view.set_content_object(**view.kwargs)
+
+        self.assertEqual(view.content_type, self.content_type)
+        self.assertEqual(view.content_object, self.taxon_profile)
+
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertEqual(context['content_object'], self.taxon_profile)
+
+
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        initial = view.get_initial()
+        self.assertEqual(list(initial['tags']), [])
+
+        self.taxon_profile.tags.add('Neobiota')
+
+        initial = view.get_initial()
+
+        self.assertEqual([tag.name for tag in initial['tags']], ['Neobiota'])
+
+
+    @test_settings
+    def test_form_valid(self):
+        
+        post_data = {
+            'tags' : 'neobiota, stuff',
+        }
+
+        form = TagAnyElementForm(data=post_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        view = self.get_view()
+
+        response = view.form_valid(form)
+
+        self.assertEqual(response.status_code, 200)
+
+        tags = [tag.name for tag in self.taxon_profile.tags.all()]
+        self.assertEqual(set(tags), set(['neobiota', 'stuff']))
+
+        # remove one tag
+        post_data = {
+            'tags' : ' neobiota ',
+        }
+
+        form = TagAnyElementForm(data=post_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        view = self.get_view()
+
+        response = view.form_valid(form)
+
+        tags = [tag.name for tag in self.taxon_profile.tags.all()]
+        self.assertEqual(set(tags), set(['neobiota']))
+
+        # remove all tags
+        post_data = {
+            'tags' : '',
+        }
+
+        form = TagAnyElementForm(data=post_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        view = self.get_view()
+
+        response = view.form_valid(form)
+
+        tags = [tag.name for tag in self.taxon_profile.tags.all()]
+        self.assertEqual(tags, [])
+
+
+
+class TestReloadTags(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
+            WithUser, WithTenantClient, WithMetaApp, WithFormTest, TenantTestCase):
+
+    url_name = 'reload_tags'
+    view_class = ReloadTags
+    
+    def setUp(self):
+        super().setUp()
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        taxon_profiles_link = MetaAppGenericContent.objects.get(content_type=taxon_profiles_ctype)
+        self.taxon_profiles = taxon_profiles_link.generic_content
+
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=self.taxon_profiles,
+            taxon=lazy_taxon,
+        )
+
+        self.taxon_profile.save()
+
+        self.content_type = ContentType.objects.get_for_model(TaxonProfile)
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.taxon_profile.id,
+        }
+        return url_kwargs
+
+

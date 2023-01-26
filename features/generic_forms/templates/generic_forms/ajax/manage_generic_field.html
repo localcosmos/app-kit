@@ -9,80 +9,46 @@
 
 {% block body %}
 	<p>
-		{% for formfield in form %}
+		{% for field in form %}
 			
-			{% if formfield.name == "is_required" %}
+			{% if field.name == "is_required" %}
 				<div class="row">
 					<div class="col-6">
 						{% if generic_field_class != "MultipleChoiceField" %}
-							{% render_bootstrap_field formfield %}
+							{% render_bootstrap_field field %}
 						{% endif %}
 					</div>
-
-			{# elif formfield.name == "is_sticky" #}
-					<!--<div class="col-6">
-						{# render_bootstrap_field formfield #}
-					</div>-->
 				</div>
 					
-					{% if generic_field_class == "ChoiceField" or generic_field_class == "MultipleChoiceField" %}
-						{% if generic_field %}
-							<div id="fieldchoices-{{ generic_field.id }}">
-								{% include 'generic_forms/ajax/manage_generic_field_choices.html' %}
-							</div>
-						{% else %}
-							<div class="alert alert-info">
-								{% trans 'HINT: Choices can be added after you have saved the label.' %}
-							</div>
-						{% endif %}
-					{% endif %}
-	
-			{% elif formfield.name == "min_value" %}
-				
-				{% if generic_field_class == "IntegerField" or generic_field_class == "FloatField" or generic_field_class == "DecimalField" %}
+				{% if generic_field_class == "ChoiceField" or generic_field_class == "MultipleChoiceField" %}
 					<div class="row">
-						<div class="col-4">
-							{% render_bootstrap_field formfield %}
-						</div>
-				{% endif %}
-			{% elif formfield.name == "max_value" %}
-				{% if generic_field_class == "IntegerField" or generic_field_class == "FloatField" or generic_field_class == "DecimalField" %}
-						<div class="col-4">
-							{% render_bootstrap_field formfield %}
-						</div>
-					{% if not generic_field_class == 'DecimalField' %}
-					</div>
-					{% endif %}
-				{% endif %}
-			{% elif formfield.name == "decimal_places" %}
-				{% if generic_field_class == 'DecimalField' %}
-						<div class="col-4">
-							{% render_bootstrap_field formfield %}
-						</div>
-					</div>
-				{% endif %}
-			{% elif formfield.name == "step" %}
-				{% if generic_field_class == 'DecimalField' or generic_field_class == 'IntegerField' or generic_field_class == 'FloatField' %}
-					<div class="row">
-						<div class="col-4">
-							{% render_bootstrap_field formfield %}
-						</div>
-					</div>
-				{% endif %}
-			{% elif formfield.name == "datetime_mode" %}
-				{% if generic_field_class == 'DateTimeField' %}
-					<div class="row">
-						<div class="col-4">
-							{% render_bootstrap_field formfield %}
+						<div class="col-12">
+							{% if generic_field %}
+								<div id="fieldchoices-{{ generic_field.id }}">
+									{% include 'generic_forms/ajax/manage_generic_field_choices.html' %}
+								</div>
+							{% else %}
+								<div class="alert alert-info">
+									{% trans 'HINT: Choices can be added after you have saved the label.' %}
+								</div>
+							{% endif %}
 						</div>
 					</div>
 				{% endif %}
 			{% else %}
-				
-				{% if formfield.is_hidden %}
-					{{ formfield }}
+				{# option fields #}
+				{% if field.is_hidden %}
+					{{ field }}
 				{% else %}
-					{% render_bootstrap_field formfield %}
+					<div class="row">
+						<div class="{% if field.field.is_option_field %}col-6{% else %}col-12{% endif %}">
+							{% render_bootstrap_field field %}
+						</div>
+					</div>
+				{% endif %}
+
+				{% if field.name == "widget" %}
+					<hr>
 				{% endif %}
 			{% endif %}
 		{% endfor %}

@@ -182,3 +182,20 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         return self.app_release_builder._get_image_urls_for_lazy_taxon(lazy_taxon)
 
 
+# WIP, currently unused
+class TaxonSerializer:
+
+    def __init__(self, lazy_taxon):
+        self.lazy_taxon = lazy_taxon
+
+    def serialize(self):
+
+        taxon_json = {
+            'taxonLatname' : self.lazy_taxon.taxon_latname,
+            'taxonAuthor' : self.lazy_taxon.taxon_author,
+            'taxonSource' : self.lazy_taxon.taxon_source,
+            'taxonNuid' : self.lazy_taxon.taxon_nuid,
+            'nameUuid' : self.lazy_taxon.name_uuid, 
+        }
+
+        return taxon_json

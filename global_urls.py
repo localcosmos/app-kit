@@ -35,7 +35,6 @@ urlpatterns = [
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
         extra_context={'base_template': 'app_kit/base.html'},
         template_name='localcosmos_server/registration/password_reset_complete.html'), name='password_reset_complete'),
-
     # LEGAL
     path('privacy-statement/', views.PrivacyStatement.as_view(), name='privacy_statement'),
     path('legal-notice/', views.LegalNotice.as_view(), name='legal_notice'),

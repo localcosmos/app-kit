@@ -69,3 +69,7 @@ def camelCase_to_underscore_case(string):
     underscored = '_'.join(spaced_parts)
 
     return underscored
+
+def underscore_to_camelCase(string):
+    under_pat = re.compile(r'_([a-z])')
+    return under_pat.sub(lambda x: x.group(1).upper(), string)

@@ -7,8 +7,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.http import JsonResponse
 
-import urllib.parse
-
 from .forms import TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm
 from .models import TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile
 
@@ -100,7 +98,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         self.taxon_profile = taxon_profile
             
 
-        if request.is_ajax():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = self.ajax_template_name
             
 
@@ -124,6 +122,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         context = super().get_context_data(**kwargs)
         context['taxon'] = self.taxon
         context['taxon_profile'] = self.taxon_profile
+        context['content_type'] = ContentType.objects.get_for_model(self.taxon_profile)
         context['node_names'] = self.get_meta_node_names()
         context['taxon_profiles'] = self.taxon_profiles
         context['generic_content'] = self.taxon_profiles

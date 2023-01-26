@@ -4,6 +4,7 @@ from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.features.generic_forms.models import (GenericForm, GenericField, GenericValues,
                                                        GenericFieldToGenericForm)
 
+from app_kit.utils import underscore_to_camelCase
 
 '''
     generates a json according to GenericFormJSON specification v1
@@ -70,7 +71,7 @@ class GenericFormJSONBuilder(JSONBuilder):
             'uuid' : str(generic_field.uuid),
             'fieldClass' : generic_field.field_class,
             'version' : generic_field.version,
-            'role' : generic_field.role,
+            'role' : underscore_to_camelCase(generic_field.role),
             'definition' : {
                 'widget' : widget,
                 'required' : generic_field_link.is_required,
@@ -78,6 +79,7 @@ class GenericFormJSONBuilder(JSONBuilder):
                 'label' : generic_field.label,
                 'helpText' : generic_field.help_text,
                 'initial' : None,
+                'unit' : generic_field.get_option('unit'),
             },
             'position' : generic_field_link.position,
             # 'options' : generic_field.options, # moved to widgetAttrs

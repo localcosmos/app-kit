@@ -101,4 +101,7 @@ urlpatterns = [
     # spreadsheet import
     path('import-from-zip/<int:meta_app_id>/<int:content_type_id>/<int:generic_content_id>/',
          views.ImportFromZip.as_view(), name='import_from_zip'),
+    # TAGS
+    path('tag-any-element/<int:content_type_id>/<int:object_id>/', views.TagAnyElement.as_view(), name='tag_any_element'),
+    path('reload-tags/<int:content_type_id>/<int:object_id>/', views.ReloadTags.as_view(), name='reload_tags'),
 ]

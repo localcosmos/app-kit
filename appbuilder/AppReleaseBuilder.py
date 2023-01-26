@@ -1509,8 +1509,8 @@ class AppReleaseBuilder(AppBuilderBase):
         
         relative_generic_content_filepath = os.path.join(relative_generic_content_folder, content_filename)
 
-        features_json_entry['path'] = relative_generic_content_filepath
-        features_json_entry['folder'] = relative_generic_content_folder
+        features_json_entry['path'] = '/{0}'.format(relative_generic_content_filepath)
+        features_json_entry['folder'] = '/{0}'.format(relative_generic_content_folder)
 
         return features_json_entry
         
@@ -1645,7 +1645,7 @@ class AppReleaseBuilder(AppBuilderBase):
         feature_entry = self._get_features_json_entry(app_generic_content)
 
         feature_entry.update({
-            'alphabet' : alphabet_relative_path, # a folder
+            'alphabet' : '/{0}'.format(alphabet_relative_path), # a folder
             'vernacular' : {}, # one file per language
         })
 
@@ -1716,7 +1716,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 json.dump(sorted_vernacular_names_distinct, f, indent=4, ensure_ascii=False)
 
             vernacular_language_specific_path = os.path.join(vernacular_relative_path, locale_filename)
-            feature_entry['vernacular'][language_code] = vernacular_language_specific_path
+            feature_entry['vernacular'][language_code] = '/{0}'.format(vernacular_language_specific_path)
 
 
         # add to settings, there is only one BackboneTaxonomy per app
@@ -1755,7 +1755,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         app_relative_taxonprofiles_folder =  self._app_relative_generic_content_path(taxon_profiles)
-        self.build_features[generic_content_type]['files'] = app_relative_taxonprofiles_folder
+        self.build_features[generic_content_type]['files'] = '/{0}'.format(app_relative_taxonprofiles_folder)
         
 
         # paths for storing taxon profiles
@@ -1807,8 +1807,8 @@ class AppReleaseBuilder(AppBuilderBase):
         relative_registry_path = os.path.join(app_relative_taxonprofiles_folder, 'registry.json')
         relative_search_index_path = os.path.join(app_relative_taxonprofiles_folder, 'search.json')
 
-        self.build_features[generic_content_type]['registry'] = relative_registry_path
-        self.build_features[generic_content_type]['search'] = relative_search_index_path
+        self.build_features[generic_content_type]['registry'] = '/{0}'.format(relative_registry_path)
+        self.build_features[generic_content_type]['search'] = '/{0}'.format(relative_search_index_path)
 
         self.logger.info('finished building TaxonProfiles')
 
@@ -1863,8 +1863,8 @@ class AppReleaseBuilder(AppBuilderBase):
                         relative_json_filepath = os.path.join(app_relative_template_contents_path, template_folder_name,
                             filename)
 
-                        template_contents_json['lookup'][str(template_content.uuid)] = relative_json_filepath
-                        template_contents_json['slugs'][localized_template_content.slug] = relative_json_filepath
+                        template_contents_json['lookup'][str(template_content.uuid)] = '/{0}'.format(relative_json_filepath)
+                        template_contents_json['slugs'][localized_template_content.slug] = '/{0}'.format(relative_json_filepath)
         
         self.build_features['TemplateContent'] = template_contents_json
         
@@ -1953,7 +1953,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             used_terms_glossary_relative_path = self._app_relative_used_terms_glossary_filepath(glossary, language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['usedTerms'] = used_terms_glossary_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['usedTerms'] = '/{0}'.format(used_terms_glossary_relative_path)
 
             # create a downloadable csv file
             used_terms_glossary_csv = jsonbuilder.create_glossary_for_csv(used_terms_glossary)
@@ -1968,7 +1968,7 @@ class AppReleaseBuilder(AppBuilderBase):
             used_terms_glossary_csv_relative_path = self._app_relative_used_terms_glossary_csv_filepath(glossary,
                 language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['usedTermsCsv'] = used_terms_glossary_csv_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['usedTermsCsv'] = '/{0}'.format(used_terms_glossary_csv_relative_path)
 
 
             # localized glossary, all terms
@@ -1981,7 +1981,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             localized_glossary_relative_path = self._app_relative_localized_glossary_filepath(glossary, language_code)
             
-            self.build_features[generic_content_type]['localized'][language_code]['allTerms'] = localized_glossary_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['allTerms'] = '/{0}'.format(localized_glossary_relative_path)
 
 
             # downloadable csv file of all terms
@@ -1999,7 +1999,7 @@ class AppReleaseBuilder(AppBuilderBase):
             localized_glossary_csv_relative_path = self._app_relative_localized_glossary_csv_filepath(glossary,
                 language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['allTermsCsv'] = localized_glossary_csv_relative_path
+            self.build_features[generic_content_type]['localized'][language_code]['allTermsCsv'] = '/{0}'.format(localized_glossary_csv_relative_path)
 
 
     ###############################################################################################################

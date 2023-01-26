@@ -21,7 +21,7 @@ test_settings = override_settings(
     DATASET_VALIDATION_CLASSES = (
         'localcosmos_server.datasets.validation.ExpertReviewValidator',
         'localcosmos_server.datasets.validation.ReferenceFieldsValidator',
-    )
+    ),
 )
 
 

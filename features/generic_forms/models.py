@@ -3,14 +3,11 @@
 '''
 from django.db import models
 from django.db.models import Q
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.translation import gettext_lazy as _
 
-import uuid, json, os, shutil
-
-from localcosmos_server.slugifier import create_unique_slug
+import uuid
 
 from app_kit.generic import GenericContent, AppContentTaxonomicRestriction
 
@@ -29,6 +26,7 @@ DJANGO_FIELD_WIDGETS = (
     ('RadioSelect', _('Radio')),
     ('SelectDateTimeWidget', _('Date and time with autofill')), # JSONWidget
     ('MobilePositionInput', _('GPS-supported point input with map')), # JSONWidget
+    ('PointOrAreaInput', _('GPS-supported point or area input with map')), # JSONWidget
     ('BackboneTaxonAutocompleteWidget', _('Taxon input with backend search')),
     ('CameraAndAlbumWidget', _('Camera and album')),
 )
@@ -44,6 +42,7 @@ DJANGO_FIELD_CLASSES = (
     ('DateTimeJSONField', _('Datetime field')),
     ('TaxonField', _('Taxon field')),
     ('PointJSONField', _('Point field')),
+    ('GeoJSONField', _('Geometry field')),
     ('PictureField', _('Image field')),
 )
 
@@ -61,6 +60,7 @@ DEFAULT_WIDGETS = {
     'PointJSONField' : 'MobilePositionInput', # JSONField
     'TaxonField' : 'BackboneTaxonAutocompleteWidget',
     'PictureField' : 'CameraAndAlbumWidget',
+    'GeoJSONField' : 'PointOrAreaInput',
 }
 
 ALLOWED_WIDGETS = {
@@ -73,6 +73,7 @@ ALLOWED_WIDGETS = {
     'MultipleChoiceField' : ['CheckboxSelectMultiple'],
     'DateTimeJSONField' : ['SelectDateTimeWidget'], # JSONField + JSONWidget
     'PointJSONField' : ['MobilePositionInput'], # JSONField + JSONWidget
+    'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
     'TaxonField' : ['BackboneTaxonAutocompleteWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
 }
@@ -88,6 +89,7 @@ FIELDCLASS_DATATYPE = {
     'DateTimeJSONField' : 'json',
     'TaxonField' : 'json',
     'PointJSONField' : 'json',
+    'GeoJSONField' : 'json',
     'PictureField' : 'json',
 }  
         
@@ -196,13 +198,13 @@ FIELD_ROLES = (
 
 
 FIELD_OPTIONS = {
-    'DecimalField' : ['min_value', 'max_value', 'decimal_places', 'step'],
-    'FloatField' : ['min_value', 'max_value', 'step'],
-    'IntegerField' : ['min_value', 'max_value', 'step'],
-    'DateTimeJSONField' : ['datetime_mode'],
+    'DecimalField' : ['min_value', 'max_value', 'decimal_places', 'step', 'unit'],
+    'FloatField' : ['min_value', 'max_value', 'step', 'unit'],
+    'IntegerField' : ['min_value', 'max_value', 'step', 'unit'],
+    #'DateTimeJSONField' : ['datetime_mode'],
 }
 
-NON_DJANGO_FIELD_OPTIONS = ['step']
+NON_DJANGO_FIELD_OPTIONS = ['step', 'unit']
 
 '''
     fields can be shared across forms
@@ -216,7 +218,7 @@ class GenericField(models.Model):
     
     role = models.CharField(max_length=50, choices=FIELD_ROLES, default='regular')
 
-    options = models.JSONField(null=True) # options that apply only to certain field classes like min, max, decimal_places
+    options = models.JSONField(null=True) # options that apply only to certain field classes like min, max, decimal_places, unit
 
     label = models.CharField(max_length=255)
     help_text = models.CharField(max_length=255, null=True)

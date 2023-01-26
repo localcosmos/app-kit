@@ -21,6 +21,18 @@
 					<h3>{{ taxon }}</h3>
 				{% endif %}
 			</div>
+			<div class="col-12 mt-3">
+				<div>
+					{% with content_object=taxon_profile %}
+						{% include 'app_kit/ajax/tags.html' %}
+					{% endwith %}
+				</div>
+				<div class="mt-3">
+					<button type="button" class="btn btn-sm btn-outline-primary xhr" data-url="{% url 'tag_any_element' content_type.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'manage tags' %}</button>
+			
+				</div>
+				<hr>
+			</div>
 		</div>
 		<div class="row">
 			<div class="col-12">

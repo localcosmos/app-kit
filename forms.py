@@ -407,3 +407,8 @@ class BuildAppForm(forms.Form):
 from django.core.validators import FileExtensionValidator
 class ZipImportForm(forms.Form):
     zipfile = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
+
+from taggit.forms import TagField
+class TagAnyElementForm(forms.Form):
+
+    tags = TagField(required=False)

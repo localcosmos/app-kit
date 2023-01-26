@@ -86,6 +86,7 @@ class WithGenericForm:
                             'min_value' : -4,
                             'max_value' : 5,
                             'step' : 1,
+                            'unit' : 'm',
                         }
 
                     if field_class == 'DecimalField':
@@ -162,7 +163,16 @@ class TestDynamicField(WithMetaApp, WithGenericForm, TenantTestCase):
             dynamic_field = DynamicField(field_link, generic_form.primary_language, self.meta_app)
 
             self.assertEqual(str(dynamic_field.uuid), str(generic_field.uuid))
-            self.assertEqual(dynamic_field.django_field.label, generic_field.label)
+
+            if generic_field.field_class in ['DecimalField', 'IntegerField', 'FloatField']:
+                unit = generic_field.get_option('unit')
+                if unit:
+                    label = '{0} ({1})'.format(generic_field.label, unit)
+                else:
+                    label = generic_field.label
+                self.assertEqual(dynamic_field.django_field.label, label)
+            else:
+                self.assertEqual(dynamic_field.django_field.label, generic_field.label)
 
             if generic_field.field_class in ['ChoiceField', 'MultipleChoiceField']:
 

@@ -186,8 +186,7 @@ class DeleteGlossaryEntry(AjaxDeleteView):
 
     template_name = 'glossary/ajax/delete_glossary_entry.html'
 
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
+    def form_valid(self, form):
         
         glossary_entry_id = self.object.id
 

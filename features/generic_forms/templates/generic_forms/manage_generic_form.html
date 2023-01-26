@@ -20,7 +20,7 @@
 		<div class="card-body">
 			<h4>{% trans 'Observation form fields' %}</h4>
 			<p>
-				<h5>{% trans 'Basic fields' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'Basic fields' %}" data-content="{% trans 'Every observation form needs at least fields for Taxon (e.g. Species), Time of Observation and Geographic Reference (e.g. GPS).' %}" /></h5>
+				<h5>{% trans 'Fundamental fields' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'Basic fields' %}" data-content="{% trans 'Every observation form needs at least fields for Taxon (e.g. Species), Time of Observation and Geographic Reference (e.g. GPS).' %}" /></h5>
 				<div>
 					<ul id="generic-form-taxonomic_reference-fields" class="simpleul">
 						{% if taxonomic_reference_field %}
@@ -37,7 +37,7 @@
 										{% trans 'Add taxon field' %} <span class="caret"></span>
 									</button>
 									<div class="dropdown-menu">
-										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'TaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'taxon field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'TaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Taxon field' %}</a>
 									</div>
 								</div>
 							</li>
@@ -62,7 +62,8 @@
 										{% trans 'Add geographic reference field' %} <span class="caret"></span>
 									</button>
 									<div class="dropdown-menu">
-										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'PointJSONField' 'geographic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'point field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'PointJSONField' 'geographic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Point field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'GeoJSONField' 'geographic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Geometry field' %}</a>
 									</div>
 								</div>
 							</li>
@@ -126,6 +127,44 @@
 
 	<link rel="stylesheet" href="{% static 'maps/leaflet/leaflet.css' %}" />
 	<script src="{% static 'maps/leaflet/leaflet.js' %}"></script>
+	
+	<link rel="stylesheet" href="{% static 'maps/leaflet-draw/src/leaflet.draw.css' %}"/>
+	<script src="{% static 'maps/leaflet-draw/src/Leaflet.draw.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Leaflet.Draw.Event.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Poly.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.SimpleShape.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Rectangle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Marker.js' %}"></script>
+  	<script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.CircleMarker.js' %}"></script>
+  	<script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Circle.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Feature.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Polyline.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Polygon.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.SimpleShape.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Rectangle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Circle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Marker.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.CircleMarker.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/ext/TouchEvents.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/LatLngUtil.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/GeometryUtil.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/LineUtil.Intersect.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/Polyline.Intersect.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/Polygon.Intersect.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/Control.Draw.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Tooltip.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Toolbar.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/draw/DrawToolbar.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/EditToolbar.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/EditToolbar.Edit.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/EditToolbar.Delete.js' %}"></script>
+
+	<script type="text/javascript" src="{% static 'maps/MapManager.js' %}"></script>
 
 {% endblock %}
 

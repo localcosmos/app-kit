@@ -30,7 +30,7 @@ class ManageBackboneTaxonomy(ManageGenericContent):
         context = super().get_context_data(**kwargs)
 
         # ajax pagination template
-        if self.request.is_ajax():
+        if self.request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = 'backbonetaxonomy/taxonlist.html'
 
         # if the querystring_key is present, only render partially for ajax pagination

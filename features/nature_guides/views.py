@@ -443,12 +443,11 @@ class DeleteNodelink(AjaxDeleteView):
         return context
 
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         if self.crosslink:
-            return super().delete(request, *args, **kwargs)
+            return super().form_valid(form)
 
-        self.object = self.get_object()
-        context = self.get_context_data(**kwargs)
+        context = self.get_context_data(**self.kwargs)
         context['deleted_object_id'] = self.object.pk
         context['deleted'] = True
         self.object.delete_branch()
@@ -500,7 +499,7 @@ class AddExistingNodes(MetaAppMixin, TemplateView):
         
         context = self.get_context_data(**kwargs)
 
-        if request.is_ajax() and 'page' in request.GET:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'page' in request.GET:
             self.template_name = 'nature_guides/ajax/add_existing_nodes_page.html'
 
         return self.render_to_response(context)
@@ -1024,7 +1023,7 @@ class DeleteMatrixFilter(AjaxDeleteView):
     template_name = 'nature_guides/ajax/delete_matrix_filter_value.html'
 
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form):
         self.object = self.get_object()
         meta_node = self.object.meta_node
         self.object.delete()
@@ -1045,8 +1044,7 @@ class DeleteMatrixFilterSpace(AjaxDeleteView):
     def get_verbose_name(self):
         return self.object
             
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
+    def form_valid(self, form):
         meta_node = self.object.matrix_filter.meta_node
         self.object.delete()
 

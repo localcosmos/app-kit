@@ -1,16 +1,10 @@
-from django.conf import settings
 from django import template
 register = template.Library()
 
-from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 
 from app_kit.features.generic_forms.models import (DJANGO_FIELD_CLASSES, DJANGO_FIELD_WIDGETS)
 
-from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
-
-from django import forms
 
 from app_kit.features.generic_forms.forms import DynamicField, DynamicForm
 
@@ -43,8 +37,9 @@ def fieldform_title(fieldform):
     widget_verbose = w[widget]
 
     if generic_field_class == 'ChoiceField':
-        title = "%s (%s)" %(class_verbose, widget_verbose)
+        title = '{0} ({1})'.format(class_verbose, widget_verbose)
     else:
         title = class_verbose
 
     return title
+

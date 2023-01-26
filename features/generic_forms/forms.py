@@ -1,14 +1,11 @@
-from django.utils import translation
 from django.conf import settings
-from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
-from django.core import validators
 from django.contrib.gis import forms
 from django.urls import reverse
 
-from .models import (GenericForm, GenericField, GenericValues, FIELDCLASS_DATATYPE, DJANGO_FIELD_WIDGETS,
-                     NUMBER_FIELDS, DJANGO_FIELD_CLASSES, VALUE_TYPES, FIELD_OPTIONS, NON_DJANGO_FIELD_OPTIONS)
+from .models import (GenericForm, DJANGO_FIELD_WIDGETS, NUMBER_FIELDS, FIELD_OPTIONS,
+    NON_DJANGO_FIELD_OPTIONS)
 
 from . import fields, widgets
 from .definitions import TEXT_LENGTH_RESTRICTIONS
@@ -56,6 +53,7 @@ class DynamicField:
         initparams = {
             'label' : label,
             'required' : generic_field_link.is_required,
+            'help_text' : generic_field.help_text,
         }
 
         # create initparams, later django_field(**init_params)
@@ -98,6 +96,10 @@ class DynamicField:
             if step:
                 widget_attrs['step'] = step
 
+            unit = generic_field.get_option('unit')
+            if unit:
+                initparams['label'] = '{0} ({1})'.format(label, unit)
+
         elif generic_field.field_class == 'TaxonField':
 
             url_kwargs = {
@@ -126,7 +128,7 @@ class DynamicField:
                 if option_type not in NON_DJANGO_FIELD_OPTIONS:
                 
                     option_value = generic_field.options.get(option_type, None)
-                    if option_value:
+                    if option_value is not None:
                         initparams[option_type] = option_value
 
         dynamic_field = django_field(**initparams)
@@ -138,6 +140,18 @@ DATETIME_MODES = (
     ('date', _('Date')),
     ('datetime', _('Date and time')),
 )
+
+OPTION_FIELDS = {
+    'min_value' : forms.FloatField(required=False),
+    'max_value' : forms.FloatField(required=False),
+    'unit' : forms.CharField(required=False, max_length=255, help_text=_('abbreviated unit, eg cm or m')),
+    'decimal_places' : forms.IntegerField(required=False),
+    'step' : forms.FloatField(required=False, help_text=_('Defines the step for the + and - buttons.')),
+    'datetime_mode' : forms.ChoiceField(required=False, label=_('Mode'), choices=DATETIME_MODES,
+                                      initial='datetime'),
+    'quadrant_size' : forms.IntegerField(label=_('Quadrant size in meters'), initial=5, min_value=5),
+}
+
 # locale inherited from form
 from .models import FIELD_ROLES, ALLOWED_WIDGETS
 class GenericFieldForm(LocalizeableForm):
@@ -149,15 +163,10 @@ class GenericFieldForm(LocalizeableForm):
     generic_field_class = forms.CharField(widget=forms.HiddenInput) # always prefilled
     generic_field_role = forms.ChoiceField(widget=forms.HiddenInput, choices=FIELD_ROLES )
     label = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['GenericField']['label'])
-    # language = forms.CharField(widget=forms.HiddenInput)
+    help_text = forms.CharField(required=False, max_length=TEXT_LENGTH_RESTRICTIONS['GenericField']['help_text'])
+
     is_required = forms.BooleanField(required=False)
-    # is_sticky = forms.BooleanField(required=False)
-    min_value = forms.FloatField(required=False)
-    max_value = forms.FloatField(required=False)
-    decimal_places = forms.IntegerField(required=False)
-    step = forms.FloatField(required=False, help_text=_('Defines the step for the + and - buttons.'))
-    datetime_mode = forms.ChoiceField(required=False, label=_('Mode'), choices=DATETIME_MODES,
-                                      initial='datetime')
+
     widget = forms.ChoiceField(help_text=_('A widget defines how the field is displayed to the user.')) # depending on field_class, prefilled, user thinks in widgets, not field_classes
 
     def __init__(self, *args, **kwargs):
@@ -181,6 +190,12 @@ class GenericFieldForm(LocalizeableForm):
                     widget_choices.append(tup)
         
         self.fields['widget'].choices = widget_choices
+
+        if generic_field_class in FIELD_OPTIONS:
+            options = FIELD_OPTIONS[generic_field_class]
+            for option in options:
+                self.fields[option] = OPTION_FIELDS[option]
+                self.fields[option].is_option_field = True
 
     def clean_is_required(self):
         is_required = self.cleaned_data.get('is_required', False)
@@ -217,7 +232,9 @@ class GenericFieldForm(LocalizeableForm):
     def clean_min_value(self):
         min_value = self.cleaned_data.get('min_value', None)
 
-        if min_value:
+        print(min_value)
+
+        if min_value is not None:
             generic_field_class = self.cleaned_data['generic_field_class']
 
             if generic_field_class not in NUMBER_FIELDS:

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect
 from django.views.generic import TemplateView, FormView
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -13,7 +13,7 @@ from django.core import mail
 from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
 from .generic import AppContentTaxonomicRestriction
 
-from .forms import (AddLanguageForm, MetaAppOptionsForm, ManageContentImageForm,
+from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm,
                     CreateGenericContentForm, AddExistingGenericContentForm, TranslateAppForm,
                     EditGenericContentNameForm, ManageContentImageWithTextForm,
                     ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm)
@@ -244,8 +244,7 @@ class DeleteApp(AjaxDeleteView):
     def get_deletion_message(self):
         return _('Do you really want to delete %s?' % self.object)
 
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
+    def form_valid(self, form):
 
         domain = Domain.objects.get(app=self.object.app)
         # this will NOT delete the Domain entry
@@ -253,8 +252,8 @@ class DeleteApp(AjaxDeleteView):
             domain.delete()
 
         self.object.app.delete()
-        
-        context = self.get_context_data(**kwargs)
+    
+        context = self.get_context_data(**self.kwargs)
         context['deleted_object_id'] = self.object.pk
         context['deleted'] = True
         self.object.delete()
@@ -630,6 +629,7 @@ class TranslateApp(MetaAppMixin, FormView):
 LANGUAGE_TERRITORIES = {
     'de' : 'DE-DE',
     'en' : 'EN-US',
+    'EN' : 'EN_US',
 }
 
 class GetDeepLTranslation(MetaAppMixin, TemplateView):
@@ -1459,6 +1459,58 @@ class ImportFromZip(MetaAppMixin, FormView):
         context['form_valid'] = True
 
         return self.render_to_response(context)
+
+
+
+class TagsMixin:
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_content_object(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_content_object(self, **kwargs):
+        self.content_type = ContentType.objects.get(pk=kwargs['content_type_id'])
+        self.content_object = self.content_type.get_object_for_this_type(pk=self.kwargs['object_id'])
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['content_type'] = self.content_type
+        context['content_object'] = self.content_object
+        return context
+
+class TagAnyElement(TagsMixin, FormView):
+
+    form_class = TagAnyElementForm
+    template_name = 'app_kit/ajax/tag_any_element.html'
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['tags'] = self.content_object.tags.all()
+        return initial
+
+    def form_valid(self, form):
+        old_tags = [tag.name.lower() for tag in self.content_object.tags.all()]
+        new_tags = form.cleaned_data['tags']
+
+        for tag in new_tags:
+            tag = tag.lower()
+            if tag in old_tags:
+                del old_tags[old_tags.index(tag)]
+            else:
+                self.content_object.tags.add(tag)
+        
+        for tag in old_tags:
+            self.content_object.tags.remove(tag)
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        return self.render_to_response(context)
+
+
+class ReloadTags(TagsMixin, TemplateView):
+
+    template_name = 'app_kit/ajax/tags.html'
 
 
 # LEGAL

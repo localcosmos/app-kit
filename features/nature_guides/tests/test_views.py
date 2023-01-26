@@ -951,12 +951,14 @@ class TestDeleteNodelink(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly, 
         
 
     @test_settings
-    def test_delete(self):
+    def test_post(self):
 
         view = self.get_view()
         view.set_node(**view.kwargs)
 
-        response = view.delete(view.request, **view.kwargs)
+        view.request.method = 'POST'
+
+        response = view.post(view.request, **view.kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context_data['deleted_object_id'], self.view_node.id)
         self.assertEqual(response.context_data['deleted'], True)
@@ -1036,12 +1038,14 @@ class TestDeleteCrosslink(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly,
         
 
     @test_settings
-    def test_delete(self):
+    def test_post(self):
 
         view = self.get_view()
         view.set_node(**view.kwargs)
 
-        response = view.delete(view.request, **view.kwargs)
+        view.request.method = 'POST'
+
+        response = view.post(view.request, **view.kwargs)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context_data['deleted_object_id'], self.crosslink.id)
         self.assertEqual(response.context_data['deleted'], True)
@@ -1122,7 +1126,7 @@ class TestAddExistingNodes(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnly
 
         view = self.get_view()
 
-        self.assertTrue(view.request.is_ajax())
+        self.assertTrue(view.request.headers.get('x-requested-with') == 'XMLHttpRequest')
         response = view.get(view.request, **view.kwargs)
         self.assertEqual(response.status_code, 200)
 
@@ -2421,7 +2425,7 @@ class TestDeleteMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
 
 
     @test_settings
-    def test_delete(self):
+    def test_post(self):
 
         self.create_matrix_filter_spaces()
 
@@ -2436,7 +2440,8 @@ class TestDeleteMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
 
             self.assertTrue(qry.exists())
 
-            response = view.delete(view.request, **view.kwargs)
+            view.request.method = 'POST'
+            response = view.post(view.request, **view.kwargs)
 
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context_data['meta_node'], meta_node)

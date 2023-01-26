@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class FrontendConfig(AppConfig):
-    name = 'frontend'
+    name = 'app_kit.features.frontend'

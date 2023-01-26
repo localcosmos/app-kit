@@ -196,6 +196,7 @@ class WithGenericField:
             'max_value' : '4',
             'decimal_places' : '2',
             'step' : '1',
+            'unit' : 'm',
             'datetime_mode' : 'datetime',
         }
 

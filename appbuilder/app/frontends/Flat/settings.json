@@ -73,6 +73,11 @@
 				"required" : false,
 				"helpText" : "Sources you used to build this app."
 			}
+		},
+		"configuration" : {
+			"cmsUrl" : {
+				"helpText" : "The URL of your cms"
+			}
 		}
 	},
 	"android" : {

@@ -1,15 +1,10 @@
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.utils import translation
 from django.utils.translation import gettext as _
-from django.forms.formsets import formset_factory
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic import TemplateView, FormView
-from django.core.exceptions import PermissionDenied
-from django.conf import settings
 
-from .models import (GenericForm, GenericField, GenericValues,  NUMBER_FIELDS, VALUE_TYPES, DEFAULT_WIDGETS,
-                     DJANGO_FIELD_CLASSES, FIELDCLASS_DATATYPE, FIELD_OPTIONS, GenericFieldToGenericForm)
+
+from .models import (GenericForm, GenericField, GenericValues, DEFAULT_WIDGETS, DJANGO_FIELD_CLASSES, 
+    FIELD_OPTIONS, GenericFieldToGenericForm)
 
 from .forms import (GenericFieldForm, AddValueForm, GenericFormOptionsForm)
 
@@ -17,17 +12,10 @@ from .forms import (GenericFieldForm, AddValueForm, GenericFormOptionsForm)
 from django.utils.decorators import method_decorator
 from localcosmos_server.decorators import ajax_required
 
-import json
 
-from django.http import JsonResponse
-from django.template import loader, Context
-
-
-from app_kit.models import MetaApp, MetaAppGenericContent
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin, FormLanguageMixin
 
-from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 
 class ManageGenericForm(ManageGenericContent):
 
@@ -107,7 +95,6 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
 
     def get_initial(self):
         initial = super().get_initial()
-        language = self.generic_form.primary_language
         
         if self.generic_field:
                             
@@ -116,7 +103,7 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
                 'generic_field_class' : self.generic_field_class,
                 'widget' : self.generic_field.render_as,
                 'label' : self.generic_field.label,
-                'help_text' : None,
+                'help_text' : self.generic_field.help_text,
                 'is_required' : self.generic_field_link.is_required,
                 'is_sticky' : self.generic_field_link.is_sticky,
                 'generic_field_role' : self.generic_field.role,
@@ -130,7 +117,7 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
                 for option_type in option_types:
                     
                     option_value = field_options.get(option_type, None)
-                    if option_value:
+                    if option_value is not None:
                         initial[option_type] = option_value
 
         else:
@@ -149,8 +136,6 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
 
         created = False
         increment_field_version = False
-        
-        language = form.cleaned_data['input_language']
 
         self.generic_field_class = form.cleaned_data['generic_field_class']
 
@@ -193,13 +178,14 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
 
             option = form.cleaned_data.get(option_type, None)
 
-            if option:
+            if option is not None:
                 field_options[option_type] = option
 
             elif option_type in field_options:
                 del field_options[option_type]
 
         self.generic_field.options = field_options
+        self.generic_field.help_text = form.cleaned_data.get('help_text', None)
 
         # save generic field            
         self.generic_field.save(self.generic_form)

@@ -309,16 +309,17 @@ class TestDeleteGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
 
 
     @test_settings
-    def test_delete(self):
+    def test_form_valid(self):
         view = self.get_view()
-        view.object = self.glossary_entry
 
         entry_pk = self.glossary_entry.pk
         query = GlossaryEntry.objects.filter(pk=entry_pk)
 
         self.assertTrue(query.exists())
 
-        response = view.delete(view.request, **view.kwargs)
+        view.request.method = 'POST'
+
+        response = view.post(view.request, **view.kwargs)
 
         self.assertFalse(query.exists())
 

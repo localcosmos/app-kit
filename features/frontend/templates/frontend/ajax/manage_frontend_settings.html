@@ -40,7 +40,7 @@
         <button type="submit" class="btn btn-outline-primary">{% trans 'save frontend' %}</button>
     </p>
 </form>
-{% if request.is_ajax %}
+{% if request|is_ajax %}
     <script>
         {% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
     </script>

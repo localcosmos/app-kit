@@ -2,9 +2,7 @@ from django import forms
 
 from django.utils.translation import gettext_lazy as _
 
-from .models import TaxonTextType, TaxonText, TaxonProfile
-
-from django.contrib.contenttypes.models import ContentType
+from .models import TaxonTextType, TaxonText
 
 from app_kit.forms import GenericContentOptionsForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
@@ -114,7 +112,6 @@ class ManageTaxonTextsForm(LocalizeableForm):
         long_text_field_name = '{0}:longtext'.format(text_type.text_type)
 
         return long_text_field_name
-
 
 
 ''' currently unused

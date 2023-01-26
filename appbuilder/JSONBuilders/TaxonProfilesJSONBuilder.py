@@ -17,6 +17,7 @@ from localcosmos_server.template_content.models import TemplateContent
 
 from collections import OrderedDict
 
+
 '''
     Builds JSON for one TaxonProfiles
 '''
@@ -113,6 +114,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'gbifNubKey' : None,
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
+            'tags' : [tag.name for tag in db_profile.tags.all()]
         }
 
         synonyms = profile_taxon.synonyms()
@@ -333,6 +335,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'nameUuid' : str(lazy_taxon.name_uuid),
                 'taxonLatname' : lazy_taxon.taxon_latname,
                 'taxonAuthor' : lazy_taxon.taxon_author,
+                'taxonNuid' : lazy_taxon.taxon_nuid,
                 'vernacularNames' : {},
                 'alternativeVernacularNames' : {},
                 'images' : {
@@ -407,6 +410,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     'taxonLatname' : lazy_taxon.taxon_latname,
                     'taxonAuthor' : lazy_taxon.taxon_author,
                     'taxonSource' : lazy_taxon.taxon_source, # for looking up the original taxon
+                    'taxonNuid' : lazy_taxon.taxon_nuid,
                     'nameUuid' : name_uuid, # for looking up the original taxon
                     'isSynonym' : False,
                 }
@@ -423,6 +427,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         'taxonAuthor' : synonym.taxon_author,
                         'taxonSource' : lazy_taxon.taxon_source,
                         'nameUuid' : name_uuid, # name_uuid of accepted name
+                        'taxonNuid' : lazy_taxon.taxon_nuid,
                         'synonymNameUuid' : str(synonym.name_uuid),
                         'isSynonym' : True,
                     }
@@ -448,7 +453,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         'name' : vernacular_name,
                         'nameUuid' : name_uuid,
                         'taxonLatname' : lazy_taxon.taxon_latname,
-                        'taxonAuthor' : lazy_taxon.taxon_author
+                        'taxonAuthor' : lazy_taxon.taxon_author,
+                        'taxonNuid' : lazy_taxon.taxon_nuid,
                     }
 
                     vernacular_name_start_letter = vernacular_name[0].upper()

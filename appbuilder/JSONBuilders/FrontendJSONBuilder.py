@@ -19,7 +19,11 @@ class FrontendJSONBuilder(JSONBuilder):
         frontend_json['userContent'] = {
             'texts' : {},
             'images' : {},
+            'configuration' : {},
         }
+
+        if frontend.configuration:
+            frontend_json['userContent']['configuration'] = frontend.configuration
 
         frontend_settings = self.app_release_builder._get_frontend_settings()
 

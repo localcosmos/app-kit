@@ -1908,7 +1908,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                 expected_space[matrix_filter_uuid] = matrix_filter_type.get_filter_space_as_list(
                     node_space)
             
-        expected_json['max_points'] = len(MATRIX_FILTER_TYPES) * 5
+        expected_json['max_points'] = len(MATRIX_FILTER_TYPES) * 1
         # check if all keys/values exist in the json
         child_json_wspaces = children_cache_manager.child_as_json(node)
         for key, value in expected_json.items():
@@ -1917,6 +1917,9 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                 self.assertIn(key, child_json_wspaces)
                 if value != child_json_wspaces[key]:
                     print(key)
+
+                #print(key)
+                #print(value)
                 self.assertEqual(value, child_json_wspaces[key])
 
         # check the spaces

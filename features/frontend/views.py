@@ -52,6 +52,16 @@ class FrontendSettingsMixin:
 
         return text_types
 
+    def get_configuration_keys(self):
+
+        configuration_keys = []
+        frontend_settings = self.get_frontend_settings()
+
+        if 'configuration' in frontend_settings['userContent']:
+            configuration_keys = list(frontend_settings['userContent']['configuration'].keys())
+        
+        return configuration_keys
+
 
     def get_initial(self):
 
@@ -67,6 +77,10 @@ class FrontendSettingsMixin:
             if frontend_text:
                 initial[text_type] = frontend_text.text
 
+        if self.generic_content.configuration:
+
+            for configuration_key, configuration_value in self.generic_content.configuration.items():
+                initial[configuration_key] = configuration_value
         
         return initial
 
@@ -131,6 +145,14 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
 
                 frontend_text.save()
 
+        self.frontend.configuration = {}
+        configuration_keys = self.get_configuration_keys()
+        for configuration_key in configuration_keys:
+            configuration_value = form.cleaned_data.get(configuration_key, None)
+            if configuration_value:
+                self.frontend.configuration[configuration_key] = configuration_value
+        
+        self.frontend.save()
         
         context = self.get_context_data(**self.kwargs)
         context['success'] = True

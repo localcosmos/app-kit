@@ -93,7 +93,7 @@ class FrontendSettingsForm(forms.Form):
 
                     
                     pythonic_restrictions = self.frontend.get_content_image_restrictions(content_image_type)
-                    print(pythonic_restrictions)
+                    #print(pythonic_restrictions)
                     widget_kwargs['restrictions'] = pythonic_restrictions
 
 
@@ -130,4 +130,19 @@ class FrontendSettingsForm(forms.Form):
                 if text_type not in self.layoutable_full_fields:
 
                     self.layoutable_full_fields.append(text_type)
+
+
+        if 'configuration' in self.frontend_settings['userContent']:
+
+            for configuration_type, configuration_definition in self.frontend_settings['userContent']['configuration'].items():
+
+                label = unCamelCase(configuration_type)
+
+                required = configuration_definition.get('required', False)
+
+                help_text = configuration_definition.get('helpText', '')
+
+                field = forms.CharField(label=label, required=required, widget=forms.TextInput, help_text=help_text)
+
+                self.fields[configuration_type] = field
 

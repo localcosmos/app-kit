@@ -16,6 +16,7 @@ from taxonomy.lazy import LazyTaxonList, LazyTaxon
 from django.contrib.contenttypes.models import ContentType
 from app_kit.models import MetaAppGenericContent
 
+from taggit.managers import TaggableManager
 
 class TaxonProfiles(GenericContent):
 
@@ -137,9 +138,10 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
 
+    tags = TaggableManager()
+
     def texts(self):
         return TaxonText.objects.filter(taxon_profile=self).order_by('position')
-
 
     '''
     this checks taxon texts and vernacularnames[latter missing]
@@ -156,6 +158,10 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
                 return False
             
         return True
+
+
+    def __str__(self):
+        return 'Taxon Profile of {0}'.format(self.taxon)
     
 
     class Meta:

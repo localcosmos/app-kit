@@ -24,6 +24,8 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
 
     allow_content_image_features = False
 
+    configuration = models.JSONField(null=True)
+
     class Meta:
         verbose_name = _('Frontend')
         verbose_name_plural = _('Frontends')

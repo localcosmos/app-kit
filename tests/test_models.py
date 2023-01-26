@@ -27,7 +27,6 @@ from app_kit.features.generic_forms.models import GenericForm, GenericField, Gen
 from app_kit.features.glossary. models import Glossary
 from app_kit.features.maps.models import Map
 from app_kit.features.nature_guides.models import NatureGuide, MetaNode, NatureGuidesTaxonTree
-from app_kit.features.fact_sheets.models import FactSheets
 from app_kit.features.frontend.models import Frontend
 
 from app_kit.settings import ADDABLE_FEATURES
@@ -36,7 +35,7 @@ from app_kit.generic import AppContentTaxonomicRestriction
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 
-feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, FactSheets, Frontend]
+feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, Frontend]
 
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from taxonomy.models import TaxonomyModelRouter
@@ -446,30 +445,6 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         expected_languages = set(secondary_languages)
 
         self.assertEqual(languages, expected_languages)
-
-
-    @test_settings
-    def test_get_fact_sheet_templates_path(self):
-
-        self.build_app_preview()
-        
-        meta_app = self.meta_app
-
-        fact_sheet_templates_path = meta_app.get_fact_sheet_templates_path()
-
-        self.assertTrue(os.path.isdir(fact_sheet_templates_path))
-
-
-    @test_settings
-    def test_get_fact_sheet_templates(self):
-
-        self.build_app_preview()
-        
-        meta_app = self.meta_app
-
-        templates = meta_app.get_fact_sheet_templates()
-        self.assertEqual(templates, [('test.html','test.html')])
-        self.assertEqual(len(templates), 1)
 
 
     @test_settings
