@@ -12,11 +12,14 @@ LARGE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'test-image-2560-1440
 
 TEST_MEDIA_ROOT = os.path.join(TESTS_ROOT, 'media_for_tests')
 
+APP_KIT_TMP = os.path.join(TESTS_ROOT, 'app_kit_tmp')
+
 test_settings = override_settings(
     LOCALCOSMOS_PRIVATE = False,
     LOCALCOSMOS_APPS_ROOT = os.path.join(TESTS_ROOT, 'www_apps'),
     APP_KIT_ROOT = os.path.join(TESTS_ROOT, 'app_kit_apps'),
-    APP_KIT_TEMPORARY_FOLDER = os.path.join(TESTS_ROOT, 'app_kit_tmp'),
+    APP_KIT_TEMPORARY_FOLDER = APP_KIT_TMP,
+    APP_KIT_PRIVATE_FRONTENDS_PATH = os.path.join(TESTS_ROOT, 'private_frontends/'),
     MEDIA_ROOT = TEST_MEDIA_ROOT,
     DATASET_VALIDATION_CLASSES = (
         'localcosmos_server.datasets.validation.ExpertReviewValidator',
@@ -24,6 +27,9 @@ test_settings = override_settings(
     ),
 )
 
+VALID_TEST_FRONTEND_PATH = os.path.join(TESTS_ROOT, 'frontends_for_testing', 'Mountain')
+VALID_TEST_FRONTEND_ZIP_FILEPATH = os.path.join(TESTS_ROOT, 'frontends_for_testing', 'Mountain.zip')
+INVALID_TEST_FRONTEND_ZIP_FILEPATH = os.path.join(TESTS_ROOT, 'frontends_for_testing', 'InvalidMountain.zip')
 
 TEST_CLIENT_ID = "4cf82a1d-755b-49e5-b687-a38d78591df4"
 TEST_UTC_TIMESTAMP = 1576161098595

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.generic import FormView
 
@@ -10,9 +11,11 @@ from app_kit.view_mixins import MetaAppMixin
 
 from app_kit.appbuilder import AppBuilder
 
-from .forms import FrontendSettingsForm
+from .forms import FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFrontendForm, InstallPrivateFrontendForm
 
 from .models import Frontend, FrontendText
+
+from .PrivateFrontendImporter import PrivateFrontendImporter
 
 
 class FrontendSettingsMixin:
@@ -158,4 +161,112 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
         context['success'] = True
         return self.render_to_response(context)
 
+
+class FrontendMixin:
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_frontend(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['frontend'] = self.frontend
+        return context
+
+    def set_frontend(self, **kwargs):
+        self.frontend = Frontend.objects.get(pk=kwargs['frontend_id'])
+
+
+    def update_frontend(self, frontend_name):
+
+        self.frontend.frontend_name = frontend_name
+        self.frontend.save()
+        preview_builder = self.meta_app.get_preview_builder()
+        preview_builder.build()
+
+
+class ChangeFrontend(FrontendMixin, MetaAppMixin, FormView):
+
+    template_name = 'frontend/ajax/change_frontend.html'
+    form_class = ChangeFrontendForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['frontend_name'] = self.frontend.frontend_name
+        return initial
+
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.meta_app, **self.get_form_kwargs())
+
+
+    def form_valid(self, form):
+
+        frontend_name = form.cleaned_data['frontend_name']
+        self.update_frontend(frontend_name)
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+
+        return self.render_to_response(context)
+
+
+'''
+    disallow private frontends that have the same name as public frontends
+'''
+class UploadPrivateFrontend(FrontendMixin, MetaAppMixin, FormView):
+
+    template_name = 'frontend/ajax/upload_private_frontend.html'
+    form_class = UploadPrivateFrontendForm
+
+    def form_valid(self, form):
+
+        context = self.get_context_data(**self.kwargs)
+
+        uploaded_zip = form.cleaned_data['frontend_zip']
+
+        zip_importer = PrivateFrontendImporter(self.meta_app)
+        zip_importer.unzip_to_temporary_folder(uploaded_zip)
+        is_valid = zip_importer.validate()
+
+        context['errors'] = zip_importer.errors
+        context['success'] = False
+        context['frontend_settings'] = {}
+
+        if is_valid == True:
+            frontend_settings = zip_importer.get_frontend_settings()
+            context['success'] = True
+            context['frontend_settings'] = frontend_settings
+            context['form'] = InstallPrivateFrontendForm(initial={'frontend_name':frontend_settings['frontend']})
+            
+        return self.render_to_response(context)
+            
+
+
+class InstallPrivateFrontend(FrontendMixin, MetaAppMixin, FormView):
+
+    template_name = 'frontend/ajax/install_private_frontend.html'
+    form_class = InstallPrivateFrontendForm
+
+    def form_valid(self, form):
+
+        context = self.get_context_data(**self.kwargs)
+
+        frontend_name = form.cleaned_data['frontend_name']
+
+        zip_importer = PrivateFrontendImporter(self.meta_app)
+        zip_importer.validate()
+
+        context['success'] = False
+
+        if zip_importer.is_valid and frontend_name == zip_importer.get_frontend_name():
+
+            zip_importer.install_frontend()
+            self.update_frontend(frontend_name)
+            context['success'] = True
+
+        return self.render_to_response(context)
         

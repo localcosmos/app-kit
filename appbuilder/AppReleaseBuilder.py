@@ -113,7 +113,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
     ###############################################################################################################
     # Cordova
-    # the webapp is serverd here for reviewing - after building but before release
+    # the browser app is serverd here for reviewing - after building but before release
 
     def get_cordova_builder(self):
 
@@ -127,7 +127,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
     ###############################################################################################################
     # FOLDERS OF THE BUILT (RELEASE CANDIDATE) APP
-    # - webapp
+    # - browser
     # - www folder for android and ios app
 
     # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/
@@ -146,16 +146,15 @@ class AppReleaseBuilder(AppBuilderBase):
     def _app_packages_path(self):
         return os.path.join(self._app_release_path, 'packages')
 
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/webapp/
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/browser
     @property
-    def _build_webapp_path(self):
-        return os.path.join(self._app_release_path, 'webapp')
+    def _build_browser_root(self):
+        return os.path.join(self._app_build_sources_path, 'browser')
 
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/build/webapp/www/
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/browser/www
     @property
-    def _build_webapp_www_path(self):
-        return os.path.join(self._build_webapp_path, 'www')
-
+    def _build_browser_www_path(self):
+        return os.path.join(self._build_browser_root, 'www')
 
     # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/cordova
     @property
@@ -188,7 +187,7 @@ class AppReleaseBuilder(AppBuilderBase):
     def _build_ios_root(self):
         return os.path.join(self._app_build_sources_path, 'ios')
 
-    # assrts are launcher icon etc
+    # assets are launcher icon etc
     @property
     def _build_ios_assets_path(self):
         return os.path.join(self._build_ios_root, 'assets')
@@ -216,17 +215,25 @@ class AppReleaseBuilder(AppBuilderBase):
     def _frontend_android_www_path(self):
         return os.path.join(self._frontend_root_path, 'android', 'www')
 
+    @property
+    def _frontend_browser_www_path(self):
+        return os.path.join(self._frontend_root_path, 'browser', 'www')
+
 
     @property
     def _frontend_config_xml_path(self):
         return os.path.join(self._frontend_root_path, 'cordova', 'config.xml')
 
     # PACKAGES
-    # webapp zip
+    # browser zip
     @property
-    def _build_webapp_zip_filepath(self):
+    def _build_packages_path(self):
+        return os.path.join(self._app_release_path, 'packages')
+
+    @property
+    def _build_browser_zip_filepath(self):
         filename = '{0}.zip'.format(self.meta_app.name)
-        return os.path.join(self._app_release_path, 'packages', filename)
+        return os.path.join(self._build_packages_path, filename)
 
     ###############################################################################################################
     # FOLDERS OF BUILT CONTENT
@@ -271,7 +278,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
     ###############################################################################################################
     # OUTPUT FOR REVIEWING
-    # the webapp is serverd here for reviewing - after building but before release
+    # the browser app is serverd here for reviewing - after building but before release
 
     def aab_review_url(self, request):
         url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, self._aab_filename)
@@ -289,7 +296,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
     # relies on correct nginx conf
     # do not use request.get_host()
-    def webapp_review_url(self, request):
+    def browser_review_url(self, request):
 
         from django_tenants.utils import get_tenant_domain_model
         Domain = get_tenant_domain_model()
@@ -299,13 +306,13 @@ class AppReleaseBuilder(AppBuilderBase):
 
         return url
 
-    # the zipped webapp
-    def webapp_zip_review_url(self, request):
-        url = '{0}://{1}/packages/review/webapp/{2}'.format(request.scheme, self.meta_app.domain, self._webapp_zipfile_name)
+    # the zipped browser app
+    def browser_zip_review_url(self, request):
+        url = '{0}://{1}/packages/review/browser/{2}'.format(request.scheme, self.meta_app.domain, self._browser_zipfile_name)
         return url
 
-    def webapp_zip_published_url(self):
-        url = '/packages/published/webapp/{0}'.format(self._webapp_zipfile_name)
+    def browser_zip_published_url(self):
+        url = '/packages/published/browser/{0}'.format(self._browser_zipfile_name)
         return url
 
     # ios ipa files
@@ -1051,7 +1058,7 @@ class AppReleaseBuilder(AppBuilderBase):
     # BUILDING
     # - uses the build folder within the app_version_folder
     # - {app_version_folder}/build/common/www/
-    # - {app_version_folder}/build/webapp/
+    # - {app_version_folder}/build/browser/
     # - {app_version_folder}/build/cordova/
     ###############################################################################################################
     def build(self):
@@ -1145,8 +1152,8 @@ class AppReleaseBuilder(AppBuilderBase):
             # build_common_www has to come first
             self._build_common_www()
 
-            # build webapp
-            self._build_webapp()
+            # build browser app
+            self._build_browser()
 
             # build ios, done on a mac
             if 'ios' in settings.APP_KIT_SUPPORTED_PLATFORMS and 'ios' in self.meta_app.build_settings['platforms']:
@@ -1502,7 +1509,7 @@ class AppReleaseBuilder(AppBuilderBase):
         features_json_entry = jsonbuilder.build_features_json_entry()
 
         # complete the settings_entry
-        # one file per form, absolute path in webapp features.js
+        # one file per form, absolute path in browser app features.js
         relative_generic_content_folder =  self._app_relative_generic_content_path(generic_content)
 
         content_filename = '{0}.json'.format(str(generic_content.uuid))
@@ -2150,80 +2157,51 @@ class AppReleaseBuilder(AppBuilderBase):
         return image_urls
 
     ###############################################################################################################
-    # BUILDING WEBAPP
-    # - symlink or copy all folders and files from common/www
-    # - add additional files supplied by frontend in {FRONTEND_NAME}/webapp
+    # BUILDING BROWSER APP
+    # - copy all folders and files from common/www into cordova folder
+    # - add additional files supplied by frontend in {FRONTEND_NAME}/browser
     ###############################################################################################################
-    def _build_Frontend_webapp_specific_assets(self):
 
-        if os.path.isdir(self._frontend_webapp_assets_www_path):
-            shutil.copytree(self._frontend_webapp_assets_www_path, self._build_webapp_www_path, dirs_exist_ok=True)
-        
-    def _build_webapp(self):
+    def _build_browser(self):
 
-        self.logger.info('Building webapp')
+        self.logger.info('Building browser app')
 
-        webapp_www_folder = self._build_webapp_www_path
+        self._build_app_www('browser', self._build_browser_www_path, self._frontend_browser_www_path)
 
-        if not os.path.isdir(webapp_www_folder):
-            os.makedirs(webapp_www_folder)
-        else:
-            self.logger.info('[webapp] webapp www folder already exists')
+        self._build_config_xml(platform='browser')
 
-        # symlink common www
-        common_www_folder = self._app_www_path
-        for content in os.listdir(common_www_folder):
-            source_path = os.path.join(common_www_folder, content)
-            dest_path = os.path.join(webapp_www_folder, content)
-            os.symlink(source_path, dest_path)
+        cordova_builder = self.get_cordova_builder()
 
-
-        # copy webapp specific assets supplied by frontend
-        self.logger.info('[webapp] copying frontend specific assets')
-        self._build_Frontend_webapp_specific_assets()
-
-
-        # served review folder
-        if os.path.islink(self._review_webapp_served_www_path):
-            os.unlink(self._review_webapp_served_www_path)
-
-        if not os.path.isdir(self._review_served_root):
-            os.makedirs(self._review_served_root)
-
-        os.symlink(webapp_www_folder, self._review_webapp_served_www_path)
-
-        # set localcosmos_server.app.review_version_path
-        self.meta_app.app.review_version_path = self._review_webapp_served_www_path
-        self.meta_app.app.save()
-
-        # if lc private is set, serve the webapp zip
-        # create a zipfile of the webapp folder
+        build_zip = True
         lc_private = self.meta_app.get_global_option('localcosmos_private')
         if lc_private == True:
-            
-            zip_filepath = self._build_webapp_zip_filepath
-            webapp_www_folder = self._build_webapp_www_path
-
-            with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as www_zip:
-
-                for root, dirs, files in os.walk(webapp_www_folder, followlinks=True):
-
-                    for filename in files:
-                        # Create the full filepath by using os module.
-                        app_file_path = os.path.join(root, filename)
-                        arcname = app_file_path.split(webapp_www_folder)[-1]
-                        www_zip.write(app_file_path, arcname=arcname)
-
-            # serve the zipfile via symlink
-            self.serve_review_webapp_zip()
-
-        self.logger.info('Successfully built webapp')
-
-
-    def serve_review_webapp_zip(self):
+            build_zip=True
         
-        self.deletecreate_folder(self._review_webapp_zip_served_path)
-        os.symlink(self._build_webapp_zip_filepath, self._review_webapp_zip_served_filepath)
+        browser_built_folder, browser_zip_filepath = cordova_builder.build_browser(rebuild=True, build_zip=build_zip)
+
+        if os.path.islink(self._review_browser_served_www_path):
+            os.unlink(self._review_browser_served_www_path)
+
+        os.symlink(browser_built_folder, self._review_browser_served_www_path)
+
+        if os.path.isfile(browser_zip_filepath):
+
+            if not os.path.exists(self._build_packages_path):
+                os.makedirs(self._build_packages_path)
+
+            shutil.move(browser_zip_filepath, self._build_browser_zip_filepath)
+            self.serve_review_browser_zip()
+            
+        # set localcosmos_server.app.review_version_path
+        self.meta_app.app.review_version_path = self._review_browser_served_www_path
+        self.meta_app.app.save()
+
+        self.logger.info('Successfully built browser app')
+
+    def serve_review_browser_zip(self):
+        
+        self.deletecreate_folder(self._review_browser_zip_served_path)
+        os.symlink(self._build_browser_zip_filepath, self._review_browser_zip_served_filepath)
 
 
     ##############################################################################################################
@@ -2239,13 +2217,13 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_served_root(self):
         return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid, 'published')
 
-    # webapp www folder of review and published
+    # browser app www folder of review and published
     @property
-    def _review_webapp_served_www_path(self):
+    def _review_browser_served_www_path(self):
         return os.path.join(self._review_served_root, 'www')
     
     @property
-    def _published_webapp_served_www_path(self):
+    def _published_browser_served_www_path(self):
         return os.path.join(self._published_served_root, 'www')
 
     ####################################################################################################
@@ -2346,25 +2324,25 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_ios_served_path(self):
         return os.path.join(self._published_served_packages_path, 'ios')
 
-    # webapp
+    # browser app
     @property
-    def _review_webapp_zip_served_path(self):
-        return os.path.join(self._review_served_packages_path, 'webapp')
+    def _review_browser_zip_served_path(self):
+        return os.path.join(self._review_served_packages_path, 'browser')
 
     @property
-    def _published_webapp_zip_served_path(self):
-        return os.path.join(self._published_served_packages_path, 'webapp')
+    def _published_browser_zip_served_path(self):
+        return os.path.join(self._published_served_packages_path, 'browser')
 
     @property
-    def _review_webapp_zip_served_filepath(self):
-        return os.path.join(self._review_webapp_zip_served_path, self._webapp_zipfile_name)
+    def _review_browser_zip_served_filepath(self):
+        return os.path.join(self._review_browser_zip_served_path, self._browser_zipfile_name)
 
     @property
-    def _published_webapp_zip_served_filepath(self):
-        return os.path.join(self._published_served_packages_path, self._webapp_zipfile_name)
+    def _published_browser_zip_served_filepath(self):
+        return os.path.join(self._published_served_packages_path, self._browser_zipfile_name)
     
     @property
-    def _webapp_zipfile_name(self):
+    def _browser_zipfile_name(self):
         zipfile_name = '{0}.zip'.format(self.meta_app.name)
         return zipfile_name
 
@@ -2434,12 +2412,6 @@ class AppReleaseBuilder(AppBuilderBase):
     # - the actual build is done on a MAC
     ###############################################################################################################
 
-    def _build_ios_assets(self):
-        self._build_app_assets('ios', self._build_ios_assets_path)
-
-    def _build_ios_www(self):
-        self._build_app_www('ios', self._build_ios_www_path, self._frontend_ios_www_path)
-    
     
     def create_ios_zipfile(self):
 
@@ -2465,9 +2437,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.deletecreate_folder(self._build_jobs_path)
 
-        self._build_ios_assets()
+        self._build_app_assets('ios', self._build_ios_assets_path)
         self._build_config_xml(platform='ios')
-        self._build_ios_www()
+        
+        self._build_app_www('ios', self._build_ios_www_path, self._frontend_ios_www_path)
         
         self.create_ios_zipfile()
 
@@ -2536,10 +2509,6 @@ class AppReleaseBuilder(AppBuilderBase):
         return ASSET_FILENAMES[platform][asset_type]
     
 
-    def _build_android_assets(self):
-        self._build_app_assets('android', self._build_android_assets_path)
-
-
     def _build_config_xml(self, platform):
 
         if os.path.isfile(self._frontend_config_xml_path):
@@ -2550,24 +2519,22 @@ class AppReleaseBuilder(AppBuilderBase):
                 target_config_xml_path = os.path.join(self._build_android_root, filename)
             elif platform == 'ios':
                 target_config_xml_path = os.path.join(self._build_ios_root, filename)
+            elif platform == 'browser':
+                target_config_xml_path = os.path.join(self._build_browser_root, filename)
 
             shutil.copyfile(self._frontend_config_xml_path, target_config_xml_path)
 
 
     # 1. symlink common www. 2. symlink android specific files
-    def _build_android_www(self):
-        self._build_app_www('android', self._build_android_www_path, self._frontend_android_www_path)
-
-
     def _build_android(self):
 
         self.logger.info('Building Android')
 
-        self._build_android_assets()
+        self._build_app_assets('android', self._build_android_assets_path)
 
         self._build_config_xml(platform='android')
 
-        self._build_android_www()
+        self._build_app_www('android', self._build_android_www_path, self._frontend_android_www_path)
 
         keystore_path = self.get_keystore_path()
         
@@ -2604,7 +2571,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self.logger.info('Starting release process')
 
         try:
-            self._release_webapp()
+            self._release_browser()
 
             if 'android' in self.meta_app.build_settings['platforms']:
                 self._release_android()
@@ -2631,27 +2598,27 @@ class AppReleaseBuilder(AppBuilderBase):
         return release_report
 
     
-    def _release_webapp(self):
+    def _release_browser(self):
 
-        build_webapp_www_folder = self._build_webapp_www_path
+        build_browser_www_folder = self._build_browser_www_path
 
-        served_published_www_folder = self._published_webapp_served_www_path
+        served_published_www_folder = self._published_browser_served_www_path
         if os.path.islink(served_published_www_folder):
             os.unlink(served_published_www_folder)
         
-        os.symlink(build_webapp_www_folder, served_published_www_folder)
+        os.symlink(build_browser_www_folder, served_published_www_folder)
 
         # update app.url, if hosted on LC
         localcosmos_private = self.meta_app.get_global_option('localcosmos_private')
 
         if localcosmos_private == True:
             # symlink the pwa zip to a browsable location
-            webapp_zip_release_folder = self._published_webapp_zip_served_path
-            self.deletecreate_folder(webapp_zip_release_folder)
+            browser_zip_release_folder = self._published_browser_zip_served_path
+            self.deletecreate_folder(browser_zip_release_folder)
 
-            webapp_zip_source = self._build_webapp_zip_filepath
-            webapp_zip_dest = self._published_webapp_zip_served_path
-            os.symlink(webapp_zip_source, webapp_zip_dest)
+            browser_zip_source = self._build_browser_zip_filepath
+            browser_zip_dest = self._published_browser_zip_served_path
+            os.symlink(browser_zip_source, browser_zip_dest)
 
         else:
             # set the url of meta_app.app

@@ -5,7 +5,7 @@
     =======================================================================================
     
     There are three types of apps for each version:
-    - Webapp
+    - browser
     - android APP
     - ios APP
 
@@ -22,7 +22,7 @@
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/sources/common/
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/cordova/
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/webapp/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/browser/
 
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/log/
 
@@ -49,12 +49,12 @@
     3. the folder for the app version is created if not present
     4. the target folder for build is {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.version}/{release|preview}/
     5. app contents (www-folder etc) are created in the folder sources/
-    6. webapp, ios and android versions are built using the common www folder + optional specific files
+    6. browser, ios and android versions are built using the common www folder + optional specific files
     7. if the build was successful, a report file is dumped within the apps log folder
     
 
     B RELEASE - only for successful builds - triggered by user
-    0. webapp is symlinked to /var/www/...
+    0. browser is symlinked to /var/www/...
     1. the apps are uploaded to the appstore
     2. the version will be locked, no further edits possible
     2. a new version will be started - triggered by user ?
@@ -278,22 +278,34 @@ class AppBuilderBase:
     @classmethod
     def get_installed_frontends(cls):
         frontends = []
-        frontends_path = os.path.join(cls._get_builder_root_path(), 'app', 'frontends')
-        for frontend_name in os.listdir(frontends_path):
-            frontends.append(frontend_name)
+        for public_frontend_name in os.listdir(cls._get_public_frontends_path()):
+            frontends.append(public_frontend_name)
+
+        private_frontends_path = cls._get_private_frontends_path()
+        if os.path.isdir(private_frontends_path):
+            for private_frontend_name in os.listdir(private_frontends_path):
+                frontends.append(private_frontend_name)
 
         return frontends
 
     # publicly installed frontends, provided by localcosmos.org
     @property
     def public_frontends_path(self):
-        return os.path.join(self._builder_root_path, 'app', 'frontends')
+        return self._get_public_frontends_path()
 
+    # support python versions < 3.8 which do not support using @property and @classmethod together
+    @classmethod
+    def _get_public_frontends_path(cls):
+        return os.path.join(cls._get_builder_root_path(), 'app', 'frontends')
 
     # a user can create his own frontend
     # this is the directory the frontend is uploaded to, tenant-specific
     @property
     def private_frontends_path(self):
+        return self._get_private_frontends_path()
+
+    @classmethod
+    def _get_private_frontends_path(cls):
         return os.path.join(settings.APP_KIT_PRIVATE_FRONTENDS_PATH, connection.schema_name)
 
 
@@ -306,6 +318,8 @@ class AppBuilderBase:
 
         return frontend
 
+    def get_private_frontend_path(self, frontend_name):
+        return os.path.join(self.private_frontends_path, frontend_name)
 
     @property
     def _frontend_root_path(self):
@@ -338,8 +352,8 @@ class AppBuilderBase:
 
 
     @property
-    def _frontend_webapp_assets_www_path(self):
-        return os.path.join(self._frontend_root_path, 'webapp', 'www')
+    def _frontend_browser_assets_www_path(self):
+        return os.path.join(self._frontend_root_path, 'browser', 'www')
 
 
     # building the frontend has to be possible on both AppPreviewBuilder (for TemplateContent preview) and AppReleaseBuilder
@@ -348,12 +362,12 @@ class AppBuilderBase:
         shutil.copytree(self._frontend_www_path, self._app_www_path, dirs_exist_ok=True)
 
 
-    def _build_Frontend_webapp_specific_assets(self):
-        self.logger.info('copying specific webapp assets of frontend: {0} -> {1}'.format(
-                        self._frontend_webapp_assets_www_path, self._app_www_path))
+    def _build_Frontend_browser_specific_assets(self):
+        self.logger.info('copying specific browser assets of frontend: {0} -> {1}'.format(
+                        self._frontend_browser_assets_www_path, self._app_www_path))
 
-        if os.path.isdir(self._frontend_webapp_assets_www_path):
-            shutil.copytree(self._frontend_webapp_assets_www_path, self._app_www_path, dirs_exist_ok=True)
+        if os.path.isdir(self._frontend_browser_assets_www_path):
+            shutil.copytree(self._frontend_browser_assets_www_path, self._app_www_path, dirs_exist_ok=True)
 
 
     #############################################################################################
@@ -510,14 +524,14 @@ class AppBuilderBase:
     def _app_nginx_served_root(self):
         return os.path.join(settings.LOCALCOSMOS_APPS_ROOT, self.meta_app.app.uid)
 
-    # webapp preview
+    # browser preview
     @property
-    def _preview_webapp_served_path(self):
+    def _preview_browser_served_path(self):
         return os.path.join(self._app_nginx_served_root, 'preview')
 
     @property
-    def _preview_webapp_served_www_path(self):
-        return os.path.join(self._preview_webapp_served_path, 'www')        
+    def _preview_browser_served_www_path(self):
+        return os.path.join(self._preview_browser_served_path, 'www')        
         
 
     ##########################################################################################

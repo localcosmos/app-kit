@@ -50,14 +50,14 @@ class TestAppbuilderBase(WithMetaApp, TenantTestCase):
 
         self.assertTrue(os.path.isfile(preview_builder._app_settings_json_filepath))
 
-        webapp_cordova_js_path = os.path.join(preview_builder._app_www_path, 'cordova.js')
-        self.assertTrue(os.path.isfile(webapp_cordova_js_path))
+        browser_cordova_js_path = os.path.join(preview_builder._app_www_path, 'cordova.js')
+        self.assertTrue(os.path.isfile(browser_cordova_js_path))
 
-        webapp_dir = os.path.join(preview_builder._app_www_path, 'webapp')
+        browser_dir = os.path.join(preview_builder._app_www_path, 'browser')
 
-        self.assertTrue(os.path.isdir(webapp_dir))
+        self.assertTrue(os.path.isdir(browser_dir))
 
-        self.assertTrue(os.path.isdir(preview_builder._preview_webapp_served_path))
+        self.assertTrue(os.path.isdir(preview_builder._preview_browser_served_path))
 
         self.assertTrue(os.path.isfile(preview_builder._app_locale_filepath(self.meta_app.primary_language)))
         self.assertTrue(os.path.isfile(preview_builder._app_glossarized_locale_filepath(self.meta_app.primary_language)))

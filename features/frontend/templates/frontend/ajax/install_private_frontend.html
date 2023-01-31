@@ -1,0 +1,31 @@
+{% extends 'localcosmos_server/modals/modal_base.html' %}
+
+{% load i18n app_tags localcosmos_tags %}
+
+
+
+{% block title %}{% trans 'Install Private Frontend' %}{% endblock %}
+
+{% block body %}
+	{% if success %}
+		<div class="alert alert-success">
+			{% trans 'Successfully installed frontend' %}
+		</div>
+	{% else %}
+	<div class="alert alert-danger">
+		{% trans 'Frontend installatoin failed.' %}
+	</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+		<script>
+			window.location.reload();
+		</script>
+	{% endif %}
+{% endblock %}

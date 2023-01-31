@@ -757,11 +757,11 @@ class BuildApp(FormView):
             context['aab_review_url'] = app_release_builder.aab_review_url(self.request)
             context['apk_review_url'] = app_release_builder.apk_review_url(self.request)
             
-            context['webapp_review_url'] = app_release_builder.webapp_review_url(self.request)
+            context['browser_review_url'] = app_release_builder.browser_review_url(self.request)
 
             context['ipa_review_url'] = app_release_builder.ipa_review_url(self.request)
             
-            context['pwa_zip_review_url'] = app_release_builder.webapp_zip_review_url(self.request)
+            context['pwa_zip_review_url'] = app_release_builder.browser_zip_review_url(self.request)
 
             app_kit_job = AppKitJobs.objects.filter(meta_app_uuid=self.meta_app.uuid,
                     app_version=self.meta_app.current_version, platform='ios', job_type='build').first()

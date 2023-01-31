@@ -682,7 +682,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             self.app.published_version = self.published_version
 
             appbuilder = self.get_release_builder()
-            published_version_path = appbuilder._published_webapp_served_www_path
+            published_version_path = appbuilder._published_browser_served_www_path
             self.app.published_version_path = published_version_path
 
             # set apk_url
@@ -690,7 +690,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             # set ipa_url
             self.app.ipa_url = appbuilder.ipa_published_url()
             # set pwa_zip_url
-            self.app.pwa_zip_url = appbuilder.webapp_zip_published_url()
+            self.app.pwa_zip_url = appbuilder.browser_zip_published_url()
 
             self.app.save()
 

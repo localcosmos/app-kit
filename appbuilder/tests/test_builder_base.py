@@ -195,11 +195,11 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
 
     
     @test_settings
-    def test_frontend_webapp_assets_www_path(self):
+    def test_frontend_browser_assets_www_path(self):
 
         appbuilder = AppBuilderBase(self.meta_app)
 
-        self.assertTrue(appbuilder._frontend_webapp_assets_www_path.endswith('webapp/www'))
+        self.assertTrue(appbuilder._frontend_browser_assets_www_path.endswith('browser/www'))
     
 
     ###############################################################################################################

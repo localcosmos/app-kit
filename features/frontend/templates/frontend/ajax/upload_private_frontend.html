@@ -1,0 +1,39 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n app_tags localcosmos_tags %}
+
+{% block above %}
+	<form method="POST" action="{% if success %}{% url 'install_private_frontend' meta_app.id frontend.id %}{% else %}{% url 'upload_private_frontend' meta_app.id frontend.id %}{% endif %}" class="xhr" enctype="multipart/form-data">{% csrf_token %}
+{% endblock %}
+
+
+{% block title %}{% trans 'Upload Private Frontend' %}{% endblock %}
+
+{% block body %}
+	{% render_bootstrap_form form %}
+	{% if success %}
+		<div>
+			{% trans 'You uploaded the following frontend:' %}
+		</div>
+		<div class="my-3">
+			<div>
+				{% trans 'Frontend' %}: <strong>{{ frontend_settings.frontend }}</strong>
+			</div>
+			<div>
+				{% trans 'version' %}: <strong>{{ frontend_settings.version }}</strong>
+			</div>
+		</div>
+		<div>
+			<strong>{% trans 'Do you want to install this frontend now?' %}</strong>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if success %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Install' %}</button>
+	{% else %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}

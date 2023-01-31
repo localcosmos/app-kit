@@ -2,13 +2,13 @@ from django import forms
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
 
+from django.utils.translation import gettext_lazy as _
+
 from app_kit.appbuilder import AppBuilder
 
-from app_kit.utils import unCamelCase, camelCase_to_underscore_case
+from app_kit.utils import unCamelCase
 
 from localcosmos_server.widgets import TwoStepFileInput
-
-import re
 
 
 '''
@@ -18,9 +18,11 @@ class FrontendSettingsForm(forms.Form):
 
     legal_notice = forms.CharField(max_length=355, widget=forms.Textarea, required=False)
 
-    layoutable_full_fields = ['legal_notice']
-
     def __init__(self, meta_app, frontend, *args, **kwargs):
+
+        self.layoutable_full_fields = ['legal_notice']
+        self.layoutable_simple_fields = []
+
         self.meta_app = meta_app
         self.frontend = frontend
         app_builder = AppBuilder(meta_app)
@@ -146,3 +148,36 @@ class FrontendSettingsForm(forms.Form):
 
                 self.fields[configuration_type] = field
 
+
+
+class ChangeFrontendForm(forms.Form):
+
+    def __init__(self, meta_app, *args, **kwargs):
+        self.meta_app = meta_app
+        super().__init__(*args, **kwargs)
+
+        self.fields['frontend_name'] = forms.ChoiceField(choices=self.get_frontend_choices(),
+            widget=forms.Select, label=_('Frontend'))
+
+
+    def get_frontend_choices(self):
+
+        preview_builder = self.meta_app.get_preview_builder()
+
+        installed_frontends = preview_builder.get_installed_frontends()
+
+        choices = []
+
+        for frontend_name in installed_frontends:
+            choices.append((frontend_name, frontend_name))
+        
+        return choices
+    
+
+from django.core.validators import FileExtensionValidator
+class UploadPrivateFrontendForm(forms.Form):
+    frontend_zip = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
+
+
+class InstallPrivateFrontendForm(forms.Form):
+    frontend_name = forms.CharField(widget=forms.HiddenInput)

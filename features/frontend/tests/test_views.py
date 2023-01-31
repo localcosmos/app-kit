@@ -1,19 +1,31 @@
+from django.conf import settings
 from django_tenants.test.cases import TenantTestCase
 
-from app_kit.tests.common import test_settings
+from django.db import connection
+
+from app_kit.tests.common import test_settings, TESTS_ROOT
 
 from app_kit.appbuilder import AppBuilder
 
 from app_kit.tests.mixins import (WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, WithFormTest, ViewTestMixin, WithImageStore, WithMedia)
 
-from app_kit.features.frontend.views import FrontendSettingsMixin, ManageFrontend, ManageFrontendSettings
+from app_kit.features.frontend.views import (FrontendSettingsMixin, ManageFrontend, ManageFrontendSettings, ChangeFrontend,
+                                                UploadPrivateFrontend, InstallPrivateFrontend)
 
-from app_kit.features.frontend.forms import FrontendSettingsForm
+from app_kit.features.frontend.forms import (FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFrontendForm,
+                                                InstallPrivateFrontendForm)
 
 from app_kit.features.frontend.models import FrontendText
 
 from .test_models import WithFrontend
+from app_kit.features.frontend.PrivateFrontendImporter import PrivateFrontendImporter
+
+from .mixins import WithFrontendZip, CleanFrontendTestFolders
+
+import os
+
+TEST_FRONTEND_NAME = 'Mountain'
 
 
 # ManageFrontendSettings uses all methods of FrontendSettingsMixin
@@ -282,3 +294,272 @@ class TestManageFrontendSettings(WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
         self.assertEqual(ln_text.text, data_2['legal_notice'])
         
 
+# also tests frontendmixin
+class TestChangeFrontend(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, WithUser, WithLoggedInUser,
+                                WithTenantClient, TenantTestCase):
+
+    url_name = 'change_frontend'
+    view_class = ChangeFrontend
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'frontend_id' : self.frontend.id,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['frontend'], self.frontend)
+
+    @test_settings
+    def test_set_frontend(self):
+        
+        view = self.get_view()
+
+        self.assertFalse(hasattr(view, 'frontend'))
+
+        view.set_frontend(**view.kwargs)
+        self.assertEqual(view.frontend, self.frontend)
+
+    
+    @test_settings
+    def test_get_form(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        form = view.get_form()
+
+        self.assertEqual(form.__class__, ChangeFrontendForm)
+
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['frontend_name'], self.frontend.frontend_name)
+        
+
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        post_data = {
+            'frontend_name' : 'Flat',
+        }
+
+        form = ChangeFrontendForm(self.meta_app, data=post_data)
+
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+
+        self.assertEqual(response.status_code, 200)
+
+    @test_settings
+    def test_update_frontend(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        view.update_frontend('Flat')
+
+
+class TestUploadPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
+                                WithUser, WithLoggedInUser, WithTenantClient, TenantTestCase):
+
+    url_name = 'upload_private_frontend'
+    view_class = UploadPrivateFrontend
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'frontend_id' : self.frontend.id,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_form_valid_valid_zip(self):
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        
+        valid_zip_file = self.get_valid_zip_file()
+
+        frontend_installation_path = os.path.join(settings.APP_KIT_PRIVATE_FRONTENDS_PATH, TEST_FRONTEND_NAME)
+
+        self.assertTrue(frontend_installation_path.startswith(TESTS_ROOT))
+
+        frontend_importer = PrivateFrontendImporter(self.meta_app)
+        self.assertFalse(os.path.isdir(frontend_importer.unzip_path))
+        self.assertFalse(os.path.isdir(frontend_installation_path))
+
+        post_data = {
+           'frontend_zip' : valid_zip_file, 
+        }
+
+        form = UploadPrivateFrontendForm(files=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        context_data = response.context_data
+
+        self.assertEqual(context_data['errors'], [])
+        self.assertEqual(context_data['success'], True)
+        self.assertIn('frontend_settings', context_data)
+        self.assertEqual(context_data['frontend_settings']['frontend'], TEST_FRONTEND_NAME)
+        self.assertEqual(context_data['form'].__class__, InstallPrivateFrontendForm)
+        self.assertEqual(context_data['form'].initial['frontend_name'], TEST_FRONTEND_NAME)
+
+        self.assertTrue(os.path.isdir(frontend_importer.unzip_path))
+        self.assertFalse(os.path.isdir(frontend_installation_path))
+
+    @test_settings
+    def test_form_valid_invalid_zip(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        
+        invalid_zip_file = self.get_invalid_zip_file()
+
+        frontend_installation_path = os.path.join(settings.APP_KIT_PRIVATE_FRONTENDS_PATH, TEST_FRONTEND_NAME)
+
+        self.assertTrue(frontend_installation_path.startswith(TESTS_ROOT))
+
+        frontend_importer = PrivateFrontendImporter(self.meta_app)
+        self.assertFalse(os.path.isdir(frontend_importer.unzip_path))
+        self.assertFalse(os.path.isdir(frontend_installation_path))
+
+        post_data = {
+           'frontend_zip' : invalid_zip_file, 
+        }
+
+        form = UploadPrivateFrontendForm(files=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        context_data = response.context_data
+
+        self.assertEqual(len(context_data['errors']), 1)
+        self.assertEqual(context_data['success'], False)
+        self.assertIn('frontend_settings', context_data)
+        self.assertEqual(context_data['frontend_settings'], {})
+        self.assertEqual(context_data['form'].__class__, UploadPrivateFrontendForm)
+
+        self.assertFalse(os.path.isdir(frontend_importer.unzip_path))
+        self.assertFalse(os.path.isdir(frontend_installation_path))
+
+
+class TestInstallPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
+                                WithUser, WithLoggedInUser, WithTenantClient, TenantTestCase):
+
+    
+    url_name = 'install_private_frontend'
+    view_class = InstallPrivateFrontend
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'frontend_id' : self.frontend.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_form_valid_valid_zip(self):
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        
+        valid_zip_file = self.get_valid_zip_file()
+        frontend_installation_path = os.path.join(settings.APP_KIT_PRIVATE_FRONTENDS_PATH, connection.schema_name,
+            TEST_FRONTEND_NAME)
+
+        self.assertTrue(frontend_installation_path.startswith(TESTS_ROOT))
+
+        frontend_importer = PrivateFrontendImporter(self.meta_app)
+        frontend_unzip_path = os.path.join(frontend_importer.unzip_path, TEST_FRONTEND_NAME)
+        frontend_importer.unzip_to_temporary_folder(valid_zip_file)
+        frontend_importer.validate()
+
+        self.assertTrue(os.path.isdir(frontend_unzip_path))
+
+        
+        self.assertEqual(frontend_importer.errors, [])
+
+        post_data = {
+            'frontend_name' : TEST_FRONTEND_NAME
+        }
+
+        form = InstallPrivateFrontendForm(data=post_data)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        self.assertEqual(self.frontend.frontend_name, 'Flat')
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+
+        self.assertFalse(os.path.isdir(frontend_unzip_path))
+        self.assertTrue(os.path.isdir(frontend_installation_path))
+
+        self.frontend.refresh_from_db()
+        self.assertEqual(self.frontend.frontend_name, TEST_FRONTEND_NAME)
+
+
+    @test_settings
+    def test_form_valid_invalid_zip(self):
+        
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        
+        invalid_zip_file = self.get_invalid_zip_file()
+
+        frontend_installation_path = os.path.join(settings.APP_KIT_PRIVATE_FRONTENDS_PATH, TEST_FRONTEND_NAME)
+
+        self.assertTrue(frontend_installation_path.startswith(TESTS_ROOT))
+
+        frontend_importer = PrivateFrontendImporter(self.meta_app)
+        frontend_importer.unzip_to_temporary_folder(invalid_zip_file)
+
+        post_data = {
+            'frontend_name' : 'InvalidMountain'
+        }
+
+        form = InstallPrivateFrontendForm(data=post_data)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], False)
+
+        self.assertFalse(os.path.isdir(frontend_importer.unzip_path))
+        self.assertFalse(os.path.isdir(frontend_installation_path))

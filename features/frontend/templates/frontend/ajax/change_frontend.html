@@ -1,0 +1,29 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n app_tags localcosmos_tags %}
+
+{% block action %}{% url 'change_frontend' meta_app.id frontend.id %}{% endblock %}
+
+
+{% block title %}{% trans 'Change Frontend' %}{% endblock %}
+
+{% block body %}
+	<h6><strong>{% trans 'Select from installed Frontends' %}</strong></h6>
+	{% render_bootstrap_form form %}
+	<hr>
+	<button type="button" class="btn btn-sm btn-outline-secondary xhr" data-url="{% url 'upload_private_frontend' meta_app.id frontend.id %}" ajax-target="ModalContent">{% trans 'upload private frontend' %}</button>
+
+{% endblock %}
+
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+		<script>
+			window.location.reload();
+		</script>
+	{% endif %}
+{% endblock %}

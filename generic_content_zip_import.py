@@ -133,7 +133,6 @@ class GenericContentZipImporter:
 
 
     def get_image_licences_workbook(self):
-        filenames = []
 
         licence_workbook = None
         workbook_filename = None

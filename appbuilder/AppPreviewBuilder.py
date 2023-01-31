@@ -1,7 +1,7 @@
 #####################################################################################################
 #
 # APP PREVIEW BUILDER
-# - builds a preview webapp without localcosmos features
+# - builds a browser preview without localcosmos features
 # - used to provide a preview for TemplateContent
 # - can only be built if the user provided all required assets defined in config.json
 # - manages the preview folder, eg {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.version}/preview/
@@ -19,14 +19,14 @@ class PreviewExists(Exception):
     pass
 
 
-# builds a webapp without content, no android, no ios
+# builds a browser app without content, no android, no ios
 class AppPreviewBuilder(AppBuilderBase):
 
     # previews are not being validated
     def validate(self):
         raise NotImplementedError('AppPreviewBuilder has no validate method')
 
-    # create app preview, webapp only
+    # create app preview, browser only
     #- delete the preview folder and recreate the preview folder
     #- symlink/copy all necessary files, but no generic content
     #- the preview is for the online content, not for other contents
@@ -70,9 +70,9 @@ class AppPreviewBuilder(AppBuilderBase):
                 f.write(app_features_string)
 
 
-            # STEP 6: copy webapp specific files provided by the frontend
-            self.logger.info('Copying webapp assets')
-            self._build_Frontend_webapp_specific_assets()
+            # STEP 6: copy browser specific files provided by the frontend
+            self.logger.info('Copying browser assets')
+            self._build_Frontend_browser_specific_assets()
 
 
             # STEP 6: create basic primary locale
@@ -118,13 +118,13 @@ class AppPreviewBuilder(AppBuilderBase):
     
     def _link_to_webserver(self):
         # make the preview live, the preview live folder is a subfolder of settings.MEDIA_ROOT
-        self.deletecreate_folder(self._preview_webapp_served_path)
+        self.deletecreate_folder(self._preview_browser_served_path)
 
-        os.symlink(self._app_www_path, self._preview_webapp_served_www_path)
+        os.symlink(self._app_www_path, self._preview_browser_served_www_path)
 
         # update the previre served folder in the database
         # set the apps preview folder - to the served folder, not the app-kits internal folder
-        self.meta_app.app.preview_version_path = self._preview_webapp_served_www_path
+        self.meta_app.app.preview_version_path = self._preview_browser_served_www_path
         self.meta_app.app.save()
 
 

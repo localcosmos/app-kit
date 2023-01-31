@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from app_kit.tests.common import test_settings, TESTS_ROOT
 
-from app_kit.tests.mixins import WithMetaApp, WithMedia, WithUser
+from app_kit.tests.mixins import WithMetaApp, WithMedia, WithUser, WithPublicDomain
 
 from app_kit.appbuilder import AppReleaseBuilder
 from app_kit.app_kit_api.models import AppKitJobs
@@ -26,7 +26,6 @@ from app_kit.features.generic_forms.models import GenericForm
 from app_kit.features.frontend.models import FrontendText
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
 from app_kit.features.taxon_profiles.models import TaxonProfiles
-from app_kit.features.fact_sheets.models import FactSheets
 from app_kit.features.maps.models import Map
 
 from taxonomy.models import TaxonomyModelRouter
@@ -39,7 +38,7 @@ import os
 
 TEST_PRIVATE_API_URL = 'http://localhost/private-api-test/'
 
-class TestReleaseBuilder(WithMetaApp, WithUser, WithMedia, WithNatureGuide, TenantTestCase):
+class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, WithNatureGuide, TenantTestCase):
 
     def setUp(self):
         super().setUp()
@@ -99,21 +98,21 @@ class TestReleaseBuilder(WithMetaApp, WithUser, WithMedia, WithNatureGuide, Tena
 
 
     @test_settings
-    def test_build_webapp_path(self):
+    def test_build_browser_path(self):
         
-        path = self.release_builder._build_webapp_path
+        path = self.release_builder._build_browser_root
 
         self.general_path_check(path)
-        self.assertTrue(path.endswith('release/webapp'))
+        self.assertTrue(path.endswith('sources/browser'))
 
 
     @test_settings
-    def test_build_webapp_www_path(self):
+    def test_build_browser_www_path(self):
         
-        path = self.release_builder._build_webapp_www_path
+        path = self.release_builder._build_browser_www_path
 
         self.general_path_check(path)
-        self.assertTrue(path.endswith('release/webapp/www'))
+        self.assertTrue(path.endswith('sources/browser/www'))
 
     
     @test_settings
@@ -193,24 +192,27 @@ class TestReleaseBuilder(WithMetaApp, WithUser, WithMedia, WithNatureGuide, Tena
 
 
     @test_settings
-    def test_webapp_review_url(self):
+    def test_browser_review_url(self):
+
+        self.create_public_domain()
+        
         request = self.get_request()
-        url = self.release_builder.webapp_review_url(request)
-        self.assertIn('/review/', url)
+        url = self.release_builder.browser_review_url(request)
+        self.assertIn('.review.', url)
         self.assertTrue(url.startswith('http'))
 
 
     @test_settings
-    def test_webapp_zip_review_url(self):
+    def test_browser_zip_review_url(self):
         request = self.get_request()
-        url = self.release_builder.webapp_zip_review_url(request)
-        self.assertIn('/packages/review/webapp', url)
+        url = self.release_builder.browser_zip_review_url(request)
+        self.assertIn('/packages/review/browser', url)
         self.assertTrue(url.startswith('http'))
 
     @test_settings
-    def test_webapp_zip_published_url(self):
-        url = self.release_builder.webapp_zip_published_url()
-        self.assertIn('/packages/published/webapp', url)
+    def test_browser_zip_published_url(self):
+        url = self.release_builder.browser_zip_published_url()
+        self.assertIn('/packages/published/browser', url)
         self.assertFalse(url.startswith('http'))
 
 
@@ -800,21 +802,6 @@ class TestReleaseBuilder(WithMetaApp, WithUser, WithMedia, WithNatureGuide, Tena
         result = self.release_builder.validate_TaxonProfiles(taxon_profiles)
         self.assertEqual(result['errors'], [])
         self.assertIn('taxa missing. A generic', result['warnings'][0].messages[0])
-
-
-    @test_settings
-    def test_validate_FactSheets(self):
-        
-        self.create_all_generic_contents(self.meta_app)
-
-        link = self.get_generic_content_link(FactSheets)
-
-        fact_sheets = link.generic_content
-
-        result = self.release_builder.validate_FactSheets(fact_sheets)
-
-        self.assertEqual(result['errors'], [])
-        self.assertEqual(result['warnings'], [])
 
 
     @test_settings
