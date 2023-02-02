@@ -55,7 +55,7 @@ from localcosmos_cordova_builder.required_assets import REQUIRED_ASSETS
 import os, json, base64, time, shutil, hashlib, zipfile
 
 from PIL import Image, ImageFile
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+ImageFile.LOAD_TRUNCATED_IMAGES = False
 
 # jobs
 from app_kit.app_kit_api.models import AppKitJobs

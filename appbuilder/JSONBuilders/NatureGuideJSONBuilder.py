@@ -116,6 +116,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 child_max_points = 0
                 child_space = {}
+                full_child_space_list = []
             
                 for node_filter_space in space_query:
 
@@ -141,8 +142,19 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                     weight = node_matrix_filter.weight
                     child_max_points = child_max_points + weight
+
+
+                    # taxon profiles cache
+                    serializer = MatrixFilterSerializer(self, node_matrix_filter)
+                    matrix_filter_json = serializer.serialize_matrix_filter()
+                    matrix_filter_json['space'] = child_space_list
+
+                    cache_entry = {
+                        'matrixFilter' :  matrix_filter_json
+                    }
+                    full_child_space_list.append(cache_entry)
                 
-                    self.add_space_to_aggregated_node_filter_space_cache(child, matrix_filter, child_space_list)
+                self.add_space_to_aggregated_node_filter_space_cache(child, full_child_space_list)
 
 
                 # apply taxon filters
@@ -189,7 +201,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
         return self.nature_guide_json
 
 
-    def add_space_to_aggregated_node_filter_space_cache(self, child, matrix_filter, child_space_list):
+    def add_space_to_aggregated_node_filter_space_cache(self, child, full_child_space_list):
 
         parent_taxon_nuid = child.parent.taxon_nuid
         aggregated_space = []
@@ -200,17 +212,14 @@ class NatureGuideJSONBuilder(JSONBuilder):
             if parent_taxon_nuid in cache:
                 aggregated_space = cache[parent_taxon_nuid]
 
-        if child.taxon_nuid not in cache:
-            cache[child.taxon_nuid] = aggregated_space
+        child_cache = aggregated_space + full_child_space_list
 
-        serializer = MatrixFilterSerializer(self, matrix_filter)
-        matrix_filter_json = serializer.serialize_matrix_filter()
-        matrix_filter_json['space'] = child_space_list
+        cache[child.taxon_nuid] = child_cache
 
-        cache_entry = {
-            'matrixFilter' :  matrix_filter_json
-        }
-        cache[child.taxon_nuid].append(cache_entry)         
+        grandparent_taxon_nuid = parent_taxon_nuid[:-3]
+
+        if grandparent_taxon_nuid in cache:
+            del cache[grandparent_taxon_nuid]
 
     def _get_matrix_filter_json(self, matrix_filter):
 
