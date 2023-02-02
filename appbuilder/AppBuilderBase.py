@@ -18,11 +18,12 @@
     * the app kit folder of a specific app version:
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.version}/
 
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/preview/
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/sources/common/
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/cordova/
-    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/release/browser/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/{preview|release}/sources/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/{preview|release}/sources/www/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/{preview|release}/sources/assets/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/{preview|release}/packages/
+    {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/{preview|release}/cordova/
+
 
     {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.current_version}/log/
 
@@ -48,8 +49,8 @@
     2. the apps folder is created if it is not present
     3. the folder for the app version is created if not present
     4. the target folder for build is {settings.APP_KIT_ROOT}/{app.uuid}/version/{app.version}/{release|preview}/
-    5. app contents (www-folder etc) are created in the folder sources/
-    6. browser, ios and android versions are built using the common www folder + optional specific files
+    5. app contents (www-folder etc) are created in the folder created by 5.
+    6. browser, ios and android versions are built using the common www folder and cordova
     7. if the build was successful, a report file is dumped within the apps log folder
     
 
@@ -71,6 +72,8 @@ from django.core import mail
 
 from app_kit.models import MetaAppGenericContent
 from app_kit.features.frontend.models import Frontend
+
+from localcosmos_cordova_builder import MetaAppDefinition, CordovaAppBuilder
 
 import logging, os, json, shutil, traceback, inspect
 
@@ -123,6 +126,12 @@ class AppBuilderBase:
 
         self.logger = None
 
+
+    @property
+    def _builder_identifier(self):
+        raise NotImplementedError('AppBuilderBase subclasses require the property builder_identifier')
+
+
     @classmethod
     def _get_builder_root_path(cls):
         builder_root_path = os.path.dirname(os.path.abspath(inspect.getfile(cls)))
@@ -164,7 +173,6 @@ class AppBuilderBase:
 
         return camel_case_string
 
-
     #############################################################################################
     # LOGGING
     #############################################################################################
@@ -175,8 +183,10 @@ class AppBuilderBase:
         if self.logger:
             return self.logger
 
-        logger = logging.getLogger(process_name)
-        logging_path = '/var/log/localcosmos/apps/{0}/'.format(process_name)
+        logger_name = '{0}-{1}'.format(self.__class__.__name__, process_name)
+
+        logger = logging.getLogger(logger_name)
+        logging_path = '/var/log/localcosmos/apps/{0}/{1}/'.format(self.__class__.__name__, process_name)
 
         if not os.path.isdir(logging_path):
             os.makedirs(logging_path)
@@ -223,10 +233,24 @@ class AppBuilderBase:
     def send_admin_email(self, title, text_content):
         mail.mail_admins(title, text_content)
 
+
+    ###############################################################################################################
+    # CORDOVA
+    # the browser app is serverd here for reviewing - after building but before release
+
+    def get_cordova_builder(self):
+
+        meta_app_definition = MetaAppDefinition(meta_app=self.meta_app)
+
+        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, 
+            self._app_build_sources_path)
+
+        return cordova_builder
+
         
-    ##########################################################################################
+    ###############################################################################################################
     # APIs
-    ##########################################################################################
+    ###############################################################################################################
     #- there can be two locations of APIs: hosted on the LC server, or hosted on the clients private server
     #- currently, the api urls do not work with the development server because of the port, e.g :8080
     #- api urls are in the form of localcosmos.org/api/    no ports, no protocol
@@ -338,6 +362,11 @@ class AppBuilderBase:
 
         raise NotFoundErr('No frontend found for name {0}'.format(frontend.frontend_name))
 
+
+    @property
+    def _frontend_config_xml_path(self):
+        return os.path.join(self._frontend_root_path, 'cordova', 'config.xml')
+
     @property
     def _frontend_www_path(self):
         return os.path.join(self._frontend_root_path, 'www')
@@ -349,25 +378,6 @@ class AppBuilderBase:
     @property
     def _frontend_settings_json_path(self):
         return os.path.join(self._frontend_root_path, 'settings.json')
-
-
-    @property
-    def _frontend_browser_assets_www_path(self):
-        return os.path.join(self._frontend_root_path, 'browser', 'www')
-
-
-    # building the frontend has to be possible on both AppPreviewBuilder (for TemplateContent preview) and AppReleaseBuilder
-    def _build_Frontend(self):
-        # copy the frontends www folder to /preview
-        shutil.copytree(self._frontend_www_path, self._app_www_path, dirs_exist_ok=True)
-
-
-    def _build_Frontend_browser_specific_assets(self):
-        self.logger.info('copying specific browser assets of frontend: {0} -> {1}'.format(
-                        self._frontend_browser_assets_www_path, self._app_www_path))
-
-        if os.path.isdir(self._frontend_browser_assets_www_path):
-            shutil.copytree(self._frontend_browser_assets_www_path, self._app_www_path, dirs_exist_ok=True)
 
 
     #############################################################################################
@@ -466,22 +476,58 @@ class AppBuilderBase:
     @property
     def _app_version_root_path(self):
         return os.path.join(self._app_root_path, 'version', str(self.meta_app.current_version))
-    
-    # the root folder of the builder (preview, build or release)
-    # subfolder of self._app_version_root_path
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{preview/build/release}/
-    # eg /opt/localcosmos/apps/{UUID}/1/preview/
-    @property
-    def _app_preview_path(self):
-        return os.path.join(self._app_version_root_path, 'preview')
 
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/
     @property
-    def _app_release_path(self):
-        return os.path.join(self._app_version_root_path, 'release')
+    def _app_builder_path(self):
+        return os.path.join(self._app_version_root_path, self._builder_identifier)
 
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/sources/
+    @property
+    def _app_build_sources_path(self):
+        return os.path.join(self._app_builder_path, 'sources')
+
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/sources/www/
+    # www content for browser, android, ios
     @property
     def _app_www_path(self):
-        raise NotImplementedError('AppBuilderBase subclasses require the property _app_www_path')
+        return os.path.join(self._app_build_sources_path, 'www')
+
+    # assets are launcher icon etc
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/sources/assets/
+    @property
+    def _app_assets_path(self):
+        return os.path.join(self._app_build_sources_path, 'assets')
+
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/packages/
+    @property
+    def _build_packages_path(self):
+        return os.path.join(self._app_builder_path, 'packages')
+
+    @property
+    def _build_browser_zip_filepath(self):
+        filename = '{0}.zip'.format(self.meta_app.name)
+        return os.path.join(self._build_packages_path, filename)
+
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/cordova/
+    @property
+    def _cordova_build_path(self):
+        return os.path.join(self._app_builder_path, 'cordova')
+
+    # build jobs currently are only used during release builds
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/build_jobs
+    @property
+    def _app_build_jobs_path(self):
+        return os.path.join(self._app_builder_path, 'build_jobs')
+
+    # iOS zip
+    @property
+    def _build_jobs_zipfile_name(self):
+        return '{0}-{1}-{2}.zip'.format(self.meta_app.app.uid, self.meta_app.current_version, self.meta_app.build_number)
+
+    @property
+    def _build_jobs_zipfile_filepath(self):
+        return os.path.join(self._app_build_jobs_path, self._build_jobs_zipfile_name)
 
     # all LocalCosmos generated content goes into that directory
     # exception: localization, which lies in www/locales/{LANGUAGE_CODE}
@@ -620,6 +666,33 @@ class AppBuilderBase:
             app_settings[key] = value
         
         return app_settings
+
+
+    #############################################################################################
+    # COMMON BUILD STEPS
+    #############################################################################################
+
+    def _recreate_builder_folder(self):
+
+        if os.path.isdir(self._app_builder_path):
+            shutil.rmtree(self._app_builder_path)
+
+        os.makedirs(self._app_builder_path)
+
+
+    # building the frontend has to be possible on both AppPreviewBuilder (for TemplateContent preview) and AppReleaseBuilder
+    def _build_Frontend(self):
+
+        # copy the frontends www folder to /preview
+        shutil.copytree(self._frontend_www_path, self._app_www_path, dirs_exist_ok=True)
+
+        if os.path.isfile(self._frontend_config_xml_path):
+            target_config_xml_path = os.path.join(self._app_build_sources_path, 'config.xml')
+            shutil.copyfile(self._frontend_config_xml_path, target_config_xml_path)
+
+
+    def _create_localcosmos_content_folder(self):
+        os.makedirs(self._app_localcosmos_content_path)
 
 
 #####################################################################################################

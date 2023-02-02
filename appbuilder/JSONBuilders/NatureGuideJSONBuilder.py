@@ -35,7 +35,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
 
     def build(self):
-
+        
+        # cache matrix filter spaces for taxon profiles
+        # no results, just nodes
         self.nature_guide_json = self._build_common_json()
 
         nature_guide = self.app_generic_content.generic_content
@@ -52,7 +54,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         # iterate over all parent nodes
         parent_nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide).exclude(
-            meta_node__node_type='result')
+            meta_node__node_type='result').order_by('taxon_nuid')
 
         # {"de" : {key:value}}
         self.localized_slugs = {}
@@ -69,8 +71,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             identification_mode = IDENTIFICATION_MODE_STRICT
 
-            if parent_node.meta_node.settings:
-                identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
+            #if parent_node.meta_node.settings:
+            #    identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 
@@ -84,6 +86,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'identificationMode' : identification_mode,
                 'slug' : primary_locale_slug,
                 'overviewImage' : self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes='large'),
+                'description' : parent_node.meta_node.description,
             }            
 
             if parent_node.meta_node.taxon:
@@ -113,23 +116,33 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 child_max_points = 0
                 child_space = {}
-
+            
                 for node_filter_space in space_query:
 
-                    # get the matrix_filter for this specific space
                     node_matrix_filter = node_filter_space.matrix_filter
-
                     node_matrix_filter_uuid = str(node_matrix_filter.uuid)
+
+                    nfs_serializer = NodeFilterSpaceListSerializer(self, node_filter_space)
+
+                    child_space_list = nfs_serializer.serialize()
+                    simple_child_space_list = nfs_serializer.simplify(child_space_list)
+
+                    '''
+                    # get the matrix_filter for this specific space
+                    
 
                     # iterate over all spaces for this filter
                     spaces = node_matrix_filter.matrix_filter_type.get_filter_space_as_list_with_identifiers(
                         node_filter_space)
+                    '''
 
                     # a list of spaces applicable for this entry/matrix_filter combination
-                    child_space[node_matrix_filter_uuid] = spaces
+                    child_space[node_matrix_filter_uuid] = simple_child_space_list
 
                     weight = node_matrix_filter.weight
                     child_max_points = child_max_points + weight
+                
+                    self.add_space_to_aggregated_node_filter_space_cache(child, matrix_filter, child_space_list)
 
 
                 # apply taxon filters
@@ -175,6 +188,28 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         return self.nature_guide_json
 
+
+    def add_space_to_aggregated_node_filter_space_cache(self, child, matrix_filter, child_space_list):
+
+        parent_taxon_nuid = child.parent.taxon_nuid
+        aggregated_space = []
+
+        cache = self.app_release_builder.aggregated_node_filter_space_cache
+
+        if child.parent.meta_node.node_type != 'root':
+            aggregated_space = cache[parent_taxon_nuid]
+
+        if child.taxon_nuid not in cache:
+            cache[child.taxon_nuid] = aggregated_space
+
+        serializer = MatrixFilterSerializer(self, matrix_filter)
+        matrix_filter_json = serializer.serialize_matrix_filter()
+        matrix_filter_json['space'] = child_space_list
+
+        cache_entry = {
+            'matrixFilter' :  matrix_filter_json
+        }
+        cache[child.taxon_nuid].append(cache_entry)         
 
     def _get_matrix_filter_json(self, matrix_filter):
 
@@ -257,8 +292,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
         return options
         
 
-
-
 class MatrixFilterSerializer:
 
     def __init__(self, jsonbuilder, matrix_filter):
@@ -305,9 +338,11 @@ class MatrixFilterSerializer:
     def serialize_matrix_filter(self):
 
         allow_multiple_values = False
+        identification_means = None
 
         if self.matrix_filter.definition:
             allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
+            identification_means = self.matrix_filter.definition.get('identification_means', None)
 
         matrix_filter_json = {
             'uuid' : str(self.matrix_filter.uuid),
@@ -319,6 +354,7 @@ class MatrixFilterSerializer:
             'restrictions' : {},
             'isRestricted' : False,
             'allowMultipleValues' : allow_multiple_values,
+            'identificationMeans' : identification_means,
             'space' : [],
             'definition' : {},
         }
@@ -353,23 +389,28 @@ class MatrixFilterSerializer:
         space_list_json = list_serializer.serialize(simple=simple)
 
         return space_list_json
-        
 
 
-class MatrixFilterSpaceListSerializer:
 
-    def __init__(self, jsonbuilder, matrix_filter, space_list):
-        self.jsonbuilder = jsonbuilder
-        self.matrix_filter = matrix_filter
-        self.space_list = space_list
+'''
+    simple output:
+    
+    space_json = {
+        'spaceIdentifier' : space_identifier,
+        'encodedSpace' : subspace,
+    }
+    
+'''
 
-    def serialize(self, simple=False):
+class SpaceListSerializerMixin:
+
+    def serialize_space_list(self, matrix_filter, space_list, simple=False):
 
         space_list_json = []
 
-        if self.matrix_filter.filter_type == 'NumberFilter':
+        if matrix_filter.filter_type == 'NumberFilter':
             
-            encoded_space = self.space_list[0].encoded_space
+            encoded_space = space_list[0].encoded_space
 
             for subspace in encoded_space:
 
@@ -383,9 +424,9 @@ class MatrixFilterSpaceListSerializer:
                 space_list_json.append(space_json)
             
 
-        elif self.matrix_filter.filter_type == 'RangeFilter':
+        elif matrix_filter.filter_type == 'RangeFilter':
 
-            encoded_space = self.space_list[0].encoded_space
+            encoded_space = space_list[0].encoded_space
             space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(encoded_space)
 
             space_list_json = [
@@ -396,9 +437,9 @@ class MatrixFilterSpaceListSerializer:
             ]
 
 
-        elif self.matrix_filter.filter_type == 'TaxonFilter':
+        elif matrix_filter.filter_type == 'TaxonFilter':
             # encoded_space is json
-            encoded_space = self.space_list[0].encoded_space
+            encoded_space = space_list[0].encoded_space
 
             for subspace in encoded_space:
 
@@ -423,9 +464,9 @@ class MatrixFilterSpaceListSerializer:
                 space_list_json.append(space_json)
             
 
-        elif self.matrix_filter.filter_type == 'ColorFilter':
+        elif matrix_filter.filter_type == 'ColorFilter':
 
-            for subspace in self.space_list:
+            for subspace in space_list:
                 
                 encoded_space = subspace.encoded_space
 
@@ -455,9 +496,9 @@ class MatrixFilterSpaceListSerializer:
                 space_list_json.append(space_json)
 
 
-        elif self.matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+        elif matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
 
-            for subspace in self.space_list:
+            for subspace in space_list:
 
                 space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
 
@@ -479,9 +520,9 @@ class MatrixFilterSpaceListSerializer:
                 space_list_json.append(space_json)
 
 
-        elif self.matrix_filter.filter_type == 'TextOnlyFilter':
+        elif matrix_filter.filter_type == 'TextOnlyFilter':
 
-            for subspace in self.space_list:
+            for subspace in space_list:
 
                 space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(subspace)
                 encoded_space = subspace.encoded_space
@@ -498,3 +539,67 @@ class MatrixFilterSpaceListSerializer:
 
         
         return space_list_json
+
+
+    def simplify(self, space_list):
+
+        simplified_list = []
+
+        for space in space_list:
+
+            simplified_space = {
+                'spaceIdentifier': space['spaceIdentifier'],
+                'encodedSpace' : space['encodedSpace'],
+            }
+
+            simplified_list.append(simplified_space)
+
+        return simplified_list
+        
+
+
+'''
+    serialize Matrixfilter.get_space (==MatrixFilterSpace.objects.filter(matrix_filter=self))
+'''
+class MatrixFilterSpaceListSerializer(SpaceListSerializerMixin):
+    
+    def __init__(self, jsonbuilder, matrix_filter, space_query):
+        self.jsonbuilder = jsonbuilder
+        self.matrix_filter = matrix_filter
+        self.space_list = list(space_query)
+
+    def serialize(self, simple=False):
+        return super().serialize_space_list(self.matrix_filter, self.space_list, simple=simple)
+
+
+'''
+    serialize NodeFilterSpace (==NodeFilterSpace.values.all() == MatrixFilterSpace query) OR NodeFilterSpace.encoded_space
+'''
+class NodeFilterSpaceListSerializer(SpaceListSerializerMixin):
+    
+    def __init__(self, jsonbuilder, node_filter_space):
+        self.jsonbuilder = jsonbuilder
+        self.matrix_filter = node_filter_space.matrix_filter
+        self.node_filter_space = node_filter_space
+
+    def serialize(self, simple=False):
+        
+        if self.matrix_filter.filter_type == 'NumberFilter':
+            space_list = [self.node_filter_space]
+
+        elif self.matrix_filter.filter_type == 'RangeFilter':
+            space_list = [self.node_filter_space]
+
+        elif self.matrix_filter.filter_type == 'TaxonFilter':
+            space_list = self.node_filter_space.values.all()
+
+        elif self.matrix_filter.filter_type == 'ColorFilter':
+            space_list = self.node_filter_space.values.all()
+
+        elif self.matrix_filter.filter_type == 'TextOnlyFilter':
+            space_list = self.node_filter_space.values.all()
+
+        elif self.matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter':
+            space_list = self.node_filter_space.values.all()
+
+        return super().serialize_space_list(self.matrix_filter, space_list, simple=simple)

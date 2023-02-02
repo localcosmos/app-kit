@@ -7,6 +7,8 @@ from localcosmos_server.forms import LocalizeableForm
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
+from app_kit.validators import json_compatible
+
 class MatrixFilterSpaceForm(LocalizeableForm):
 
     # edit space id id is given
@@ -25,7 +27,7 @@ from app_kit.forms import OptionalContentImageForm
 class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFilterSpaceForm):
 
     text = forms.CharField(label=_('Text'), widget=forms.Textarea,
-                           max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description'])
+        max_length=TEXT_LENGTH_RESTRICTIONS['DescriptiveTextAndImages']['description'], validators=[json_compatible])
     
     localizeable_fields = ['text']
     layoutable_simple_fields = ['text']
@@ -38,7 +40,7 @@ class DescriptiveTextAndImagesFilterSpaceForm(OptionalContentImageForm, MatrixFi
 class TextOnlyFilterSpaceForm(MatrixFilterSpaceForm):
 
     text = forms.CharField(label=_('Text'), widget=forms.Textarea,
-                           max_length=TEXT_LENGTH_RESTRICTIONS['TextOnlyFilter']['text'])
+        max_length=TEXT_LENGTH_RESTRICTIONS['TextOnlyFilter']['text'], validators=[json_compatible])
     
     localizeable_fields = ['text']
 

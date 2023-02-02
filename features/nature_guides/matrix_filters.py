@@ -73,7 +73,7 @@ class MatrixFilterType:
     verbose_space_name = None
 
     # these will be saved in the db automatically
-    definition_parameters = []
+    definition_parameters = ['identification_means']
 
     help_text = _("What is described by the filter, e.g. 'length of nose'")
 
@@ -338,7 +338,7 @@ class MultiSpaceFilterMixin:
 class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Range filter')
-    definition_parameters = ['step', 'unit', 'unit_verbose']
+    definition_parameters = ['identification_means', 'step', 'unit', 'unit_verbose']
 
     help_text = _("What is described by this trait, e.g. 'length of nose'")
 
@@ -478,7 +478,7 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Number filter')
-    definition_parameters = ['unit', 'unit_verbose']
+    definition_parameters = ['identification_means', 'unit', 'unit_verbose']
 
     help_text = _("What is described by this trait, e.g. 'number of legs'")
     
@@ -592,7 +592,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = ['allow_multiple_values']
+    definition_parameters = ['identification_means', 'allow_multiple_values']
 
     verbose_name = _('Color filter')
     verbose_space_name = _('color')
@@ -913,7 +913,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = ['allow_multiple_values']
+    definition_parameters = ['identification_means', 'allow_multiple_values']
 
     verbose_name = _('Text/Images filter')
     verbose_space_name = _('text with image')
@@ -1040,7 +1040,7 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
 
-    definition_parameters = ['allow_multiple_values']
+    definition_parameters = ['identification_means', 'allow_multiple_values']
 
     verbose_name = _('Text only filter')
     verbose_space_name = _('text')
@@ -1191,7 +1191,7 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = False
 
-    definition_parameters = []
+    definition_parameters = ['identification_means']
 
     verbose_name = _('Taxonomic Filter')
     verbose_space_name = _('Taxon')

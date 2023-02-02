@@ -205,7 +205,135 @@ class TestPrivateFrontendImporter(CleanFrontendTestFolders, WithFrontendZip, Wit
         }
 
         frontend_importer.validate_settings_json(frontend_settings)
+        self.assertEqual(len(frontend_importer.errors), 6)
+
+        frontend_importer.errors = []
+        frontend_settings = {
+            'frontend' : TEST_FRONTEND_NAME,
+            'version' : '1.0',
+            'userContent' : {
+                'images' : {
+                    'appLauncherIcon' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required': True
+                    },
+                    'appSplashscreen' : {},
+                },
+            },
+        }
+
+        frontend_importer.validate_settings_json(frontend_settings)
+        print(frontend_importer.errors)
+        self.assertEqual(len(frontend_importer.errors), 3)
+
+
+        frontend_importer.errors = []
+        frontend_settings = {
+            'frontend' : TEST_FRONTEND_NAME,
+            'version' : '1.0',
+            'userContent' : {
+                'images' : {
+                    'appLauncherIcon' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required': True
+                    },
+                    'appSplashscreen' : {
+                        'restrictions': {
+                            'ratio': '2:1'
+                        },
+                    },
+                },
+            },
+        }
+
+        frontend_importer.validate_settings_json(frontend_settings)
+        self.assertEqual(len(frontend_importer.errors), 3)
+
+
+        frontend_importer.errors = []
+        frontend_settings = {
+            'frontend' : TEST_FRONTEND_NAME,
+            'version' : '1.0',
+            'userContent' : {
+                'images' : {
+                    'appLauncherIcon' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required': True
+                    },
+                    'appSplashscreen' : {
+                        'restrictions': {
+                            'ratio': '1:1'
+                        },
+                    },
+                },
+            },
+        }
+
+        frontend_importer.validate_settings_json(frontend_settings)
+        self.assertEqual(len(frontend_importer.errors), 2)
+
+        frontend_importer.errors = []
+        frontend_settings = {
+            'frontend' : TEST_FRONTEND_NAME,
+            'version' : '1.0',
+            'userContent' : {
+                'images' : {
+                    'appLauncherIcon' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required': True
+                    },
+                    'appSplashscreen' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                    },
+                },
+            },
+        }
+
+        frontend_importer.validate_settings_json(frontend_settings)
+        self.assertEqual(len(frontend_importer.errors), 1)
+
+        frontend_importer.errors = []
+        frontend_settings = {
+            'frontend' : TEST_FRONTEND_NAME,
+            'version' : '1.0',
+            'userContent' : {
+                'images' : {
+                    'appLauncherIcon' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required': True
+                    },
+                    'appSplashscreen' : {
+                        'restrictions': {
+                            'fileType': ['svg'],
+                            'ratio': '1:1'
+                        },
+                        'required' : True
+                    },
+                },
+            },
+        }
+
+        frontend_importer.validate_settings_json(frontend_settings)
         self.assertEqual(len(frontend_importer.errors), 0)
+
 
     @test_settings
     def test_validate_frontend_files(self):

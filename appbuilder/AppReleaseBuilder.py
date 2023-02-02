@@ -30,7 +30,7 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
                                                        GenericValues, DJANGO_FIELD_CLASSES)
 
 from app_kit.features.glossary.models import Glossary
-from app_kit.features.taxon_profiles.models import TaxonProfile
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 from app_kit.features.frontend.models import Frontend
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
 from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
@@ -50,6 +50,7 @@ from app_kit.utils import import_module
 from app_kit.generic_content_validation import ValidationError, ValidationWarning
 
 from localcosmos_cordova_builder import MetaAppDefinition, CordovaAppBuilder
+from localcosmos_cordova_builder.required_assets import REQUIRED_ASSETS
 
 import os, json, base64, time, shutil, hashlib, zipfile
 
@@ -62,20 +63,6 @@ from app_kit.app_kit_api.models import AppKitJobs
 import csv, uuid
 
 NO_IMAGE_URL = None #'img/noimage.svg'
-
-# output filenames for assets required to build cordova apps
-ASSET_FILENAMES = {
-    'android' : {
-        'launcherIcon' : 'launcher_icon.svg',
-        'launcherBackground' : 'launcher_background.svg',
-        'splashscreen' : 'splashscreen.svg',
-    },
-    'ios' : {
-        'launcherIcon' : 'launcher_icon.svg',
-        'launcherBackground' : 'launcher_background.svg',
-        'splashscreen' : 'splashscreen.svg',
-    }
-}
 
 class AppBuildFailed(Exception):
     pass
@@ -99,6 +86,12 @@ class AppReleaseBuilder(AppBuilderBase):
         
         self.content_image_builder = ContentImageBuilder()
 
+
+    @property
+    def _builder_identifier(self):
+        return 'release'
+
+
     def get_empty_result(self):
 
         result = {
@@ -109,131 +102,7 @@ class AppReleaseBuilder(AppBuilderBase):
         }
 
         return result
-
-
-    ###############################################################################################################
-    # Cordova
-    # the browser app is serverd here for reviewing - after building but before release
-
-    def get_cordova_builder(self):
-
-        meta_app_definition = MetaAppDefinition(meta_app=self.meta_app)
-
-        cordova_builder = CordovaAppBuilder(meta_app_definition, self._cordova_build_path, 
-            self._app_build_sources_path)
-
-        return cordova_builder
-
-
-    ###############################################################################################################
-    # FOLDERS OF THE BUILT (RELEASE CANDIDATE) APP
-    # - browser
-    # - www folder for android and ios app
-
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/
-    @property
-    def _app_build_sources_path(self):
-        return os.path.join(self._app_release_path, 'sources')
-
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/common/www/
-    # www content for browser, android, ios
-    @property
-    def _app_www_path(self):
-        return os.path.join(self._app_build_sources_path, 'common', 'www')
-
-    # path for output packages like .aab .ipa .zip
-    @property
-    def _app_packages_path(self):
-        return os.path.join(self._app_release_path, 'packages')
-
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/browser
-    @property
-    def _build_browser_root(self):
-        return os.path.join(self._app_build_sources_path, 'browser')
-
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/sources/browser/www
-    @property
-    def _build_browser_www_path(self):
-        return os.path.join(self._build_browser_root, 'www')
-
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/cordova
-    @property
-    def _cordova_build_path(self):
-        return os.path.join(self._app_release_path, 'cordova')
-
     
-    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/build_jobs
-    @property
-    def _build_jobs_path(self):
-        return os.path.join(self._app_release_path, 'build_jobs')
-
-    # platform specific assets that have to be passed to CordovaAppbuilder
-    # android
-    @property
-    def _build_android_root(self):
-        return os.path.join(self._app_build_sources_path, 'android')
-
-    # assets are launcher icon etc
-    @property
-    def _build_android_assets_path(self):
-        return os.path.join(self._build_android_root, 'assets')
-
-    @property
-    def _build_android_www_path(self):
-        return os.path.join(self._build_android_root, 'www')
-
-    # ios
-    @property
-    def _build_ios_root(self):
-        return os.path.join(self._app_build_sources_path, 'ios')
-
-    # assets are launcher icon etc
-    @property
-    def _build_ios_assets_path(self):
-        return os.path.join(self._build_ios_root, 'assets')
-
-    @property
-    def _build_ios_www_path(self):
-        return os.path.join(self._build_ios_root, 'www')
-
-    # iOS zip
-    @property
-    def _build_ios_zipfile_name(self):
-        return '{0}-ios-{1}-{2}.zip'.format(self.meta_app.app.uid, self.meta_app.current_version, self.meta_app.build_number)
-
-    @property
-    def _build_ios_zipfile_filepath(self):
-        # sources/ios/cordova_ios.zip
-        return os.path.join(self._build_jobs_path, self._build_ios_zipfile_name)
-
-    # assets supplied by frontend
-    @property
-    def _frontend_ios_www_path(self):
-        return os.path.join(self._frontend_root_path, 'ios', 'www')
-
-    @property
-    def _frontend_android_www_path(self):
-        return os.path.join(self._frontend_root_path, 'android', 'www')
-
-    @property
-    def _frontend_browser_www_path(self):
-        return os.path.join(self._frontend_root_path, 'browser', 'www')
-
-
-    @property
-    def _frontend_config_xml_path(self):
-        return os.path.join(self._frontend_root_path, 'cordova', 'config.xml')
-
-    # PACKAGES
-    # browser zip
-    @property
-    def _build_packages_path(self):
-        return os.path.join(self._app_release_path, 'packages')
-
-    @property
-    def _build_browser_zip_filepath(self):
-        filename = '{0}.zip'.format(self.meta_app.name)
-        return os.path.join(self._build_packages_path, filename)
 
     ###############################################################################################################
     # FOLDERS OF BUILT CONTENT
@@ -1142,15 +1011,19 @@ class AppReleaseBuilder(AppBuilderBase):
             self.app_settings = self._get_app_settings(preview=False)
 
             self.build_features = {}
+            self.aggregated_node_filter_space_cache = {}
             
             # create build folder
             # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/common/www/
             # a build of a specific version always kills the previous build
-            self.logger.info('deleting and recreating {0}'.format(self._app_release_path))
-            self.deletecreate_folder(self._app_release_path)
+            self.logger.info('deleting and recreating {0}'.format(self._app_builder_path))
+            self.deletecreate_folder(self._app_builder_path)
 
             # build_common_www has to come first
             self._build_common_www()
+
+            # build app assets
+            self._build_app_assets()
 
             # build browser app
             self._build_browser()
@@ -1211,6 +1084,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.logger.info('vernacular names cache length: {0}'.format(len(self.nature_guides_vernacular_names)))
 
+        taxon_profiles_content_type = ContentType.objects.get_for_model(TaxonProfiles)
+
         # build the frontend first
         self.logger.info('Building the Frontend')
         frontend_content_type = ContentType.objects.get_for_model(Frontend)
@@ -1235,11 +1110,12 @@ class AppReleaseBuilder(AppBuilderBase):
                                                  glossary_link.generic_content.uuid))
 
             # options are on the link, pass the link
-            self._build_Glossary(glossary_link)        
+            self._build_Glossary(glossary_link)
         
         # iterate over all features (except glossary) and create the necessary json files
+        exclude_content_types = [taxon_profiles_content_type, glossary_content_type, frontend_content_type]
         generic_content_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app).exclude(
-            content_type=glossary_content_type).exclude(content_type=frontend_content_type)
+            content_type__in=exclude_content_types)
 
         for link in generic_content_links:
             generic_content = link.generic_content            
@@ -1248,6 +1124,13 @@ class AppReleaseBuilder(AppBuilderBase):
             # options are on the link, pass the link
             build_method = getattr(self, '_build_{0}'.format(generic_content.__class__.__name__))
             build_method(link)
+
+
+        # build TaxonProfiles
+        taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
+                                                                    content_type=taxon_profiles_content_type)
+
+        self._build_TaxonProfiles(taxon_profiles_link)        
 
         # build TemplateContent
         self._build_TemplateContent()
@@ -1270,7 +1153,33 @@ class AppReleaseBuilder(AppBuilderBase):
         # registry has been filled byt the build_ methods *
 
         with open(self._app_licence_registry_filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.licence_registry, f, indent=4)     
+            json.dump(self.licence_registry, f, indent=4)
+
+
+    ###############################################################################################################
+    # BUILDING image assets required by cordova, usually svg
+    ###############################################################################################################
+
+    def _build_app_assets(self):
+
+        self.logger.info('Building assets')
+
+        if not os.path.isdir(self._app_assets_path):
+            os.makedirs(self._app_assets_path)
+
+        frontend = self._get_frontend()
+
+        for image_type, image_filename in REQUIRED_ASSETS.items():
+
+            content_image = frontend.image(image_type)
+
+            if not content_image:
+                raise FileNotFoundError('The image {0} is required for each frontend.'.format(image_type))
+
+            image_filepath = content_image.image_store.source_image.path
+
+            destination_filepath = os.path.join(self._app_assets_path, image_filename)
+            shutil.copyfile(image_filepath, destination_filepath)  
            
 
     ###############################################################################################################
@@ -2032,91 +1941,6 @@ class AppReleaseBuilder(AppBuilderBase):
     # - respect features
     # 
     ###############################################################################################################
-    ''' moved to ContentImageBuilder
-    def _save_content_image(self, content_image, absolute_path, relative_path, filename=None, size=None):
-
-        if size == None:
-            size = 500
-
-        key = '{0}-{1}'.format(content_image.id, size)
-        if key in self.content_images_cache:
-            return self.content_images_cache[key]
-
-        if not os.path.isdir(absolute_path):
-            self.logger.info('creating directory {0}'.format(absolute_path))
-            os.makedirs(absolute_path)
-
-        source_image_path = content_image.image_store.source_image.path
-
-        # pil does not support svg, simply copy file
-        if source_image_path.endswith('.svg'):
-            if not filename:
-                filename = os.path.basename(source_image_path)
-            
-            relative_image_filepath = os.path.join(relative_path, filename)
-            absolute_image_filepath = os.path.join(absolute_path, filename)
-
-            shutil.copyfile(source_image_path, absolute_image_filepath)
-
-        # use pil to manipulate the image
-        else:
-            original_image = Image.open(source_image_path)
-
-            processed_image = content_image.get_in_memory_processed_image(original_image, size)
-
-            # all processed images are webp
-            #original_format = original_image.format
-            #output_format = original_format
-            #allowed_formats = ['png', 'jpg', 'jpeg']
-
-            #if original_format not in allowed_formats:
-            file_extension = 'webp'
-            output_format = 'WEBP'
-
-
-            if filename:
-                blankname, ext = os.path.splitext(filename)
-                output_filename = '{0}.{1}'.format(blankname, file_extension)
-            else:
-                output_filename = '{0}-{1}-{2}.{3}'.format(content_image.image_type, content_image.id, size, file_extension)
-                #output_filename = '{0}.{1}'.format(uuid.uuid4(), file_extension)
-
-
-            relative_image_filepath = os.path.join(relative_path, output_filename)
-            absolute_image_filepath = os.path.join(absolute_path, output_filename)
-            
-
-            if not os.path.isfile(absolute_image_filepath):
-
-                if output_format == 'JPEG':
-                    image_with_white_background = Image.new("RGB", processed_image.size, (255, 255, 255))
-                    image_with_white_background.paste(processed_image)
-                    image_with_white_background.save(absolute_image_filepath, output_format, quality=95)
-
-                else:
-                    processed_image.save(absolute_image_filepath, output_format)
-
-
-            # add image to licence_registry
-            licence = content_image.image_store.licences.first()
-            if licence:
-                content_licence = licence.content_licence().as_dict()
-
-                registry_entry = {
-                    'creatorName' : licence.creator_name,
-                    'creatorLink' : licence.creator_link,
-                    'sourceLink' : licence.source_link,
-                    'licence' : content_licence,
-                }
-                
-                self.licence_registry['licences'][relative_image_filepath] = registry_entry
-        
-        relative_image_filepath = os.path.join('/', relative_image_filepath)
-        self.content_images_cache[key] = relative_image_filepath
-
-        return relative_image_filepath
-    '''
-
 
     def build_localized_content_image(self, localized_content_image):
         
@@ -2165,10 +1989,6 @@ class AppReleaseBuilder(AppBuilderBase):
     def _build_browser(self):
 
         self.logger.info('Building browser app')
-
-        self._build_app_www('browser', self._build_browser_www_path, self._frontend_browser_www_path)
-
-        self._build_config_xml(platform='browser')
 
         cordova_builder = self.get_cordova_builder()
 
@@ -2301,12 +2121,12 @@ class AppReleaseBuilder(AppBuilderBase):
 
     @property
     def _ios_build_job_zip_served_filepath(self):
-        return os.path.join(self._ios_build_job_zip_served_path, self._build_ios_zipfile_name)
+        return os.path.join(self._ios_build_job_zip_served_path, self._build_jobs_zipfile_name)
 
     @property
     def _ios_build_job_zipfile_url(self):
         # relies on nginx conf
-        relative_path = 'apps/{0}/packages/build-jobs/ios/{1}'.format(self.meta_app.app.uid, self._build_ios_zipfile_name)
+        relative_path = 'apps/{0}/packages/build-jobs/ios/{1}'.format(self.meta_app.app.uid, self._build_jobs_zipfile_name)
 
         if not self._ios_build_job_zip_served_filepath.endswith(relative_path):
             msg = 'wrong relative path. {0} does not end with {1}'.format(self._ios_build_job_zip_served_filepath,
@@ -2348,108 +2168,46 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
     ###############################################################################################################
-    # BUILDING installable android, iOS apps
+    # BUILD JOBS
+    #
     ###############################################################################################################
 
-    # bulding assets like launcherIcon and splashscreen
-    # build_platform_assets_path is either self._build_ios_assets_path or self._build_android_assets_path
-    def _build_app_assets(self, platform, build_platform_assets_path):
+    def _create_build_jobs_zipfile(self):
 
-        self.logger.info('Building {0} assets'.format(platform))
+        self.logger.info('Creating zipfile for build jobs')
 
-        if not os.path.isdir(build_platform_assets_path):
-            os.makedirs(build_platform_assets_path)
+        with zipfile.ZipFile(self._build_jobs_zipfile_filepath, 'w', zipfile.ZIP_DEFLATED) as www_zip:
 
-        frontend_settings = self._get_frontend_settings()
-        frontend = self._get_frontend()
+            # add www
+            for root, dirs, files in os.walk(self._app_build_sources_path, followlinks=True):
 
-        for image_type in ['launcherIcon', 'splashscreen']:
+                for filename in files:
+                    # Create the full filepath by using os module.
+                    app_file_path = os.path.join(root, filename)
+                    arcname = app_file_path.split(self._app_build_sources_path)[-1]
+                    www_zip.write(app_file_path, arcname=arcname)
 
-            image_definition = frontend_settings[platform][image_type]
-
-            if image_definition['type'] == 'userContent':
-                image_identifier = image_definition['imageIdentifier']
-
-                content_image = frontend.image(image_identifier)
-
-                image_filepath = content_image.image_store.source_image.path
-
-                filename = self.get_asset_filename(platform, image_type)
-
-                destination_filepath = os.path.join(build_platform_assets_path, filename)
-                shutil.copyfile(image_filepath, destination_filepath)
-
-            else:
-                raise NotImplementedError('[Frontend settings] {0} {1} of type {2} is not supported'.format(
-                    platform, image_type, image_definition['type']))
-
-    # build_platform_www_path is either self._build_ios_www_path or self._build_android_www_path
-    # frontend_platform_www_path is either self._frontend_ios_www_path or self._frontend_android_www_path
-    def _build_app_www(self, platform, build_platform_www_path, frontend_platform_www_path):
-        self.logger.info('Building {0} www'.format(platform))
-        
-        # symlink common www
-        common_www_folder = self._app_www_path
-        platform_www_folder = build_platform_www_path
-
-        if not os.path.isdir(platform_www_folder):
-            os.makedirs(platform_www_folder)
-
-        for content in os.listdir(common_www_folder):
-            source_path = os.path.join(common_www_folder, content)
-            dest_path = os.path.join(platform_www_folder, content)
-            os.symlink(source_path, dest_path)
-
-        # add android specific files, if any
-        # the android folder does not have to be present
-        if os.path.isdir(frontend_platform_www_path):
-            shutil.copytree(frontend_platform_www_path, build_platform_www_path, dirs_exist_ok=True)
-
+        self.logger.info('Successfully created zipfile.')
+            
 
     ###############################################################################################################
     # BUILDING iOS
     # - use BuildJobs, Mac queries BuildJobs and does Jobs
     # - the actual build is done on a MAC
     ###############################################################################################################
-
     
-    def create_ios_zipfile(self):
-
-        self.logger.info('Creating zipfile for ios')
-
-        with zipfile.ZipFile(self._build_ios_zipfile_filepath, 'w', zipfile.ZIP_DEFLATED) as www_zip:
-
-            # add www
-            for root, dirs, files in os.walk(self._build_ios_root, followlinks=True):
-
-                for filename in files:
-                    # Create the full filepath by using os module.
-                    app_file_path = os.path.join(root, filename)
-                    arcname = app_file_path.split(self._build_ios_root)[-1]
-                    www_zip.write(app_file_path, arcname=arcname)
-
-
-
-        self.logger.info('Successfully created zipfile.')
-    
-
     def _create_ios_build_job(self):
 
-        self.deletecreate_folder(self._build_jobs_path)
-
-        self._build_app_assets('ios', self._build_ios_assets_path)
-        self._build_config_xml(platform='ios')
+        self.deletecreate_folder(self._app_build_jobs_path)
         
-        self._build_app_www('ios', self._build_ios_www_path, self._frontend_ios_www_path)
-        
-        self.create_ios_zipfile()
+        self._create_build_jobs_zipfile()
 
         # make the zipfile available
         zipfile_served_folder = self._ios_build_job_zip_served_path
 
         self.deletecreate_folder(zipfile_served_folder)
         
-        os.symlink(self._build_ios_zipfile_filepath, self._ios_build_job_zip_served_filepath)
+        os.symlink(self._build_jobs_zipfile_filepath, self._ios_build_job_zip_served_filepath)
 
         # remember: AppKitJobs lies in the public schema
         # create a BuildJob so the Mac can download and build app
@@ -2504,37 +2262,10 @@ class AppReleaseBuilder(AppBuilderBase):
         keystore_path = os.path.join(self._certificates_path, self.android_keystore_name)
         return keystore_path
 
-
-    def get_asset_filename(self, platform, asset_type):
-        return ASSET_FILENAMES[platform][asset_type]
-    
-
-    def _build_config_xml(self, platform):
-
-        if os.path.isfile(self._frontend_config_xml_path):
-
-            filename = 'config.xml'
-
-            if platform == 'android':
-                target_config_xml_path = os.path.join(self._build_android_root, filename)
-            elif platform == 'ios':
-                target_config_xml_path = os.path.join(self._build_ios_root, filename)
-            elif platform == 'browser':
-                target_config_xml_path = os.path.join(self._build_browser_root, filename)
-
-            shutil.copyfile(self._frontend_config_xml_path, target_config_xml_path)
-
-
     # 1. symlink common www. 2. symlink android specific files
     def _build_android(self):
 
         self.logger.info('Building Android')
-
-        self._build_app_assets('android', self._build_android_assets_path)
-
-        self._build_config_xml(platform='android')
-
-        self._build_app_www('android', self._build_android_www_path, self._frontend_android_www_path)
 
         keystore_path = self.get_keystore_path()
         
@@ -2565,7 +2296,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         release_report = self.get_empty_result()
 
-        release_report['result'] =  'success'
+        release_report['result'] = 'success'
 
         self.logger = self._get_logger('release')
         self.logger.info('Starting release process')

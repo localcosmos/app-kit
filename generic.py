@@ -20,10 +20,12 @@ from PIL import Image
 """
     Certain App Contents can have taxonomic restrictions, like Form Fields or Forms
 """
-from localcosmos_server.models import TaxonomicRestrictionBase
+from localcosmos_server.models import TaxonomicRestrictionBase, TaxonomicRestrictionManager
 class AppContentTaxonomicRestriction(TaxonomicRestrictionBase):
 
     LazyTaxonClass = LazyTaxon
+
+    objects = TaxonomicRestrictionManager
 
 
 class GenericContentManager(models.Manager):

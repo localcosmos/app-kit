@@ -7,19 +7,17 @@ from app_kit.tests.common import test_settings, TESTS_ROOT
 
 from app_kit.tests.mixins import (WithMetaApp,)
 
-from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
+from app_kit.appbuilder import AppBuilderBase, AppReleaseBuilder, AppPreviewBuilder
 
 from app_kit.models import MetaAppGenericContent
 from app_kit.features.frontend.models import Frontend, FrontendText
 
-TEST_PRIVATE_API_URL = 'https://localhost/private-api-test/'
-
 from django.conf import settings
 
-import shutil
+import shutil, os
 
+TEST_PRIVATE_API_URL = 'https://localhost/private-api-test/'
 
-import os
 
 class TestAppBuilderBase(WithMetaApp, TenantTestCase):
 
@@ -192,14 +190,6 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
         appbuilder = AppBuilderBase(self.meta_app)
         path = appbuilder._frontend_www_path
         self.assertTrue(path.endswith('Flat/www'))
-
-    
-    @test_settings
-    def test_frontend_browser_assets_www_path(self):
-
-        appbuilder = AppBuilderBase(self.meta_app)
-
-        self.assertTrue(appbuilder._frontend_browser_assets_www_path.endswith('browser/www'))
     
 
     ###############################################################################################################
@@ -209,32 +199,122 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
     def test_app_root_path(self):
         appbuilder = AppBuilderBase(self.meta_app)
         path = appbuilder._app_root_path
+        self.assertTrue(path.startswith(settings.APP_KIT_ROOT))
 
 
     @test_settings
     def test_app_version_root_path(self):
         appbuilder = AppBuilderBase(self.meta_app)
         path = appbuilder._app_version_root_path
+        self.assertTrue(path.startswith(appbuilder._app_root_path))
 
     @test_settings
-    def test_app_preview_path(self):
-        appbuilder = AppBuilderBase(self.meta_app)
-        path = appbuilder._app_preview_path
+    def test_app_builder_path(self):
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        path = preview_builder._app_builder_path
         self.assertTrue(path.endswith('preview'))
+        self.assertTrue(path.startswith(preview_builder._app_version_root_path))
+
+        release_builder = AppReleaseBuilder(self.meta_app)
+        path = release_builder._app_builder_path
+        self.assertTrue(path.endswith('release'))
+        self.assertTrue(path.startswith(release_builder._app_version_root_path))
+
+    @test_settings
+    def test_app_build_sources_path(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._app_build_sources_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._app_build_sources_path
+        self.assertTrue(path.endswith('sources'))
 
     @test_settings
     def test_app_www_path(self):
-        appbuilder = AppBuilderBase(self.meta_app)
 
+        basebuilder = AppBuilderBase(self.meta_app)
         with self.assertRaises(NotImplementedError):
-            path = appbuilder._app_www_path
+            path = basebuilder._app_www_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._app_www_path
+        self.assertTrue(path.endswith('preview/sources/www'))
+
+    @test_settings
+    def test_app_assets_path(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._app_assets_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._app_assets_path
+        self.assertTrue(path.endswith('preview/sources/assets'))
+
+    @test_settings
+    def test_build_packages_path(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._build_packages_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._build_packages_path
+        self.assertTrue(path.endswith('preview/packages'))
+
+    @test_settings
+    def test_build_browser_zip_filepath(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._build_browser_zip_filepath
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._build_browser_zip_filepath
+        self.assertTrue(path.endswith('preview/packages/{0}.zip'.format(self.meta_app.name)))
+
+    @test_settings
+    def test_cordova_build_path(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._cordova_build_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._cordova_build_path
+        self.assertTrue(path.endswith('preview/cordova'))
+
+    @test_settings
+    def test_app_build_jobs_path(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._app_build_jobs_path
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._app_build_jobs_path
+        self.assertTrue(path.endswith('preview/build_jobs'))
 
 
     @test_settings
-    def test_app_release_path(self):
+    def test_build_jobs_zipfile_name(self):
         appbuilder = AppBuilderBase(self.meta_app)
-        path = appbuilder._app_release_path
-        self.assertTrue(path.endswith('release'))
+        filename = appbuilder._build_jobs_zipfile_name
+        self.assertTrue(filename.endswith('.zip'))
+
+
+    @test_settings
+    def test_build_jobs_zipfile_filepath(self):
+
+        basebuilder = AppBuilderBase(self.meta_app)
+        with self.assertRaises(NotImplementedError):
+            path = basebuilder._build_jobs_zipfile_filepath
+
+        appbuilder = AppPreviewBuilder(self.meta_app)
+        path = appbuilder._build_jobs_zipfile_filepath
+        self.assertTrue(path.endswith('preview/build_jobs/{0}'.format(appbuilder._build_jobs_zipfile_name)))
 
 
     ###############################################################################################################

@@ -165,34 +165,40 @@ var upstart = {
 	},
 
 	_load_frontend : function(callback){
-		var path = app_features["Frontend"]["path"];
-		ajax.getJSON(path, {}, function(frontend){
 
-			const style = document.createElement('style');
-			style.innerHTML = `@media (orientation: landscape) { 
-				html {	
-					background-image: url('${frontend.userContent.images.appPcBackground.imageUrl['8x']}');
-				}
-			}
-			@media (orientation: portrait) {
-				html {
-					background-image: url('${frontend.userContent.images.appBackground.imageUrl['8x']}');
-				}
-			}
-			.logo-home > div {
-				background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
-
-			}
-			.navbar-logo {
-				background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
-
-			}
-			`;
-
-			document.head.appendChild(style);
-
+		if (settings.PREVIEW == true){
 			callback();
-		});
+		}
+		else {
+			var path = app_features["Frontend"]["path"];
+			ajax.getJSON(path, {}, function(frontend){
+
+				const style = document.createElement('style');
+				style.innerHTML = `@media (orientation: landscape) { 
+					html {	
+						background-image: url('${frontend.userContent.images.appPcBackground.imageUrl['8x']}');
+					}
+				}
+				@media (orientation: portrait) {
+					html {
+						background-image: url('${frontend.userContent.images.appBackground.imageUrl['8x']}');
+					}
+				}
+				.logo-home > div {
+					background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
+
+				}
+				.navbar-logo {
+					background-image: url('${frontend.userContent.images.logo.imageUrl['1x']}');
+
+				}
+				`;
+
+				document.head.appendChild(style);
+
+				callback();
+			});
+		}
 	},
 
 

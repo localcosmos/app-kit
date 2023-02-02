@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
-from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import MatrixFilterSerializer
+from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import MatrixFilterSerializer, NodeFilterSpaceListSerializer
 
 from app_kit.features.taxon_profiles.models import TaxonProfile
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace, MetaNode,
@@ -76,8 +76,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     }
 
                     node_traits.append(node_trait)
-
-            self.trait_cache[node.taxon_nuid] = node_traits
 
         #self.app_release_builder.logger.info('finished collecting')
 
@@ -177,6 +175,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                        meta_node_id__in=meta_nodes).order_by('pk').distinct('pk')
+
         else:
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                         meta_node__node_type='result',
@@ -190,6 +189,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         #self.app_release_builder.logger.info('{0} occurs {1} times in nature_guides'.format(profile_taxon.taxon_latname, node_occurrences.count()))
         
         for node in node_occurrences:
+
+            if node.taxon_nuid in self.app_release_builder.aggregated_node_filter_space_cache:
+                node_traits = self.app_release_builder.aggregated_node_filter_space_cache[node.taxon_nuid]
+                taxon_profile_json['traits'] += node_traits
 
             is_active = True
 
@@ -214,10 +217,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if node.decision_rule and node.decision_rule not in taxon_profile_json['nodeDecisionRules']:
                     taxon_profile_json['nodeDecisionRules'].append(node.decision_rule)
 
-                node_traits = self.collect_node_traits(node)
-                for node_trait in node_traits:
-                    
-                    taxon_profile_json['traits'].append(node_trait)
+                #node_traits = self.collect_node_traits(node)
+                #taxon_profile_json['traits'] += node_traits
 
                 current_nuid = node.taxon_nuid
                 while len(current_nuid) > 3:
@@ -230,12 +231,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     if len(current_nuid) > 3:
                         parent_nuids.add(current_nuid)
 
-        
         # collect all traits of all parent nuids
-        parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
+        #parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
 
         #self.app_release_builder.logger.info('Found {0} parents for {1}'.format(len(parents), profile_taxon.taxon_latname))
-
+        '''
         for parent in parents:
 
             is_active = True
@@ -254,6 +254,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     for parent_node_trait in parent_node_traits:
                         
                         taxon_profile_json['traits'].append(parent_node_trait)
+        '''
         
 
         # get taxonomic images

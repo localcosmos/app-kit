@@ -252,6 +252,7 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
             initial['node_id'] = self.node.id
             initial['taxon'] = self.node.meta_node.taxon
             initial['is_active'] = self.node.is_active
+            initial['description'] = self.node.meta_node.description
 
         else:
             initial['node_type'] = self.node_type
@@ -342,7 +343,8 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
         else:
             self.node.meta_node.remove_taxon()
 
-        self.node.meta_node.name = form.cleaned_data['name']  
+        self.node.meta_node.name = form.cleaned_data['name']
+        self.node.meta_node.description = form.cleaned_data['description']  
         self.node.meta_node.save()
 
         self.node.decision_rule = form.cleaned_data['decision_rule']

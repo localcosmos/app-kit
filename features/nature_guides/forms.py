@@ -1,3 +1,4 @@
+from django.conf import settings
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
@@ -9,6 +10,8 @@ from localcosmos_server.taxonomy.fields import TaxonField
 from .models import MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction
 
 from app_kit.utils import get_appkit_taxon_search_url
+
+from app_kit.validators import json_compatible
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
@@ -128,6 +131,11 @@ NODE_TYPE_CHOICES = (
     ('result', _('Identification result')),
 )
 
+META_NODE_DESCRIPTION_WIDGET = forms.HiddenInput
+if settings.APP_KIT_ENABLE_META_NODE_DESCRIPTION == True:
+    META_NODE_DESCRIPTION_WIDGET = forms.Textarea
+
+
  # parent_node is fetched using view kwargs
 class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     
@@ -147,12 +155,16 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
         widget=forms.HiddenInput,
         max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'],
         help_text=_("Will be shown below the image. Text that describes how to identify this entry or group, e.g. 'red feet, white body'."))
+
+    description = forms.CharField(widget=META_NODE_DESCRIPTION_WIDGET, required=False, validators=[json_compatible])
     
     node_id = forms.IntegerField(widget=forms.HiddenInput, required=False) # create the node if empty
 
 
-    localizeable_fields = ['name', 'decision_rule']
+    localizeable_fields = ['name', 'decision_rule', 'description']
     field_order = ['node_type', 'name', 'taxon', 'image', 'decision_rule', 'node_id']
+
+    layoutable_simple_fields = ['description']
 
 
     def __init__(self, tree_parent_node, submitted_parent_node, *args, **kwargs):

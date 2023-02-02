@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.utils.decorators import method_decorator
-from django.views.generic import FormView
-
+from django.views.generic import FormView, TemplateView
+from django.db import connection
 from django.contrib.contenttypes.models import ContentType
 
 from localcosmos_server.decorators import ajax_required
@@ -16,6 +16,8 @@ from .forms import FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFronte
 from .models import Frontend, FrontendText
 
 from .PrivateFrontendImporter import PrivateFrontendImporter
+
+import threading
 
 
 class FrontendSettingsMixin:
@@ -86,7 +88,6 @@ class FrontendSettingsMixin:
                 initial[configuration_key] = configuration_value
         
         return initial
-
 
 
 '''
@@ -177,13 +178,33 @@ class FrontendMixin:
     def set_frontend(self, **kwargs):
         self.frontend = Frontend.objects.get(pk=kwargs['frontend_id'])
 
-
+    # runs async in thread
     def update_frontend(self, frontend_name):
 
         self.frontend.frontend_name = frontend_name
         self.frontend.save()
-        preview_builder = self.meta_app.get_preview_builder()
-        preview_builder.build()
+
+        def run_in_thread():
+
+            # threading resets the conntion -> set to tenant
+            connection.set_tenant(self.request.tenant)
+
+            self.frontend.lock('preview_build')
+
+            try:
+                preview_builder = self.meta_app.get_preview_builder()
+                preview_builder.build()
+                self.frontend.unlock()
+
+            except Exception as e:
+
+                self.frontend.messages['last_preview_build_errors'] = [str(e)]
+
+                # unlock generic content
+                self.frontend.unlock()
+
+        thread = threading.Thread(target=run_in_thread)
+        thread.start()
 
 
 class ChangeFrontend(FrontendMixin, MetaAppMixin, FormView):
@@ -266,7 +287,8 @@ class InstallPrivateFrontend(FrontendMixin, MetaAppMixin, FormView):
 
             zip_importer.install_frontend()
             self.update_frontend(frontend_name)
+
             context['success'] = True
 
+
         return self.render_to_response(context)
-        

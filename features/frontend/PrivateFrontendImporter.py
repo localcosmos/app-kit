@@ -3,6 +3,8 @@ from django.db import connection
 
 from django.utils.translation import gettext_lazy as _
 
+from localcosmos_cordova_builder.required_assets import REQUIRED_ASSETS
+
 import os, shutil, zipfile, json
 
 
@@ -136,13 +138,36 @@ class PrivateFrontendImporter:
 
             else:
 
-                required_images = ['appLauncherIcon', 'appSplashscreen']
-
-                for image_key in required_images:
+                for image_key, image_filename in REQUIRED_ASSETS.items():
 
                     if image_key not in frontend_settings['userContent']['images']:
-                        self.errors.append(_("'{0}' not found in settings.userContent.images".format(image_key)))
+                        self.errors.append(_("'%(image_key)s' not found in settings.userContent.images") % {
+                            'image_key' : image_key
+                        })
 
+                    else:
+                        image_definition = frontend_settings['userContent']['images'][image_key]
+
+                        required = image_definition.get('required', False)
+
+                        if required != True:
+                            self.errors.append(_('settings.userContent.images.%(image_key)s.required has to be set to true') % {
+                                'image_key' : image_key
+                            })
+
+                        restrictions = image_definition.get('restrictions', {})
+
+                        file_type = restrictions.get('fileType', [])
+                        if file_type != ['svg']:
+                            self.errors.append(_('settings.userContent.images.%(image_key)s.restrictions.fileType has to be ["svg"]') % {
+                                'image_key' : image_key
+                            })
+
+                        ratio = restrictions.get('ratio', None)
+                        if ratio != '1:1':
+                            self.errors.append(_('settings.userContent.images.%(image_key)s.restrictions.ratio has to be "1:1"') % {
+                                'image_key' : image_key
+                            })
 
     def validate_frontend_files(self):
 
@@ -158,10 +183,14 @@ class PrivateFrontendImporter:
                 subitem_path = os.path.join(self.temporary_frontend_folder, subitem)
 
                 if item_type == 'folder' and not os.path.isdir(subitem_path):
-                    self.errors.append(_('{0} of your frontend is not a folder'))
+                    self.errors.append(_('%(subitem)s of your frontend is not a folder') % {
+                        'subitem' : subitem
+                    })
 
                 if item_type == 'file' and not os.path.isfile(subitem_path):
-                    self.errors.append(_('{0} of your frontend is not a file'))
+                    self.errors.append(_('%(subitem)s of your frontend is not a file') % {
+                        'subitem' : subitem
+                    })
 
         
     def get_frontend_name(self):

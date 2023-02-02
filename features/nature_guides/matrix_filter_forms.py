@@ -9,12 +9,24 @@ from .models import MatrixFilter
 from .matrix_filters import MATRIX_FILTER_TYPES
 
 
+IDENTIFICATION_MEANS = (
+    ('', '--------'),
+    ('visual', _('visual')),
+    ('tactile', _('tactile')),
+    ('auditory', _('auditory')),
+    ('microscope', _('microscope')),
+    ('gustatory', _('gustatory')),
+    ('olfactory', _('olfactory')),
+)
 
 class MatrixFilterManagementForm(LocalizeableForm):
     
     name = forms.CharField(label=_('Name of filter or trait'),
                            help_text=_("What is described by the filter, e.g. 'length of nose'"))
     filter_type = forms.ChoiceField(choices=MATRIX_FILTER_TYPES, widget=forms.HiddenInput)
+
+    identification_means = forms.ChoiceField(choices=IDENTIFICATION_MEANS, required=False,
+                        label=_('Means of identification'))
 
     weight = forms.IntegerField(min_value=0, max_value=10, initial=1,
                                 help_text=_('0-10. Use a high value if the trait is easily recoginzed, and a low one if it is more difficult.'))

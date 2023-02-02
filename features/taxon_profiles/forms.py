@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import TaxonTextType, TaxonText
 
+from app_kit.validators import json_compatible
+
 from app_kit.forms import GenericContentOptionsForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
 
@@ -77,13 +79,13 @@ class ManageTaxonTextsForm(LocalizeableForm):
 
             short_text_field_label = text_type.text_type
             short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
-                                    required=False, label=short_text_field_label)
+                                    required=False, label=short_text_field_label, validators=[json_compatible])
             short_text_field.taxon_text_type = text_type
             short_text_field.is_short_version = True
 
             long_text_field_label = text_type.text_type
             long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
-                                    required=False, label=long_text_field_label)
+                                    required=False, label=long_text_field_label, validators=[json_compatible])
             long_text_field.taxon_text_type = text_type
             long_text_field.is_short_version = False
 

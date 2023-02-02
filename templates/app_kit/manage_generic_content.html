@@ -70,6 +70,18 @@
 									window.location.href = "{% url generic_content.manage_url meta_app.id content_type.id generic_content.id %}";
 								}, 15000);
 							</script>
+						{% elif generic_content.messages.lock_reason == 'preview_build' %}
+							<div class="text-center">
+								<img src="{% static 'app_kit/images/spinner.gif' %}" />
+							</div>
+							<div class="text-center mt-3">
+								{% blocktrans %}Currently building your frontend for previews.{% endblocktrans %}
+							</div>
+							<script>
+								setTimeout(function(){
+									window.location.href = "{% url generic_content.manage_url meta_app.id content_type.id generic_content.id %}";
+								}, 5000);
+							</script>
 						{% else %}
 							{% trans 'Your app is currently being built and this content is locked.' %}
 						{% endif %}

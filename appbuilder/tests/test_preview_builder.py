@@ -12,7 +12,7 @@ import os
 
 TEST_PRIVATE_API_URL = 'https://localhost/private-api-test/'
 
-class TestAppbuilderBase(WithMetaApp, TenantTestCase):
+class TestAppPreviewBuilder(WithMetaApp, TenantTestCase):
 
     def setUp(self):
         super().setUp()
@@ -29,33 +29,30 @@ class TestAppbuilderBase(WithMetaApp, TenantTestCase):
 
         self.assertTrue(os.path.isdir(app_builder._app_root_path))
         self.assertTrue(os.path.isdir(app_builder._app_version_root_path))
-
-        self.assertFalse(os.path.isdir(app_builder._app_preview_path))
         
         preview_builder = AppPreviewBuilder(self.meta_app)
+
+        self.assertFalse(os.path.isdir(preview_builder._app_builder_path))
+
+        print(preview_builder._app_builder_path)
+
         preview_builder.build()
 
-        self.assertTrue(os.path.isdir(app_builder._app_preview_path))
+        self.assertTrue(os.path.isdir(preview_builder._app_builder_path))
 
         # preview_dir should be empty
-        preview_dir = os.listdir(app_builder._app_preview_path)
-        self.assertEqual(len(preview_dir), 1)
+        preview_dir = os.listdir(preview_builder._app_builder_path)
+        self.assertEqual(len(preview_dir), 2)
 
-        subfolders = [f.path for f in os.scandir(preview_builder._app_preview_path) if f.is_dir()]
-        self.assertEqual(subfolders[0], preview_builder._app_www_path)
+        subfolders = [f.path for f in os.scandir(preview_builder._app_builder_path) if f.is_dir()]
+        self.assertIn(preview_builder._app_build_sources_path, subfolders)
+        self.assertIn(preview_builder._cordova_build_path, subfolders)
 
         www_subfolders = [f.path for f in os.scandir(preview_builder._app_www_path) if f.is_dir()]
 
         self.assertIn(preview_builder._app_localcosmos_content_path, www_subfolders)
 
         self.assertTrue(os.path.isfile(preview_builder._app_settings_json_filepath))
-
-        browser_cordova_js_path = os.path.join(preview_builder._app_www_path, 'cordova.js')
-        self.assertTrue(os.path.isfile(browser_cordova_js_path))
-
-        browser_dir = os.path.join(preview_builder._app_www_path, 'browser')
-
-        self.assertTrue(os.path.isdir(browser_dir))
 
         self.assertTrue(os.path.isdir(preview_builder._preview_browser_served_path))
 

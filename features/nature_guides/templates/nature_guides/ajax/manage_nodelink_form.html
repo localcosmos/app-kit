@@ -86,3 +86,12 @@
 		{% endif %}
 	</script>
 {% endblock %}
+
+{% block script %}
+<script>
+	
+	/* update source element data on every keystroke to prevent HTML5 validation to kick in before submit is called - which triggers updateSourceElement */
+	{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+	
+</script>
+{% endblock %}

@@ -22,26 +22,25 @@ class PreviewExists(Exception):
 # builds a browser app without content, no android, no ios
 class AppPreviewBuilder(AppBuilderBase):
 
+    @property
+    def _builder_identifier(self):
+        return 'preview'
+
     # previews are not being validated
     def validate(self):
         raise NotImplementedError('AppPreviewBuilder has no validate method')
 
-    # create app preview, browser only
-    #- delete the preview folder and recreate the preview folder
-    #- symlink/copy all necessary files, but no generic content
-    #- the preview is for the online content, not for other contents
-    #- raises an Exception if the preview folder already exists
-    #- copy user content from older version (which ones?)
+
     def build(self):
 
-        self.logger = self._get_logger('preview_build')
+        self.logger = self._get_logger('build')
         self.logger.info('Starting AppPreviewBuilder.build process for app {0} version {1}'.format(self.meta_app.name,
                                                                                         self.meta_app.current_version))
 
         try:
             # STEP 1, create the root folder of the preview app, which then contains the www folder
-            self.logger.info('(Re)Creating preview folder: {0}'.format(self._app_preview_path))
-            self._recreate_preview_folder()
+            self.logger.info('(Re)Creating preview folder: {0}'.format(self._app_builder_path))
+            self._recreate_builder_folder()
 
             # STEP 2
             self._build_Frontend()
@@ -70,22 +69,23 @@ class AppPreviewBuilder(AppBuilderBase):
                 f.write(app_features_string)
 
 
-            # STEP 6: copy browser specific files provided by the frontend
-            self.logger.info('Copying browser assets')
-            self._build_Frontend_browser_specific_assets()
-
-
             # STEP 6: create basic primary locale
             self.logger.info('Building locales')
             self._build_locales()
 
-            # the preview also optionally supplies AppFrontendImages and AppFrontendTexts
-            # however, the preview frontend should work without these assets
 
+            # STEP 7: run cordova build browser inside cordova
+            self.logger.info('Building cordova app')
+            cordova_builder = self.get_cordova_builder()
+
+            browser_built_path, browser_zip_filepath = cordova_builder.build_browser(build_zip=False)
+
+            # the preview also will optionally suppliy AppFrontendImages and AppFrontendTexts (in the future)
+            # however, the preview frontend should work without these assets
 
             # STEP 8: link to webserver
             self.logger.info('Linking to webserver')
-            self._link_to_webserver()
+            self._link_to_webserver(browser_built_path)
 
             self.logger.info('App made available at {0}'.format(self.meta_app.app.preview_version_path))
 
@@ -104,23 +104,12 @@ class AppPreviewBuilder(AppBuilderBase):
     # BUILD STEPS
     #############################################################################################
 
-    def _recreate_preview_folder(self):
-
-        if os.path.isdir(self._app_preview_path):
-            shutil.rmtree(self._app_preview_path)
-
-        os.makedirs(self._app_preview_path)
-
-
-    def _create_localcosmos_content_folder(self):
-        os.makedirs(self._app_localcosmos_content_path)
-
     
-    def _link_to_webserver(self):
+    def _link_to_webserver(self, browser_built_path):
         # make the preview live, the preview live folder is a subfolder of settings.MEDIA_ROOT
         self.deletecreate_folder(self._preview_browser_served_path)
 
-        os.symlink(self._app_www_path, self._preview_browser_served_www_path)
+        os.symlink(browser_built_path, self._preview_browser_served_www_path)
 
         # update the previre served folder in the database
         # set the apps preview folder - to the served folder, not the app-kits internal folder
@@ -158,11 +147,3 @@ class AppPreviewBuilder(AppBuilderBase):
 
             with open(app_glossarized_primary_locale_filepath, 'w') as app_glossarzied_primary_locale_file:
                 app_glossarzied_primary_locale_file.write(json.dumps(primary_locale_fallback))
-
-    
-    #############################################################################################
-    # PREVIEW SPECIFIC PATHS
-    #############################################################################################
-    @property
-    def _app_www_path(self):
-        return os.path.join(self._app_preview_path, 'www')

@@ -23,6 +23,7 @@ from app_kit.features.frontend.PrivateFrontendImporter import PrivateFrontendImp
 
 from .mixins import WithFrontendZip, CleanFrontendTestFolders
 
+from time import sleep
 import os
 
 TEST_FRONTEND_NAME = 'Mountain'
@@ -372,6 +373,10 @@ class TestChangeFrontend(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, WithUse
 
         self.assertEqual(response.status_code, 200)
 
+        sleep(30)
+
+
+
     @test_settings
     def test_update_frontend(self):
         
@@ -380,6 +385,8 @@ class TestChangeFrontend(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, WithUse
         view.set_meta_app(**view.kwargs)
 
         view.update_frontend('Flat')
+
+        sleep(30)
 
 
 class TestUploadPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
@@ -531,6 +538,8 @@ class TestInstallPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, With
 
         self.frontend.refresh_from_db()
         self.assertEqual(self.frontend.frontend_name, TEST_FRONTEND_NAME)
+
+        sleep(30)
 
 
     @test_settings

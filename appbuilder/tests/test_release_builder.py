@@ -87,32 +87,6 @@ class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, Wit
 
         cordova_builder = self.release_builder.get_cordova_builder()
         self.assertTrue(isinstance(cordova_builder, CordovaAppBuilder))
-    
-    @test_settings
-    def test_app_www_path(self):
-
-        path = self.release_builder._app_www_path
-
-        self.general_path_check(path)
-        self.assertTrue(path.endswith('sources/common/www'))
-
-
-    @test_settings
-    def test_build_browser_path(self):
-        
-        path = self.release_builder._build_browser_root
-
-        self.general_path_check(path)
-        self.assertTrue(path.endswith('sources/browser'))
-
-
-    @test_settings
-    def test_build_browser_www_path(self):
-        
-        path = self.release_builder._build_browser_www_path
-
-        self.general_path_check(path)
-        self.assertTrue(path.endswith('sources/browser/www'))
 
     
     @test_settings
