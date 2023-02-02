@@ -128,21 +128,11 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     child_space_list = nfs_serializer.serialize()
                     simple_child_space_list = nfs_serializer.simplify(child_space_list)
 
-                    '''
-                    # get the matrix_filter for this specific space
-                    
-
-                    # iterate over all spaces for this filter
-                    spaces = node_matrix_filter.matrix_filter_type.get_filter_space_as_list_with_identifiers(
-                        node_filter_space)
-                    '''
-
                     # a list of spaces applicable for this entry/matrix_filter combination
                     child_space[node_matrix_filter_uuid] = simple_child_space_list
 
                     weight = node_matrix_filter.weight
                     child_max_points = child_max_points + weight
-
 
                     # taxon profiles cache
                     serializer = MatrixFilterSerializer(self, node_matrix_filter)

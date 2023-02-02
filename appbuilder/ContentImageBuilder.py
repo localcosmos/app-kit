@@ -77,6 +77,9 @@ class ContentImageBuilder:
                     if not os.path.isfile(absolute_image_filepath):
                         processed_image.save(absolute_image_filepath, output_format)
                 
-                image_urls[size_name] = '/{0}'.format(relative_image_filepath)        
+                image_url = '/{0}'.format(relative_image_filepath)
+                image_urls[size_name] = image_url
+
+                self.image_cache[cache_key] = image_url
         
         return image_urls
