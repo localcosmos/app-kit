@@ -197,7 +197,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
         cache = self.app_release_builder.aggregated_node_filter_space_cache
 
         if child.parent.meta_node.node_type != 'root':
-            aggregated_space = cache[parent_taxon_nuid]
+            if parent_taxon_nuid in cache:
+                aggregated_space = cache[parent_taxon_nuid]
 
         if child.taxon_nuid not in cache:
             cache[child.taxon_nuid] = aggregated_space
