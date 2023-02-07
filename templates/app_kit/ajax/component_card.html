@@ -10,7 +10,7 @@
 					<div class="dropdown-menu">
 						<a class="dropdown-item xhr" data-url="{% url 'remove_app_generic_content' link.id %}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
 						{% if link.generic_content|generic_content_may_have_image %}
-							<a data-url="{% url 'manage_content_image' link.generic_content|ctype_id link.generic_content.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+							<a data-url="{% url 'manage_content_image' meta_app.id link.generic_content|ctype_id link.generic_content.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
 						{% endif %}
 					</div>
 				</div>

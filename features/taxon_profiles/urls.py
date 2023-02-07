@@ -30,6 +30,6 @@ urlpatterns = [
     path('manage-taxon-profile-image/<int:meta_app_id>/<int:content_image_id>/',
         views.ManageTaxonProfileImage.as_view(), name='manage_taxon_profile_image'),
     # delete taxon profile image
-    path('delete-taxon-profile-image/<int:pk>/',
+    path('delete-taxon-profile-image/<int:meta_app_id>/<int:pk>/',
         views.DeleteTaxonProfileImage.as_view(), name='delete_taxon_profile_image'),
 ]

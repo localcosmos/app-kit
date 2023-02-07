@@ -41,7 +41,7 @@
 					<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ image.id }}">
 						<a data-url="{% url 'manage_taxon_profile_image' meta_app.id image.id %}?taxon_source={{ taxon.taxon_source }}&taxon_latname={{ taxon.taxon_latname }}&taxon_author={{ taxon.taxon_author }}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
 
-						<a data-url="{% url 'delete_taxon_profile_image' image.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+						<a data-url="{% url 'delete_taxon_profile_image' meta_app.id image.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
 						<div class="dropdown-divider"></div>
 						<a class="dropdown-item text-center moveforwardbutton" data-targetid="content_image_container_{{ image.id }}">&#x25c0; {% trans 'Move left' %}</a>
 						<div class="dropdown-divider"></div>

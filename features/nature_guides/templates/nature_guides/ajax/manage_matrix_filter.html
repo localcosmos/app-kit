@@ -2,7 +2,7 @@
 {% load i18n app_tags localcosmos_tags %}
 
 {% block action %}
-	{% if matrix_filter %}{% url 'manage_matrix_filter' matrix_filter.id %}{% else %}{% url 'create_matrix_filter' meta_node.id filter_type %}{% endif %}
+	{% if matrix_filter %}{% url 'manage_matrix_filter' meta_app.id matrix_filter.id %}{% else %}{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type %}{% endif %}
 {% endblock %}
 
 {% block title %}

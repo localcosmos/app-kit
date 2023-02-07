@@ -65,7 +65,7 @@
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									{% for filter_type in matrix_filter_types %}
-										<a data-url="{% url 'create_matrix_filter' meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+										<a data-url="{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
 									{% endfor %}
 								</div>
 							</div>
@@ -84,7 +84,7 @@
 							</button>
 							<div class="dropdown-menu">
 								{% for filter_type in matrix_filter_types %}
-									<a data-url="{% url 'create_matrix_filter' meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+									<a data-url="{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
 								{% endfor %}
 							</div>
 						</div>

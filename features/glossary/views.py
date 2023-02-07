@@ -6,6 +6,8 @@ from localcosmos_server.decorators import ajax_required
 
 from app_kit.views import ManageGenericContent
 
+from app_kit.view_mixins import MetaAppMixin
+
 from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm
 
 from .models import Glossary, GlossaryEntry, TermSynonym
@@ -93,7 +95,7 @@ class ManageGlossaryEntryCommon:
 
 
 from app_kit.views import ManageContentImageMixin
-class AddGlossaryEntry(ManageContentImageMixin, ManageGlossaryEntryCommon, FormView):
+class AddGlossaryEntry(ManageContentImageMixin, ManageGlossaryEntryCommon, MetaAppMixin, FormView):
 
     template_name = 'glossary/ajax/add_glossary_entry.html'
     form_class = GlossaryEntryWithImageForm        
@@ -118,7 +120,7 @@ class AddGlossaryEntry(ManageContentImageMixin, ManageGlossaryEntryCommon, FormV
 
 
 
-class ManageGlossaryEntry(ManageGlossaryEntryCommon, FormView):
+class ManageGlossaryEntry(ManageGlossaryEntryCommon, MetaAppMixin, FormView):
 
     template_name = 'glossary/ajax/manage_glossary_entry.html'
     form_class = GlossaryEntryForm
@@ -149,7 +151,7 @@ class ManageGlossaryEntry(ManageGlossaryEntryCommon, FormView):
     
 
 
-class GetGlossaryEntries(TemplateView):
+class GetGlossaryEntries(MetaAppMixin, TemplateView):
 
     template_name = 'glossary/ajax/glossary_entries.html'
 
@@ -165,7 +167,7 @@ class GetGlossaryEntries(TemplateView):
         return context
 
 
-class GetGlossaryEntry(TemplateView):
+class GetGlossaryEntry(MetaAppMixin, TemplateView):
 
     template_name = 'glossary/ajax/glossary_entry.html'
 

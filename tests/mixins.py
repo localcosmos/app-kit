@@ -10,7 +10,7 @@ from django.db import connection
 
 
 from app_kit.tests.common import (test_settings, TESTS_ROOT, powersetdic, TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
-from app_kit.models import (ContentImageMixin, MetaApp, MetaAppGenericContent, ImageStore, ContentImage)
+from app_kit.models import (MetaApp, MetaAppGenericContent, ImageStore, ContentImage)
 
 from app_kit.multi_tenancy.models import TenantUserRole
 
@@ -290,13 +290,21 @@ class WithZipFile:
 
 class WithImageStore:
 
-    def create_image_store(self, name='test_image.jpg'):
+    def create_image_store(self, name='test_image.jpg', test_image_path=TEST_IMAGE_PATH):
 
         user = self.create_user()
-        md5 = hashlib.md5(Image.open(TEST_IMAGE_PATH).tobytes()).hexdigest()
 
-        image = SimpleUploadedFile(name=name, content=open(TEST_IMAGE_PATH, 'rb').read(),
-                                        content_type='image/jpeg')
+        content_type='image/jpeg'
+
+        if test_image_path.endswith('.svg'):
+            md5 = hashlib.md5(open(test_image_path,'rb').read()).hexdigest()
+            content_type='image/svg'
+            name = os.path.basename(test_image_path)
+        else:
+            md5 = hashlib.md5(Image.open(test_image_path).tobytes()).hexdigest()
+
+        image = SimpleUploadedFile(name=name, content=open(test_image_path, 'rb').read(),
+                                        content_type=content_type)
 
         image_store = ImageStore(
             source_image=image,

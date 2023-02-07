@@ -470,6 +470,9 @@ class AppBuilderBase:
     def _app_root_path(self):
         return os.path.join(settings.APP_KIT_ROOT, str(self.meta_app.uuid))
 
+    @property
+    def _app_content_images_cache_path(self):
+        return os.path.join(self._app_root_path, 'cache/content_images/')
     
     # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/
     # eg /opt/localcosmos/apps/{UUID}/1/

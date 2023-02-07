@@ -1,5 +1,5 @@
 {% load i18n localcosmos_tags %}
-<form class="xhr" method="POST" action="{% url 'add_glossary_entry' generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
+<form class="xhr" method="POST" action="{% url 'add_glossary_entry' meta_app.id generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
 
 	{% include 'app_kit/ajax/form_extended_with_content_image.html' %}
 
@@ -14,7 +14,7 @@
 </form>
 {% if saved_glossary_entry %}
 	<script>
-		$.get("{% url 'get_glossary_entries' generic_content.id %}", function(html){
+		$.get("{% url 'get_glossary_entries' meta_app.id generic_content.id %}", function(html){
 			$("#glossary-entries").html(html);
 			ajaxify("glossary-entries");
 		});

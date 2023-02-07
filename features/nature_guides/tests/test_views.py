@@ -331,7 +331,7 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
 
         data = self.get_nodelink_form_data()
 
-        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         form.is_valid()
@@ -356,7 +356,7 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
 
         data = self.get_nodelink_form_data()
 
-        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         form.is_valid()
@@ -491,7 +491,7 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data.update(taxon_post_data)
 
-        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         form.is_valid()
@@ -531,7 +531,7 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data.update(matrix_filters_data)
 
-        form = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         form.is_valid()
@@ -588,7 +588,7 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         data_2.update(matrix_filter_post_data_2)
 
-        form_2 = ManageNodelinkForm(view.submitted_parent_node, view.submitted_parent_node, data=data_2,
+        form_2 = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data_2,
                                     from_url=view.request.path)
 
         form_2.is_valid()
@@ -741,7 +741,7 @@ class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMat
 
         data.update(taxon_post_data)
 
-        form = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.tree_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         form.is_valid()
@@ -781,7 +781,7 @@ class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMat
 
         data.update(matrix_filters_data)
 
-        form = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data,
+        form = ManageNodelinkForm(self.meta_app, view.tree_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
 
         matrix_filter_field_count = 0
@@ -847,7 +847,7 @@ class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMat
 
         data_2.update(matrix_filter_post_data_2)
 
-        form_2 = ManageNodelinkForm(view.tree_parent_node, view.submitted_parent_node, data=data_2,
+        form_2 = ManageNodelinkForm(self.meta_app, view.tree_parent_node, view.submitted_parent_node, data=data_2,
                                     from_url=view.request.path)
 
         form_2.is_valid()
@@ -1432,6 +1432,7 @@ class TestLoadMatrixFilters(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnl
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'meta_node_id' : self.start_node.meta_node.id,
         }
         return url_kwargs
@@ -1440,6 +1441,7 @@ class TestLoadMatrixFilters(WithNatureGuideLink, ViewTestMixin, WithAjaxAdminOnl
     def test_get_context_data(self):
         view = self.get_view()
         view.meta_node = self.start_node.meta_node
+        view.meta_app = self.meta_app
 
         matrix_filter_type = ContentType.objects.get_for_model(MatrixFilter)
 
@@ -1467,6 +1469,7 @@ class ManageMatrixFilterCommon:
 
     def get_url_kwargs(self, filter_type):
         url_kwargs = {
+            'meta_app_id': self.meta_app.id,
             'meta_node_id' : self.view_node.meta_node.id,
             'filter_type' : filter_type,
         }
@@ -1502,6 +1505,7 @@ class ManageMatrixFilterCommon:
         view = self.view_class()        
         view.request = request
         view.kwargs = self.get_url_kwargs(filter_type)
+        view.meta_app = self.meta_app
 
         return view
 
@@ -1734,6 +1738,7 @@ class TestManageMatrixFilter(ManageMatrixFilterCommon,  WithNatureGuideLink, Wit
 
     def get_url_kwargs(self, matrix_filter):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'matrix_filter_id' : matrix_filter.id,
         }
         return url_kwargs
@@ -1911,6 +1916,91 @@ class TestManageMatrixFilter(ManageMatrixFilterCommon,  WithNatureGuideLink, Wit
 
 
 
+class TestDeleteMatrixFilter(WithNatureGuideLink, ViewTestMixin, WithUser, WithMedia, WithMatrixFilters,
+                WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_matrix_filter'
+    view_class = DeleteMatrixFilter
+
+
+    def setUp(self):
+        super().setUp()
+
+        self.matrix_filters = self.create_all_matrix_filters(self.start_node)
+
+        self.view_node = self.start_node
+
+
+    def get_url_kwargs(self, matrix_filter):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : matrix_filter.id,
+        }
+        return url_kwargs
+
+    def get_url(self, matrix_filter):
+        url_kwargs = self.get_url_kwargs(matrix_filter)
+        url = reverse(self.url_name, kwargs=url_kwargs)
+        
+        return url
+    
+
+    def get_request(self, matrix_filter):
+        factory = RequestFactory()
+        url = self.get_url(matrix_filter)
+
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+        request = factory.get(url, **url_kwargs)
+        
+        request.user = self.user
+        request.session = self.client.session
+        request.tenant = self.tenant
+
+        return request
+
+
+    def get_view(self, matrix_filter):
+
+        request = self.get_request(matrix_filter)
+
+        view = self.view_class()        
+        view.request = request
+        view.kwargs = self.get_url_kwargs(matrix_filter)
+        view.meta_app = self.meta_app
+
+        return view
+
+
+
+    @test_settings
+    def test_post(self):
+
+        for matrix_filter in self.matrix_filters:
+
+            view = self.get_view(matrix_filter)
+
+            meta_node = matrix_filter.meta_node
+            
+            matrix_filter_id = matrix_filter.pk
+            qry = MatrixFilter.objects.filter(pk=matrix_filter_id)
+
+            view = self.get_view(matrix_filter)
+
+            self.assertTrue(qry.exists())
+
+            view.request.method = 'POST'
+            response = view.post(view.request, **view.kwargs)
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context_data['meta_app'], self.meta_app)
+            self.assertEqual(response.context_data['meta_node'], meta_node)
+            self.assertEqual(response.context_data['deleted'], True)
+
+            self.assertFalse(qry.exists())
+
+
 class ManageMatrixFilterSpaceCommon:
 
 
@@ -1985,6 +2075,7 @@ class ManageMatrixFilterSpaceCommon:
 
     def get_url_kwargs(self, matrix_filter):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'matrix_filter_id' : matrix_filter.id,
         }
         return url_kwargs
@@ -2013,6 +2104,7 @@ class ManageMatrixFilterSpaceCommon:
         view = self.view_class()        
         view.request = request
         view.kwargs = self.get_url_kwargs(matrix_filter)
+        view.meta_app = self.meta_app
 
         return view
 
@@ -2292,6 +2384,7 @@ class TestManageMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
 
     def get_url_kwargs(self, space):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'space_id' : space.id,
         }
         return url_kwargs
@@ -2363,6 +2456,7 @@ class TestManageMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
             old_encoded_space = space.encoded_space
 
             view = self.get_view(space)
+            view.meta_app = self.meta_app
             view.set_space(**view.kwargs)
             view.set_primary_language()
 
@@ -2391,7 +2485,6 @@ class TestManageMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
                 self.assertEqual(space.encoded_space, [255,0,255,1])
 
 
-
 class TestDeleteMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, WithNatureGuideLink, WithUser,
         WithImageStore, WithMedia, WithMatrixFilters, WithLoggedInUser, WithMetaApp, WithTenantClient,
         TenantTestCase):
@@ -2405,6 +2498,7 @@ class TestDeleteMatrixFilterSpace(ManageMatrixFilterSpaceCommon, WithFormTest, W
 
     def get_url_kwargs(self, space):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'pk' : space.id,
         }
         return url_kwargs
@@ -2741,7 +2835,7 @@ class TestSearchMoveToGroup(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMixi
 
         return url_kwargs
 
-
+    @test_settings
     def test_get_queryset(self):
         
         view = self.get_view()
@@ -2777,6 +2871,7 @@ class TestManageMatrixFilterRestrictionsCreate(WithMatrixFilters, WithNatureGuid
     def get_url_kwargs(self, matrix_filter):
 
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'meta_node_id' : self.meta_node.id,
             'matrix_filter_id' : matrix_filter.id,
         }
@@ -2813,6 +2908,7 @@ class TestManageMatrixFilterRestrictionsCreate(WithMatrixFilters, WithNatureGuid
 
         view = self.view_class()        
         view.request = request
+        view.meta_app = self.meta_app
         view.kwargs = self.get_url_kwargs(matrix_filter)
 
         return view
@@ -2988,7 +3084,8 @@ class TestManageMatrixFilterRestrictionsCreate(WithMatrixFilters, WithNatureGuid
                 matrix_filter_post_data = self.get_matrix_filter_post_data(restrictive_matrix_filter)
                 post_data.update(matrix_filter_post_data)
 
-                form = view.form_class(restricted_matrix_filter, self.meta_node, data=post_data, from_url='/')
+                form = view.form_class(self.meta_app, restricted_matrix_filter, self.meta_node, data=post_data,
+                                        from_url='/')
 
                 form.is_valid()
                 self.assertEqual(form.errors, {})
@@ -3261,7 +3358,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         return node_dict
             
-        
+    @test_settings    
     def test_set_node(self):
 
         view = self.get_view()
@@ -3270,7 +3367,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(view.node, self.copy_node)
         self.assertEqual(view.parent_node, self.copy_node.parent)
 
-
+    @test_settings
     def test_get_new_taxon_nuid(self):
 
         view = self.get_view()
@@ -3284,7 +3381,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         
         self.assertEqual(new_taxon_nuid, expected_nuid)
 
-
+    @test_settings
     def test_copy_meta_node(self):
 
         view = self.get_view()
@@ -3298,7 +3395,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(meta_node.node_type, copied_meta_node.node_type)
         self.assertEqual(meta_node.name, copied_meta_node.name)
 
-
+    @test_settings
     def test_copy_meta_node_with_taxon(self):
 
         view = self.get_view()
@@ -3321,7 +3418,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         self.assertEqual(lazy_taxon, copied_meta_node.taxon)
 
-
+    @test_settings
     def test_copy_content_image(self):
 
         view = self.get_view()
@@ -3347,7 +3444,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(copied_image.is_primary, content_image.is_primary)
         self.assertEqual(copied_image.text, content_image.text)
 
-
+    @test_settings
     def test_copy_matrix_filter(self):
 
         view = self.get_view()
@@ -3395,6 +3492,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
                 
         
     # does NOT create new values/ matrix filters
+    @test_settings
     def test_copy_node_filter_space_root_node(self):
 
         view = self.get_view()
@@ -3428,6 +3526,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(original_filter_count, new_filter_count)
         
     # does create new values/ matrix filters
+    @test_settings
     def test_copy_node_filter_space_subnode(self):
 
         view = self.get_view()
@@ -3490,6 +3589,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
     # copy the root node of the brancht which should be copied
     # toplevel copy does not pass taxon_tree_fields
     # also check conten images
+    @test_settings
     def test_copy_toplevel_node(self):
 
         view = self.get_view()
@@ -3513,6 +3613,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
         self.assertEqual(matrix_filters.count(), copied_matrix_filters.count())
 
 
+    @test_settings
     def test_copy_subnode_with_taxontree_fields(self):
 
         # copy single node
@@ -3560,7 +3661,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
         self.assertEqual(matrix_filters.count(), copied_matrix_filters.count())
 
-
+    @test_settings
     def test_copy_crosslinks(self):
 
         # 3 cases :
@@ -3708,6 +3809,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
     
     # copy branch
+    @test_settings
     def test_form_valid(self):
 
         view = self.get_view()
@@ -3780,7 +3882,7 @@ class TestCopyTreeBranch(WithImageStore, WithMedia, WithNatureGuideLink, WithMat
 
                 result_link = NatureGuideCrosslinks.objects.get(parent=root_copy, child=orig_child_node)
 
-            
+    @test_settings
     def test_copy_and_delete_old(self):
         pass
         
@@ -3809,6 +3911,7 @@ class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia
     def get_url_kwargs(self):
 
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'content_type_id' : self.content_type.id,
             'object_id' : self.space.id,
             'image_type' : self.image_type,
@@ -3819,6 +3922,7 @@ class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia
     def get_view(self):
         view = super().get_view()
         url_kwargs = self.get_url_kwargs()
+        view.meta_app=self.meta_app
         view.set_content_image(**url_kwargs)
 
         if view.content_image:
@@ -3828,6 +3932,7 @@ class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia
         view.set_taxon(view.request)
         return view
 
+    @test_settings
     def test_get_context_data(self):
         view = self.get_view()
         kwargs = self.get_url_kwargs()
@@ -3839,6 +3944,7 @@ class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia
         self.assertEqual(context['content_image_taxon'], None)
         self.assertEqual(context['new'], True)
 
+    @test_settings
     def test_post(self):
         
         post_data, file_data = self.get_post_form_data()
@@ -3897,7 +4003,7 @@ class TestManageAdditionalMatrixFilterSpaceImage(ContentImagePostData, WithMedia
         self.assertEqual(context['new'], False)
 
 
-class TestDeleteAdditionalMatrixFilterSpaceImage( WithImageStore, WithMedia, WithMatrixFilters, WithNatureGuideLink, ViewTestMixin,
+class TestDeleteAdditionalMatrixFilterSpaceImage(WithImageStore, WithMedia, WithMatrixFilters, WithNatureGuideLink, ViewTestMixin,
                             WithAjaxAdminOnly, ContentImagePostData, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
     
     url_name = 'delete_additional_matrix_filter_space_image'
@@ -3919,6 +4025,7 @@ class TestDeleteAdditionalMatrixFilterSpaceImage( WithImageStore, WithMedia, Wit
     def get_url_kwargs(self):
         content_image = self.create_content_image()
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'pk' : content_image.pk,
         }
         return url_kwargs
@@ -3927,6 +4034,7 @@ class TestDeleteAdditionalMatrixFilterSpaceImage( WithImageStore, WithMedia, Wit
     def test_get_context_data(self):
         view = self.get_view()
         view.object = view.get_object()
+        view.meta_app = self.meta_app
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['image_type'], 'image')
         self.assertEqual(context['content_instance'], self.space)

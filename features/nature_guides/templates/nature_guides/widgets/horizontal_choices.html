@@ -24,8 +24,8 @@
 									{% trans 'Modify' %} <span class="caret"></span>
 								</button>
 								<div class="dropdown-menu">
-									<a data-url="{% url 'manage_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
-									<a data-url="{% url 'delete_matrix_filter_space' option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+									<a data-url="{% url 'manage_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+									<a data-url="{% url 'delete_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
 									<div class="dropdown-divider"></div>
 									<a class="dropdown-item text-center movespaceleftbutton" data-targetid="space_{{ option.space_id }}">&#9664; {% trans 'Move left' %}</a>
 									<div class="dropdown-divider"></div>

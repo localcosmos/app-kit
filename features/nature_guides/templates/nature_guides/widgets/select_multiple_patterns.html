@@ -3,7 +3,7 @@
 
 {% block extra_menu %}
     <div class="dropdown-divider"></div>
-    <a data-url="{% url 'manage_additional_matrix_filter_space_image' matrix_filter_space_ctype.id option.space_id 'secondary' %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Additional image' %}</a>
+    <a data-url="{% url 'manage_additional_matrix_filter_space_image' meta_app.id matrix_filter_space_ctype.id option.space_id 'secondary' %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Additional image' %}</a>
 {% endblock %}
 
 

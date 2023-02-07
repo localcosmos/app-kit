@@ -65,13 +65,13 @@ urlpatterns = [
     path('remove_taxonomic_restriction/<int:pk>/',
         views.RemoveTaxonomicRestriction.as_view(), name='remove_taxonomic_restriction'),
     # app and content images
-    path('manage-content-image/<int:content_type_id>/<int:object_id>/',
+    path('manage-content-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
         views.ManageContentImage.as_view(), name='manage_content_image'),
-    path('manage-content-image/<int:content_type_id>/<int:object_id>/<str:image_type>/',
+    path('manage-content-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<str:image_type>/',
         views.ManageContentImage.as_view(), name='manage_content_image'),
-    path('manage-content-image/<int:content_image_id>/',
+    path('manage-content-image/<int:meta_app_id>/<int:content_image_id>/',
         views.ManageContentImage.as_view(), name='manage_content_image'),
-    path('delete-content-image/<int:pk>/',
+    path('delete-content-image/<int:meta_app_id>/<int:pk>/',
         views.DeleteContentImage.as_view(), name='delete_content_image'),
     # content image with text
     path('manage-content-image-with-text/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',

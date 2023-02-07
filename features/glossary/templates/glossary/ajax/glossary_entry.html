@@ -20,8 +20,8 @@
 			{% trans 'Modify' %} <span class="caret"></span>
 		</button>
 		<div class="dropdown-menu">
-			<a data-url="{% url 'edit_glossary_entry' generic_content.id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
-			<a data-url="{% url 'manage_content_image' glossary_entry|ctype_id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+			<a data-url="{% url 'edit_glossary_entry' meta_app.id generic_content.id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+			<a data-url="{% url 'manage_content_image' meta_app.id glossary_entry|ctype_id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
 			<a data-url="{% url 'delete_glossary_entry' glossary_entry.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
 		</div>
 	</div>

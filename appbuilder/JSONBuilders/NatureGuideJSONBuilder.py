@@ -342,7 +342,7 @@ class MatrixFilterSerializer:
 
         if self.matrix_filter.definition:
             allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
-            identification_means = self.matrix_filter.definition.get('identification_means', None)
+            identification_means = self.matrix_filter.definition.get('identification_means', [])
 
         matrix_filter_json = {
             'uuid' : str(self.matrix_filter.uuid),

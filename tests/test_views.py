@@ -1303,6 +1303,8 @@ class ContentImagePostData:
         crop_parameters = {
             'width' : 12,
             'height' : 20,
+            'x' : 0,
+            'y' : 0,
         }
 
         md5_image = self.get_image()
@@ -1350,7 +1352,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
 
     def get_url(self):
         url_kwargs = {
-            #'meta_app_id' : self.meta_app.id,
+            'meta_app_id' : self.meta_app.id,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1375,6 +1377,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         # content_type_id and object_id in kwargs
         # case 1: content_image_id not in kwargs, new image, cutom iamge type
         image_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
             'image_type' : 'custom',
@@ -1393,6 +1396,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
 
         # case 2: content_image_id not in kwargs, not a new image
         content_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1427,6 +1431,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
 
         # case 4: content_image_id in kwargs, not new
         image_kwargs = {
+            'meta_app' : self.meta_app,
             'content_image_id' : content_image.id,
         }
 
@@ -1441,8 +1446,10 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         # content_type_id and object_id in kwargs
         # case 5: image exists, content_image_id not in kwargs, new image
         exists_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
+            'image_type' : 'custom',
         }
 
         request_5 = self.get_request()
@@ -1451,7 +1458,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         }
         mixin_5 = ManageContentImageMixin()
         mixin_5.request = request_5
-        mixin_5.set_content_image(**image_type_kwargs)
+        mixin_5.set_content_image(**exists_kwargs)
         self.assertEqual(mixin_5.image_type, 'custom')
         self.assertEqual(mixin_5.content_image, None)
         self.assertEqual(mixin_5.object_content_type, self.content_type)
@@ -1511,6 +1518,8 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         crop_parameters = {
             'width' : 12,
             'height' : 20,
+            'x' : 0,
+            'y' : 0,
         }
 
         md5_image = self.get_image()
@@ -1534,6 +1543,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
 
     def get_mixin_for_save(self):
         content_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1542,6 +1552,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         request.GET = {}
         mixin = ManageContentImageMixin()
         mixin.request = request
+        mixin.meta_app = self.meta_app
         mixin.set_content_image(**content_type_kwargs)
         mixin.set_taxon(request)
 
@@ -1679,6 +1690,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
     def test_get_context_data(self):
 
         content_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1704,6 +1716,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
     def test_get_initial(self):
 
         content_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1746,6 +1759,7 @@ class TestManageContentImageMixin(ContentImagePostData, WithLoggedInUser, WithUs
         self.create_content_image()
 
         content_type_kwargs = {
+            'meta_app' : self.meta_app,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1779,7 +1793,7 @@ class TestManageContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
 
     def get_url_kwargs(self):
         url_kwargs = {
-            #'meta_app_id' : self.meta_app.id,
+            'meta_app_id' : self.meta_app.id,
             'content_type_id' : self.content_type.id,
             'object_id' : self.generic_content.id,
         }
@@ -1863,6 +1877,7 @@ class TestDeleteContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
     def get_url_kwargs(self):
         content_image = self.create_content_image()
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'pk' : content_image.pk,
         }
         return url_kwargs
@@ -1870,6 +1885,7 @@ class TestDeleteContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
     @test_settings
     def test_get_context_data(self):
         view = self.get_view()
+        view.meta_app = self.meta_app
         view.object = view.get_object()
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['image_type'], 'image')
@@ -2106,7 +2122,7 @@ class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTen
 
 
         data_no_text = {
-            'target-language' : 'EN',
+            'target-language' : 'EN-US',
         }
 
         response = self.tenant_client.post(url, data_no_text, **url_kwargs)
@@ -2115,7 +2131,7 @@ class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTen
 
         valid_data = {
             'text' : 'Test text',
-            'target-language' : 'EN',
+            'target-language' : 'EN-US',
         }
 
         response = self.tenant_client.post(url, valid_data, **url_kwargs)
@@ -2253,6 +2269,8 @@ class TestManageLocalizedContentImage(ViewTestMixin, WithAjaxAdminOnly, WithLogg
         crop_parameters = {
             'width' : 12,
             'height' : 20,
+            'x' : 0,
+            'y' : 0,
         }
 
         md5_image = self.get_image()

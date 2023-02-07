@@ -6,7 +6,7 @@
 		<div class="card-body">
 			
 			<div>
-				<button type="button" data-url="{% url 'add_glossary_entry' generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Add glossary entry' %}</button>
+				<button type="button" data-url="{% url 'add_glossary_entry' meta_app.id generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Add glossary entry' %}</button>
 			</div>
 		</div>
 	</div>

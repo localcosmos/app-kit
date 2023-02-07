@@ -23,7 +23,7 @@ from decimal import Decimal
 
 from base64 import b64encode
 
-import json
+import json, matplotlib
 
 '''
     EVERYTHING IS A RANGE PARADIGM
@@ -122,10 +122,11 @@ class MatrixFilterType:
 
     ### FORM FIELDS
     # the field displayed when end-user uses the identification matrix
-    def get_matrix_form_field(self):
+    # the meta_app is required for making prepopulating the cache possible (ContentImageMixin requires MetaApp)
+    def get_matrix_form_field(self, meta_app):
         raise NotImplementedError('MatrixFilterType subclasses need a get_matrix_form_field method')
 
-    def get_matrix_form_field_widget(self):
+    def get_matrix_form_field_widget(self, meta_app):
 
         allow_multiple_values = False
 
@@ -136,7 +137,7 @@ class MatrixFilterType:
             'matrix_filter_space_ctype' : ContentType.objects.get_for_model(self.matrix_filter.space_model),
             'allow_multiple_values' : allow_multiple_values,
         }
-        widget = self.MatrixFormFieldWidget(self.matrix_filter, extra_context=extra_context)
+        widget = self.MatrixFormFieldWidget(meta_app, self.matrix_filter, extra_context=extra_context)
         return widget
 
     # the field when adding/editing a matrix node
@@ -144,7 +145,7 @@ class MatrixFilterType:
     def get_node_space_widget_attrs(self):
         return {}
     
-    def get_node_space_widget_args(self):
+    def get_node_space_widget_args(self, meta_app):
         return []
     
     def get_node_space_widget_kwargs(self, from_url, **kwargs):
@@ -159,18 +160,18 @@ class MatrixFilterType:
         return widget_kwargs
 
 
-    def get_node_space_widget(self, from_url, **kwargs):
+    def get_node_space_widget(self, meta_app, from_url, **kwargs):
 
         widget_kwargs = self.get_node_space_widget_kwargs(from_url, **kwargs)
-        widget_args = self.get_node_space_widget_args()
+        widget_args = self.get_node_space_widget_args(meta_app)
         widget = self.NodeSpaceDefinitionWidgetClass(*widget_args, **widget_kwargs)
 
         return widget
 
     
-    def get_node_space_field_kwargs(self, from_url, **kwargs):
+    def get_node_space_field_kwargs(self, meta_app, from_url, **kwargs):
         
-        widget = self.get_node_space_widget(from_url, **kwargs)
+        widget = self.get_node_space_widget(meta_app, from_url, **kwargs)
         
         field_kwargs = {
             'widget' : widget,
@@ -179,9 +180,9 @@ class MatrixFilterType:
         return field_kwargs
 
     
-    def get_node_space_definition_form_field(self, from_url, **kwargs):
+    def get_node_space_definition_form_field(self, meta_app, from_url, **kwargs):
         
-        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)        
+        field_kwargs = self.get_node_space_field_kwargs(meta_app, from_url, **kwargs)        
         field = self.NodeSpaceDefinitionFormFieldClass(**field_kwargs)
 
         return field
@@ -365,9 +366,9 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return [0,0]
 
     # field for the end-user input
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         # decimalfield as a slider
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         
         return self.MatrixFormFieldClass(required=False, label=self.matrix_filter.name,
                     min_value=self.matrix_filter.encoded_space[0], max_value=self.matrix_filter.encoded_space[1],
@@ -375,9 +376,9 @@ class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
 
     # display a field with min value, max value and units
-    def get_node_space_field_kwargs(self, from_url, **kwargs):
+    def get_node_space_field_kwargs(self, meta_app, from_url, **kwargs):
 
-        field_kwargs = super().get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs = super().get_node_space_field_kwargs(meta_app, from_url, **kwargs)
         
         field_kwargs.update({
             'subfield_kwargs' : {
@@ -516,16 +517,16 @@ class NumberFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return choices
 
     # FORM FIELDS
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         choices = self._get_choices()
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
     
 
-    def get_node_space_field_kwargs(self, from_url, **kwargs):
+    def get_node_space_field_kwargs(self, meta_app, from_url, **kwargs):
 
-        field_kwargs = super().get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs = super().get_node_space_field_kwargs(meta_app, from_url, **kwargs)
         field_kwargs.update({
             'choices' : self._get_choices(),
         })
@@ -629,6 +630,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
 
     def encoded_space_to_hex(self, encoded_space):
+        print(encoded_space)
         return self.rgb_to_hex(encoded_space[0], encoded_space[1], encoded_space[2], encoded_space[3])
         
 
@@ -641,10 +643,13 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             # decimal = percentage * 255, percentage as float
             # convert decimal to hexadecimal value . ex: 127.5 in decimal = 7*16ˆ1 + 15 = 7F in hexadecimal
 
-            alpha_decimal = a * 255
-            alpha_hex = hex(alpha_decimal).split('x')[-1]
+            #alpha_decimal = a * 255
+            #alpha_hex = hex(alpha_decimal).split('x')[-1]
+
+            color = (r/255, g/255, b/255, a)
             
-            color_hex = '{0}{1}'.format(color_hex, alpha_hex)
+            #color_hex = '{0}{1}'.format(color_hex, alpha_hex)
+            color_hex = matplotlib.colors.to_hex(color, keep_alpha=True)
             
         return color_hex
 
@@ -718,21 +723,21 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
         return choices
 
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         choices = self._get_choices()
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
 
-    def get_node_space_widget_args(self):
-        return [self]
+    def get_node_space_widget_args(self, meta_app):
+        return [meta_app, self]
     
     # node space definition: assign colors to a node (child)
-    def get_node_space_definition_form_field(self, from_url, **kwargs):
+    def get_node_space_definition_form_field(self, meta_app, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
 
-        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs = self.get_node_space_field_kwargs(meta_app, from_url, **kwargs)
         
         field = self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
@@ -955,23 +960,23 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
         return choices
 
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         choices = self._get_choices()
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
 
-    def get_node_space_widget_args(self):
-        return [self]
+    def get_node_space_widget_args(self, meta_app):
+        return [meta_app, self]
     
     '''
     this method needs a queryset in the space as it works with ModelMultipleChoiceField
     '''
-    def get_node_space_definition_form_field(self, from_url, **kwargs):
+    def get_node_space_definition_form_field(self, meta_app, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
 
-        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs = self.get_node_space_field_kwargs(meta_app, from_url, **kwargs)
         
         return self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
@@ -1074,9 +1079,9 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
         return choices
 
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         choices = self._get_choices()
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
@@ -1130,14 +1135,14 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
         return space
 
 
-    def get_node_space_widget_args(self):
-        return [self]
+    def get_node_space_widget_args(self, meta_app):
+        return [meta_app, self]
     
     
-    def get_node_space_definition_form_field(self, from_url, **kwargs):
+    def get_node_space_definition_form_field(self, meta_app, from_url, **kwargs):
         queryset = self.matrix_filter.get_space()
 
-        field_kwargs = self.get_node_space_field_kwargs(from_url, **kwargs)
+        field_kwargs = self.get_node_space_field_kwargs(meta_app, from_url, **kwargs)
         
         return self.NodeSpaceDefinitionFormFieldClass(queryset, **field_kwargs)
 
@@ -1246,9 +1251,9 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return choices
     
 
-    def get_matrix_form_field(self):
+    def get_matrix_form_field(self, meta_app):
         choices = self._get_choices()
-        widget = self.get_matrix_form_field_widget()
+        widget = self.get_matrix_form_field_widget(meta_app)
         return self.MatrixFormFieldClass(label=self.matrix_filter.name, widget=widget,
                                          choices=choices, required=False)
 
@@ -1345,16 +1350,16 @@ class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
         return initial
 
     # no node space definition for taxon filter
-    def get_node_space_definition_form_field(self, from_url, **kwargs):
+    def get_node_space_definition_form_field(self, meta_app, from_url, **kwargs):
         return None
 
     def get_node_space_widget_kwargs(self, from_url, **kwargs):
         return {}
 
-    def get_node_space_widget(self, from_url, **kwargs):
+    def get_node_space_widget(self, meta_app, from_url, **kwargs):
         return None
 
-    def get_node_space_field_kwargs(self, from_url, **kwargs):
+    def get_node_space_field_kwargs(self, meta_app, from_url, **kwargs):
         return {}
 
     def get_filter_space_as_list(self, filter_space):

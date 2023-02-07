@@ -93,7 +93,7 @@ class ManageNatureGuide(ManageGenericContent):
         context['nature_guide'] = self.generic_content
         context['children_count'] = self.parent_node.children_count
         
-        context['form'] = IdentificationMatrixForm(self.parent_node.meta_node)
+        context['form'] = IdentificationMatrixForm(self.meta_app, self.parent_node.meta_node)
         context['search_for_node_form'] = SearchForNodeForm(language=self.primary_language)
 
         # add the parents to the context for tree browsing
@@ -188,7 +188,7 @@ class MultipleTraitValuesIterator:
     - the NatureGuidestaxonTree.save() method always requires the tree parent
     - matrix filters always require the submitted parent
 '''
-class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, FormView):
+class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, MetaAppMixin, FormView):
 
     template_name = 'nature_guides/ajax/manage_nodelink_form.html'
 
@@ -290,7 +290,7 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Form
             form_class = self.get_form_class()
 
         # submitted parent node is for matrix filters
-        return form_class(self.tree_parent_node, self.submitted_parent_node, **self.get_form_kwargs())
+        return form_class(self.meta_app, self.tree_parent_node, self.submitted_parent_node, **self.get_form_kwargs())
     
     # if a taxon is added to a meta_node without taxon, there could have been a taxon profile referencing
     # app_kit.features.nature_guides as taxon_source. this taxon profile has to be updated to reference
@@ -711,7 +711,7 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 '''
     Matrix
 '''
-class LoadMatrixFilters(TemplateView):
+class LoadMatrixFilters(MetaAppMixin, TemplateView):
 
     template_name = 'nature_guides/ajax/matrix_filters.html'
 
@@ -722,7 +722,7 @@ class LoadMatrixFilters(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = IdentificationMatrixForm(self.meta_node)
+        context['form'] = IdentificationMatrixForm(self.meta_app, self.meta_node)
         context['meta_node'] = self.meta_node
         context['meta_node_has_matrix_filters'] = MatrixFilter.objects.filter(
             meta_node=self.meta_node).exists()
@@ -735,7 +735,7 @@ class LoadMatrixFilters(TemplateView):
     Superclass for creating and managing matrix filters
     - no appmixin due to horizontal_choices
 '''
-class ManageMatrixFilter(FormLanguageMixin, FormView):
+class ManageMatrixFilter(FormLanguageMixin, MetaAppMixin, FormView):
 
     template_name = 'nature_guides/ajax/manage_matrix_filter.html'
     form_class = MatrixFilterManagementForm
@@ -1019,7 +1019,7 @@ class DeleteAdditionalMatrixFilterSpaceImage(DeleteContentImage):
         return context
 
 
-class DeleteMatrixFilter(AjaxDeleteView):
+class DeleteMatrixFilter(MetaAppMixin, AjaxDeleteView):
     model = MatrixFilter
 
     template_name = 'nature_guides/ajax/delete_matrix_filter_value.html'
@@ -1031,6 +1031,7 @@ class DeleteMatrixFilter(AjaxDeleteView):
         self.object.delete()
 
         context = {
+            'meta_app' : self.meta_app,
             'meta_node' : meta_node,
             'deleted' : True,
         }
@@ -1038,7 +1039,7 @@ class DeleteMatrixFilter(AjaxDeleteView):
         
 
 # parent_node_id needed for reload matrix
-class DeleteMatrixFilterSpace(AjaxDeleteView):
+class DeleteMatrixFilterSpace(MetaAppMixin, AjaxDeleteView):
     model = MatrixFilterSpace
 
     template_name = 'nature_guides/ajax/delete_matrix_filter_value.html'
@@ -1051,6 +1052,7 @@ class DeleteMatrixFilterSpace(AjaxDeleteView):
         self.object.delete()
 
         context = {
+            'meta_app' : self.meta_app,
             'meta_node' : meta_node,
             'deleted':True,
         }
@@ -1190,7 +1192,7 @@ class SearchMoveToGroup(SearchForNode):
         return None
 
 
-class ManageMatrixFilterRestrictions(MultipleTraitValuesIterator, FormView):
+class ManageMatrixFilterRestrictions(MultipleTraitValuesIterator, MetaAppMixin, FormView):
 
     template_name = 'nature_guides/ajax/manage_matrix_filter_restrictions.html'
     form_class = ManageMatrixFilterRestrictionsForm
@@ -1208,7 +1210,7 @@ class ManageMatrixFilterRestrictions(MultipleTraitValuesIterator, FormView):
 
         if form_class is None:
             form_class = self.get_form_class()
-        return form_class(self.matrix_filter, self.meta_node, **self.get_form_kwargs())
+        return form_class(self.meta_app, self.matrix_filter, self.meta_node, **self.get_form_kwargs())
 
 
     def get_form_kwargs(self):

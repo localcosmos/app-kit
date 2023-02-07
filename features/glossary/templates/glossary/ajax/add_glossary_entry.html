@@ -2,7 +2,7 @@
 {% load i18n localcosmos_tags %}
 
 {% block action %}
-	{% url 'add_glossary_entry' generic_content.id %}
+	{% url 'add_glossary_entry' meta_app.id generic_content.id %}
 {% endblock %}
 
 {% block enctype %}multipart/form-data{% endblock %}
@@ -36,7 +36,7 @@
 {% block script %}
 	{% if saved_glossary_entry is True %}
 	<script>
-		$.get("{% url 'get_glossary_entries' generic_content.id %}", function(html){
+		$.get("{% url 'get_glossary_entries' meta_app.id generic_content.id %}", function(html){
 			$("#glossary-entries").html(html);
 			ajaxify("glossary-entries");
 		});

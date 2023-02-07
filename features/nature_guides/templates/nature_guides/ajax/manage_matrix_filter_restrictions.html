@@ -1,7 +1,7 @@
 {% extends 'localcosmos_server/modals/large_modal_form.html' %}
 {% load i18n localcosmos_tags %}
 
-{% block action %}{% url 'manage_matrix_filter_restrictions' meta_node.id matrix_filter.id %}{% endblock %}
+{% block action %}{% url 'manage_matrix_filter_restrictions' meta_app.id meta_node.id matrix_filter.id %}{% endblock %}
 
 {% block title %}
 	{% blocktrans with name=matrix_filter.name %}Manage visibility of {{ name }}{% endblocktrans %}

@@ -1,8 +1,8 @@
 {% extends 'app_kit/ajax/content_image_form.html' %}
 
-{% block base_url %}{% url 'manage_additional_matrix_filter_space_image' content_type.id content_instance.id 'secondary' %}{% endblock %}
+{% block base_url %}{% url 'manage_additional_matrix_filter_space_image' meta_app.id content_type.id content_instance.id 'secondary' %}{% endblock %}
 
-{% block delete_url %}{% url 'delete_additional_matrix_filter_space_image' content_image.pk %}{% endblock %}
+{% block delete_url %}{% url 'delete_additional_matrix_filter_space_image' meta_app.id content_image.pk %}{% endblock %}
 
 {% block extra_script %}
 	{% if request.method == 'POST' and form.is_valid %}

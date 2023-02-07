@@ -17,14 +17,15 @@ from .definitions import TEXT_LENGTH_RESTRICTIONS
 
 class IdentificationMatrixForm(forms.Form):
 
-    def __init__(self, meta_node, *args, **kwargs):
+    # meta_app is required to make ContentImage cache possible during the creatoin of those images
+    def __init__(self, meta_app, meta_node, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # get all matrix filters for this node
         matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
 
         for matrix_filter in matrix_filters:
-            form_field = matrix_filter.matrix_filter_type.get_matrix_form_field()
+            form_field = matrix_filter.matrix_filter_type.get_matrix_form_field(meta_app)
             setattr(form_field, 'matrix_filter', matrix_filter)
             self.fields[str(matrix_filter.uuid)] = form_field
             
@@ -106,7 +107,7 @@ class MatrixFilterValueChoicesMixin:
 
         for matrix_filter in matrix_filters:
 
-            field = matrix_filter.matrix_filter_type.get_node_space_definition_form_field(self.from_url,
+            field = matrix_filter.matrix_filter_type.get_node_space_definition_form_field(self.meta_app, self.from_url,
                                                                     show_add_button=self.show_add_button)
 
             # not all filters return fields. eg TaxonFilter works automatically
@@ -167,7 +168,9 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     layoutable_simple_fields = ['description']
 
 
-    def __init__(self, tree_parent_node, submitted_parent_node, *args, **kwargs):
+    def __init__(self, meta_app, tree_parent_node, submitted_parent_node, *args, **kwargs):
+
+        self.meta_app = meta_app
 
         # the node this node is attached to in the tree, no crosslinks
         self.tree_parent_node = tree_parent_node
@@ -257,8 +260,9 @@ class ManageMatrixFilterRestrictionsForm(MatrixFilterValueChoicesMixin, forms.Fo
 
     show_add_button = False
 
-    def __init__(self, matrix_filter, meta_node, *args, **kwargs):
+    def __init__(self, meta_app, matrix_filter, meta_node, *args, **kwargs):
 
+        self.meta_app = meta_app
         self.meta_node = meta_node
         self.matrix_filter = matrix_filter
 

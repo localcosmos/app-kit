@@ -87,6 +87,7 @@ class TestAddGlossaryEntry(WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithU
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'glossary_id' : self.generic_content.id,
         }
         return url_kwargs
@@ -95,6 +96,7 @@ class TestAddGlossaryEntry(WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithU
     def get_view(self):
         view = super().get_view()
         view.glossary = self.generic_content
+        view.meta_app = self.meta_app
         view.set_glossary_entry()
         view.set_content_image()
         return view
@@ -200,6 +202,7 @@ class TestManageGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'glossary_id' : self.generic_content.id,
             'glossary_entry_id' : self.glossary_entry.id,
         }
@@ -209,6 +212,7 @@ class TestManageGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
     def get_view(self):
         view = super().get_view()
         view.glossary = self.generic_content
+        view.meta_app = self.meta_app
         view.set_glossary_entry(**view.kwargs)
         view.set_content_image()
         return view
@@ -254,6 +258,7 @@ class TestGetGlossaryEntries(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wit
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'glossary_id' : self.generic_content.id,
         }
         return url_kwargs
@@ -264,6 +269,7 @@ class TestGetGlossaryEntries(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wit
 
         view = self.get_view()
         view.glossary = self.generic_content
+        view.meta_app = self.meta_app
 
         context = view.get_context_data(**view.kwargs)
 
@@ -279,6 +285,7 @@ class TestGetGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithA
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'glossary_entry_id' : self.glossary_entry.id,
         }
         return url_kwargs
@@ -286,6 +293,7 @@ class TestGetGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithA
     @test_settings
     def test_get_context_data(self):
         view = self.get_view()
+        view.meta_app = self.meta_app
         view.glossary_entry = self.glossary_entry
         
         context = view.get_context_data(**view.kwargs)

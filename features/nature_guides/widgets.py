@@ -74,9 +74,22 @@ class MatrixFilterMixin(WidgetExtraContextMixin):
             raise ValueError('MatrixFilterMixin needs the matrix_filter attribute')
         
         context['matrix_filter'] = self.matrix_filter
-
         return context
     
+
+class MatrixFilterMetaAppMixin(MatrixFilterMixin):
+
+    def __init__(self, meta_app, *args, **kwargs):
+        self.meta_app = meta_app
+        super().__init__(*args, **kwargs)
+
+
+    def get_context(self, name, value, attrs):
+
+        context = super().get_context(name, value, attrs)
+        context['meta_app'] = self.meta_app
+
+        return context
 
 
 '''
@@ -88,7 +101,7 @@ class MatrixFilterMixin(WidgetExtraContextMixin):
     RangeTraitWidget
     - displays as a slider or a range slider
 '''
-class RangePropertyWidget(MatrixFilterMixin, Widget):
+class RangePropertyWidget(MatrixFilterMetaAppMixin, Widget):
 
     template_name = 'nature_guides/widgets/range.html'
 
@@ -133,15 +146,15 @@ class DefineRangeSpaceWidget(WidgetExtraContextMixin, MultiWidget):
     Widgets for assigning values to a node (child)
     these depend on the previously defined selectable values
 '''
-class DefineDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class DefineDescriptionWidget(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/define_description_widget.html'
 
 
-class DefineTextDescriptionWidget(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class DefineTextDescriptionWidget(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/define_text_description_widget.html' 
     
 
-class DefineColorsWidget(MatrixFilterMixin, SelectMultiple):
+class DefineColorsWidget(MatrixFilterMetaAppMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/define_colors_widget.html'
     
 
@@ -153,74 +166,74 @@ class DefineNumbersWidget(WidgetExtraContextMixin, CheckboxSelectMultiple):
     Widgets for the end-user matrix key
     - Select and SelectMultiple with templates
 '''
-class SliderSelectMultipleColors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleColors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_colors.html'
 
-class SliderRadioSelectColor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectColor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_colors.html'
 
 
-class SliderSelectMultipleDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleDescriptors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
 
-class SliderRadioSelectDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectDescriptor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_patterns.html'
 
 
-class SliderSelectMultipleTextDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleTextDescriptors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_texts.html'
 
-class SliderRadioSelectTextDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectTextDescriptor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_texts.html'
 
 
-class SliderSelectMultipleNumbers(MatrixFilterMixin, SelectMultiple):
+class SliderSelectMultipleNumbers(MatrixFilterMetaAppMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_numbers.html'
 
-class SliderRadioSelectNumber(MatrixFilterMixin, RadioSelect):
+class SliderRadioSelectNumber(MatrixFilterMetaAppMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_numbers.html'
 
 
-class SliderSelectMultipleTaxonfilters(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SliderSelectMultipleTaxonfilters(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/slider_select_multiple_taxonfilters.html'
 
-class SliderRadioSelectTaxonfilter(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class SliderRadioSelectTaxonfilter(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/slider_select_multiple_taxonfilters.html'
 
 
 '''
     END USER INPUT, no slider
 '''
-class SelectMultipleColors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SelectMultipleColors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/select_multiple_colors.html'
 
-class RadioSelectColor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class RadioSelectColor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_colors.html'
 
 
-class SelectMultipleDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SelectMultipleDescriptors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/select_multiple_patterns.html'
 
-class RadioSelectDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class RadioSelectDescriptor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_patterns.html'
 
 
-class SelectMultipleTextDescriptors(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SelectMultipleTextDescriptors(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/select_multiple_texts.html'
 
-class RadioSelectTextDescriptor(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class RadioSelectTextDescriptor(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_texts.html'
 
 
-class SelectMultipleNumbers(MatrixFilterMixin, SelectMultiple):
+class SelectMultipleNumbers(MatrixFilterMetaAppMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/select_multiple_numbers.html'
 
-class RadioSelectNumber(MatrixFilterMixin, RadioSelect):
+class RadioSelectNumber(MatrixFilterMetaAppMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_numbers.html'
 
 
-class SelectMultipleTaxonfilters(MatrixFilterMixin, ChoiceExtraKwargsMixin, SelectMultiple):
+class SelectMultipleTaxonfilters(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, SelectMultiple):
     template_name = 'nature_guides/widgets/select_multiple_taxonfilters.html'
 
-class RadioSelectTaxonfilter(MatrixFilterMixin, ChoiceExtraKwargsMixin, RadioSelect):
+class RadioSelectTaxonfilter(MatrixFilterMetaAppMixin, ChoiceExtraKwargsMixin, RadioSelect):
     template_name = 'nature_guides/widgets/select_multiple_taxonfilters.html'

@@ -973,6 +973,7 @@ class TestDeleteTaxonProfileImage(TestManageTaxonProfileImage):
     def get_url_kwargs(self):
 
         url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
             'pk' : self.content_image.id,
         }
         return url_kwargs

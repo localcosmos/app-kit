@@ -2,7 +2,7 @@
 {% load i18n app_tags localcosmos_tags %}
 
 {% block action %}
-	{% if matrix_filter_space %}{% url 'manage_matrix_filter_space' matrix_filter_space.id %}{% else %}{% url 'create_matrix_filter_space' matrix_filter.id %}{% endif %}{% if from_url %}?from_url={{ from_url }}{% endif %}
+	{% if matrix_filter_space %}{% url 'manage_matrix_filter_space' meta_app.id matrix_filter_space.id %}{% else %}{% url 'create_matrix_filter_space' meta_app.id matrix_filter.id %}{% endif %}{% if from_url %}?from_url={{ from_url }}{% endif %}
 {% endblock %}
 
 {% block enctype %}multipart/form-data{% endblock %}

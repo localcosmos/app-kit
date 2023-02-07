@@ -25,7 +25,7 @@ from taxonomy.lazy import LazyTaxonList, LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
 
 
-class TestIdentificationMatrixForm(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+class TestIdentificationMatrixForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_init(self):
@@ -37,7 +37,7 @@ class TestIdentificationMatrixForm(WithNatureGuide, WithMatrixFilters, TenantTes
 
         matrix_filters = self.create_all_matrix_filters(node)
 
-        form = IdentificationMatrixForm(node.meta_node)
+        form = IdentificationMatrixForm(self.meta_app, node.meta_node)
 
         for matrix_filter in MatrixFilter.objects.filter(meta_node=node.meta_node):
 
@@ -77,7 +77,7 @@ class TestNatureGuideOptionsForm(WithNatureGuide, WithMetaApp, TenantTestCase):
         expected_choices = set([str(observation_form.uuid), str(taxon_profiles.uuid), BLANK_CHOICE_DASH[0]])
 
 
-class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_init(self):
@@ -89,7 +89,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         from_url = '/'
 
         # form without node (-> create new link) and without matrix filters
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
 
         self.assertEqual(len(form.fields), 8)
         self.assertEqual(form.from_url, from_url)
@@ -98,7 +98,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         # for without node, but with all matrix filters
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
         # taxon filter does not return a form field
         self.assertEqual(len(form.fields), 13)
         self.assertEqual(form.from_url, from_url)
@@ -122,7 +122,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
 
         # test with node (child)
         node = self.create_node(parent_node, 'First')
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, node=node)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, node=node)
         # taxon filter does not return a form field
         self.assertEqual(len(form.fields), 13)
         self.assertEqual(form.node, node)
@@ -147,12 +147,12 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         from_url = '/'
 
         # form without node (-> create new link) and without matrix filters
-        form = ManageNodelinkForm(tree_parent_node, tree_parent_node, from_url=from_url)
+        form = ManageNodelinkForm(self.meta_app, tree_parent_node, tree_parent_node, from_url=from_url)
 
         for field in form:
             self.assertFalse(getattr(field, 'is_matrix_filter', False))
 
-        form = ManageNodelinkForm(tree_parent_node, submitted_parent_node, from_url=from_url)
+        form = ManageNodelinkForm(self.meta_app, tree_parent_node, submitted_parent_node, from_url=from_url)
 
         matrix_filter_field_count = 0
         matrix_filter_uuids = [str(m.uuid) for m in matrix_filters]
@@ -173,7 +173,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         parent_node = nature_guide.root_node
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
-        form = ManageNodelinkForm(parent_node, parent_node, from_url='/')
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url='/')
 
         for field in form:
             if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
@@ -222,7 +222,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
                 node_space.values.add(space)
 
 
-        form = ManageNodelinkForm(parent_node, parent_node, from_url='/', node=node)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url='/', node=node)
 
         for field in form:
             if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
@@ -252,7 +252,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
         from_url = '/'
 
         # form without node (-> create new link) and without matrix filters
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data={})
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data={})
         self.assertTrue(form.is_bound)
 
         self.assertFalse(form.is_valid())
@@ -262,7 +262,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
             'node_type' : 'node',
             'name' : 'name',
         }
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data=data)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
 
         form.is_valid()
@@ -274,7 +274,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, TenantTestCase)
             'node_type' : 'node',
             'decision_rule' : 'name',
         }
-        form = ManageNodelinkForm(parent_node, parent_node, from_url=from_url, data=data)
+        form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
 
         form.is_valid()
@@ -357,8 +357,8 @@ class MockMatrixFilterValueChoicesMixin(MatrixFilterValueChoicesMixin):
     def get_matrix_filter_field_initial(self, field):
         return None
     
-class TestMatrixFilterValueChoicesMixin(WithNatureGuide, WithMatrixFilters, TenantTestCase):
 
+class TestMatrixFilterValueChoicesMixin(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_get_matrix_filters(self):
@@ -388,6 +388,7 @@ class TestMatrixFilterValueChoicesMixin(WithNatureGuide, WithMatrixFilters, Tena
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
         mixin = MockMatrixFilterValueChoicesMixin()
+        mixin.meta_app = self.meta_app
         mixin.meta_node = meta_node
         mixin.fields = {}
         mixin.from_url = '/'
@@ -409,7 +410,7 @@ class TestMatrixFilterValueChoicesMixin(WithNatureGuide, WithMatrixFilters, Tena
                 self.assertEqual(field.label, matrix_filter.name)
         
     
-class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters, TenantTestCase):
+class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_init(self):
@@ -422,7 +423,7 @@ class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters,
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
         for matrix_filter in matrix_filters:
-            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url=('/'))
+            form = ManageMatrixFilterRestrictionsForm(self.meta_app, matrix_filter, meta_node, from_url=('/'))
 
             # the matrix filter itself may not occur in choices
             self.assertEqual(form.meta_node, meta_node)
@@ -451,7 +452,7 @@ class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters,
 
         for matrix_filter in matrix_filters:
             
-            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url=('/'))
+            form = ManageMatrixFilterRestrictionsForm(self.meta_app, matrix_filter, meta_node, from_url=('/'))
 
             form_matrix_filters = form.get_matrix_filters()
 
@@ -469,7 +470,7 @@ class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters,
         matrix_filters = self.create_all_matrix_filters(parent_node)
 
         for matrix_filter in matrix_filters:
-            form = ManageMatrixFilterRestrictionsForm(matrix_filter, meta_node, from_url='/')
+            form = ManageMatrixFilterRestrictionsForm(self.meta_app, matrix_filter, meta_node, from_url='/')
 
             for field in form:
                 if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:
@@ -523,7 +524,7 @@ class TestManageMatrixFilterRestrictionsForm(WithNatureGuide, WithMatrixFilters,
 
 
             
-            form = ManageMatrixFilterRestrictionsForm(restricted_filter, meta_node, from_url='/')
+            form = ManageMatrixFilterRestrictionsForm(self.meta_app, restricted_filter, meta_node, from_url='/')
 
             for field in form:
                 if hasattr(field.field, 'is_matrix_filter') and field.field.is_matrix_filter == True:

@@ -60,6 +60,7 @@ class FrontendSettingsForm(forms.Form):
                 }
 
                 url_kwargs = {
+                    'meta_app_id' : self.meta_app.id,
                     'content_type_id' : frontend_content_type.id,
                     'object_id' : self.frontend.id,
                     'image_type' : content_image_type 

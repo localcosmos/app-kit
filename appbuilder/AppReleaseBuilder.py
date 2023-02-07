@@ -84,7 +84,7 @@ class AppReleaseBuilder(AppBuilderBase):
         super().__init__(meta_app)
         self.nature_guides_vernacular_names = {}
         
-        self.content_image_builder = ContentImageBuilder()
+        self.content_image_builder = ContentImageBuilder(self._app_content_images_cache_path)
 
 
     @property
@@ -1035,6 +1035,9 @@ class AppReleaseBuilder(AppBuilderBase):
             # build android
             if 'android' in self.meta_app.build_settings['platforms']:
                 self._build_android()
+
+            # empty image cache
+            self.content_image_builder.clean_on_disk_cache()
 
         
         except Exception as e:

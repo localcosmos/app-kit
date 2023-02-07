@@ -4,6 +4,10 @@ import os
 TESTS_ROOT = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'TESTS_ROOT')
 
 TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'Leaf.jpg')
+LARGE_SQUARE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'Leaf-large.jpg')
+
+TEST_SVG_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'localcosmos-logo.svg')
+
 TEST_BACKGROUND_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'app-background.jpg')
 
 TEST_TEMPLATE_PATH = os.path.join(TESTS_ROOT, 'templates', 'neobiota.html')

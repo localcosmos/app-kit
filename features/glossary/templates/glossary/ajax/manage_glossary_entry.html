@@ -2,7 +2,7 @@
 {% load i18n localcosmos_tags %}
 
 {% block action %}
-	{% url 'edit_glossary_entry' generic_content.id glossary_entry.id  %}
+	{% url 'edit_glossary_entry' meta_app.id generic_content.id glossary_entry.id  %}
 {% endblock %}
 
 {% block enctype %}multipart/form-data{% endblock %}
@@ -27,7 +27,7 @@
 	{% if saved_glossary_entry is True %}
 		<script>
 			$("#LargeModal").modal('hide');
-			$.get("{% url 'get_glossary_entry' glossary_entry.id %}", function(html){
+			$.get("{% url 'get_glossary_entry' meta_app.id glossary_entry.id %}", function(html){
 				var target_id = "glossary-entry-{{ glossary_entry.id }}"
 				$("#" + target_id).html(html);
 				ajaxify(target_id);

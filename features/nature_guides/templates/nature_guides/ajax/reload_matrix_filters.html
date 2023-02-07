@@ -1,5 +1,5 @@
 <script>
-	$.get("{% url 'load_matrix_filters' meta_node.id %}", function(html){
+	$.get("{% url 'load_matrix_filters' meta_app.id meta_node.id %}", function(html){
 		$("#matrix-filters-collapsible").html(html);
 		ajaxify('matrix-filters-collapsible');
 	});

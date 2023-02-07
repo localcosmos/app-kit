@@ -24,6 +24,7 @@ Domain = get_tenant_domain_model()
 from app_kit.app_kit_api.models import AppKitJobs, AppKitStatus
 
 from app_kit.appbuilder import AppBuilder, AppPreviewBuilder
+from app_kit.appbuilder.ContentImageBuilder import ContentImageBuilder
 
 from .view_mixins import ViewClassMixin, MetaAppMixin, MetaAppFormLanguageMixin
 
@@ -629,7 +630,7 @@ class TranslateApp(MetaAppMixin, FormView):
 LANGUAGE_TERRITORIES = {
     'de' : 'DE-DE',
     'en' : 'EN-US',
-    'EN' : 'EN_US',
+    'EN' : 'EN-US',
 }
 
 class GetDeepLTranslation(MetaAppMixin, TemplateView):
@@ -1062,10 +1063,23 @@ class RemoveTaxonomicRestriction(AjaxDeleteView):
     Save a content image from a ContentImageForm
 '''
 from localcosmos_server.view_mixins import ContentImageViewMixin
-class ManageContentImageMixin(ContentImageViewMixin):
+class ManageContentImageMixin(MetaAppMixin, ContentImageViewMixin):
     ContentImageClass = ContentImage
     ImageStoreClass = ImageStore
     LazyTaxonClass = LazyTaxon
+
+    # cache the image
+    def save_image(self, form):
+        super().save_image(form)
+
+        # add to cache
+        release_builder = self.meta_app.get_release_builder()
+
+        cache_path = release_builder._app_content_images_cache_path
+
+        content_image_builder = ContentImageBuilder(cache_path)
+
+        image_urls = content_image_builder.build_cached_images(self.content_image, force_build=True)
 
     '''
         optionally, an image can have a taxon assigned
@@ -1125,8 +1139,8 @@ class ManageContentImageSuggestions(TemplateView):
                 return self.ModelClass.search_image_suggestions(self.searchtext)
             
         return []
-        
-    
+
+
 from localcosmos_server.views import ManageContentImageBase
 class ManageContentImage(ManageContentImageMixin, ManageContentImageBase, FormView):
     template_name = 'app_kit/ajax/content_image_form.html'
@@ -1134,7 +1148,7 @@ class ManageContentImage(ManageContentImageMixin, ManageContentImageBase, FormVi
 
 
 from app_kit.view_mixins import FormLanguageMixin
-class ManageContentImageWithText(MetaAppMixin, FormLanguageMixin, ManageContentImage):
+class ManageContentImageWithText(FormLanguageMixin, ManageContentImage):
 
     form_class = ManageContentImageWithTextForm
     template_name = 'app_kit/ajax/content_image_with_text_form.html'
@@ -1260,7 +1274,7 @@ class ManageLocalizedContentImage(LicencingFormViewMixin, FormView):
 
 
 
-class DeleteContentImage(AjaxDeleteView):
+class DeleteContentImage(MetaAppMixin, AjaxDeleteView):
     
     template_name = 'app_kit/ajax/delete_content_image.html'
     model = ContentImage
