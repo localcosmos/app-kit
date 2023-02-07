@@ -39,7 +39,7 @@ from app_kit.app_kit_api.models import AppKitJobs
 from localcosmos_server.models import App, SecondaryAppLanguages
 
 from PIL import Image, ImageFile, ImageColor
-ImageFile.LOAD_TRUNCATED_IMAGES = False
+ImageFile.LOAD_TRUNCATED_IMAGES = settings.APP_KIT_LOAD_TRUNCATED_IMAGES
 
 # draw features on image
 
