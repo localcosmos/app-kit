@@ -85,8 +85,6 @@ class AppVersionExistsError(Exception):
     pass
 
 
-ROAD_API_SUFFIX = 'road-remotedb-api/'
-
 #####################################################################################################
 #
 # APP BUILDER BASE
@@ -269,10 +267,6 @@ class AppBuilderBase:
 
         return api_url
 
-    # for all apps running on the localcosmos server, used eg by the preview builder
-    def _localcosmos_road_remotedb_api_url(self):
-        road_remotedb_url = self._localcosmos_server_api_url() + ROAD_API_SUFFIX
-        return road_remotedb_url
 
     # can be a private localcosmos api hosted on the tenants own server
     def _app_api_url(self):
@@ -289,11 +283,6 @@ class AppBuilderBase:
 
         # lc server
         return self._localcosmos_server_api_url()
-    
-    # can be a private localcosmos api hosted on the tenants own server
-    def _app_road_remotedb_api_url(self):
-        road_remotedb_url = self._app_api_url() + ROAD_API_SUFFIX
-        return road_remotedb_url
 
     
     ##########################################################################################
@@ -615,11 +604,8 @@ class AppBuilderBase:
 
         if preview == True:
             api_url = self._localcosmos_server_api_url()
-            remotedb_api_url = self._localcosmos_road_remotedb_api_url()
         else:
             api_url = self._app_api_url()
-            remotedb_api_url = self._app_road_remotedb_api_url()
-
 
         settings = {
             "NAME" : self.meta_app.name,
@@ -630,7 +616,6 @@ class AppBuilderBase:
             "APP_UUID" : str(self.meta_app.uuid),
             "APP_VERSION" : self.meta_app.current_version,
             "API_URL" : api_url,
-            "REMOTEDB_API_URL" : remotedb_api_url,
             "PREVIEW" : preview, # True is only needed for previewing template_content
         }
 

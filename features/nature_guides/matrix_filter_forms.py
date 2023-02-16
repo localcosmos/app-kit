@@ -15,6 +15,7 @@ IDENTIFICATION_MEANS = (
     ('tactile', _('tactile')),
     ('auditory', _('auditory')),
     ('microscope', _('microscope')),
+    ('scalpel', _('scalpel')),
     ('gustatory', _('gustatory')),
     ('olfactory', _('olfactory')),
 )

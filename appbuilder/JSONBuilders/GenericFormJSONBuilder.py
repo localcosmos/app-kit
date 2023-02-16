@@ -50,7 +50,7 @@ class GenericFormJSONBuilder(JSONBuilder):
 
             generic_form_json['fields'].append(generic_field_dic)
 
-            if generic_field_dic['role'] in ['taxonomic_reference', 'geographic_reference', 'temporal_reference']:
+            if generic_field.role in ['taxonomic_reference', 'geographic_reference', 'temporal_reference']:
                 key = self.to_camel_case(generic_field_dic['role'])
                 generic_form_json[key] = generic_field_dic['uuid']
 
@@ -112,20 +112,20 @@ class GenericFormJSONBuilder(JSONBuilder):
 
                 # apply the step - necessary for html in-browser validation of forms
                 # default and fallback
-                step = '1'
+                step = 1
 
                 if generic_field.field_class == 'FloatField' or generic_field.field_class == 'DecimalField':
                     #default
-                    step = '0.01'
+                    step = 0.01
 
                     if 'decimal_places' in generic_field.options:
                         # both pow and math.pow fail for pow(0.1, 2) which is ridiculous
                         decimal_places = generic_field.options['decimal_places']
 
                         if decimal_places == 0:
-                            step = '1'
+                            step = 1
                         elif decimal_places > 0:
-                            step = '0.{0}1'.format('0' * (decimal_places-1))
+                            step = float('0.{0}1'.format('0' * (decimal_places-1)))
 
                 field_dic['widgetAttrs']['step'] = step
 

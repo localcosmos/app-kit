@@ -1478,10 +1478,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         generic_content = app_generic_content.generic_content
 
-        if only_one_allowed == True:
-            generic_content_json['isMulticontent'] = False
-        else:
-            generic_content_json['isMulticontent'] = True
+        #if only_one_allowed == True:
+        #    generic_content_json['isMulticontent'] = False
+        #else:
+        #    generic_content_json['isMulticontent'] = True
 
 
         filename_identifier = str(generic_content.uuid)

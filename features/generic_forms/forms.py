@@ -158,8 +158,6 @@ class GenericFieldForm(LocalizeableForm):
 
     localizeable_fields = ['label']
     
-    # form_id = forms.IntegerField(widget=forms.HiddenInput) url param
-    # generic_field_id = forms.IntegerField(widget=forms.HiddenInput, required=False)# edit or create url param
     generic_field_class = forms.CharField(widget=forms.HiddenInput) # always prefilled
     generic_field_role = forms.ChoiceField(widget=forms.HiddenInput, choices=FIELD_ROLES )
     label = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['GenericField']['label'])
@@ -170,6 +168,8 @@ class GenericFieldForm(LocalizeableForm):
     widget = forms.ChoiceField(help_text=_('A widget defines how the field is displayed to the user.')) # depending on field_class, prefilled, user thinks in widgets, not field_classes
 
     def __init__(self, *args, **kwargs):
+
+
         super().__init__(*args, **kwargs)
 
         field_class_field = self.fields['generic_field_class']
@@ -196,6 +196,13 @@ class GenericFieldForm(LocalizeableForm):
             for option in options:
                 self.fields[option] = OPTION_FIELDS[option]
                 self.fields[option].is_option_field = True
+
+
+        role = self.initial.get('generic_field_role', 'regular')
+        if role in ['temporal_reference', 'geographic_reference']:
+            self.initial['is_required'] = True
+            self.fields['is_required'].widget.attrs['disabled'] = True
+            
 
     def clean_is_required(self):
         is_required = self.cleaned_data.get('is_required', False)
