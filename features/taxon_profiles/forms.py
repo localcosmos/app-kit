@@ -1,3 +1,4 @@
+from django.conf import settings
 from django import forms
 
 from django.utils.translation import gettext_lazy as _
@@ -69,44 +70,46 @@ class ManageTaxonTextsForm(LocalizeableForm):
         for text_type in types:
 
             short_text_field_name = text_type.text_type
-            long_text_field_name = self.get_long_text_form_field_name(text_type)
-
+            
             self.text_type_map[short_text_field_name] = text_type
-            self.text_type_map[long_text_field_name] = text_type
-
             self.short_text_fields.append(short_text_field_name)
-            self.long_text_fields.append(long_text_field_name)
-
+            
             short_text_field_label = text_type.text_type
             short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
                                     required=False, label=short_text_field_label, validators=[json_compatible])
             short_text_field.taxon_text_type = text_type
             short_text_field.is_short_version = True
 
-            long_text_field_label = text_type.text_type
-            long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
-                                    required=False, label=long_text_field_label, validators=[json_compatible])
-            long_text_field.taxon_text_type = text_type
-            long_text_field.is_short_version = False
+            self.fields[short_text_field_name] = short_text_field
+            self.localizeable_fields.append(short_text_field_name)
+            self.fields[short_text_field_name].language = self.language
+            self.layoutable_simple_fields.append(short_text_field_name)
+            
+
+            if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+                long_text_field_name = self.get_long_text_form_field_name(text_type)
+                self.text_type_map[long_text_field_name] = text_type
+                self.long_text_fields.append(long_text_field_name)
+
+                long_text_field_label = text_type.text_type
+                long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
+                                        required=False, label=long_text_field_label, validators=[json_compatible])
+                long_text_field.taxon_text_type = text_type
+                long_text_field.is_short_version = False
+
+                self.fields[long_text_field_name] = long_text_field
+                self.localizeable_fields.append(long_text_field_name)
+                self.fields[long_text_field_name].language = self.language
+                self.layoutable_simple_fields.append(long_text_field_name)
 
             if taxon_profile:
                 content = TaxonText.objects.filter(taxon_text_type=text_type,
                                 taxon_profile=taxon_profile).first()
                 if content:
                     short_text_field.initial = content.text
-                    long_text_field.initial = content.long_text
-            
-            self.fields[short_text_field_name] = short_text_field
-            self.fields[long_text_field_name] = long_text_field
 
-            self.localizeable_fields.append(short_text_field_name)
-            self.localizeable_fields.append(long_text_field_name)
-
-            self.fields[short_text_field_name].language = self.language
-            self.fields[long_text_field_name].language = self.language
-            
-            self.layoutable_simple_fields.append(short_text_field_name)
-            self.layoutable_simple_fields.append(long_text_field_name)
+                    if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+                        long_text_field.initial = content.long_text
     
     
     def get_long_text_form_field_name(self, text_type):

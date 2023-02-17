@@ -170,6 +170,9 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
     def __init__(self, meta_app, tree_parent_node, submitted_parent_node, *args, **kwargs):
 
+        if settings.APP_KIT_ENABLE_META_NODE_DESCRIPTION != True:
+            self.layoutable_simple_fields = []
+
         self.meta_app = meta_app
 
         # the node this node is attached to in the tree, no crosslinks

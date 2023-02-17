@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.conf import settings
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -127,6 +127,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         context['taxon_profiles'] = self.taxon_profiles
         context['generic_content'] = self.taxon_profiles
         context['text_types'] = TaxonTextType.objects.all().exists()
+        context['show_text_length_badges'] = settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True
         return context
 
 

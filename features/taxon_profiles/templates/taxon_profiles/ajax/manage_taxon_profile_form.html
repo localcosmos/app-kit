@@ -11,7 +11,7 @@
 						<div class="form-group {% if field.errors %}has-error{% endif %}">
 
 							<h4>
-								{{ field.label }} {% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %}
+								{{ field.label }} {% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
 								<div class="btn-group dropup">
 									<div class="dropdown">
 										<button id="dropdownMenu-{{ field.field.taxon_text_type.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
