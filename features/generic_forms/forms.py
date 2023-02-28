@@ -10,8 +10,6 @@ from .models import (GenericForm, DJANGO_FIELD_WIDGETS, NUMBER_FIELDS, FIELD_OPT
 from . import fields, widgets
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
-import decimal
-
 from localcosmos_server.forms import LocalizeableForm
 
 class DynamicForm(forms.Form):

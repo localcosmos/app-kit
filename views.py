@@ -1298,56 +1298,6 @@ class DeleteLocalizedContentImage(AjaxDeleteView):
         context['language_code'] = self.object.language_code
         return context
 
- 
-'''
-    generic view for storing the order of elements, using the position attribute
-'''
-from django.db import transaction, connection
-class StoreObjectOrder(TemplateView):
-
-    def _on_success(self):
-        pass
-
-    def get_save_args(self, obj):
-        return []
-
-    @method_decorator(ajax_required)
-    def post(self, request, *args, **kwargs):
-
-        success = False
-
-        order = request.POST.get('order', None)
-
-        if order:
-            
-            self.order = json.loads(order)
-
-            self.ctype = ContentType.objects.get(pk=kwargs['content_type_id'])
-            self.model = self.ctype.model_class()
-
-            self.objects = self.model.objects.filter(pk__in=self.order)
-
-            with transaction.atomic():
-
-                for obj in self.objects:
-                    position = self.order.index(obj.pk) + 1
-
-                    if len(self.order) >= 30:
-                        cursor = connection.cursor()
-                        cursor.execute("UPDATE %s SET position=%s WHERE id=%s" %(self.model._meta.db_table,
-                                                                                 '%s', '%s'),
-                                       [position, obj.id])
-                    else:
-                        obj.position = position
-                        save_args = self.get_save_args(obj)
-                        obj.save(*save_args)
-
-            self._on_success()
-
-            success = True
-        
-        return JsonResponse({'success':success})
-
 
 class MockButton(TemplateView):
     

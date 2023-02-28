@@ -90,9 +90,6 @@ urlpatterns = [
         views.ManageContentImageSuggestions.as_view(), name='manage_content_image_suggestions'),
     path('manage-content-image-suggestions/<int:content_type_id>/',
         views.ManageContentImageSuggestions.as_view(), name='manage_content_image_suggestions'),
-    # generic object order
-    path('store-object-order/<int:content_type_id>/',
-        views.StoreObjectOrder.as_view(), name='store_object_order'),
     # button placeholder
     path('mockbutton/',
         views.MockButton.as_view(), name='mockbutton'),

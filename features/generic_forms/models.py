@@ -29,6 +29,7 @@ DJANGO_FIELD_WIDGETS = (
     ('PointOrAreaInput', _('GPS-supported point or area input with map')), # JSONWidget
     ('BackboneTaxonAutocompleteWidget', _('Taxon input with backend search')),
     ('CameraAndAlbumWidget', _('Camera and album')),
+    ('FixedTaxonWidget', _('Fixed taxon')),
 )
 
 DJANGO_FIELD_CLASSES = (
@@ -74,7 +75,7 @@ ALLOWED_WIDGETS = {
     'DateTimeJSONField' : ['SelectDateTimeWidget'], # JSONField + JSONWidget
     'PointJSONField' : ['MobilePositionInput'], # JSONField + JSONWidget
     'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
-    'TaxonField' : ['BackboneTaxonAutocompleteWidget'],
+    'TaxonField' : ['BackboneTaxonAutocompleteWidget', 'FixedTaxonWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
 }
 

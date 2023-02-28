@@ -1,92 +1,143 @@
 {
-	"frontend" : "Flat",
-	"version" : "0.1",
-	"userContent" : {
-		"images" : {
-			"appBackground" : {
-				"restrictions" : {
-					"fileType" : ["jpg","jpeg","png"],
-					"ratio" : "10:16"
+	"frontend": "Flat",
+	"version": "0.1",
+	"userContent": {
+		"images": {
+			"appBackground": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					],
+					"ratio": "10:16"
 				},
-				"helpText" : "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
-				"required" : false
+				"helpText": "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
+				"required": false
 			},
-			"appLauncherIcon" : {
-				"restrictions" : {
-					"fileType" : ["svg"],
-					"ratio" : "1:1"
+			"appLauncherIcon": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					],
+					"ratio": "1:1"
 				},
-				"helpText" : "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
-				"required" : true
+				"helpText": "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+				"required": true
 			},
-			"appPcBackground" : {
-				"restrictions" : {
-					"fileType" : ["jpg","jpeg","png"],
-					"ratio" : "2:1"
+			"appPcBackground": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					],
+					"ratio": "2:1"
 				},
-				"helpText" : "Will be displayed in the webapp using a pc",
-				"required" : false
+				"helpText": "Will be displayed in the webapp using a pc",
+				"required": false
 			},
-			"appSplashscreen" : {
-				"restrictions" : {
-					"fileType" : ["svg"],
-					"ratio" : "1:1"
+			"appSplashscreen": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					],
+					"ratio": "1:1"
 				},
-				"helpText" : "Will be displayed during app startup",
-				"required" : true
+				"helpText": "Will be displayed during app startup",
+				"required": true
 			},
-			"logo" : {
-				"restrictions" : {
-					"fileType" : ["svg"]
+			"logo": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					]
 				},
-				"helpText" : "Will be displayed on the apps main page",
-				"required" : true
+				"helpText": "Will be displayed on the apps main page",
+				"required": true
 			},
-			"fundingPartner1" : {
-				"restrictions" : {
-					"fileType" : ["jpg","jpeg","png"]
+			"fundingPartner1": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					]
 				},
-				"helpText" : "Will be displayed in the funding partner sections",
-				"required" : false
+				"helpText": "Will be displayed in the funding partner sections",
+				"required": false
 			},
-			"fundingPartner2" : {
-				"restrictions" : {
-					"fileType" : ["jpg","jpeg","png"]
+			"fundingPartner2": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					]
 				},
-				"helpText" : "Will be displayed in the funding partner sections",
-				"required" : false
+				"helpText": "Will be displayed in the funding partner sections",
+				"required": false
 			},
-			"fundingPartner3" : {
-				"restrictions" : {
-					"fileType" : ["jpg","jpeg","png"]
+			"fundingPartner3": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					]
 				},
-				"helpText" : "Will be displayed in the funding partner sections",
-				"required" : false
+				"helpText": "Will be displayed in the funding partner sections",
+				"required": false
 			}
 		},
-		"texts" : {
-			"aboutApp" : {
-				"required" : false,
-				"helpText" : "Describe your app"
+		"texts": {
+			"aboutApp": {
+				"required": false,
+				"helpText": "Describe your app"
 			},
-			"appSources" : {
-				"required" : false,
-				"helpText" : "Sources you used to build this app."
+			"appSources": {
+				"required": false,
+				"helpText": "Sources you used to build this app."
 			}
 		},
-		"configuration" : {
-			"cmsUrl" : {
-				"helpText" : "The URL of your cms"
+		"configuration": {
+			"cmsUrl": {
+				"helpText": "The URL of your cms"
 			}
 		}
 	},
-	"cordova" : {
-		"platforms" : {
-			"android" : "android@10.1.2",
-			"ios" : "ios@6.2.0",
-			"browser" : "browser@6.0.0"	
+	"templateContent": {
+		"urlPattern": "/pages/{slug}/",
+		"navigations": {
+			"main": {
+				"name": "Main navigation"
+			},
+			"footer": {
+				"name": "Footer navigation"
+			}
 		},
-		"plugins" : [
+		"requiredOfflineContents": {
+			"home": {
+				"templateType": "page",
+				"allowedTemplates": [
+					"home"
+				]
+			},
+			"footer": {
+				"templateType": "feature",
+				"allowedTemplates": [
+					"footer"
+				]
+			}
+		}
+	},
+	"cordova": {
+		"platforms": {
+			"android": "android@10.1.2",
+			"ios": "ios@6.2.0",
+			"browser": "browser@6.0.0"
+		},
+		"plugins": [
 			"cordova-plugin-camera@6.0.0",
 			"cordova-plugin-datepicker@0.9.3",
 			"cordova-plugin-device@2.0.3",

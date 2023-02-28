@@ -588,7 +588,7 @@ class LoadKeyNodes(MetaAppMixin, TemplateView):
         return context
 
 
-from app_kit.views import StoreObjectOrder
+from localcosmos_server.generic_views import StoreObjectOrder
 class StoreNodeOrder(StoreObjectOrder):
 
     def get_save_args(self, node):

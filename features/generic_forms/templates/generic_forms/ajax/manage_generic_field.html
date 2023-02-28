@@ -66,18 +66,22 @@
 
 {% block below %}
 	</form>
-	{% if generic_field.role == "regular" %}
+	{% if generic_field.role == "regular" or generic_field.field_class == "TaxonField" %}
 		<div class="modal-body">
 			<a class="btn btn-outline-primary" role="button" data-toggle="collapse" href="#fieldtaxonomicrestriction" aria-expanded="false" aria-controls="collapseExample">
 				{% trans 'Taxonomic restriction' %}
 			</a>
 			<div class="collapse mt-2" id="fieldtaxonomicrestriction">
 				<div>
-					{% render_taxonomic_restriction meta_app.app generic_field 'typed' %}
+					{% if generic_field.role == "regular" %}
+						{% render_taxonomic_restriction meta_app.app generic_field 'typed' %}
+					{% else %}
+						{% render_taxonomic_restriction meta_app.app generic_field %}
+					{% endif %}
 				</div>
 			</div>
 
-		</div>
+		</div>	
 	{% endif %}
 {% endblock %}
 

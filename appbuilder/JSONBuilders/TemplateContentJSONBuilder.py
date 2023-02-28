@@ -29,7 +29,7 @@ class TemplateContentJSONBuilder(JSONBuilder):
             'options' : {},
             'globalOptions' : {},
             'name' : 'TemplateContent', #{}, translated in-app
-            'slug' : 'template-content',
+            'slug' : 'pages',
             'list' : [],
             'lookup' : {},
             'slugs' : {},
