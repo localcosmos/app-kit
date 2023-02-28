@@ -133,7 +133,7 @@
 	},
 	"cordova": {
 		"platforms": {
-			"android": "android@10.1.2",
+			"android": "android@11.0.0",
 			"ios": "ios@6.2.0",
 			"browser": "browser@6.0.0"
 		},
