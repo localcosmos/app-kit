@@ -27,7 +27,9 @@ class FrontendJSONBuilder(JSONBuilder):
 
         frontend_settings = self.app_release_builder._get_frontend_settings()
 
-        for text_type, text_definition in frontend_settings['userContent']['texts'].items():
+        text_types = list(frontend_settings['userContent']['texts'].keys()) + ['legal_notice']
+
+        for text_type in text_types:
             
             frontend_text = FrontendText.objects.filter(frontend=frontend, identifier=text_type).first()
 

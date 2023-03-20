@@ -1,0 +1,55 @@
+
+<div class="page solid">
+    <div class="row">
+        <div class="col-12">
+            {{ data.contents.banner }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{{ data.contents.cardsDescription }}}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{#each data.contents.cards}}
+                <div>
+                    {{ text }}
+                </div>
+                <div>
+                    {{ image.imageUrl }}
+                </div>
+                <div>
+                    {{ link }}
+                </div>
+            {{/each}}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{{ data.contents.projectDescription }}}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            {{ data.contents.appShortName }} <br>
+            {{ data.contents.appFullName }} <br>
+            {{ data.contents.appSubtitle }}
+        </div>
+    </div>
+    {{#each data.contents.articles}}
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    {{ article.title }}
+                </div>
+                <div>
+                    {{ image.imageUrl }}
+                </div>
+                <div>
+                    {{ article.slug }}
+                </div>
+            </div>
+        </div>
+    {{/each}}
+</div>

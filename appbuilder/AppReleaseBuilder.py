@@ -1767,8 +1767,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
                         filename = '{0}.json'.format(localized_template_content.slug)
 
+                        template_content_subpath = os.path.join(language_code, template_folder_name)
+
                         template_content_template_path = os.path.join(app_absolute_template_contents_path,
-                            template_folder_name)
+                            template_content_subpath)
 
                         if not os.path.isdir(template_content_template_path):
                             os.makedirs(template_content_template_path)
@@ -1779,11 +1781,22 @@ class AppReleaseBuilder(AppBuilderBase):
                             template_content_file.write(json.dumps(localized_template_content_json, indent=4,
                                 ensure_ascii=False))
 
-                        relative_json_filepath = os.path.join(app_relative_template_contents_path, template_folder_name,
+                        relative_json_filepath = os.path.join(app_relative_template_contents_path, template_content_subpath,
                             filename)
 
+
                         template_contents_json['lookup'][str(template_content.uuid)] = '/{0}'.format(relative_json_filepath)
-                        template_contents_json['slugs'][localized_template_content.slug] = '/{0}'.format(relative_json_filepath)
+                        template_contents_json['slugs'][localized_template_content.slug] = {
+                            'path': '/{0}'.format(relative_json_filepath),
+                            'templateName': template_folder_name,
+                        }
+
+                        if template_content.assignment:
+                            if template_content.assignment not in template_contents_json['assignments']:
+                                template_contents_json['assignments'][template_content.assignment] = {}
+
+                            template_contents_json['assignments'][template_content.assignment][language_code] = '/{0}'.format(relative_json_filepath)
+
         
         self.build_features['TemplateContent'] = template_contents_json
         

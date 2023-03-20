@@ -24,7 +24,7 @@
 		{% trans 'Drag and drop for ordering.' %}
 	</div>
 	<hr>
-	<div id="text-types-for-ordering" class="row p-3" data-store-positions-url="{% url 'store_object_order' text_types_content_type.id %}">
+	<div id="text-types-for-ordering" class="row p-3" data-store-positions-url="{% url 'store_app_kit_object_order' text_types_content_type.id %}">
 		{% for text_type in text_types %}
 			<div id="text-type-order-{{ text_type.id }}" data-object-id="{{ text_type.id }}" class="col-12 text-type-order-entry my-1 p-3">
 				{{ text_type.text_type }}

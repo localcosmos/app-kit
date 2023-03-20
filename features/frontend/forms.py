@@ -16,7 +16,7 @@ from localcosmos_server.widgets import TwoStepFileInput
 '''
 class FrontendSettingsForm(forms.Form):
 
-    legal_notice = forms.CharField(max_length=355, widget=forms.Textarea, required=False)
+    legal_notice = forms.CharField(max_length=500, widget=forms.Textarea, required=False)
 
     def __init__(self, meta_app, frontend, *args, **kwargs):
 

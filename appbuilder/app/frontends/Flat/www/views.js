@@ -4980,14 +4980,18 @@ var OnlineContentView = View(RemoteView, {
 // - for both preview and view
 // ATTENTION: used by appKit
 
-var FactSheetView = View(RemoteView, {
+var TemplateContentView = View(RemoteView, {
 
-	"identifier" : "FactSheetView",
-	"template_name" : "template_content/Neobiota/neobiota.html",
+	"identifier" : "TemplateContentView",
+	"template_name" : "template_content/pages/home/",
 
 
 	get : function(self, request, args, kwargs){
-		self.get_html(self, function(data){
+
+	
+		self.get_data(self, function(data){
+
+			self.template_name = data['templatePath'];
 
 			// render page
 			var context = self.get_context_data(self, kwargs);
@@ -4999,7 +5003,7 @@ var FactSheetView = View(RemoteView, {
 	},
 	
 	
-	get_local_html : function (self, onsuccess, onerror){
+	get_local_data : function (self, onsuccess, onerror){
 		
 		let slug = self.kwargs["slug"];
 		let contents_path = app_features.TemplateContent.slugs[slug];
@@ -5007,26 +5011,26 @@ var FactSheetView = View(RemoteView, {
 		
 	},
 	
-	get_preview_html : function(self, onsuccess, onerror){
+	get_preview_data : function(self, onsuccess, onerror){
 		// settings.API_URL points to the app kit if settings.PREVIEW == true
 		var url = '' + settings.API_URL + 'template-content-preview/' + self.kwargs["slug"] + "/";
 		self.perform_request(self, url, 'GET', 'JSON', {}, onsuccess, onerror);
 	},
 	
-	get_html : function(self, onsuccess, onerror){
+	get_data : function(self, onsuccess, onerror){
 
 		if (settings.PREVIEW == true){
-			self.get_preview_html(self, onsuccess, onerror);
+			self.get_preview_data(self, onsuccess, onerror);
 		}
 		else {
-			self.get_local_html(self, onsuccess, onerror);
+			self.get_local_data(self, onsuccess, onerror);
 		}
 
 	}
 });
 
 
-var FactSheetModal = View(TemplateView, {
+var TemplateContentModal = View(TemplateView, {
 
 	"identifier" : "FactSheetModal",
 	

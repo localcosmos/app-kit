@@ -1,5 +1,7 @@
 {
     "templateName" : "Neobiota",
+    "type": "page",
+    "templatePath" : "/template_content/page/Neobiota/neobiota.html",
     "version" : 1,
     "contents": {
       "headline": {
@@ -18,7 +20,8 @@
         "format": "layoutable-simple"
       },
       "images": {
-        "type": "multi-image"
+        "type": "image",
+        "allowMultiple": true
       }
     }
   }

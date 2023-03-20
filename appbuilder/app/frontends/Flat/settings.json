@@ -91,14 +91,15 @@
 			}
 		},
 		"texts": {
-			"aboutApp": {
-				"required": false,
-				"helpText": "Describe your app"
-			},
-			"appSources": {
-				"required": false,
-				"helpText": "Sources you used to build this app."
-			}
+            "privacyPolicy": {
+                "required": true,
+                "helpText": "Privacy Policy of your App.",
+				"format": "layoutability-full"
+            },
+            "termsOfUse": {
+                "required": false,
+                "helpText": "Terms Of Use of your App."
+            }
 		},
 		"configuration": {
 			"cmsUrl": {
@@ -107,10 +108,15 @@
 		}
 	},
 	"templateContent": {
-		"urlPattern": "/pages/{slug}/",
+		"urlPattern": "/pages/{templateName}/{slug}/",
 		"navigations": {
 			"main": {
-				"name": "Main navigation"
+				"name": "Main navigation",
+				"maxLevels": 2
+			},
+			"more": {
+				"name": "More - Burger",
+				"maxLevels": 1
 			},
 			"footer": {
 				"name": "Footer navigation"
@@ -124,7 +130,7 @@
 				]
 			},
 			"footer": {
-				"templateType": "feature",
+				"templateType": "component",
 				"allowedTemplates": [
 					"footer"
 				]

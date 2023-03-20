@@ -554,6 +554,24 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
 
     children_cache = models.JSONField(null=True)
 
+
+    def get_content_image_restrictions(self, image_type='image'):
+
+        if image_type == 'overview':
+            restrictions = {
+                'allow_features' : False,
+                'allow_cropping' : False,
+            }
+
+        else:
+            restrictions = {
+                'allow_features' : True,
+                'allow_cropping' : True,
+            }
+        
+        return restrictions
+
+
     def add_setting(self, key, value):
         if not self.settings:
             self.settings = {}

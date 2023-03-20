@@ -4,7 +4,7 @@
 	<div class="col-12">
 		<div><strong>{% trans 'Choices' %}</strong></div>
 		{% if generic_field.choices %}
-			<div id="generic-field-choices" data-store-positions-url="{% url 'store_object_order' generic_values_content_type.id %}">
+			<div id="generic-field-choices" data-store-positions-url="{% url 'store_app_kit_object_order' generic_values_content_type.id %}">
 				{% for choice in generic_field.choices %}
 					<div id="choice-{{ choice.id }}" data-object-id="{{ choice.id }}">
 						{{ choice.name }} 

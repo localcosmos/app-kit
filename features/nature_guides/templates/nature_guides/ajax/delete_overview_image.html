@@ -1,0 +1,13 @@
+{% extends 'localcosmos_server/ajax/delete_server_content_image.html' %}
+
+{% block success_js %}
+	<script>
+        $("#Modal").modal("hide");
+        (function() {
+    		let indicator = document.getElementById("overview-image-indicator");
+            indicator.classList.add("d-none");
+        })();
+	</script>
+
+	{% block extra_success_js %}{% endblock %}
+{% endblock %}

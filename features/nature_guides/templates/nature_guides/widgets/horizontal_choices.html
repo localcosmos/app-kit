@@ -1,7 +1,7 @@
 {% load i18n static localcosmos_tags %}
 <div class="horizontal-slide {% block size %}large{% endblock %}">
 
-	<div id="{{ widget.attrs.id }}" data-store-positions-url="{% url 'store_object_order' matrix_filter_space_ctype.id %}">
+	<div id="{{ widget.attrs.id }}" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_space_ctype.id %}">
 		{% for group, options, index in widget.optgroups %}
 			
 			{% for option in options %}

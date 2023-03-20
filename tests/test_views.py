@@ -1898,7 +1898,7 @@ class TestDeleteContentImage(ViewTestMixin, WithAjaxAdminOnly, ContentImagePostD
 class TestStoreObjectOrder(ViewTestMixin, WithLoggedInUser, WithUser, WithTenantClient,
                            WithMetaApp, WithFormTest, TenantTestCase):
 
-    url_name = 'store_object_order'
+    url_name = 'store_app_kit_object_order'
     view_class = StoreObjectOrder 
 
     def setUp(self):

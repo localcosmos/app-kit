@@ -99,7 +99,7 @@
 			<div class="mt-3">
 				<h5>{% trans 'Additional fields' %}</h5>
 	
-				<ul id="generic-form-regular-fields" data-store-positions-url="{% url 'store_object_order' generic_field_link_content_type.id %}" class="simpleul clearfix">
+				<ul id="generic-form-regular-fields" data-store-positions-url="{% url 'store_app_kit_object_order' generic_field_link_content_type.id %}" class="simpleul clearfix">
 					{% for generic_field_link in generic_fields %}
 						{% include 'generic_forms/generic_field_modify.html' %}
 					{% endfor %}

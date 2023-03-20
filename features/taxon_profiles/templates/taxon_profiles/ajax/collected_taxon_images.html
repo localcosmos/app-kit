@@ -20,7 +20,7 @@
 	<hr>
 {% endif %}
 
-<div id="taxon-profile-images" class="row" data-store-positions-url="{% url 'store_object_order' content_image_ctype.id %}">
+<div id="taxon-profile-images" class="row" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
 	{% for image in taxon_profile_images %}
 	
 		<div id="content_image_container_{{ image.id }}" data-object-id="{{ image.id }}" class="col-6 col-md-4 col-lg-2">

@@ -108,6 +108,9 @@
 							<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
 						{% endif %}
 					</span>
+					{% content_image parent_node.meta_node 'overview' as overview_image %}
+					
+					<span id="overview-image-indicator" class="badge badge-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
 					<div class="btn-group dropdown">
 						{% with menualign='alignright' %}
 							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}

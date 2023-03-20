@@ -1,0 +1,85 @@
+{
+  "templateName" : "home",
+  "type": "page",
+  "templatePath" : "/template_content/page/home/home.html",
+  "version" : 1,
+  "contents": {
+    "banner": {
+      "type": "image",
+      "allowMultiple": false,
+      "helpText": "Landscape image, approximately 2:1 ratio"
+    },
+    "cardsDescription": {
+      "type": "text",
+      "allowMultiple": false,
+      "format": "layoutable-simple",
+      "widget": "textarea",
+      "helpText": "Describe your project",
+      "restrictions" : {
+        "maxLength": 200,
+        "minLength": 100
+      }
+    },
+    "cards": {
+      "type": "component",
+      "templateName": "Card",
+      "allowMultiple": true,
+      "maxNumber": 4,
+      "minNumber": 2,
+      "restrictions": {
+        
+      }
+    },
+    "projectDescription": {
+      "type": "text",
+      "allowMultiple": false,
+      "format": "layoutable-simple",
+      "widget": "textarea",
+      "helpText": "Describe your project",
+      "restrictions" : {
+        "maxLength": 400,
+        "minLength": 100
+      }
+    },
+    "projectDescriptionBackground": {
+      "type": "image",
+      "helpText": "Landscape image, approximately 2:1 ratio"
+    },
+    "appShortName": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "helpText": "Short name of your App",
+      "restrictions" : {
+        "maxLength": 30
+      }
+    },
+    "appFullName": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "helpText": "Full name of your App",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    },
+    "appSubtitle": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "helpText": "Subtitle of your App",
+      "restrictions" : {
+        "maxLength": 100
+      }
+    },
+    "articles": {
+      "type": "component",
+      "allowMultiple": true,
+      "templateName": "ArticlePreview",
+      "restrictions": {
+
+      },
+      "required": false
+    }
+  }
+}

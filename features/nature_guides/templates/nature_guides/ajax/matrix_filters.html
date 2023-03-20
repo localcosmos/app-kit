@@ -14,7 +14,7 @@
 	<form id="matrix-filters-form">
 
 		{% if meta_node_has_matrix_filters %}
-			<div class="matrixfiltermanagement" data-store-positions-url="{% url 'store_object_order' matrix_filter_ctype.id %}">
+			<div class="matrixfiltermanagement" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_ctype.id %}">
 
 				{% for field in form %}
 					<div id="matrix_filter_{{ field.field.matrix_filter.id }}" {% if field.field.matrix_filter.is_restricted %}class="restricted-matrix-filter"{% endif %} data-object-id="{{ field.field.matrix_filter.id }}">

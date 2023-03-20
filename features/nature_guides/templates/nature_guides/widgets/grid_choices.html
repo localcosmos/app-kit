@@ -1,6 +1,6 @@
 {% load i18n static localcosmos_tags %}
 
-<div id="{{ widget.attrs.id }}" class="grid-choices {% block size %}{% endblock %}" data-store-positions-url="{% url 'store_object_order' matrix_filter_space_ctype.id %}">
+<div id="{{ widget.attrs.id }}" class="grid-choices {% block size %}{% endblock %}" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_space_ctype.id %}">
 	{% for group, options, index in widget.optgroups %}
 		
 		{% for option in options %}

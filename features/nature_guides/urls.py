@@ -73,10 +73,8 @@ urlpatterns = [
     path('set-identification-mode/<int:meta_node_id>/<str:identification_mode>/',
          views.StoreIdentificationMode.as_view(), name='store_identification_mode'),
     # overview image
-    path('manage-overview-image/<int:content_type_id>/<int:object_id>/<str:image_type>/',
-        views.ManageOverviewImage.as_view(),
-        name='manage_overview_image'),
-    path('delete-overview-image/<int:pk>/',
-        views.DeleteOverviewImage.as_view(),
+    path('manage-overview-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<str:image_type>/',
+        views.ManageOverviewImage.as_view(), name='manage_overview_image'),
+    path('delete-overview-image/<int:meta_app_id>/<int:pk>/', views.DeleteOverviewImage.as_view(),
         name='delete_overview_image'),
 ]

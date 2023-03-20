@@ -1,6 +1,6 @@
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 
-from localcosmos_server.template_content.models import PUBLISHED_IMAGE_TYPE_PREFIX
+from localcosmos_server.template_content.utils import get_published_image_type, get_component_image_type
 from localcosmos_server.template_content.api.serializers import LocalizedTemplateContentSerializer, ContentLicenceSerializer
 
 '''
@@ -33,9 +33,42 @@ class TemplateContentJSONBuilder(JSONBuilder):
             'list' : [],
             'lookup' : {},
             'slugs' : {},
+            'assignments': {}
         }
 
         return generic_content_json
+
+
+    def get_image_data(self, content_definition, localized_template_content, image_type):
+
+        image_type = get_published_image_type(image_type)
+
+        if content_definition.get('allowMultiple', False) == True:
+            # do not mix up licences
+            images = []
+            content_images = localized_template_content.images(image_type=image_type)
+            for content_image in content_images:
+                image_urls = self.app_release_builder.build_content_image(content_image)
+                licence = content_image.image_store.licences.first()
+                licence_serializer = ContentLicenceSerializer(licence)
+
+                image_json = {
+                    'imageUrl' : image_urls,
+                    'licence' : licence_serializer.data,
+                }
+
+                images.append(image_json)
+            
+            return images
+
+        else: 
+            image_urls = self._get_image_urls(localized_template_content, image_type=image_type)
+
+            image = {
+                'imageUrl' : image_urls
+            }
+            
+            return image
 
 
     def build_localized_template_content(self, localized_template_content):
@@ -43,31 +76,53 @@ class TemplateContentJSONBuilder(JSONBuilder):
         serializer = LocalizedTemplateContentSerializer(localized_template_content, context={'preview': False})
         content_json = serializer.data
 
-        for content_key, content_definition in content_json['contents'].items():
+        published_template = localized_template_content.template_content.template
 
-            image_type = '{0}{1}'.format(PUBLISHED_IMAGE_TYPE_PREFIX, content_key)
+        for content_key, content_definition in published_template.definition['contents'].items():
 
-            if content_definition['type'] == 'image':
-                image_urls = self._get_image_urls(localized_template_content, image_type=image_type)
-                content_json['contents'][content_key]['value']['imageUrl'] = image_urls
+            if content_key in content_json['contents']:
 
+                if content_definition['type'] == 'image':
+        
+                    image_type = content_key
 
-            elif content_definition['type'] == 'multi-image':
-                # do not mix up licences
-                value = []
-                content_images = localized_template_content.images(image_type=image_type)
-                for content_image in content_images:
-                    image_urls = self.app_release_builder.build_content_image(content_image)
-                    licence = content_image.image_store.licences.first()
-                    licence_serializer = ContentLicenceSerializer(licence)
+                    image_data = self.get_image_data(content_definition, localized_template_content, image_type)
 
-                    image_json = {
-                        'imageUrl' : image_urls,
-                        'licence' : licence_serializer.data,
-                    }
+                    if content_definition.get('allowMultiple', False) == True:
+                        content_json['contents'][content_key] = image_data
+                    else:
+                        if content_key not in content_json['contents'] or content_json['contents'][content_key] == None:
+                            content_json['contents'][content_key] = {}
+                        content_json['contents'][content_key].update(image_data)
+                            
 
-                    value.append(image_json)
-                
-                content_json['contents'][content_key]['value'] = value
+                elif content_definition['type'] == 'component':
+                    
+                    component_template = localized_template_content.template_content.get_component_template(content_key)
+                    component_definition = component_template.definition
+
+                    if content_definition.get('allowMultiple', False) == True:
+
+                        components = content_json['contents'][content_key]
+
+                        for component_index, component in enumerate(components, 0):
+
+                            component_uuid = component['uuid']
+
+                            component_with_image_data = serializer.get_component_with_image_data(content_key, component,
+                                component_definition, component_uuid, localized_template_content, self.get_image_data)
+
+                            content_json['contents'][content_key][component_index] = component_with_image_data
+
+                    else:
+                        
+                        component = content_json['contents'][content_key]
+
+                        component_uuid = component['uuid']
+
+                        component_with_image_data = self.get_component_with_image_data(content_key, component,
+                            component_definition, component_uuid, localized_template_content, self.get_image_data)
+
+                        content_json['contents'][content_key] = component_with_image_data
 
         return content_json

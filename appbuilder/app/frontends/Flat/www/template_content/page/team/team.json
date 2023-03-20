@@ -1,0 +1,74 @@
+{
+  "templateName" : "team",
+  "type": "page",
+  "templatePath" : "/template_content/page/team/team.html",
+  "version" : 1,
+  "contents": {
+    "teamImage": {
+      "type": "image",
+      "allowMultiple": false,
+      "helpText": "Fill width image at the top of the page"
+    },
+    "teamIntroduction": {
+      "type": "text",
+      "allowMultiple": false,
+      "format": "layoutable-simple",
+      "widget": "textarea"
+    },
+    "group1Title": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    },
+    "group1Cards": {
+      "type": "component",
+      "templateName": "TeamCard",
+      "allowMultiple": true
+    },
+    "group2Title": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    },
+    "group2Cards": {
+      "type": "component",
+      "templateName": "TeamCard",
+      "allowMultiple": true
+    },
+    "group3Title": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    },
+    "group3Cards": {
+      "type": "component",
+      "templateName": "TeamCard",
+      "allowMultiple": true
+    },
+    "acknowledgementsTitle": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "TextInput",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    },
+    "acknowledgementsText": {
+      "type": "text",
+      "allowMultiple": false,
+      "widget": "textarea",
+      "restrictions" : {
+        "maxLength": 80
+      }
+    }
+  }
+}

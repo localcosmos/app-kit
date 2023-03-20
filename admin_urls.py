@@ -2,6 +2,7 @@ from django.conf import settings
 from django.urls import include, path
 from . import views
 
+from localcosmos_server import generic_views
 
 urlpatterns = [
     # features
@@ -101,4 +102,7 @@ urlpatterns = [
     # TAGS
     path('tag-any-element/<int:content_type_id>/<int:object_id>/', views.TagAnyElement.as_view(), name='tag_any_element'),
     path('reload-tags/<int:content_type_id>/<int:object_id>/', views.ReloadTags.as_view(), name='reload_tags'),
+    # object order
+    path('store-object-order/<int:content_type_id>/',
+        generic_views.StoreObjectOrder.as_view(), name='store_app_kit_object_order'),
 ]
