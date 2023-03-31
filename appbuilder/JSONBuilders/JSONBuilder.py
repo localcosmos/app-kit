@@ -88,7 +88,17 @@ class JSONBuilder:
         else:
             image_urls = self.app_release_builder.no_image_url
             
-        return image_urls     
+        return image_urls 
+
+
+    def _get_image_licence(self, content_image_mixedin, image_type='image'):
+        if type(content_image_mixedin) == ContentImage:
+            content_image = content_image_mixedin
+        else:
+            content_image = content_image_mixedin.image(image_type=image_type)
+
+        licence = self.app_release_builder.content_image_builder.build_licence(content_image)
+        return licence
 
 
     def get_taxonomic_restriction(self, instance, restriction_model=AppContentTaxonomicRestriction):

@@ -118,8 +118,9 @@
 				"name": "More - Burger",
 				"maxLevels": 1
 			},
-			"footer": {
-				"name": "Footer navigation"
+			"legal": {
+				"name": "Legal navigation",
+				"maxLevels": 1
 			}
 		},
 		"requiredOfflineContents": {

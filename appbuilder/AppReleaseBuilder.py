@@ -35,7 +35,7 @@ from app_kit.features.frontend.models import Frontend
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
 from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
 
-from localcosmos_server.template_content.models import TemplateContent
+from localcosmos_server.template_content.models import TemplateContent, Navigation
 
 
 # TAXONOMY
@@ -1012,6 +1012,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
             self.build_features = {}
             self.aggregated_node_filter_space_cache = {}
+            self.inactivated_nuids = set([])
             
             # create build folder
             # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/common/www/
@@ -1767,7 +1768,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
                         filename = '{0}.json'.format(localized_template_content.slug)
 
-                        template_content_subpath = os.path.join(language_code, template_folder_name)
+                        template_content_subpath = os.path.join(language_code, 'pages', template_folder_name,
+                            localized_template_content.slug)
 
                         template_content_template_path = os.path.join(app_absolute_template_contents_path,
                             template_content_subpath)
@@ -1797,7 +1799,42 @@ class AppReleaseBuilder(AppBuilderBase):
 
                             template_contents_json['assignments'][template_content.assignment][language_code] = '/{0}'.format(relative_json_filepath)
 
-        
+        # build the navigations
+        navigations = Navigation.objects.filter(app=self.meta_app.app)
+
+        template_contents_json['navigations'] = {}
+
+        for navigation in navigations:
+
+            template_contents_json['navigations'][navigation.navigation_type] = {}
+            for language_code in languages:
+
+                localized_navigation = navigation.get_locale(language_code)
+
+                if localized_navigation and localized_navigation.published_navigation:
+
+                    filename = '{0}.json'.format(navigation.navigation_type)
+
+                    navigations_subpath = os.path.join(language_code, 'navigations')
+
+                    relative_navigation_json_filepath = os.path.join(app_relative_template_contents_path,
+                        navigations_subpath, filename)
+
+                    absolute_navigations_folder_path = os.path.join(app_absolute_template_contents_path,
+                        navigations_subpath)
+
+                    if not os.path.isdir(absolute_navigations_folder_path):
+                        os.makedirs(absolute_navigations_folder_path)
+
+                    absolute_navigation_json_filepath = os.path.join(absolute_navigations_folder_path, filename)
+
+                    with open(absolute_navigation_json_filepath, 'w') as navigation_file:
+                        navigation_file.write(json.dumps(localized_navigation.published_navigation, indent=4,
+                                ensure_ascii=False))
+
+                    template_contents_json['navigations'][navigation.navigation_type][language_code] = '/{0}'.format(relative_navigation_json_filepath)
+
+
         self.build_features['TemplateContent'] = template_contents_json
         
     ###############################################################################################################
@@ -1888,19 +1925,19 @@ class AppReleaseBuilder(AppBuilderBase):
             self.build_features[generic_content_type]['localized'][language_code]['usedTerms'] = '/{0}'.format(used_terms_glossary_relative_path)
 
             # create a downloadable csv file
-            used_terms_glossary_csv = jsonbuilder.create_glossary_for_csv(used_terms_glossary)
-            used_terms_glossary_csv_filepath = self._app_used_terms_glossary_csv_filepath(glossary, language_code)
+            #used_terms_glossary_csv = jsonbuilder.create_glossary_for_csv(used_terms_glossary)
+            #used_terms_glossary_csv_filepath = self._app_used_terms_glossary_csv_filepath(glossary, language_code)
 
             
-            with open(used_terms_glossary_csv_filepath, 'w', newline='') as utg_csvfile:
-                utg_writer = csv.writer(utg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                for utg_row in used_terms_glossary_csv:
-                    utg_writer.writerow(utg_row)
+            #with open(used_terms_glossary_csv_filepath, 'w', newline='') as utg_csvfile:
+            #    utg_writer = csv.writer(utg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            #    for utg_row in used_terms_glossary_csv:
+            #        utg_writer.writerow(utg_row)
 
-            used_terms_glossary_csv_relative_path = self._app_relative_used_terms_glossary_csv_filepath(glossary,
-                language_code)
+            #used_terms_glossary_csv_relative_path = self._app_relative_used_terms_glossary_csv_filepath(glossary,
+            #    language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['usedTermsCsv'] = '/{0}'.format(used_terms_glossary_csv_relative_path)
+            #self.build_features[generic_content_type]['localized'][language_code]['usedTermsCsv'] = '/{0}'.format(used_terms_glossary_csv_relative_path)
 
 
             # localized glossary, all terms
@@ -1919,19 +1956,19 @@ class AppReleaseBuilder(AppBuilderBase):
             # downloadable csv file of all terms
 
             # create a downloadable csv file
-            localized_glossary_csv = jsonbuilder.create_glossary_for_csv(localized_glossary)
-            localized_glossary_csv_filepath = self._app_localized_glossary_csv_filepath(glossary, language_code)
+            #localized_glossary_csv = jsonbuilder.create_glossary_for_csv(localized_glossary)
+            #localized_glossary_csv_filepath = self._app_localized_glossary_csv_filepath(glossary, language_code)
 
             
-            with open(localized_glossary_csv_filepath, 'w', newline='') as lg_csvfile:
-                lg_writer = csv.writer(lg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                for lg_row in localized_glossary_csv:
-                    lg_writer.writerow(lg_row)
+            #with open(localized_glossary_csv_filepath, 'w', newline='') as lg_csvfile:
+            #    lg_writer = csv.writer(lg_csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            #    for lg_row in localized_glossary_csv:
+            #        lg_writer.writerow(lg_row)
 
-            localized_glossary_csv_relative_path = self._app_relative_localized_glossary_csv_filepath(glossary,
-                language_code)
+            #localized_glossary_csv_relative_path = self._app_relative_localized_glossary_csv_filepath(glossary,
+            #    language_code)
 
-            self.build_features[generic_content_type]['localized'][language_code]['allTermsCsv'] = '/{0}'.format(localized_glossary_csv_relative_path)
+            #self.build_features[generic_content_type]['localized'][language_code]['allTermsCsv'] = '/{0}'.format(localized_glossary_csv_relative_path)
 
 
     ###############################################################################################################
@@ -1980,19 +2017,12 @@ class AppReleaseBuilder(AppBuilderBase):
 
         if image_urls:
 
-            licence = content_image.image_store.licences.first()
-            if licence:
-                content_licence = licence.content_licence().as_dict()
+            licence_registry_entry = self.content_image_builder.build_licence(content_image)
 
-                registry_entry = {
-                    'creatorName' : licence.creator_name,
-                    'creatorLink' : licence.creator_link,
-                    'sourceLink' : licence.source_link,
-                    'licence' : content_licence,
-                }
+            if licence_registry_entry:
                 
                 for size_name, image_url in image_urls.items():
-                    self.licence_registry['licences'][image_url] = registry_entry
+                    self.licence_registry['licences'][image_url] = licence_registry_entry
 
         return image_urls
 

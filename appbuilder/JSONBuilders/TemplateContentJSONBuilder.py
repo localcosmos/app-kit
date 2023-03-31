@@ -64,8 +64,17 @@ class TemplateContentJSONBuilder(JSONBuilder):
         else: 
             image_urls = self._get_image_urls(localized_template_content, image_type=image_type)
 
+            licence = {}
+
+            if image_urls:
+                content_image = localized_template_content.image(image_type=image_type)
+                licence = content_image.image_store.licences.first()
+                licence_serializer = ContentLicenceSerializer(licence)
+                licence = licence_serializer.data
+
             image = {
-                'imageUrl' : image_urls
+                'imageUrl' : image_urls,
+                'licence' : licence,
             }
             
             return image

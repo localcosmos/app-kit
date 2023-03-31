@@ -7,13 +7,14 @@
 				<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
 				<div class="dropdown-menu">
 					<a class="dropdown-item xhr" data-url="{% url 'delete_app' meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Delete {{ meta_app }}{% endblocktrans %}</a>
+					<a class="dropdown-item xhr" data-url="{% url 'edit_generic_content_name' meta_app|ctype_id meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Rename {{ meta_app }}{% endblocktrans %}</a>
 				</div>
 			</div>
 
 		</div>
 		<div class="card-body">
 			<div style="position:relative;">
-				<h5 class="card-title">{{ meta_app }}</h5>
+				<h5 id="app-name-{{ meta_app.id }}" class="card-title">{{ meta_app }}</h5>
 				<p class="card-text">
 					<div class="text-right">
 						<strong><a href="{% url 'manage_metaapp' meta_app.id content_type.id meta_app.id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>

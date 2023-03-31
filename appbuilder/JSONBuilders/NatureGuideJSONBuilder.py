@@ -34,6 +34,21 @@ class NatureGuideJSONBuilder(JSONBuilder):
         return features_json_entry
 
 
+    def get_inactivated_nuids(self, nature_guide):
+
+        inactivated_nuids = []
+
+        for node in NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide):
+            if node.additional_data and node.additional_data.get('is_active', True) == False:
+                inactivated_nuids.append(node.taxon_nuid)
+
+        self.app_release_builder.inactivated_nuids = self.app_release_builder.inactivated_nuids.union(
+            set(inactivated_nuids))
+
+        return inactivated_nuids
+
+
+
     def build(self):
         
         # cache matrix filter spaces for taxon profiles
@@ -41,6 +56,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
         self.nature_guide_json = self._build_common_json()
 
         nature_guide = self.app_generic_content.generic_content
+
+        inactivated_nuids = self.get_inactivated_nuids(nature_guide)
 
         start_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide, meta_node__node_type='root')
         
@@ -162,10 +179,17 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 child_primary_locale_slug = self.add_to_localized_slugs(child)
 
+                image_urls = self._get_image_urls(child.meta_node)
+                licence = {}
+                if image_urls:
+                    content_image = child.meta_node.image()
+                    licence = self.app_release_builder.content_image_builder.build_licence(content_image)
+
                 child_json = {
                     'uuid' : str(child.name_uuid),
                     'nodeType' : child.meta_node.node_type,
-                    'imageUrl' : self._get_image_urls(child.meta_node),
+                    'imageUrl' : image_urls,
+                    'licence': licence,
                     'space' : child_space,
                     'maxPoints' : child_max_points,
                     'isPossible' : True,
@@ -173,6 +197,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'decisionRule' : child.decision_rule,
                     'taxon' : None,
                     'slug' : child_primary_locale_slug,
+                    'description' : child.meta_node.description,
                 }
 
                 if child.meta_node.taxon:
@@ -508,12 +533,25 @@ class SpaceListSerializerMixin:
                 }
 
                 if simple == False:
-                    space_json['imageUrl'] = self.jsonbuilder._get_image_urls(subspace)
+
+                    image_urls = self.jsonbuilder._get_image_urls(subspace)
+                    licence = {}
+
+                    if image_urls:
+                        content_image = subspace.image()
+                        licence = self.jsonbuilder.app_release_builder.content_image_builder.build_licence(content_image)
+
+                    space_json['imageUrl'] = image_urls
+                    space_json['licence'] = licence
 
                     secondary_image = self.jsonbuilder._get_content_image(subspace, image_type='secondary')
 
                     if secondary_image:
                         space_json['secondaryImageUrl'] = self.jsonbuilder._get_image_urls(subspace, image_type='secondary')
+                        secondary_content_imge = subspace.image(image_type='secondary')
+                        secondary_licence = self.jsonbuilder.app_release_builder.content_image_builder.build_licence(
+                            secondary_content_imge)
+                        space_json['secondaryLicence'] = secondary_licence
                     else:
                         space_json['secondaryImageUrl'] = None
                 

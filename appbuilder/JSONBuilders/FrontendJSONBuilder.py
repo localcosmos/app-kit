@@ -61,9 +61,13 @@ class FrontendJSONBuilder(JSONBuilder):
                                             relative_path, image_sizes='all')
             else:
                 image_urls = None
+
+            if image_urls:
+                licence = self.app_release_builder.content_image_builder.build_licence(content_image)
             
             frontend_json['userContent']['images'][image_type] = {
                 'imageUrl' : image_urls,
+                'licence': licence
             }
 
         return frontend_json

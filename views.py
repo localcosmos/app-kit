@@ -236,7 +236,7 @@ class AppLimitReached(TemplateView):
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):        
         return super().dispatch(request, *args, **kwargs)
-    
+        
 
 class DeleteApp(AjaxDeleteView):
 
@@ -511,8 +511,12 @@ class EditGenericContentName(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        is_meta_app = False
+        if self.generic_content_type == ContentType.objects.get_for_model(MetaApp):
+            is_meta_app = True
         context['content_type'] = self.generic_content_type
         context['generic_content'] = self.generic_content
+        context['is_meta_app'] = is_meta_app
         return context
 
     def get_initial(self):

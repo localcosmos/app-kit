@@ -2,6 +2,9 @@ import os, shutil
 
 from PIL import Image
 
+from localcosmos_server.template_content.api.serializers import ContentLicenceSerializer
+
+
 # widths of the ouput image
 # the height depends on the crop area set by the user
 IMAGE_SIZES = {
@@ -166,6 +169,18 @@ class ContentImageBuilder:
                 self.image_cache[cache_key] = image_url
         
         return image_urls
+
+
+    def build_licence(self, content_image):
+
+        licence_json = {}
+        licence = content_image.image_store.licences.first()
+
+        if licence:
+            licence_serializer = ContentLicenceSerializer(licence)
+            licence_json = licence_serializer.data
+
+        return licence_json
 
     
     def clean_on_disk_cache(self):

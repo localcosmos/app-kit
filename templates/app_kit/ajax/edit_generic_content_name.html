@@ -17,6 +17,11 @@
 {% block script %}
 	{% if success %}
 		<script>
+			{% if is_meta_app %}
+				$("#app-name-{{ generic_content.id }}").text("{{ generic_content.name }}");
+			{% else %}
+				$("#generic-content-name").text("{{ generic_content.name }}");
+			{% endif %}
 			$("#Modal").modal("hide");
 			$("#generic-content-name").text("{{ generic_content.name }}");
 		</script>

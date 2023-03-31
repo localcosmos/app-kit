@@ -190,6 +190,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         for node in node_occurrences:
 
+            is_in_inactive_branch = False
+
+            for inactivated_nuid in self.app_release_builder.inactivated_nuids:
+                if node.taxon_nuid.startswith(inactivated_nuid):
+                    is_in_inactive_branch = True
+                    break
+
+            if is_in_inactive_branch == True:
+                continue
+
             if node.taxon_nuid in self.app_release_builder.aggregated_node_filter_space_cache:
                 node_traits = self.app_release_builder.aggregated_node_filter_space_cache[node.taxon_nuid]
                 taxon_profile_json['traits'] += node_traits
@@ -415,6 +425,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     'taxonSource' : lazy_taxon.taxon_source, # for looking up the original taxon
                     'taxonNuid' : lazy_taxon.taxon_nuid,
                     'nameUuid' : name_uuid, # for looking up the original taxon
+                    'acceptedNameUuid': name_uuid,
                     'isSynonym' : False,
                 }
                 search_indices_json['taxonLatname'][taxon_latname_start_letter].append(taxon_latname_entry_json)
@@ -425,17 +436,22 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
 
+                    synonym_start_letter = synonym_full_latname[0]
+
                     synonym_entry_json = {
                         'taxonLatname' : synonym.taxon_latname,
                         'taxonAuthor' : synonym.taxon_author,
                         'taxonSource' : lazy_taxon.taxon_source,
-                        'nameUuid' : name_uuid, # name_uuid of accepted name
                         'taxonNuid' : lazy_taxon.taxon_nuid,
-                        'synonymNameUuid' : str(synonym.name_uuid),
+                        'nameUuid' : str(synonym.name_uuid), # name_uuid of accepted name
+                        'acceptedNameUuid' : name_uuid,
                         'isSynonym' : True,
                     }
 
-                    search_indices_json['taxonLatname'][taxon_latname_start_letter].append(synonym_entry_json)
+                    if synonym_start_letter not in search_indices_json['taxonLatname']:
+                        search_indices_json['taxonLatname'][synonym_start_letter] = []
+
+                    search_indices_json['taxonLatname'][synonym_start_letter].append(synonym_entry_json)
 
 
             # add vernacular names - these might not be unique, therefore use a list
@@ -497,9 +513,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
     def get_image_entry(self, content_image_mixedin):
 
+        image_urls = self._get_image_urls(content_image_mixedin)
+        licence = {}
+
+        if image_urls:
+            licence = self._get_image_licence(content_image_mixedin)
+
         image_entry = {
             'text': content_image_mixedin.text,
-            'imageUrl' : self._get_image_urls(content_image_mixedin),
+            'imageUrl' : image_urls,
+            'licence' : licence
         }
 
         return image_entry
