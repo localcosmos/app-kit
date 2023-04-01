@@ -28,7 +28,7 @@
 
     {% for field_name in form.layoutable_full_fields %}
         var field = document.getElementById('id_{{ field_name }}');
-
+        
         if (field != null){
 
             ClassicEditor.create( field, {% include 'template_content/ckeditor/layout-complex.js' %}).then(editor => {
