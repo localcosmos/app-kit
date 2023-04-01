@@ -116,7 +116,11 @@ class ContentImageBuilder:
         
         for size_name, size in IMAGE_SIZES[image_sizes].items():
 
-            cache_key = '{0}-{1}'.format(content_image.id, size)
+            if content_image.__class__.__name__ == 'ServerContentImage':
+                cache_key = '{0}-s-{1}'.format(content_image.id, size)
+            else:
+                cache_key = '{0}-{1}'.format(content_image.id, size)
+
 
             output_filename = self.get_output_filename(content_image, size)
 
