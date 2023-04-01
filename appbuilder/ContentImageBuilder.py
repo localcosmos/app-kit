@@ -50,7 +50,12 @@ class ContentImageBuilder:
         else:
             file_extension = 'webp'
 
-            output_filename = '{0}-{1}-{2}.{3}'.format(content_image.image_type, content_image.id, size,
+            suffix = ''
+            if content_image.__class__.__name__ == 'ServerContentImage':
+                suffix = '-s'
+
+
+            output_filename = '{0}-{1}{2}-{3}.{4}'.format(content_image.image_type, content_image.id, suffix, size,
                                 file_extension)
 
         return output_filename
