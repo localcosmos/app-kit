@@ -260,7 +260,7 @@ class GlossaryJSONBuilder(JSONBuilder):
 
                             data_term_b64 = base64.b64encode(data_term.encode('utf-8')).decode('utf-8')
                                 
-                            glossarized_term = '<span class="glossary_link tap" action="glossary" data-term="{1}">{0} </span>'.format(match_text, data_term_b64)
+                            glossarized_term = '<span class="glossary_link tap" action="glossary" data-term="{1}">{0}</span>'.format(match_text, data_term_b64)
 
                             # the match is replaced in the list, so the first occurrence of the match is the correct one
                             match_index = text_parts.index(match_text)

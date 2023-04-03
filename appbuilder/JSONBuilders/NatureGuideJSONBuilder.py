@@ -57,6 +57,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         nature_guide = self.app_generic_content.generic_content
 
+        # required, sets app_release_builder values
         inactivated_nuids = self.get_inactivated_nuids(nature_guide)
 
         start_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide, meta_node__node_type='root')
@@ -129,7 +130,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
                 # fill the space
                 # there is only one NodeFilterSpace per matrix_filter/node combination
-                space_query = NodeFilterSpace.objects.filter(node=child, matrix_filter__in=matrix_filters)
+                space_query = NodeFilterSpace.objects.filter(node=child, matrix_filter__in=matrix_filters).order_by('matrix_filter__position')
 
                 child_max_points = 0
                 child_space = {}
