@@ -94,6 +94,18 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 
+            overview_image = None
+            overview_image_urls = self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes='large')
+
+            if overview_image_urls:
+                overview_content_image = parent_node.meta_node.image(image_type='overview')
+                overview_image_licence = self.app_release_builder.content_image_builder.build_licence(overview_content_image)
+                overview_image = {
+                    'imageUrl': overview_image_urls,
+                    'licence': overview_image_licence,
+                }
+
+
             # the overview image should not be square
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
@@ -103,7 +115,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 'matrixFilters' : {},
                 'identificationMode' : identification_mode,
                 'slug' : primary_locale_slug,
-                'overviewImage' : self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes='large'),
+                'overviewImage' : overview_image,
                 'description' : parent_node.meta_node.description,
             }            
 
