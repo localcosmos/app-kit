@@ -35,9 +35,7 @@ class Glossary(GenericContent):
 
     def get_primary_localization(self, meta_app=None):
 
-        translation = {}
-
-        translation[self.name] = self.name
+        translation = super().get_primary_localization(meta_app)
 
         for entry in GlossaryEntry.objects.filter(glossary=self):
             translation[entry.term] = entry.term

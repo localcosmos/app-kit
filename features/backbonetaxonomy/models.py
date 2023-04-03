@@ -94,9 +94,7 @@ class BackboneTaxonomy(GenericContent):
         # avoid circular import
         from app_kit.models import MetaAppGenericContent
 
-        translation = {}
-
-        translation[self.name] = self.name
+        translation = super().get_primary_localization(meta_app)
 
         # add taxon locales for custom taxonomy
         custom_taxa = BackboneTaxa.objects.filter(backbonetaxonomy=self, taxon_source=CUSTOM_TAXONOMY_SOURCE)

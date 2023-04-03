@@ -85,8 +85,15 @@ class GenericContentMethodsMixin:
 
     
     def get_primary_localization(self, meta_app=None):
-        raise NotImplementedError('Generic Content do need a get_primary_localization method')
+        locale = {}
+        locale[self.name] = self.name
 
+        if self.global_options and 'description' in self.global_options:
+            description = self.get_global_option('description')
+            if description and len(description) > 0:
+                locale['description'] = description
+
+        return locale
 
     def manage_url(self):
         return 'manage_{0}'.format(self.__class__.__name__.lower())

@@ -76,9 +76,7 @@ class NatureGuide(ContentImageMixin, GenericContent):
 
 
     def get_primary_localization(self, meta_app=None):
-        locale = {}
-
-        locale[self.name] = self.name
+        locale = super().get_primary_localization(meta_app)
 
         # fetch all meta_nodes
         meta_nodes = MetaNode.objects.filter(nature_guide=self)

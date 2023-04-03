@@ -30,10 +30,17 @@ class JSONBuilder:
 
         generic_content_type = self.generic_content.__class__.__name__
 
+        description = None
+
+        if self.generic_content.global_options and 'description' in self.generic_content.global_options:
+
+            description = self.generic_content.get_global_option('description')
+
         features_json_entry = {
             'genericContentType' : generic_content_type,
             'uuid' : str(self.generic_content.uuid),
             'name' : self.generic_content.name,
+            'description': description,
             'slug' : self.app_release_builder.get_generic_content_slug(self.generic_content),
             'version' : self.generic_content.current_version,
         }
@@ -176,7 +183,7 @@ class JSONBuilder:
         
         if self.generic_content.global_options:
 
-            for key, value in self.app_generic_content.global_options.items():
+            for key, value in self.generic_content.global_options.items():
 
                 camel_case_key = self.to_camel_case(key)
 

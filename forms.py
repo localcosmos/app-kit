@@ -172,11 +172,13 @@ class GenericContentOptionsForm(forms.Form):
 
 class EditGenericContentNameForm(LocalizeableForm):
 
-    localizeable_fields = ['name']
+    localizeable_fields = ['name', 'description']
 
     content_type_id = forms.IntegerField(widget=forms.HiddenInput)
     generic_content_id = forms.IntegerField(widget=forms.HiddenInput)
     name = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['GenericContent']['name'])
+
+    description = forms.CharField(widget=forms.Textarea, required=False)
 
 
 class AddExistingGenericContentForm(forms.Form):

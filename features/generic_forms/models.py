@@ -101,9 +101,7 @@ class GenericForm(GenericContent):
     taxonomic_restrictions = GenericRelation(AppContentTaxonomicRestriction)
 
     def get_primary_localization(self, meta_app=None):
-        locale = {}
-
-        locale[self.name] = self.name
+        locale = super().get_primary_localization(meta_app)
 
         for generic_field in self.fields.all():
             

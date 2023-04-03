@@ -526,6 +526,7 @@ class EditGenericContentName(FormView):
             'content_type_id' : self.generic_content_type.id,
             'generic_content_id' : self.generic_content.id,
             'name' : self.generic_content.name,
+            'description': self.generic_content.get_global_option('description')
         })
 
         return initial
@@ -539,6 +540,14 @@ class EditGenericContentName(FormView):
 
         content_type = ContentType.objects.get(pk=form.cleaned_data['content_type_id'])
         generic_content = content_type.get_object_for_this_type(pk=form.cleaned_data['generic_content_id'])
+
+        description = form.cleaned_data['description']
+
+        if description:
+            if not generic_content.global_options:
+                generic_content.global_options = {}
+            
+            generic_content.global_options['description'] = description
 
         # meta_app has the name stored on meta_app.app
 

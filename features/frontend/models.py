@@ -33,11 +33,9 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
 
     def get_primary_localization(self, meta_app=None):
 
-        locale = {
-            '_meta' : {}
-        }
+        locale = super().get_primary_localization(meta_app)
 
-        locale[self.name] = self.name
+        locale['_meta'] = {}
 
         frontend_texts = FrontendText.objects.filter(frontend=self, frontend_name=self.frontend_name)
 
