@@ -829,6 +829,12 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         
         super().save(*args, **kwargs)
 
+        linked_profile = TaxonProfile.objects.filter(taxon_source='app_kit.features.nature_guides', name_uuid=self.name_uuid).first()
+        if linked_profile and linked_profile.taxon_latname != self.taxon_latname:
+            linked_profile.taxon_latname = self.taxon_latname
+            linked_profile.save()
+
+
 
     # user should call delete_branch, not delete() directly
     def delete(self, from_delete_branch=False, *args, **kwargs):

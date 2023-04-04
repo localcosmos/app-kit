@@ -1647,7 +1647,17 @@ class AppReleaseBuilder(AppBuilderBase):
     ###############################################################################################################
     # TAXON PROFILES
     # - one file per taxon profile which includes all languages
-    
+    def check_taxon_is_inactive(self, taxon):
+
+        is_inactive = False
+
+        for nuid in self.inactivated_nuids:
+            if taxon.taxon_nuid.startswith(nuid):
+                is_inactive = True
+                break
+
+        return is_inactive
+
     def _build_TaxonProfiles(self, app_generic_content):
 
         taxon_profiles = app_generic_content.generic_content        
@@ -1690,22 +1700,26 @@ class AppReleaseBuilder(AppBuilderBase):
         self.logger.info('Building taxon profiles for {0} collected taxa'.format(collected_taxa.count()))
         
         for profile_taxon in collected_taxa:
+
+            is_inactive = self.check_taxon_is_inactive(profile_taxon)
+
+            if is_inactive == False:
             
-            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
-                                                           languages=self.meta_app.languages())
+                profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
+                                                            languages=self.meta_app.languages())
 
-            
-            if profile_json is not None:
+                
+                if profile_json is not None:
 
-                # dump the profile
-                source_folder = os.path.join(app_absolute_taxonprofiles_path, profile_taxon.taxon_source)
-                if not os.path.isdir(source_folder):
-                    os.makedirs(source_folder)
+                    # dump the profile
+                    source_folder = os.path.join(app_absolute_taxonprofiles_path, profile_taxon.taxon_source)
+                    if not os.path.isdir(source_folder):
+                        os.makedirs(source_folder)
 
-                profile_filepath = os.path.join(source_folder, '{0}.json'.format(profile_taxon.name_uuid))
+                    profile_filepath = os.path.join(source_folder, '{0}.json'.format(profile_taxon.name_uuid))
 
-                with open(profile_filepath, 'w', encoding='utf-8') as f:
-                    json.dump(profile_json, f, indent=4, ensure_ascii=False)
+                    with open(profile_filepath, 'w', encoding='utf-8') as f:
+                        json.dump(profile_json, f, indent=4, ensure_ascii=False)
 
 
         # build search index and registry
