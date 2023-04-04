@@ -24,6 +24,8 @@ from .matrix_filter_space_forms import (DescriptiveTextAndImagesFilterSpaceForm,
 from app_kit.views import ManageGenericContent, ManageContentImage, DeleteContentImage
 from app_kit.view_mixins import MetaAppMixin, FormLanguageMixin, MetaAppFormLanguageMixin
 
+from app_kit.features.taxon_profiles.models import TaxonProfile
+
 
 from app_kit.utils import copy_model_instance
 
@@ -336,8 +338,13 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Meta
 
                 if taxon_profile:
                     # update taxon_profile taxon
-                    taxon_profile.set_taxon(new_taxon)
-                    taxon_profile.save()
+                    # check if profile for this taxon already exists
+                    existing_new_taxon_profile = TaxonProfile.objects.filter(taxon_source=new_taxon.taxon_source,
+                        taxon_latname=new_taxon.taxon_latname, taxon_author=new_taxon.taxon_author).first()
+
+                    if not existing_new_taxon_profile:
+                        taxon_profile.set_taxon(new_taxon)
+                        taxon_profile.save()
                 
             self.node.meta_node.set_taxon(new_taxon)
         else:
