@@ -153,6 +153,15 @@ class NatureGuide(ContentImageMixin, GenericContent):
 
         return crosslinks
 
+    def get_inactive_nuids(self):
+
+        inactive_nuids = set([])
+
+        for node in NatureGuidesTaxonTree.objects.filter(nature_guide=self):
+            if node.additional_data and node.additional_data.get('is_active', True) == False:
+                inactive_nuids.add(node.taxon_nuid)
+        
+        return inactive_nuids
 
     # return a LazyTaxonList instance
     def taxa(self):

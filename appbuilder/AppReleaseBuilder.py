@@ -1697,41 +1697,47 @@ class AppReleaseBuilder(AppBuilderBase):
 
         collected_taxa = taxon_profiles.collected_taxa()
 
-        self.logger.info('Building taxon profiles for {0} collected taxa'.format(collected_taxa.count()))
-        
+        active_collected_taxa = []
+
         for profile_taxon in collected_taxa:
 
             is_inactive = self.check_taxon_is_inactive(profile_taxon)
 
             if is_inactive == False:
+                active_collected_taxa.append(profile_taxon)
+
+
+        self.logger.info('Building taxon profiles for {0} collected taxa'.format(len(active_collected_taxa)))
+        
+        for profile_taxon in active_collected_taxa:
+
+            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
+                                                        languages=self.meta_app.languages())
+
             
-                profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
-                                                            languages=self.meta_app.languages())
+            if profile_json is not None:
 
-                
-                if profile_json is not None:
+                # dump the profile
+                source_folder = os.path.join(app_absolute_taxonprofiles_path, profile_taxon.taxon_source)
+                if not os.path.isdir(source_folder):
+                    os.makedirs(source_folder)
 
-                    # dump the profile
-                    source_folder = os.path.join(app_absolute_taxonprofiles_path, profile_taxon.taxon_source)
-                    if not os.path.isdir(source_folder):
-                        os.makedirs(source_folder)
+                profile_filepath = os.path.join(source_folder, '{0}.json'.format(profile_taxon.name_uuid))
 
-                    profile_filepath = os.path.join(source_folder, '{0}.json'.format(profile_taxon.name_uuid))
-
-                    with open(profile_filepath, 'w', encoding='utf-8') as f:
-                        json.dump(profile_json, f, indent=4, ensure_ascii=False)
+                with open(profile_filepath, 'w', encoding='utf-8') as f:
+                    json.dump(profile_json, f, indent=4, ensure_ascii=False)
 
 
         # build search index and registry
         languages = self.meta_app.languages()
-        taxon_profiles_registry = jsonbuilder.build_alphabetical_registry(collected_taxa, languages)
+        taxon_profiles_registry = jsonbuilder.build_alphabetical_registry(active_collected_taxa, languages)
         registry_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'registry.json')
         
         with open(registry_absolute_filepath, 'w', encoding='utf-8') as f:
             json.dump(taxon_profiles_registry, f, indent=4, ensure_ascii=False)
 
 
-        taxon_profiles_search_indices = jsonbuilder.build_search_indices(collected_taxa, languages)
+        taxon_profiles_search_indices = jsonbuilder.build_search_indices(active_collected_taxa, languages)
         search_indices_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'search.json')
 
         with open(search_indices_absolute_filepath, 'w', encoding='utf-8') as f:
