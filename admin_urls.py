@@ -95,7 +95,7 @@ urlpatterns = [
     path('mockbutton/',
         views.MockButton.as_view(), name='mockbutton'),
     # anycluster, prefixed with app-kit to distinguish it from the API anycluster
-    path('anycluster/', include('localcosmos_server.anycluster_schema_urls')),
+    #path('anycluster/', include('localcosmos_server.anycluster_schema_urls')),
     # spreadsheet import
     path('import-from-zip/<int:meta_app_id>/<int:content_type_id>/<int:generic_content_id>/',
          views.ImportFromZip.as_view(), name='import_from_zip'),

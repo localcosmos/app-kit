@@ -2519,5 +2519,3 @@ class TestReloadTags(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
             'object_id' : self.taxon_profile.id,
         }
         return url_kwargs
-
-
