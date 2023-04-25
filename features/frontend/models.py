@@ -95,7 +95,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
 
     @property
     def namespace_prefix(self):
-        prefix = '{0}:'.format(self.frontend_name)
+        prefix = '{0}__'.format(self.frontend_name)
         return prefix
 
     def get_namespaced_image_type(self, image_type):
