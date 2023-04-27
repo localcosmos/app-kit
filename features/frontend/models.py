@@ -72,7 +72,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         frontend_settings = self.get_settings()
 
         # image_type for frontends is namespaces like this:  FRONTEND_NAME:image_type , eg Flat:background
-        image_type_parts = namespaced_image_type.split(':')
+        image_type_parts = namespaced_image_type.split('__')
         image_type = image_type_parts[-1]
 
         image_definition = frontend_settings['userContent']['images'][image_type]

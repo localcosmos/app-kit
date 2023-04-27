@@ -12,10 +12,10 @@ from django.db import connection
 from rest_framework.views import APIView
 from rest_framework.exceptions import ParseError, NotFound, APIException
 from rest_framework.response import Response
-from rest_framework.renderers import TemplateHTMLRenderer
+from rest_framework.renderers import JSONRenderer
 from rest_framework.generics import GenericAPIView
 from rest_framework import status, mixins
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 
 from .serializers import (AppKitJobSerializer, AppKitJobAssignSerializer, AppKitJobCompletedSerializer,
                           AppKitJobStatusSerializer, ApiTokenSerializer)
@@ -66,6 +66,8 @@ class ObtainLCAuthToken(TokenObtainPairView):
 
 class AppKitJobList(AppKitApiMixin, mixins.ListModelMixin, GenericAPIView):
 
+    renderer_classes = (JSONRenderer,)
+    parser_classes = (JSONParser,)
     serializer_class = AppKitJobSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['platform']
@@ -97,6 +99,9 @@ class AppKitJobDetail(AppKitApiMixin, mixins.RetrieveModelMixin, mixins.DestroyM
     queryset = AppKitJobs.objects.all()
     serializer_class = AppKitJobSerializer
 
+    renderer_classes = (JSONRenderer,)
+    parser_classes = (JSONParser,)
+
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -121,6 +126,9 @@ class AlreadyAssigned(APIException):
 
 class AssignAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView):
 
+    renderer_classes = (JSONRenderer,)
+    parser_classes = (JSONParser,)
+
     queryset = AppKitJobs.objects.all()
     serializer_class = AppKitJobAssignSerializer
 
@@ -135,6 +143,10 @@ class AssignAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView):
 
 
 class UpdateAppKitJobStatus(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView):
+
+    renderer_classes = (JSONRenderer,)
+    parser_classes = (JSONParser,)
+    
     queryset = AppKitJobs.objects.all()
     serializer_class = AppKitJobStatusSerializer
 
@@ -155,7 +167,7 @@ class CompletedAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView
     queryset = AppKitJobs.objects.all()
     serializer_class = AppKitJobCompletedSerializer
     parser_classes = (MultiPartParser, )
-
+    renderer_classes =(JSONRenderer,)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

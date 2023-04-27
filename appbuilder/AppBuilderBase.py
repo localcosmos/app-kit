@@ -353,8 +353,16 @@ class AppBuilderBase:
 
 
     @property
+    def _frontend_cordova_path(self):
+        return os.path.join(self._frontend_root_path, 'cordova')
+
+    @property
     def _frontend_config_xml_path(self):
-        return os.path.join(self._frontend_root_path, 'cordova', 'config.xml')
+        return os.path.join(self._frontend_cordova_path, 'config.xml')
+
+    @property
+    def _frontend_cordova_res_path(self):
+        return os.path.join(self._frontend_cordova_path, 'res')
 
     @property
     def _frontend_www_path(self):
@@ -478,6 +486,11 @@ class AppBuilderBase:
     @property
     def _app_build_sources_path(self):
         return os.path.join(self._app_builder_path, 'sources')
+
+    # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/sources/
+    @property
+    def _app_build_sources_cordova_assets_path(self):
+        return os.path.join(self._app_build_sources_path, 'cordova')
 
     # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/{release|preview}/sources/www/
     # www content for browser, android, ios
@@ -674,9 +687,16 @@ class AppBuilderBase:
         # copy the frontends www folder to /preview
         shutil.copytree(self._frontend_www_path, self._app_www_path, dirs_exist_ok=True)
 
+        if not os.path.isdir(self._app_build_sources_cordova_assets_path):
+            os.makedirs(self._app_build_sources_cordova_assets_path)
+
         if os.path.isfile(self._frontend_config_xml_path):
-            target_config_xml_path = os.path.join(self._app_build_sources_path, 'config.xml')
+            target_config_xml_path = os.path.join(self._app_build_sources_cordova_assets_path, 'config.xml')
             shutil.copyfile(self._frontend_config_xml_path, target_config_xml_path)
+
+        if os.path.isdir(self._frontend_cordova_res_path):
+            target_cordova_res_path =  os.path.join(self._app_build_sources_cordova_assets_path, 'res')    
+            shutil.copytree(self._frontend_cordova_res_path, target_cordova_res_path)
 
 
     def _create_localcosmos_content_folder(self):

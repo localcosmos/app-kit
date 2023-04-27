@@ -55,39 +55,6 @@
 				},
 				"helpText": "Will be displayed on the apps main page",
 				"required": true
-			},
-			"fundingPartner1": {
-				"restrictions": {
-					"fileType": [
-						"jpg",
-						"jpeg",
-						"png"
-					]
-				},
-				"helpText": "Will be displayed in the funding partner sections",
-				"required": false
-			},
-			"fundingPartner2": {
-				"restrictions": {
-					"fileType": [
-						"jpg",
-						"jpeg",
-						"png"
-					]
-				},
-				"helpText": "Will be displayed in the funding partner sections",
-				"required": false
-			},
-			"fundingPartner3": {
-				"restrictions": {
-					"fileType": [
-						"jpg",
-						"jpeg",
-						"png"
-					]
-				},
-				"helpText": "Will be displayed in the funding partner sections",
-				"required": false
 			}
 		},
 		"texts": {
@@ -152,7 +119,6 @@
 			"cordova-plugin-file@6.0.2",
 			"cordova-plugin-geolocation@4.1.0",
 			"cordova-plugin-network-information@3.0.0",
-			"cordova-plugin-splashscreen@6.0.0",
 			"cordova-plugin-statusbar@3.0.0",
 			"cordova-sqlite-storage@6.0.0",
 			"cordova-plugin-wkwebview-file-xhr@3.1.0"

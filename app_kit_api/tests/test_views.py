@@ -1,23 +1,61 @@
 from app_kit.tests.common import test_settings
 from django.conf import settings
-from rest_framework.test import APIRequestFactory, APITestCase
+
 from django_tenants.test.cases import TenantTestCase
+from django.test import TestCase
+from django_tenants.utils import tenant_context
+
 from rest_framework import status
 from django.urls import reverse
 
-from app_kit.tests.mixins import WithTenantClient, WithUser
-from django_tenants.utils import tenant_context
+from app_kit.tests.mixins import WithTenantClient, WithUser, WithMetaApp
+
+
+from localcosmos_server.tests.mixins import WithApp, WithObservationForm
+
+from localcosmos_server.models import LocalcosmosUser
 
 import json, subprocess
 
 
 from app_kit.app_kit_api.views import ObtainLCAuthToken
 
-class TestObtainLCAuthToken(APITestCase):
+
+class TestObtainLCAuthToken(WithUser, WithTenantClient, TenantTestCase):
+
+    def setUp(self):
+        super().setUp()
+
+        self.superuser = self.create_superuser()
+
+        # create the app kit api user
+        self.username = settings.APP_KIT_APIUSER_USERNAME
+        self.password = settings.APP_KIT_APIUSER_PASSWORD
+        self.email = settings.APP_KIT_APIUSER_EMAIL = 'api@localcosmos.org'
+
+        self.app_kit_api_user = LocalcosmosUser.objects.create_user(self.username, self.email, self.password)
+
+
+    def get_post_data(self):
+
+        post_data = {
+            'username': self.username,
+            'password': self.password,
+        }
+
+        return post_data
+
 
     @test_settings
     def test_post(self):
-        pass
+        
+        post_data = self.get_post_data()
+
+        url = '/api/building/auth-token/' #reverse('get_appkit_api_token')
+
+        response = self.client.post(url, post_data, follow=True, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
 '''
@@ -25,7 +63,6 @@ class TestObtainLCAuthToken(APITestCase):
 '''
 from localcosmos_server.datasets.api.tests.test_views import WithDatasetPostData, CreatedUsersMixin
 from localcosmos_server.datasets.models import Dataset
-from localcosmos_server.tests.mixins import WithApp, WithObservationForm
 from anycluster.tests.common import GEOJSON_RECTANGLE
 from anycluster.definitions import GEOMETRY_TYPE_VIEWPORT
 

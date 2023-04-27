@@ -7,8 +7,8 @@ app_name = 'build_api'
 
 urlpatterns = [
     # app unspecific
-    path('', views.APIHome.as_view(), name='home'),
-    path('auth-token/', views.ObtainLCAuthToken.as_view(), name='get_token'),
+    path('', views.APIHome.as_view(), name='appkit_api_home'),
+    path('auth-token/', views.ObtainLCAuthToken.as_view(), name='get_appkit_api_token'),
     path('jobs/', views.AppKitJobList.as_view(), name='job_list'),
     path('jobs/<int:pk>/', views.AppKitJobDetail.as_view(), name='job_detail'),
     path('jobs/<int:pk>/assign/', views.AssignAppKitJob.as_view(), name='assign_job'),

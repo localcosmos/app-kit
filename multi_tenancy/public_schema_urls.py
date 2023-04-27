@@ -22,7 +22,7 @@ urlpatterns = [
     path('api/building/', include('app_kit.app_kit_api.urls')),
     
     # SETUP
-    path('', include('app_kit.multi_tenancy.setup_urls')), # set up demo app
+    path('', include('app_kit.multi_tenancy.setup_urls')),
 
     path('my-account/', login_required(views.MyAccount.as_view()), name='my_account'),
     path('edit-account/', login_required(views.EditAccount.as_view()), name='edit_account'),
@@ -33,7 +33,7 @@ urlpatterns = [
     
     # LEGAL
     path('privacy-statement/', app_kit_views.PrivacyStatement.as_view(), name='privacy_statement'),
-    path('legal_notice/', app_kit_views.LegalNotice.as_view(), name='legal_notice'),
+    path('legal-notice/', app_kit_views.LegalNotice.as_view(), name='legal_notice'),
 ]
 
 
