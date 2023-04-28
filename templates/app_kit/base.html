@@ -142,7 +142,7 @@
 								{% if meta_app.published_version == meta_app.current_version %}
 									<ul id="appbar-items" class="navbar-nav">
 										<li class="nav-item">
-											<a class="nav-link" href="{% url 'manage_templatecontent' meta_app.app.uid %}">{% trans 'Template content' %}</a>
+											<a class="nav-link" href="{% url 'template_content_home' meta_app.app.uid %}">{% trans 'Template content' %}</a>
 										</li>
 									</ul>
 								{% else %}
@@ -227,7 +227,7 @@
 							window.location.href=window.location;
 						}, 10000);
 					</script>
-				{% elif meta_app and meta_app.published_version == meta_app.current_version and 'online-content' not in request.path %}
+				{% elif meta_app and meta_app.published_version == meta_app.current_version and 'template-content' not in request.path %}
 					<br>
 					<div class="container">
 						<div class="row">
@@ -266,7 +266,14 @@
 										<strong>{% trans 'Status' %}:</strong> <span class="badge badge-success">{% trans 'published' %}</span><br>
 										<strong>{% trans 'Published version' %}: </strong> {{ meta_app.published_version }} <br>
 										<strong>{% trans 'Web app URL' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.app.get_url }}" target="_blank">{{ request.scheme }}://{{ meta_app.app.get_url }}</a><br>
-										<strong>{% trans 'Android .apk' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a><br>
+
+										<strong>{% trans 'Android .aab' %}:</strong>
+											{% if meta_app.app.apk_url %}
+												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a>
+											{% else %}
+												<span class="text-danger">{% trans 'not available' %}</span>
+											{% endif %}
+											<br>
 										
 										<strong>{% trans 'iOS .ipa' %}:</strong>
 										{% if meta_app.app.ipa_url %}

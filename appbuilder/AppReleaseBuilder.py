@@ -2210,6 +2210,10 @@ class AppReleaseBuilder(AppBuilderBase):
     def _published_ios_served_path(self):
         return os.path.join(self._published_served_packages_path, 'ios')
 
+    @property
+    def _published_ios_served_ipa_filepath(self):
+        return os.path.join(self._published_ios_served_path, self._ipa_filename)
+
     # browser app
     @property
     def _review_browser_zip_served_path(self):
@@ -2397,13 +2401,15 @@ class AppReleaseBuilder(AppBuilderBase):
     
     def _release_browser(self):
 
-        build_browser_www_folder = self._build_browser_www_path
+        cordova_builder = self.get_cordova_builder()
+
+        browser_built_www_path = cordova_builder._browser_built_www_path
 
         served_published_www_folder = self._published_browser_served_www_path
         if os.path.islink(served_published_www_folder):
             os.unlink(served_published_www_folder)
         
-        os.symlink(build_browser_www_folder, served_published_www_folder)
+        os.symlink(browser_built_www_path, served_published_www_folder)
 
         # update app.url, if hosted on LC
         localcosmos_private = self.meta_app.get_global_option('localcosmos_private')
@@ -2418,9 +2424,11 @@ class AppReleaseBuilder(AppBuilderBase):
             os.symlink(browser_zip_source, browser_zip_dest)
 
         else:
+            self.meta_app.app.published_version_path = self._published_browser_served_www_path
             # set the url of meta_app.app
-            url = 'https://{0}.localcosmos.org/'.format(self.meta_app.app.uid)
+            url = 'https://{0}.{1}/'.format(self.meta_app.app.uid, settings.APP_KIT_DOMAIN)
             self.meta_app.app.url = url
+        
             self.meta_app.app.save()
 
 
@@ -2439,7 +2447,7 @@ class AppReleaseBuilder(AppBuilderBase):
             self.meta_app.name, str(self.meta_app.uuid), self.meta_app.app.uid, self.meta_app.current_version, platform,
             ','.join(tenant_admin_emails))
             
-        self.send_admin_email(title, text_content)
+        #self.send_admin_email(title, text_content)
         
     ##############################################################################################################
     # RELEASE ANDROID AAB
@@ -2470,30 +2478,30 @@ class AppReleaseBuilder(AppBuilderBase):
             
             self.logger.info('Sending release email for Android')
 
-            #self._send_release_request_email('Android')
+            self._send_release_request_email('Android')
 
 
     ##############################################################################################################
     # RELEASE iOS IPA
     # - delete review ipa, symlink released ipa
     # - [TODO:] auto-upload to the app store via fastlane.tools
-    def _release_ios(self, meta_app, app_version):
+    def _release_ios(self):
 
         self.logger.info('Releasing iOS')
 
-        cordova_builder = self.get_cordova_builder(meta_app, app_version)
+        cordova_builder = self.get_cordova_builder()
 
         # remove review dir
-        ipa_review_folder = self._served_review_ipa_folder(meta_app)
-        if os.path.isdir(ipa_review_folder):
-            shutil.rmtree(ipa_review_folder)
+        ios_review_folder = self._review_ios_served_path
+        if os.path.isdir(ios_review_folder):
+            shutil.rmtree(ios_review_folder)
 
         # symlink the ipa to a browsable location
-        ipa_release_folder = self._served_published_ipa_folder(meta_app)
-        self.deletecreate_folder(ipa_release_folder)
+        ios_release_folder = self._published_ios_served_path
+        self.deletecreate_folder(ios_release_folder)
 
-        ipa_source = cordova_builder.get_ipa_filepath()
-        ipa_dest = self._served_published_ipa_filepath(meta_app, app_version)
+        ipa_source = cordova_builder._ipa_filepath
+        ipa_dest = self._published_ios_served_ipa_filepath
         os.symlink(ipa_source, ipa_dest)
 
         # for fastlane appstore release, done on a mac
@@ -2503,7 +2511,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         # until fastlane is implemented: send email
         # ad-hoc or appstores
-        if meta_app.build_settings['distribution'] == 'appstores':
+        if self.meta_app.build_settings['distribution'] == 'appstores':
             
             self.logger.info('Sending release email for iOS')
 
