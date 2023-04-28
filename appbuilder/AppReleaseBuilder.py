@@ -2408,7 +2408,10 @@ class AppReleaseBuilder(AppBuilderBase):
         served_published_www_folder = self._published_browser_served_www_path
         if os.path.islink(served_published_www_folder):
             os.unlink(served_published_www_folder)
-        
+
+        if not os.path.isdir(self._published_served_root):
+            os.makedirs(self._published_served_root)
+
         os.symlink(browser_built_www_path, served_published_www_folder)
 
         # update app.url, if hosted on LC
