@@ -2447,7 +2447,7 @@ class AppReleaseBuilder(AppBuilderBase):
             self.meta_app.name, str(self.meta_app.uuid), self.meta_app.app.uid, self.meta_app.current_version, platform,
             ','.join(tenant_admin_emails))
             
-        #self.send_admin_email(title, text_content)
+        self.send_admin_email(title, text_content)
         
     ##############################################################################################################
     # RELEASE ANDROID AAB
