@@ -1730,11 +1730,44 @@ class AppReleaseBuilder(AppBuilderBase):
 
         # build search index and registry
         languages = self.meta_app.languages()
-        taxon_profiles_registry = jsonbuilder.build_alphabetical_registry(active_collected_taxa, languages)
+        taxon_profiles_registry, localized_registries = jsonbuilder.build_alphabetical_registry(active_collected_taxa,
+            languages)
+
+        # store the general registry
         registry_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'registry.json')
         
         with open(registry_absolute_filepath, 'w', encoding='utf-8') as f:
             json.dump(taxon_profiles_registry, f, indent=4, ensure_ascii=False)
+
+        
+        # store the localized_registries
+        relative_localized_registries_root = os.path.join(app_relative_taxonprofiles_folder, 'vernacular')
+        absolute_localized_registries_root = os.path.join(app_absolute_taxonprofiles_path, 'vernacular')
+
+        if not os.path.isdir(absolute_localized_registries_root):
+            os.makedirs(absolute_localized_registries_root)
+
+        
+        self.build_features[generic_content_type]['localizedRegistries'] = {}
+
+        for language_code, localized_registry in localized_registries.items():
+
+            localized_registry_filename = '{0}.json'.format(language_code)
+
+            relative_localized_registry_filepath = os.path.join(relative_localized_registries_root,
+                localized_registry_filename)
+            absolute_localized_registry_filepath = os.path.join(absolute_localized_registries_root,
+                localized_registry_filename)
+
+            with open(absolute_localized_registry_filepath, 'w', encoding='utf-8') as f:
+                json.dump(localized_registry, f, indent=4, ensure_ascii=False)
+
+            
+            self.build_features[generic_content_type]['localizedRegistries'][language_code] = relative_localized_registry_filepath
+            
+
+        # store search indices
+        relative_search_index_path = os.path.join(app_relative_taxonprofiles_folder, 'search.json')
 
 
         taxon_profiles_search_indices = jsonbuilder.build_search_indices(active_collected_taxa, languages)

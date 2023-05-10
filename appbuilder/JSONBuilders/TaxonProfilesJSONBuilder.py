@@ -29,6 +29,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         self.trait_cache = {}
         self.built_taxon_profiles_cache = {}
 
+        self.nature_guide_ids = []
+
+        self.vernacular_names_from_nature_guide_cache = {}
+
 
     small_image_size = (200,200)
     large_image_size = (1000, 1000)
@@ -36,6 +40,49 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
     def build(self):
         return self._build_common_json()
+
+
+    def get_nature_guide_ids(self):
+
+        if not self.nature_guide_ids:
+
+            nature_guide_type = ContentType.objects.get_for_model(NatureGuide)
+            nature_guide_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app,
+                                                                    content_type=nature_guide_type)
+            self.nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
+
+        return self.nature_guide_ids
+
+
+    def get_vernacular_name_from_nature_guides(self, lazy_taxon):
+
+        name_uuid = str(lazy_taxon.name_uuid)
+
+        if name_uuid in self.vernacular_names_from_nature_guide_cache:
+            return self.vernacular_names_from_nature_guide_cache[name_uuid]
+
+        nature_guide_ids = self.get_nature_guide_ids()
+
+        vernacular_name = None
+
+        if lazy_taxon.taxon_source in self.installed_taxonomic_sources:
+
+            node_occurrence = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
+                meta_node__node_type='result',
+                name_uuid=lazy_taxon.name_uuid).first()
+
+            if node_occurrence:
+                vernacular_name = node_occurrence.meta_node.name
+
+        self.vernacular_names_from_nature_guide_cache[name_uuid] = vernacular_name
+
+        return vernacular_name
+
+
+    @property
+    def installed_taxonomic_sources(self):
+        installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
+        return installed_taxonomic_sources
 
 
     def collect_node_traits(self, node):
@@ -125,9 +172,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             taxon_profile_json['synonyms'].append(synonym_entry)
 
         for language_code in languages:
-            vernacular_name = profile_taxon.vernacular(language=language_code)
 
-            taxon_profile_json['vernacular'][language_code] = vernacular_name
+            preferred_vernacular_name = self.get_vernacular_name_from_nature_guides(profile_taxon)
+
+            if not preferred_vernacular_name:
+                preferred_vernacular_name = profile_taxon.vernacular(language=language_code)
+
+            taxon_profile_json['vernacular'][language_code] = preferred_vernacular_name
 
             all_vernacular_names = profile_taxon.all_vernacular_names(language=language_code)
             
@@ -159,14 +210,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get information (traits, node_names) from nature guides if possible
         # collect node images
         # only use occurrences in nature guides of this app
-        nature_guide_type = ContentType.objects.get_for_model(NatureGuide)
-        nature_guide_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app,
-                                                                  content_type=nature_guide_type)
-        nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
+        nature_guide_ids = self.get_nature_guide_ids()
 
-        installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
-
-        if profile_taxon.taxon_source in installed_taxonomic_sources:
+        if profile_taxon.taxon_source in self.installed_taxonomic_sources:
 
             meta_nodes = MetaNode.objects.filter(
                 nature_guide_id__in=nature_guide_ids,
@@ -341,7 +387,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         registry = {}
 
+        localized_registries = {}
+
         for lazy_taxon in taxon_list:
+
+            preferred_vernacular_name = None
+            preferred_image = None
+
+            preferred_name = self.get_vernacular_name_from_nature_guides(lazy_taxon)
             
             registry_entry = {
                 'taxonSource' : lazy_taxon.taxon_source,
@@ -358,21 +411,50 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 }
             }
 
-            for language_code in languages:
-                vernacular_name = lazy_taxon.vernacular(language=language_code)
-
-                if vernacular_name:
-                    registry_entry['vernacularNames'][language_code] = vernacular_name
-
             # images
             built_taxon_profile = self.built_taxon_profiles_cache.get(str(lazy_taxon.name_uuid), None)
             if built_taxon_profile:
                 registry_entry['images'] = built_taxon_profile['images']
 
+
+            for language_code in languages:
+
+                if not preferred_vernacular_name:
+                    preferred_vernacular_name = lazy_taxon.vernacular(language=language_code)
+
+                if preferred_vernacular_name:
+                    registry_entry['vernacularNames'][language_code] = preferred_vernacular_name
+
+                
+                # build the localized registry, same structure as BackboneTaxonomy vernacular_dic
+                preferred_name = preferred_vernacular_name
+                if not preferred_name:
+                    preferred_name = '{0} {1}'.format(lazy_taxon.taxon_latname, lazy_taxon.taxon_author)
+                    
+                if language_code not in localized_registries:
+                    localized_registries[language_code] = []
+
+                vernacular_dic = {
+                    'taxonSource': lazy_taxon.taxon_source,
+                    'taxonLatname': lazy_taxon.taxon_latname,
+                    'taxonAuthor': lazy_taxon.taxon_author,
+                    'nameUuid': str(lazy_taxon.name_uuid),
+                    'taxonNuid': lazy_taxon.taxon_nuid ,
+                    'imageUrl': preferred_image,
+                    'name': preferred_name,
+                }
+
+                localized_registries[language_code].append(vernacular_dic)
+
             registry[str(lazy_taxon.name_uuid)] = registry_entry
 
+        # sort the localited registries
+        for language_code, localized_registry in localized_registries.items():
 
-        return registry
+            sorted_localized_registry = sorted(localized_registry, key=lambda x: x['name'])
+            localized_registries[language_code] = sorted_localized_registry
+
+        return registry, localized_registries
             
 
     '''
