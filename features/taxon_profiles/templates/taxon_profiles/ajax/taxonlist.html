@@ -9,7 +9,7 @@
 			{% for taxon in taxa %}
 				{% get_taxon_profile taxon as profile %}
 				<li>
-					<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id taxon.taxon_source taxon.name_uuid %}">{{ taxon }}</a>
+					<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id taxon.taxon_source taxon.name_uuid %}"><i>{{ taxon }}</i></a>
 					{% if profile %}
 					{% else %}
 						<span class="badge badge-warning">{% trans 'no profile' %}</span>

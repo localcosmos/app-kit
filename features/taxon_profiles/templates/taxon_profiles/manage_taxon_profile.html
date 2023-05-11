@@ -11,14 +11,14 @@
 		<div class="row mb-4">
 			<div class="col-12">
 				<br>
-				{% if taxon.vernacular %}
+				{% if vernacular_name_from_nature_guides %}
+					<h3>{{ vernacular_name_from_nature_guides }}</h3>
+					<i>{{ taxon }}</i>
+				{% elif taxon.vernacular %}
 					<h3>{{ taxon.vernacular }}</h3>
-					({{ taxon }})
-				{% elif node_names %}
-					<h3>{{ node_names.0 }}</h3>
-					({{ taxon }})
+					<i>{{ taxon }}</i>
 				{% else %}
-					<h3>{{ taxon }}</h3>
+					<h3><i>{{ taxon }}</i></h3>
 				{% endif %}
 			</div>
 			<div class="col-12 mt-3">

@@ -404,6 +404,12 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         return link
 
+    # GENERIC CONTENTS
+    def get_generic_content_links(self, model):
+        content_type = ContentType.objects.get_for_model(model)
+        links = MetaAppGenericContent.objects.filter(meta_app=self, content_type=content_type)
+        return links
+
     # TAXONOMY
     def backbone(self):
         if self._backbone is None:

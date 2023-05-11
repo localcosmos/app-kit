@@ -212,14 +212,6 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
         form = view.get_form()
         self.assertEqual(form.__class__, ManageTaxonTextsForm)
 
-    @test_settings
-    def test_get_meta_node_names(self):
-
-        view = self.get_view()
-        view.set_taxon(view.request, **view.kwargs)
-
-        meta_node_names = view.get_meta_node_names()
-        self.assertEqual(list(meta_node_names), [self.meta_node.name])
 
     @test_settings
     def test_get_context_data(self):

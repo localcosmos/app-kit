@@ -1,4 +1,5 @@
 import re
+from django.conf import settings
 
 def import_module(module):
     module = str(module)

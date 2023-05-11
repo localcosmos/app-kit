@@ -109,21 +109,13 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         return form_class(self.taxon_profiles, self.taxon_profile, **self.get_form_kwargs())
 
 
-    def get_meta_node_names(self):
-
-        meta_node_names = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source,
-                taxon_latname=self.taxon.taxon_latname,
-                taxon_author=self.taxon.taxon_author).values_list('name', flat=True)
-
-        return meta_node_names
-
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['taxon'] = self.taxon
         context['taxon_profile'] = self.taxon_profile
+        context['vernacular_name_from_nature_guides'] = self.taxon.get_primary_locale_vernacular_name_from_nature_guides(
+            self.meta_app)
         context['content_type'] = ContentType.objects.get_for_model(self.taxon_profile)
-        context['node_names'] = self.get_meta_node_names()
         context['taxon_profiles'] = self.taxon_profiles
         context['generic_content'] = self.taxon_profiles
         context['text_types'] = TaxonTextType.objects.all().exists()

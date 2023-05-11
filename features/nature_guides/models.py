@@ -1518,3 +1518,21 @@ class MatrixFilterRestriction(models.Model):
     values = models.ManyToManyField(MatrixFilterSpace)
     encoded_space = models.JSONField(null=True) # for ranges [2,4] and numbers only
     
+
+
+def get_vernacular_name_from_nature_guides(meta_app, lazy_taxon):
+
+    installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
+
+    if lazy_taxon.taxon_source in installed_taxonomic_sources:
+
+        nature_guide_links = meta_app.get_generic_content_links(NatureGuide)
+        nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
+
+        meta_node = MetaNode.objects.filter(nature_guide_id__in=nature_guide_ids,
+            name_uuid=lazy_taxon.name_uuid).first()
+
+        if meta_node:
+            return meta_node.name
+
+    return None
