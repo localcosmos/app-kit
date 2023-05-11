@@ -19,7 +19,11 @@
 			{% endif %}
 			
 			{% if field.name == 'color_2' %}
-					<div id="color-2-container" class="col-6 {% if form.initial.gradient %}{% else %}d-none{% endif %}">
+					<div id="color-2-container" class="col-6 {% if form.initial.color_type == 'gradient' or form.initial.color_type == 'triplet' %}{% else %}d-none{% endif %}">
+			{% endif %}
+
+			{% if field.name == 'color_3' %}
+					<div id="color-3-container" class="col-6 {% if form.initial.color_type == 'triplet' %}{% else %}d-none{% endif %}">
 			{% endif %}
 
 			{% include 'localcosmos_server/bootstrap_field.html' %}
@@ -27,8 +31,12 @@
 			{% if field.name == 'color' %}
 					</div>
 			{% endif %}
-			
+
 			{% if field.name == 'color_2' %}
+					</div>
+			{% endif %}
+			
+			{% if field.name == 'color_3' %}
 					</div>
 				</div>
 			{% endif %}
@@ -48,22 +56,31 @@
 	
 	<script>
 		(function(){
-			var trait_value_color = document.getElementById("trait-value-color");
+			const trait_value_color = document.getElementById("trait-value-color");
 			
-			var color_1 = $("#id_color");
-			var color_2 = $("#id_color_2");
-			var gradient = $("#id_gradient");
+			const color_1 = $("#id_color");
+			const color_2 = $("#id_color_2");
+			const color_3 = $("#id_color_3");
+			const color_type = $("#id_color_type");
+
+			const color_2_container = $("#color-2-container");
+			const color_3_container = $("#color-3-container");
 			
 			function update_trait_value_color(event){
-				let gradient_is_checked = gradient.is(":checked");
+				let selected_color_type = color_type.val();
 				
 				color_1_value = color_1.val();
 				
 				
-				if (gradient_is_checked){
+				if (selected_color_type == "gradient"){
 					color_2_value = color_2.val();
 					
 					trait_value_color.style.backgroundImage = "linear-gradient(to right, " + color_1_value + "," + color_2_value + ")";
+				}
+				else if (selected_color_type == "triplet"){
+					color_2_value = color_2.val();
+					color_3_value = color_3.val();
+					trait_value_color.style.backgroundImage = "linear-gradient(to right, " + color_1_value + ", " + color_1_value + " 33%, " + color_2_value + " 33%, " + color_2_value + " 66%, " + color_3_value + " 66%, " + color_3_value + " 100%)";
 				}
 				else {
 					trait_value_color.style.backgroundImage = "";
@@ -74,16 +91,22 @@
 			
 			color_1.on("change", update_trait_value_color);
 			color_2.on("change", update_trait_value_color);
+			color_3.on("change", update_trait_value_color);
 			
-			var color_2_container = $("#color-2-container");
-			gradient.on("change", function(event){
-				let gradient_is_checked = gradient.is(":checked");
+			color_type.on("change", function(event){
+				let selected_color_type = color_type.val();
 				
-				if (gradient_is_checked == true){
+				if (selected_color_type == "gradient"){
 					color_2_container.removeClass("d-none");
+					color_3_container.addClass("d-none");
+				}
+				else if (selected_color_type == "triplet") {
+					color_2_container.removeClass("d-none");
+					color_3_container.removeClass("d-none");
 				}
 				else {
 					color_2_container.addClass("d-none");
+					color_3_container.addClass("d-none");
 				}
 				
 				update_trait_value_color(null);

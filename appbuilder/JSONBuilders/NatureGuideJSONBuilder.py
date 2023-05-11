@@ -516,10 +516,12 @@ class SpaceListSerializerMixin:
 
                 description = None
                 gradient = False
+                color_type = 'single'
 
                 if subspace.additional_information:
                     description = subspace.additional_information.get('description', None)
                     gradient = subspace.additional_information.get('gradient', False)
+                    color_type = subspace.additional_information.get('color_type', 'single')
                 
                 space_json = {
                     'spaceIdentifier' : space_identifier,
@@ -530,6 +532,7 @@ class SpaceListSerializerMixin:
                     space_json.update({
                         'html' : html,
                         'gradient' : gradient,
+                        'color_type': color_type,
                         'description' : description,
                     })
 

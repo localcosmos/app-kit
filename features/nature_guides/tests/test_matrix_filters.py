@@ -785,8 +785,14 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         )
 
         if isinstance(color_list[0], list):
+
+            if len(color_list) == 2:
+                color_type = 'gradient'
+            elif len(color_list) == 3:
+                color_type = 'triplet'
+
             matrix_filter_space.additional_information = {
-                'gradient' : True,
+                'color_type' : color_type,
             }
 
         matrix_filter_space.save()
@@ -878,6 +884,14 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         color_filter.set_encoded_space()
         expected_space_w_gradient = [[111,222,255,1],[255,222,111,1], [[0,0,0,1],[255,255,255,1]]]
         self.assertEqual(color_filter.matrix_filter.encoded_space, expected_space_w_gradient)
+
+        # one triplet
+        triplet = [[0,0,0,1],[255,255,255,1], [100,100,100,1]]
+        space_4 = self.create_space(triplet)
+
+        color_filter.set_encoded_space()
+        expected_space_w_triplet = [[111,222,255,1],[255,222,111,1], [[0,0,0,1],[255,255,255,1]], [[0,0,0,1],[255,255,255,1], [100,100,100,1]]]
+        self.assertEqual(color_filter.matrix_filter.encoded_space, expected_space_w_triplet)
         
         
     @test_settings
@@ -975,6 +989,13 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         self.assertEqual(gradient_html, expected_gradient_html)
 
+        # triplet
+        triplet = [[0,0,0,1],[255,255,255,1], [100,100,100,1]]
+        triplet_html = color_filter.encoded_space_to_html(triplet)
+        expected_triplet_html = 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1) 33%, rgba(255,255,255,1) 33%, rgba(255,255,255,1) 66%, rgba(100,100,100,1) 66%, rgba(100,100,100,1) 100%)'
+
+        self.assertEqual(triplet_html, expected_triplet_html)
+
 
     @test_settings
     def test_decode(self):
@@ -995,6 +1016,13 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         self.assertEqual(gradient_html, expected_gradient_html)
 
+        # triplet
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        triplet_html = color_filter.decode(triplet)
+        expected_triplet_html = 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1) 33%, rgba(255,255,255,1) 33%, rgba(255,255,255,1) 66%, rgba(100,100,100,1) 66%, rgba(100,100,100,1) 100%)'
+
+        self.assertEqual(triplet_html, expected_triplet_html)
+
 
     @test_settings
     def test_get_choices(self):
@@ -1011,19 +1039,28 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
 
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        space_3 = self.create_space(triplet)
+
         choices = color_filter._get_choices()
         expected_choices = [
             ('[111,222,255,1]', 'rgba(111,222,255,1)', {
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
-                'gradient' : False,
+                'color_type' : 'single',
             }),
             ('[[0,0,0,1],[255,255,255,1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
                 'modify' : True,
                 'space_id' : space_2.id,
                 'description' : None,
-                'gradient': True,
+                'color_type': 'gradient',
+            }),
+            ('[[0,0,0,1],[255,255,255,1],[100,100,100,1]]', 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1) 33%, rgba(255,255,255,1) 33%, rgba(255,255,255,1) 66%, rgba(100,100,100,1) 66%, rgba(100,100,100,1) 100%)', {
+                'modify' : True,
+                'space_id' : space_3.id,
+                'description' : None,
+                'color_type': 'triplet',
             })
         ]
 
@@ -1045,6 +1082,9 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
 
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        space_3 = self.create_space(triplet)
+
         self.matrix_filter.refresh_from_db()
         color_filter = ColorFilter(self.matrix_filter)
         field = color_filter.get_matrix_form_field(self.meta_app)
@@ -1054,13 +1094,19 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
                 'modify':True,
                 'space_id':space_1.id,
                 'description' : None,
-                'gradient' : False,
+                'color_type' : 'single',
             }),
             ('[[0,0,0,1],[255,255,255,1]]', 'linear-gradient(to right, rgba(0,0,0,1),rgba(255,255,255,1))', {
                 'modify' : True,
                 'space_id' : space_2.id,
                 'description' : None,
-                'gradient': True,
+                'color_type': 'gradient',
+            }),
+            ('[[0,0,0,1],[255,255,255,1],[100,100,100,1]]', 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,1) 33%, rgba(255,255,255,1) 33%, rgba(255,255,255,1) 66%, rgba(100,100,100,1) 66%, rgba(100,100,100,1) 100%)', {
+                'modify' : True,
+                'space_id' : space_3.id,
+                'description' : None,
+                'color_type': 'triplet',
             })
         ]
         
@@ -1106,6 +1152,9 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         gradient = [[0,0,0,1],[255,255,255,1]]
         space_2 = self.create_space(gradient)
 
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        space_3 = self.create_space(triplet)
+
         field = color_filter.get_node_space_definition_form_field(self.meta_app, from_url)
         self.assertTrue(isinstance(field, ObjectLabelModelMultipleChoiceField))
         self.assertTrue(isinstance(field.widget, DefineColorsWidget))
@@ -1140,6 +1189,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         expected_initial = {
             'color' : '#6fdeff',
+            'color_type': 'single',
         }
 
         self.assertEqual(expected_initial, initial)
@@ -1152,11 +1202,26 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         expected_initial_2 = {
             'color' : '#000000',
-            'color_2' : '#ffffffff',
-            'gradient' : True,
+            'color_2' : '#ffffff',
+            'color_type' : 'gradient',
         }
 
         self.assertEqual(initial_2, expected_initial_2)
+
+        # triplet
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        space_3 = self.create_space(triplet)
+
+        initial_3 = color_filter.get_single_space_initial(space_3)
+
+        expected_initial_3 = {
+            'color' : '#000000',
+            'color_2' : '#ffffff',
+            'color_3' : '#646464',
+            'color_type' : 'triplet',
+        }
+
+        self.assertEqual(initial_3, expected_initial_3)
 
 
     @test_settings
@@ -1168,6 +1233,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         data = {
             'input_language' : 'en',
             'color' : '#000000',
+            'color_type': 'single',
         }
 
         form = ColorFilterSpaceForm(data=data)
@@ -1185,7 +1251,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
             'color' : '#ff00ff',
             'color_2': '#00ff00',
             'description' : 'rainbow',
-            'gradient' : True,
+            'color_type' : 'gradient',
         }
 
         form_2 = ColorFilterSpaceForm(data=data_2)
@@ -1197,7 +1263,27 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
         self.assertEqual(space_2.matrix_filter, self.matrix_filter)
         self.assertEqual(space_2.encoded_space, [[255,0,255,1],[0,255,0,1]])
         self.assertEqual(space_2.additional_information['description'], 'rainbow')
-        self.assertEqual(space_2.additional_information['gradient'], True)
+        self.assertEqual(space_2.additional_information['color_type'], 'gradient')
+
+
+        # triplet
+        data_3 = {
+            'input_language' : 'en',
+            'color' : '#ff00ff',
+            'color_2': '#00ff00',
+            'color_3': '#646464',
+            'color_type' : 'triplet',
+        }
+
+        form_3 = ColorFilterSpaceForm(data=data_3)
+
+        is_valid = form_3.is_valid()
+        self.assertEqual(form_3.errors, {})
+
+        space_3 = color_filter.save_single_space(form_3)
+        self.assertEqual(space_3.matrix_filter, self.matrix_filter)
+        self.assertEqual(space_3.encoded_space, [[255,0,255,1],[0,255,0,1],[100,100,100,1]])
+        self.assertEqual(space_3.additional_information['color_type'], 'triplet')
         
         
     @test_settings
@@ -1275,6 +1361,15 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
 
         space_list = color_filter.get_filter_space_as_list(node_filter_space)
         self.assertEqual(space_list, [[111,222,255,1], [[0,0,0,1],[255,255,255,1]]])
+
+
+        # triplet
+        triplet = [[0,0,0,1],[255,255,255,1],[100,100,100,1]]
+        space_3 = self.create_space(triplet)
+
+        node_filter_space.values.add(space_3)
+        space_list = color_filter.get_filter_space_as_list(node_filter_space)
+        self.assertEqual(space_list, [[111,222,255,1], [[0,0,0,1],[255,255,255,1]], [[0,0,0,1],[255,255,255,1],[100,100,100,1]]])
         
 
     @test_settings
@@ -1305,7 +1400,7 @@ class TestColorFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilters
             self.assertFalse(is_valid)
 
 
-        valid_encoded_spaces = [[111,222,255,1], [[0,0,0,0],[255,255,255,1]] ]
+        valid_encoded_spaces = [[111,222,255,1], [[0,0,0,0],[255,255,255,1]], [[0,0,0,1],[255,255,255,1],[100,100,100,1]] ]
 
         for space in valid_encoded_spaces:
             is_valid = color_filter.validate_encoded_space(space)

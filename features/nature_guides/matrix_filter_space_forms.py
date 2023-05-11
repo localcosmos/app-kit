@@ -50,15 +50,22 @@ class TextOnlyFilterSpaceForm(MatrixFilterSpaceForm):
 '''
     define/change an rgb color
 '''
+COLOR_TYPES = (
+    ('single', _('single color')),
+    ('gradient', _('gradient')),
+    ('triplet', _('triplet')),
+)
 class ColorFilterSpaceForm(MatrixFilterSpaceForm):
 
     localizeable_fields = []
 
-    gradient = forms.BooleanField(required=False, label=_('gradient'))
+    color_type = forms.ChoiceField(label=_('Color type'), choices=COLOR_TYPES)
 
     color = forms.CharField(widget=forms.TextInput(attrs={'type':'color'}))
 
     color_2 = forms.CharField(required=False, widget=forms.TextInput(attrs={'type':'color'}))
+
+    color_3 = forms.CharField(required=False, widget=forms.TextInput(attrs={'type':'color'}))
     
     description = forms.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['ColorFilter']['description'],
                                   required=False)

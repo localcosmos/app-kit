@@ -7,7 +7,7 @@
 {% endblock %}
 {% block label %}
 	<label for="choice_{{ widget.name }}_{{ option.index }}" class="matrix-filter-color">
-		<div class="square responsiveback" {% if option.gradient %}style="background-image: {{ option.label }};"{% else %}style="background-color: {{ option.label }};"{% endif %}></div>
+		<div class="square responsiveback" {% if option.color_type == 'gradient' or option.color_type == 'triplet' %}style="background-image: {{ option.label }};"{% else %}style="background-color: {{ option.label }};"{% endif %}></div>
 		{% if option.description %}
 			<div>{{ option.description }}</div>
 		{% endif %}

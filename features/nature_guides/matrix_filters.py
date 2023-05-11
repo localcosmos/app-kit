@@ -675,7 +675,11 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             for color in encoded_space:
                 rgba_str = self.list_to_rgba_str(color)
                 gradient_colors.append(rgba_str)
-            html = 'linear-gradient(to right, {0})'.format(','.join(gradient_colors))
+
+            if len(encoded_space) == 2:
+                html = 'linear-gradient(to right, {0})'.format(','.join(gradient_colors))
+            else:
+                html = 'linear-gradient(to right, {0}, {0} 33%, {1} 33%, {1} 66%, {2} 66%, {2} 100%)'.format(gradient_colors[0], gradient_colors[1], gradient_colors[2])
         else:
             html = self.list_to_rgba_str(encoded_space)
 
@@ -691,15 +695,18 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         for space in self.matrix_filter.get_space():
 
             description = None
-            gradient = False
+            color_type = 'single'
 
             if space.additional_information:
                 description = space.additional_information.get('description', None)
-                gradient = space.additional_information.get('gradient', False)
 
-                # fallback
-                if isinstance(space.encoded_space[0], list):
-                    gradient = True
+                if 'color_type' in space.additional_information:
+                    color_type = space.additional_information['color_type']
+                else:
+                    # fallback for older colors
+                    gradient = space.additional_information.get('gradient', False)
+                    if gradient:
+                        color_type = 'gradient'
 
             encoded_space = space.encoded_space
 
@@ -714,7 +721,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
                 'modify' : True,
                 'space_id' : space.id,
                 'description' : description,
-                'gradient' : gradient,
+                'color_type' : color_type,
             }
 
             choice = (choice_value, space_html, extra_kwargs)
@@ -759,8 +766,10 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         encoded_space = matrix_filter_space.encoded_space
 
         if isinstance(encoded_space[0], list):
-            color_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space[0])
-            color_2_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space[1])
+            color_hex = self.encoded_space_to_hex(encoded_space[0])
+            color_2_hex = self.encoded_space_to_hex(encoded_space[1])
+            if len(encoded_space) == 3:
+                color_3_hex = self.encoded_space_to_hex(encoded_space[2])
 
         else:
             color_hex = self.encoded_space_to_hex(matrix_filter_space.encoded_space)
@@ -768,9 +777,12 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         # currently, the html color input does not support alpha channels, respect leading #
         if len(color_hex) > 7:
             color_hex = color_hex[:7]
+
+        initial_colortype = 'single'
         
         initial = {
             'color' : color_hex,
+            'color_type': initial_colortype
         }
 
         if matrix_filter_space.additional_information:
@@ -778,12 +790,15 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             if description:
                 initial['description'] = description
 
-            gradient = matrix_filter_space.additional_information.get('gradient', False)
-            initial['gradient'] = gradient
+            color_type = matrix_filter_space.additional_information.get('color_type', 'single')
+            initial['color_type'] = color_type
 
-            if gradient:
-                initial['color_2'] = color_2_hex
-                
+            if color_type == 'gradient':
+                initial['color_2'] = color_2_hex[:7]
+            elif color_type == 'triplet':
+                initial['color_2'] = color_2_hex[:7]
+                initial['color_3'] = color_3_hex[:7]
+        
         return initial
 
     ### SAVE ONE COLOR
@@ -807,9 +822,9 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
             space.additional_information = {}
             
         description = form.cleaned_data.get('description', None)
-        gradient = form.cleaned_data.get('gradient', False)
+        color_type = form.cleaned_data.get('color_type', 'single')
 
-        space.additional_information['gradient'] = gradient
+        space.additional_information['color_type'] = color_type
         
         if description:
             space.additional_information['description'] = description
@@ -822,9 +837,16 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
         encoded_space = self.encode_from_hex(color_1_hex_value)
 
         color_2_hex_value = form.cleaned_data.get('color_2', None)
-        if gradient and color_2_hex_value:
+        color_3_hex_value = form.cleaned_data.get('color_3', None)
+
+        if color_type == 'gradient' and color_2_hex_value:
             encoded_color_2 = self.encode_from_hex(color_2_hex_value)
             encoded_space = [encoded_space, encoded_color_2]
+
+        elif color_type == 'triplet' and color_2_hex_value and color_3_hex_value:
+            encoded_color_2 = self.encode_from_hex(color_2_hex_value)
+            encoded_color_3 = self.encode_from_hex(color_3_hex_value)
+            encoded_space = [encoded_space, encoded_color_2, encoded_color_3]
 
         space.encoded_space = encoded_space
         space.save(old_encoded_space=old_encoded_space)
