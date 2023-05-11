@@ -225,8 +225,8 @@ class ChildrenCacheManager:
 
         identification_mode = IDENTIFICATION_MODE_STRICT
 
-        #if self.meta_node.settings:
-        #    identification_mode = self.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
+        if self.meta_node.settings:
+            identification_mode = self.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
         data['identification_mode'] = identification_mode
         
@@ -329,6 +329,7 @@ class ChildrenCacheManager:
             'max_points' : max_points,
             'is_visible' : True,
             'name' : child.meta_node.name,
+            'morphotype': child.meta_node.morphotype,
             'decision_rule' : decision_rule,
             'taxon' : None,
         }
@@ -553,6 +554,9 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     # for unique_together constraint only
     nature_guide = models.ForeignKey(NatureGuide, on_delete=models.CASCADE)
     name = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'], null=True)
+
+    morphotype = models.CharField(max_length=355, null=True)
+
     node_type = models.CharField(max_length=30, choices=NODE_TYPES)
 
     description = models.TextField(null=True)

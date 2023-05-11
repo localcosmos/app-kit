@@ -16,9 +16,11 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             AddExistingGenericContent, ListManageApps, RemoveAppGenericContent, ManageAppLanguages,
             DeleteAppLanguage, AddTaxonomicRestriction, RemoveTaxonomicRestriction, ManageContentImageMixin,
             ManageContentImage, ManageContentImageWithText, DeleteContentImage, ReloadTags,
-            StoreObjectOrder, MockButton, DeleteLocalizedContentImage, TagAnyElement,
+            MockButton, DeleteLocalizedContentImage, TagAnyElement,
             ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
             ManageLocalizedContentImage)
+
+from localcosmos_server.generic_views import StoreObjectOrder
 
 from app_kit.forms import (CreateGenericContentForm, CreateAppForm, EditGenericContentNameForm,
                            TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm,

@@ -3,6 +3,7 @@ from django.conf import settings
 TEXT_LENGTH_RESTRICTIONS = {
     'MetaNode' : {
         'name' : 40,
+        'morphotype' : 40,
     },
     'NatureGuidesTaxonTree' : {
         'decision_rule' : 40,

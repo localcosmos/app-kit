@@ -145,6 +145,9 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     name = forms.CharField(help_text=_('Name of the taxon or group.'),
                            max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'])
 
+    morphotype = forms.CharField(help_text=_('Morphotype, like sex or development stage'), required=False,
+                           max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['morphotype'])
+
     taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
                        taxon_search_url=get_appkit_taxon_search_url, required=False)
 

@@ -110,6 +110,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
                 'name' : parent_node.meta_node.name,
+                'morphotype': parent_node.meta_node.morphotype,
                 'taxon' : None,
                 'children' : [],
                 'matrixFilters' : {},
@@ -206,7 +207,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'space' : child_space,
                     'maxPoints' : child_max_points,
                     'isPossible' : True,
-                    'name' : child.meta_node.name, # all langs as json
+                    'name' : child.meta_node.name,
+                    'morphotype': child.meta_node.morphotype,
                     'decisionRule' : child.decision_rule,
                     'taxon' : None,
                     'slug' : child_primary_locale_slug,

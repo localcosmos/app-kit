@@ -91,7 +91,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         # form without node (-> create new link) and without matrix filters
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
 
-        self.assertEqual(len(form.fields), 8)
+        self.assertEqual(len(form.fields), 9)
         self.assertEqual(form.from_url, from_url)
         self.assertEqual(form.node, None)
 
@@ -261,6 +261,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
             'input_language' : 'en',
             'node_type' : 'node',
             'name' : 'name',
+            'morphotype' : 'morphotype',
         }
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
