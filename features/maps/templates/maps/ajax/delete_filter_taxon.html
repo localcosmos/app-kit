@@ -1,0 +1,12 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block extra_success_js %}
+    <script>
+
+    $.get("{% url 'manage_map_taxonomic_filter' meta_app.id map.id taxonomic_filter.id %}", function(html){
+        $("#LargeModalContent").html(html);
+        ajaxify("LargeModalContent");
+    });
+
+    </script>
+{% endblock %}

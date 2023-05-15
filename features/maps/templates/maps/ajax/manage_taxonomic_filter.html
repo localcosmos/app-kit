@@ -1,0 +1,52 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n app_tags localcosmos_tags %}
+
+{% block title %}
+    {% if taxonomic_filter %}{% trans 'Manage taxonomic filters' %}{% else %}{% trans 'Create taxonomic filter' %}{% endif %}
+{% endblock %}
+
+
+{% block action %}{% if taxonomic_filter %}{% url 'manage_map_taxonomic_filter' meta_app.id map.id taxonomic_filter.id %}{% else %}{% url 'create_map_taxonomic_filter' meta_app.id map.id %}{% endif %}{% endblock %}
+
+{% block body %}
+	{% render_bootstrap_form form %}
+    {% if taxonomic_filter %}
+        <div class="row">
+            {% if taxonomic_filter.taxa %}
+                <div class="col-12">
+                    <h4>{% blocktrans with name=taxonomic_filter.name %}Taxa of {{ name }}{% endblocktrans %}</h4>
+                </div>
+                {% for taxon_link in taxonomic_filter.taxa %}
+                    <div class="col-12">
+                        {{ taxon_link.taxon_latname }} {{ taxon_link.taxon_author }} <a href="{% url 'delete_map_filter_taxon' meta_app.id map.id taxonomic_filter.id taxon_link.id %}" class="btn btn-xs btn-danger xhr" ajax-target="ModalContent">{% trans 'delete' %}</a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        {% trans 'This filter has no taxa yet' %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+    {% if success %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="alert alert-success">
+                    {% trans 'Successfully saved taxonomic filter' %}
+                </div>
+            </div>
+        </div>
+        <script>
+            $.get("{% url 'get_map_taxonomic_filters' meta_app.id map.id %}", function(html){
+                $("#map-taxonomic-filters").html(html);
+                ajaxify('map-taxonomic-filters');
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}

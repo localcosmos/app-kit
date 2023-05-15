@@ -1,0 +1,26 @@
+{% load i18n localcosmos_tags %}
+<div class="row">
+    {% if taxonomic_filters %}
+        {% for taxonomic_filter in taxonomic_filters %}
+            <div id="ctype-{{ taxonomic_filter|ctype_id }}-{{ taxonomic_filter.id }}" class="col-12 my-2">
+                <strong>{{ taxonomic_filter.name }}</strong>
+
+                <div class="btn-group dropup">
+                    <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% trans 'Modify' %} <span class="caret"></span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a data-url="{% url 'manage_map_taxonomic_filter' meta_app.id generic_content.id taxonomic_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                        <a data-url="{% url 'delete_map_taxonomic_filter' taxonomic_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}    
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                {% trans 'You have not defined any taxonomic filters yet.' %}
+            </div>
+        </div>
+    {% endif %}
+</div>

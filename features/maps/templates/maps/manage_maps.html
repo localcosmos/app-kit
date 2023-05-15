@@ -10,96 +10,176 @@
 			{% endif %}
 		</div>
 	</div>
+
 	<div id="map-{{ generic_content.id }}" class="map {{ generic_content.map_type }}-map"></div>
-	<div class="row mt-4">
+
+	<div class="row mt-3">
+		<div class="col-12">
+			{% if project_area %}
+				<h4><span class="badge badge-success">{% trans 'project area active' %}</span></h4>
+			{% else %}
+				<h4><span class="badge badge-info">{% trans 'No area restrictions' %}</span></h4>
+			{% endif %}
+		</div>
+	</div>
+	<div class="row mt-5">
 		<div class="col-12">
 			<h4>{% trans 'Initial view' %}</h4>
 			{% trans 'You can set the initial zoom level and center for the Map in your app.' %}<br>
 			<button id="setAppMapInitialView" type="button" class="btn btn-outline-primary">{% trans 'Set current view as initial view' %}</button>
 		</div>
 	</div>
-	<div class="row mt-4">
+	<div class="row mt-5">
 		<div class="col-12">
 			<h4>{% trans 'Project area' %}</h4>
 			{% trans 'Optionally restrict you project to a specific area. This only has an effect if you collect observations.' %}<br>
 			<a href="{% url 'manage_project_area' meta_app.id content_type.id generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Manage project area' %}</a>
 		</div>
 	</div>
+	<div class="row mt-5">
+		<div class="col-12">
+			<h4>{% trans 'Map filters' %}</h4>
+			{% trans 'You can offer multiple filters which your users can apply to the map.' %}<br>
+		</div>
+		<div class="col-12 mt-3">
+			<div class="card">
+				<div class="card-header">
+					{% trans 'Taxonomic Filters' %}
+				</div>
+				<div class="card-body">
+					<div id="map-taxonomic-filters">
+						{% include 'maps/ajax/taxonomic_filters.html' %}
+					</div>
+					<div class="row mt-3">
+						<div class="col-12">
+							<a href="{% url 'create_map_taxonomic_filter' meta_app.id generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Add taxonomic filter' %}</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% get_generic_content_option generic_content 'include_observation_forms_as_filters' as include_observation_form_as_filters %}
+		{% if include_observation_form_as_filters %}
+		<div class="col-12 mt-3">
+			<div class="card">
+				<div class="card-header">
+					{% trans 'Filters from Observation Forms' %}
+				</div>
+				<div class="card-body">
+					{% for observation_form_link in observation_form_links %}
+						<div>
+							<strong>{{ observation_form_link.generic_content.name }}</strong>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+		{% endif %}
+	</div>
 
 {% endblock %}
 
 {% block extra_head_script %}
-	<link rel="stylesheet" href="{% static 'maps/leaflet/leaflet.css' %}" />
-	<script src="{% static 'maps/leaflet/leaflet.js' %}"></script>
-
-	<link rel="stylesheet" href="{% static 'app_kit/maps/Leaflet.draw/src/leaflet.draw.css' %}" />
-	<script src="{% static 'app_kit/maps/Leaflet.draw/src/Leaflet.draw.js' %}"></script>
-	<script src="{% static 'app_kit/maps/Leaflet.draw/src/Leaflet.Draw.Event.js' %}"></script>
-	<script src="{% static 'app_kit/maps/Leaflet.draw/src/Toolbar.js' %}"></script>
-	<script src="{% static 'app_kit/maps/Leaflet.draw/src/Tooltip.js' %}"></script>
-
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/GeometryUtil.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/LatLngUtil.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/LineUtil.Intersect.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/Polygon.Intersect.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/Polyline.Intersect.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/ext/TouchEvents.js' %}"></script>
-
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/DrawToolbar.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Feature.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.SimpleShape.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Polyline.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Marker.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Circle.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.CircleMarker.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Polygon.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/draw/handler/Draw.Rectangle.js' %}"></script>
-
-
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/EditToolbar.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/EditToolbar.Edit.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/EditToolbar.Delete.js' %}"></script>
-
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/Control.Draw.js' %}"></script>
-
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.Poly.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.SimpleShape.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.Rectangle.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.Marker.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.CircleMarker.js' %}"></script>
-    <script src="{% static 'app_kit/maps/Leaflet.draw/src/edit/handler/Edit.Circle.js' %}"></script>
-
-	<!-- google maps -->
-	<!--<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDjGlftX1wUpCVxYg0lMgGe7IViIaL0HWc"></script>-->
+	<script src="{% static 'openlayers/v7.3.0/dist/ol.js' %}"></script>
+	<link rel="stylesheet" href="{% static 'openlayers/v7.3.0/ol.css' %}">
 {% endblock %}
 
 {% block extra_script %}
-	<script type="text/javascript" src="{% static 'anycluster/anycluster.js' %}"></script>
-    <script type="text/javascript" src="{% static 'anycluster/django_ajax_csrf.js' %}"></script>
-    <script type="text/javascript" src="{% static 'anycluster/anycluster_marker.js' %}"></script>
+	<script type="module">
 
-	<script>
+		import { AnyclusterOpenLayers } from "/static/anycluster/openlayers/anycluster-openlayers.js";
+
 		{% get_generic_content_option generic_content 'initial_longitude' as initial_longitude %}
 		{% get_generic_content_option generic_content 'initial_latitude' as initial_latitude %}
 		{% get_generic_content_option generic_content 'initial_zoom' as initial_zoom %}
 
 
-		var initial_longitude = 30,
-			initial_latitude = 30,
+		var initial_longitude = 11,
+			initial_latitude = 47,
 			initial_zoom = 3;
 
 		{% if initial_longitude %}
-			initial_longitude = {{ initial_longitude }};
+			initial_longitude = {{ initial_longitude|safe }};
 		{% endif %}
 		
 		{% if initial_latitude %}
-			initial_latitude = {{ initial_latitude }};
+			initial_latitude = {{ initial_latitude|safe }};
 		{% endif %}
 
 		{% if initial_zoom %}
 			initial_zoom = {{ initial_zoom }};
 		{% endif %}
 
+
+		const Map = ol.Map;
+		const TileLayer = ol.layer.Tile;
+		const OSM = ol.source.OSM;
+		const View = ol.View;
+		const fromLonLat = ol.proj.fromLonLat;
+
+
+		const map = new Map({
+			target: 'map-{{ generic_content.id }}',
+			layers: [
+			new TileLayer({
+				source: new OSM(),
+			}),
+			],
+			view: new View({
+			center: fromLonLat([initial_longitude, initial_latitude]),
+			zoom: initial_zoom,
+			minZoom: 3,
+			constrainResolution: true,
+			}),
+		});
+
+		const apiUrl = "/api/anycluster/";
+
+		const singlePinImages = {};
+
+		const settings = {
+			srid: 'EPSG:3857',
+			singlePinImages: singlePinImages,
+			onFinalClick: function (marker, data) {
+				alert(JSON.stringify(data))
+			}
+		};
+
+		const markerFolderPath = '/static/anycluster/images/';
+
+		const anyclusterLeaflet = new AnyclusterOpenLayers(map, apiUrl, markerFolderPath, settings);
+
+
+		// set initial view
+		const setviewButton = document.getElementById("setAppMapInitialView");
+		function setAppMapInitialView(event){
+			const center_3857 = map.getView().getCenter();
+			const center = ol.proj.toLonLat(center_3857, 'EPSG:3857');
+
+			const zoom = map.getView().getZoom();	
+			
+			const initial_latitude_input = document.getElementById("id_initial_latitude");
+			const initial_longitude_input = document.getElementById("id_initial_longitude");
+			const initial_zoom_input = document.getElementById("id_initial_zoom");
+
+			initial_longitude_input.setAttribute("readonly", false);
+			initial_latitude_input.setAttribute("readonly", false);
+			initial_zoom_input.setAttribute("readonly", false);
+
+			initial_longitude_input.value = center[0];
+			initial_latitude_input.value = center[1];
+			initial_zoom_input.value = zoom;
+
+			initial_longitude_input.setAttribute("readonly", true);
+			initial_latitude_input.setAttribute("readonly", true);
+			initial_zoom_input.setAttribute("readonly", true);
+
+			document.getElementById("options-form-{{ generic_content.uuid }}").submit();
+		}
+
+		setviewButton.addEventListener("click", setAppMapInitialView);
+
+		/*
 		var map_markers = {
 
 			"taxonomy.sources.col" : {
@@ -160,31 +240,8 @@
 		var anycluster = new Anycluster(mapdiv_id, anycluster_settings);
 
 
-		var setview_btn = document.getElementById("setAppMapInitialView");
-		function setAppMapInitialView(event){
-			var center = anycluster.map.getBounds().getCenter();
-			var zoom = anycluster.map.getZoom();			
-			
-			var initial_latitude_input = document.getElementById("id_initial_latitude");
-			var initial_longitude_input = document.getElementById("id_initial_longitude");
-			var initial_zoom_input = document.getElementById("id_initial_zoom");
-
-			initial_longitude_input.setAttribute("readonly", false);
-			initial_latitude_input.setAttribute("readonly", false);
-			initial_zoom_input.setAttribute("readonly", false);
-
-			initial_longitude_input.value = center.lng;
-			initial_latitude_input.value = center.lat;
-			initial_zoom_input.value = zoom;
-
-			initial_longitude_input.setAttribute("readonly", true);
-			initial_latitude_input.setAttribute("readonly", true);
-			initial_zoom_input.setAttribute("readonly", true);
-
-			document.getElementById("options-form-{{ generic_content.uuid }}").submit();
-		}
-
-		setview_btn.addEventListener("click", setAppMapInitialView);
+		
+		*/
 
 	</script>
 

@@ -924,6 +924,44 @@ input[type="color"] {
 	border: 2px solid #ff0000 !important;
 }
 
+.project-area-controls {
+	position: absolute;
+	top: 65px;
+    left: .5em;
+	color: #FFFFFF;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.project-area-controls a {
+	display: block;
+	width: 50px;
+	text-align:center;
+	border-radius: 4px;
+	cursor: pointer;
+	padding: 4px;
+}
+
+.project-area-controls a:hover,
+.project-area-controls a:focus {
+  text-decoration: none;
+  outline: 1px solid var(--ol-subtle-foreground-color);
+  color: var(--ol-foreground-color);
+}
+
+.project-area-clear-btn {
+	background: rgba(190,0,0,0.7);
+	color: #FFFFFF;
+	border-color: 1px solid #EFEFEF;
+}
+
+.project-area-draw-btn {
+	background: rgba(0,0,190,0.7);
+	color: #FFFFFF;
+	border-color: 1px solid #EFEFEF;
+}
+
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
 	.app-review.phone {

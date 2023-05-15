@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 from app_kit.generic import GenericContentManager, GenericContent
+from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 
 from taxonomy.lazy import LazyTaxonList
 
@@ -48,3 +49,31 @@ class MapGeometries(models.Model):
     map = models.ForeignKey(Map, on_delete=models.CASCADE)
     geometry_type = models.CharField(max_length=255, choices=GEOMETRY_TYPES)
     geometry = models.GeometryField(srid=3857)
+
+
+class MapTaxonomicFilter(models.Model):
+
+    map = models.ForeignKey(Map, on_delete=models.CASCADE)
+    name = models.CharField(max_length=355)
+    position = models.IntegerField(default=0)
+
+    @property
+    def taxa(self):
+        return FilterTaxon.objects.filter(taxonomic_filter=self)
+
+    
+    def __str__(self):
+        return self.name
+
+
+class FilterTaxon(ModelWithRequiredTaxon):
+
+    taxonomic_filter = models.ForeignKey(MapTaxonomicFilter, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return '{0} {1}'.format(self.taxon.taxon_latname, self.taxon.taxon_author)
+
+    class Meta:
+        unique_together = ('taxonomic_filter', 'name_uuid')
+
+

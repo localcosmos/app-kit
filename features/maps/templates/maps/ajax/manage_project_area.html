@@ -28,17 +28,35 @@
 {% block script %}
 	<script>
 		(function(){
-			var area_form_field = document.getElementById("id_area");
 
-			var max_nodes = 41;
-			var error_box = document.getElementById("polygon-error");
+			
+			const Map = ol.Map;
+			const TileLayer = ol.layer.Tile;
+			const OSM = ol.source.OSM;
+			const View = ol.View;
+			const VectorSource = ol.source.Vector;
+			const VectorLayer = ol.layer.Vector;
+			const fromLonLat = ol.proj.fromLonLat;
+			const Modify = ol.interaction.Modify;
+			const Draw = ol.interaction.Draw;
+			const Snap = ol.interaction.Snap;
+			const Select = ol.interaction.Select;
+			const defaultInteractions = ol.interaction.defaults.defaults;
+			const Control = ol.control.Control;
+			const defaultControls = ol.control.defaults.defaults;
+			const GeoJSON = ol.format.GeoJSON;
+
+			const area_form_field = document.getElementById("id_area");
+
+			const max_nodes = 41;
+			const error_box = document.getElementById("polygon-error");
 
 			{% get_generic_content_option map 'initial_longitude' as initial_longitude %}
 			{% get_generic_content_option map 'initial_latitude' as initial_latitude %}
 			{% get_generic_content_option map 'initial_zoom' as initial_zoom %}
 
 
-			var initial_longitude = 30,
+			let initial_longitude = 30,
 				initial_latitude = 30,
 				initial_zoom = 3;
 
@@ -54,19 +72,151 @@
 				initial_zoom = {{ initial_zoom }};
 			{% endif %}
 
-			function update_form_field(drawnItems){
-				var geojson = drawnItems.toGeoJSON();
-				
-				if (geojson.features.length){
-					area_form_field.value = JSON.stringify(geojson);
+			function updateFormField(event){
+
+				const geojsonWriter = new ol.format.GeoJSON();
+
+				let feature = null;
+
+				if (event.hasOwnProperty('feature')){
+					feature = event.feature;
+				}
+				else if (event.hasOwnProperty('features')){
+					event.features.forEach(f => {
+						feature = f;
+					});
+				}
+
+				if (feature != null){
+					// FeatureCollection
+					const geojsonStr = geojsonWriter.writeFeatures([feature], { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+					area_form_field.value = geojsonStr;
+					error_box.classList.add("d-none");
 				}
 				else {
-					area_form_field.value = "";
+					error_box.classList.remove("d-none");
 				}
 			}
 
 			setTimeout(function(){
 
+				const polygonStyle = {
+					'fill-color': 'rgba(255, 0, 0, 0.3)',
+					'stroke-color': '#ff0000',
+					'stroke-width': 3,
+				};
+
+				const raster = new TileLayer({
+					source: new OSM(),
+				});
+
+				const source = new VectorSource(
+					{% if project_area %}
+						{
+							features: new GeoJSON().readFeatures({{ project_area|safe }}),
+						}
+					{% endif %}
+				);
+
+				const vector = new VectorLayer({
+					source: source,
+					style: polygonStyle,
+				});
+
+				
+				const select = new Select();
+
+
+				// custom controls
+				class ClearVectorLayerControl extends Control {
+					/**
+					 * @param {Object} [opt_options] Control options.
+					 */
+					constructor(opt_options) {
+						const options = opt_options || {};
+
+						const clearButton = document.createElement('a');
+						clearButton.className = 'project-area-clear-btn';
+						clearButton.textContent = 'Clear';
+
+						const drawButton = document.createElement('a');
+						drawButton.className = 'project-area-draw-btn';
+						drawButton.textContent = 'Draw';
+
+						const element = document.createElement('div');
+						element.className = 'project-area-controls ol-unselectable';
+						element.appendChild(drawButton);
+						element.appendChild(clearButton);
+
+						super({
+							element: element,
+							target: options.target,
+						});
+
+						clearButton.addEventListener('click', this.clearVectorLayer.bind(this), false);
+
+						drawButton.addEventListener('click', this.drawPolygon.bind(this), false);
+					}
+
+					clearVectorLayer() {
+						this.getMap().getAllLayers()[1].getSource().clear();
+						area_form_field.value = '';
+					}
+
+					drawPolygon() {
+						this.getMap().addInteraction(draw);
+					}
+				}
+
+				// Limit multi-world panning to one world east and west of the real world.
+				// Geometry coordinates have to be within that range.
+				const extent = ol.proj.get('EPSG:3857').getExtent().slice();
+				extent[0] += extent[0];
+				extent[2] += extent[2];
+
+				const modify = new Modify({
+					features: select.getFeatures(),
+					source: source
+				});
+
+				modify.on('modifyend', updateFormField);
+
+				const map = new Map({
+					controls: defaultControls().extend([new ClearVectorLayerControl()]),
+					layers: [raster, vector],
+					target: 'area-map',
+					view: new View({
+						center: fromLonLat([initial_longitude, initial_latitude]),
+						zoom: initial_zoom,
+						extent,
+					}),
+				});
+
+				let snap;
+
+				const draw = new Draw({
+					source: source,
+					type: 'Polygon',
+				});
+
+				draw.on('drawstart', function(event){
+					vector.getSource().clear();
+				});
+
+				draw.on('drawend', function(event) {
+					map.removeInteraction(draw);
+					updateFormField(event);
+				});
+
+				//map.addInteraction(draw);
+				snap = new Snap({source: source});
+				map.addInteraction(snap);
+
+				map.addInteraction(modify);
+				map.addInteraction(select);
+				
+
+				/*
 				var osm_layer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors' });
 
 
@@ -150,6 +300,7 @@
 				map.on(L.Draw.Event.DELETED, function (event) {
 					update_form_field(drawnItems);
 				});
+			*/
 
 			}, 500);
 		})();
