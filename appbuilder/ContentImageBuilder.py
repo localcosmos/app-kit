@@ -89,7 +89,7 @@ class ContentImageBuilder:
                     processed_image = content_image.get_in_memory_processed_image(original_image, size)
 
                     output_format = 'WEBP'
-                    processed_image.save(absolute_image_filepath, output_format)
+                    processed_image.save(absolute_image_filepath, output_format, quality=70)
 
 
     def get_on_disk_cached_image(self, content_image, size):
