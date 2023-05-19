@@ -32,6 +32,7 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
 from app_kit.features.glossary.models import Glossary
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 from app_kit.features.frontend.models import Frontend
+from app_kit.features.maps.models import Map, MapTaxonomicFilter
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
 from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
 
@@ -919,6 +920,16 @@ class AppReleaseBuilder(AppBuilderBase):
             'errors' : [],
             'warnings' : [],
         }
+
+        taxonomic_filters = MapTaxonomicFilter.objects.filter(map=map)
+
+        for taxonomic_filter in taxonomic_filters:
+
+            taxa = taxonomic_filter.taxa
+            if not taxa:
+                error_message = _('%(taxonomic_filter_name)s has no taxa') % {'taxonomic_filter_name': taxonomic_filter.name }
+                taxon_error = ValidationError(map, taxonomic_filter, [error_message])
+                result['errors'].append(taxon_error)
 
         return result
 
@@ -2036,7 +2047,7 @@ class AppReleaseBuilder(AppBuilderBase):
         
         map_json = jsonbuilder.build()
 
-        self._add_generic_content_to_app(app_generic_content, map_json)
+        self._add_generic_content_to_app(app_generic_content, map_json, only_one_allowed=True)
 
 
     ###############################################################################################################

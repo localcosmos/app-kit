@@ -190,3 +190,16 @@ class JSONBuilder:
                 global_options[camel_case_key] = value
         
         return global_options
+
+    
+    def build_taxon(self, lazy_taxon):
+
+        taxon = {
+            'taxonSource': lazy_taxon.taxon_source,
+            'taxonLatname': lazy_taxon.taxon_latname,
+            'taxonAuthor': lazy_taxon.taxon_author,
+            'nameUuid' : str(lazy_taxon.name_uuid),
+            'taxonNuid' : lazy_taxon.taxon_nuid,
+        }
+
+        return taxon

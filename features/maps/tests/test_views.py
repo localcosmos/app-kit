@@ -8,10 +8,15 @@ from app_kit.tests.common import test_settings
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, WithFormTest, ViewTestMixin)
 
+from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 
-from app_kit.features.maps.views import ManageMaps, ManageProjectArea
-from app_kit.features.maps.models import Map, MapGeometries
-from app_kit.features.maps.forms import ProjectAreaForm
+from .mixins import WithMap, WithMapTaxonomicFilter
+
+
+from app_kit.features.maps.views import (ManageMaps, ManageProjectArea, ManageTaxonomicFilter, GetTaxonomicFilters,
+    DeleteFilterTaxon)
+from app_kit.features.maps.models import Map, MapGeometries, MapTaxonomicFilter, FilterTaxon
+from app_kit.features.maps.forms import ProjectAreaForm, TaxonomicFilterForm
 
 from app_kit.models import MetaAppGenericContent
 
@@ -253,6 +258,328 @@ class TestManageProjectArea(WithMaps, ViewTestMixin, WithAdminOnly, WithUser, Wi
         self.assertEqual(response_3.status_code, 200)
         self.assertFalse(qry.exists())
 
+
+      
+class TestCreateTaxonomicFilter(WithMapTaxonomicFilter, WithMap, WithMaps, ViewTestMixin, WithAjaxAdminOnly,
+    WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    
+    url_name = 'create_map_taxonomic_filter'
+    view_class = ManageTaxonomicFilter
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'map_id' : self.generic_content.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        view.set_taxonomic_filter(**view.kwargs)
+        return view
+
+
+    @test_settings
+    def test_set_taxonomic_filter(self):
+        view = super().get_view()
+        self.assertFalse(hasattr(view, 'map'))
+        view.set_taxonomic_filter(**self.get_url_kwargs())
+
+        self.assertEqual(view.map, self.generic_content)
+        self.assertEqual(view.taxonomic_filter, None)
+        self.assertEqual(view.content_type, self.content_type)
+
+
+    @test_settings
+    def test_get_context_data(self):
         
+        view = self.get_view()
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxonomic_filter'], None)
+        self.assertEqual(context['map'], self.generic_content)
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertFalse(context['success'])
+        self.assertEqual(context['add_taxon_form'].__class__, AddSingleTaxonForm)
+
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        initial = view.get_initial()
+        self.assertFalse('name' in initial)
+
+    @test_settings
+    def test_get_form_kwargs(self):
+        view = self.get_view()
+        form_kwargs = view.get_form_kwargs()
+        self.assertEqual(form_kwargs['taxonomic_filter'], None)
+
+    @test_settings
+    def test_form_valid(self):
         
+        view = self.get_view()
+
+        post_data = {
+            'name': 'test name',
+            'input_language': 'de',
+        }
+
+        form = TaxonomicFilterForm(data=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        query = MapTaxonomicFilter.objects.filter(name='test name')
+
+        self.assertFalse(query.exists())
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        self.assertTrue(query.exists())
+
+    @test_settings 
+    def test_form_valid_with_taxon(self):
         
+        view = self.get_view()
+
+        post_data = {
+            'name': 'test name',
+            'input_language': 'de',
+        }
+
+        lazy_lacerta = self.get_taxon()
+        taxon_post_data = self.get_taxon_post_data(lazy_lacerta)
+        post_data.update(taxon_post_data)
+
+        form = TaxonomicFilterForm(data=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        query = MapTaxonomicFilter.objects.filter(name='test name')
+
+        self.assertFalse(query.exists())
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        self.assertTrue(query.exists())
+
+        taxon_query = FilterTaxon.objects.filter(taxonomic_filter=query.first())
+        self.assertTrue(taxon_query.exists())
+        self.assertEqual(taxon_query.first().taxon, lazy_lacerta)
+
+
+class TestManageTaxonomicFilter(WithMapTaxonomicFilter, WithMap, WithMaps, ViewTestMixin, WithAjaxAdminOnly,
+    WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    
+    url_name = 'manage_map_taxonomic_filter'
+    view_class = ManageTaxonomicFilter
+
+    def setUp(self):
+        super().setUp()
+        self.taxonomic_filter = self.create_taxonomic_filter()
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'map_id' : self.generic_content.id,
+            'taxonomic_filter_id': self.taxonomic_filter.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        view.set_taxonomic_filter(**view.kwargs)
+        return view
+
+
+    @test_settings
+    def test_set_taxonomic_filter(self):
+        view = super().get_view()
+        self.assertFalse(hasattr(view, 'map'))
+        view.set_taxonomic_filter(**self.get_url_kwargs())
+
+        self.assertEqual(view.map, self.generic_content)
+        self.assertEqual(view.taxonomic_filter, self.taxonomic_filter)
+        self.assertEqual(view.content_type, self.content_type)
+
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxonomic_filter'], self.taxonomic_filter)
+        self.assertEqual(context['map'], self.generic_content)
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertFalse(context['success'])
+        self.assertEqual(context['add_taxon_form'].__class__, AddSingleTaxonForm)
+
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        initial = view.get_initial()
+        self.assertEqual(initial['name'], self.taxonomic_filter.name)
+
+    @test_settings
+    def test_get_form_kwargs(self):
+        view = self.get_view()
+        form_kwargs = view.get_form_kwargs()
+        self.assertEqual(form_kwargs['taxonomic_filter'], self.taxonomic_filter)
+
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+
+        query_1 = MapTaxonomicFilter.objects.filter(name='test filter')
+        self.assertTrue(query_1.exists())
+
+        post_data = {
+            'name': 'test name updated',
+            'input_language': 'de',
+        }
+
+        form = TaxonomicFilterForm(data=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        query = MapTaxonomicFilter.objects.filter(name='test name updated')
+
+        self.assertFalse(query.exists())
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        self.assertTrue(query.exists())
+
+    @test_settings 
+    def test_form_valid_with_taxon(self):
+        
+        view = self.get_view()
+
+        query_1 = MapTaxonomicFilter.objects.filter(name='test filter')
+        self.assertTrue(query_1.exists())
+
+        post_data = {
+            'name': 'test name updated',
+            'input_language': 'de',
+        }
+
+        lazy_lacerta = self.get_taxon()
+        taxon_post_data = self.get_taxon_post_data(lazy_lacerta)
+        post_data.update(taxon_post_data)
+
+        form = TaxonomicFilterForm(data=post_data)
+
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        query = MapTaxonomicFilter.objects.filter(name='test name updated')
+
+        self.assertFalse(query.exists())
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        self.assertTrue(query.exists())
+
+        taxon_query = FilterTaxon.objects.filter(taxonomic_filter=query.first())
+        self.assertTrue(taxon_query.exists())
+        self.assertEqual(taxon_query.first().taxon, lazy_lacerta)
+
+
+class TestGetTaxonomicFilters(WithMapTaxonomicFilter, WithMap, WithMaps, ViewTestMixin, WithAjaxAdminOnly,
+    WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'get_map_taxonomic_filters'
+    view_class = GetTaxonomicFilters
+
+    def setUp(self):
+        super().setUp()
+        self.taxonomic_filter = self.create_taxonomic_filter()
+        self.map = self.taxonomic_filter.map
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'map_id' : self.map.id,
+        }
+        return url_kwargs
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+
+        context = view.get_context_data(**view.kwargs)
+
+        mtf_ctype = ContentType.objects.get_for_model(self.taxonomic_filter)
+
+        self.assertEqual(list(context['taxonomic_filters']), [self.taxonomic_filter])
+        self.assertEqual(context['map_taxonomic_filter_content_type'], mtf_ctype)
+        self.assertEqual(context['generic_content'], self.map)
+
+
+class TestDeleteFilterTaxon(WithMapTaxonomicFilter, WithMap, WithMaps, ViewTestMixin, WithAjaxAdminOnly,
+    WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_map_filter_taxon'
+    view_class = DeleteFilterTaxon
+
+    def setUp(self):
+        super().setUp()
+        self.taxonomic_filter = self.create_taxonomic_filter()
+        self.map = self.taxonomic_filter.map
+        
+        self.filter_taxon = FilterTaxon(
+            taxonomic_filter=self.taxonomic_filter,
+        )
+
+        lazy_lacerta = self.get_taxon()
+
+        self.filter_taxon.set_taxon(lazy_lacerta)
+        self.filter_taxon.save()
+
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        view.object = self.filter_taxon
+        return view
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'map_id' : self.map.id,
+            'taxonomic_filter_id': self.taxonomic_filter.id,
+            'pk': self.filter_taxon.pk,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+
+        context = view.get_context_data(**self.get_url_kwargs())
+        self.assertEqual(context['map'], self.map)
+        self.assertEqual(context['taxonomic_filter'], self.taxonomic_filter)

@@ -45,7 +45,6 @@ class TaxonomicFilterForm(LocalizeableForm):
 
     def __init__(self, *args, **kwargs):
         self.taxonomic_filter = kwargs.pop('taxonomic_filter', None)
-        print(self.taxonomic_filter)
         super().__init__(*args, **kwargs)
 
     name = forms.CharField(max_length=355)

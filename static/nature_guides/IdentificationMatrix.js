@@ -843,11 +843,19 @@ class MatrixFilter {
 
       let restriction = this.restricted_by[matrix_filter_uuid];
 
+      // mf_1.space_1 OR mf_1.space_2 
+      let all_spaces_of_this_filter_are_inactive = true;
+
       for (let space_identifier in restriction) {
-        is_active = restriction[space_identifier];
-        if (is_active == false) {
+        let space_is_active = restriction[space_identifier];
+        if (space_is_active == true) {
+          all_spaces_of_this_filter_are_inactive = false;
           break;
         }
+      }
+
+      if (all_spaces_of_this_filter_are_inactive == true){
+        is_active = false;
       }
 
       if (is_active == false) {

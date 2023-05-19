@@ -33,6 +33,7 @@ class ManageMaps(ManageGenericContent):
         context['project_area'] = MapGeometries.objects.filter(map=self.generic_content,
             geometry_type=PROJECT_AREA_TYPE).first()
         context['taxonomic_filters'] = MapTaxonomicFilter.objects.filter(map=self.generic_content)
+        context['map_taxonomic_filter_content_type'] = ContentType.objects.get_for_model(MapTaxonomicFilter)
         context['observation_form_links'] = self.meta_app.get_generic_content_links(GenericForm)
         return context
 
@@ -213,9 +214,14 @@ class ManageTaxonomicFilter(MetaAppFormLanguageMixin, FormView):
             filter_taxon.save()
 
         context = self.get_context_data(**self.kwargs)
+
+        # provide an empty taxon field
         form_kwargs = self.get_form_kwargs()
-        del form_kwargs['data']
-        context['form'] = form
+        if 'data' in form_kwargs:
+            del form_kwargs['data']
+        if 'files' in form_kwargs:
+            del form_kwargs['files']
+        context['form'] = self.form_class(**form_kwargs)
         context['success'] = True
         return self.render_to_response(context)
 
@@ -228,6 +234,7 @@ class GetTaxonomicFilters(MetaAppMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         map = Map.objects.get(pk=kwargs['map_id'])
         context['taxonomic_filters'] = MapTaxonomicFilter.objects.filter(map=map)
+        context['map_taxonomic_filter_content_type'] = ContentType.objects.get_for_model(MapTaxonomicFilter)
         context['generic_content'] = map
         return context
 

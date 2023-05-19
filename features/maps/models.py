@@ -21,6 +21,12 @@ class Map(GenericContent):
 
         locale = super().get_primary_localization(meta_app)
 
+        map_taxonomic_filters = MapTaxonomicFilter.objects.filter(map=self)
+
+        for taxonomic_filter in map_taxonomic_filters:
+            filter_name = taxonomic_filter.name
+            locale[filter_name] = filter_name
+
         return locale
 
 
@@ -65,13 +71,19 @@ class MapTaxonomicFilter(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        ordering = ('position',)
+
 
 class FilterTaxon(ModelWithRequiredTaxon):
 
     taxonomic_filter = models.ForeignKey(MapTaxonomicFilter, on_delete=models.CASCADE)
 
     def __str__(self):
-        return '{0} {1}'.format(self.taxon.taxon_latname, self.taxon.taxon_author)
+        if self.taxon.taxon_author:
+            return '{0} {1}'.format(self.taxon.taxon_latname, self.taxon.taxon_author)
+        else:
+            return self.taxon_latname
 
     class Meta:
         unique_together = ('taxonomic_filter', 'name_uuid')
