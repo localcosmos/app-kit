@@ -69,7 +69,7 @@ class MapJSONBuilder(JSONBuilder):
                 taxon_entry = self.build_taxon(taxon)
                 filter_entry['taxa'].append(taxon_entry)
 
-        map_json['taxonomicFilters'].append(filter_entry)
+            map_json['taxonomicFilters'].append(filter_entry)
 
         include_generic_forms = map.get_option(self.meta_app, 'include_observation_forms_as_filters')
 
