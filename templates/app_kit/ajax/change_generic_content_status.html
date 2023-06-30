@@ -1,0 +1,31 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% url 'change_generic_content_status' meta_app.id generic_content_link.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans with name=generic_content_link.generic_content.name %}Change publication status of {{ name }}{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			$.get("{% url 'generic_content_card' meta_app.id generic_content_link.id %}", function(html){
+				$("#ctype-{{ generic_content_link|ctype_id }}-{{ generic_content_link.id }}").replaceWith(html);
+				ajaxify($(html).attr("id"));
+			});			
+
+			var modal = $("#Modal");
+			modal.modal("hide");
+			
+		</script>
+	{% endif %}
+{% endblock %}

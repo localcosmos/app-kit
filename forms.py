@@ -414,3 +414,12 @@ from taggit.forms import TagField
 class TagAnyElementForm(forms.Form):
 
     tags = TagField(required=False)
+
+
+GENERIC_CONTENT_STATUS = (
+    ('draft', _('draft')),
+    ('publish', _('publish')),
+)
+class GenericContentStatusForm(forms.Form):
+    publication_status = forms.ChoiceField(choices=GENERIC_CONTENT_STATUS)
+

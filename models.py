@@ -775,6 +775,12 @@ class MetaAppGenericContent(models.Model):
     def __str__(self):
         return '{0}'.format(self.generic_content)
 
+    @property
+    def publication_status(self):
+        if self.options:
+            return self.options.get('publication_status', 'publish')
+        return 'publish'
+
     '''
     def save(self, *args, **kwargs):
         if not self.pk:

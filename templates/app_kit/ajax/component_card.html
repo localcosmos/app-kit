@@ -12,6 +12,7 @@
 						{% if link.generic_content|generic_content_may_have_image %}
 							<a data-url="{% url 'manage_content_image' meta_app.id link.generic_content|ctype_id link.generic_content.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
 						{% endif %}
+						<a data-url="{% url 'change_generic_content_status' meta_app.id link.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Change publication status' %}</a>
 					</div>
 				</div>
 			{% endif %}
@@ -19,9 +20,20 @@
 		</div>
 		<div class="card-body" style="position:relative;">
 			<h5 class="card-title">{{ link.generic_content }}</h5>
+
 			<div id="content_image_{{ link.generic_content|ctype_id }}_{{ link.generic_content.id }}" class="generic-content-image" {% if link.generic_content.image %}style="background-image:url('{{ link.generic_content.image_url }}')"{% endif %}></div>
-			<div class="text-right">
-				<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
+
+			<div class="row">
+				<div class="col-4"></div>
+				<div class="col-4 text-left">
+					{% get_generic_content_option link.generic_content 'publication_status' as publication_status %}
+					{% if publication_status == 'draft' %}
+						<span class="badge badge-warning">{% trans 'draft' %}</span>
+					{% endif %}
+				</div>
+				<div class="col-4 text-right">
+					<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
+				</div>
 			</div>
 		</div>
 	</div>

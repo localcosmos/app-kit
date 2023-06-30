@@ -355,6 +355,9 @@ class AppReleaseBuilder(AppBuilderBase):
 
                 for feature_link in feature_links:
 
+                    if feature_link.publication_status != 'publish':
+                        continue
+
                     generic_content = feature_link.generic_content
 
                     validation_method_name = 'validate_{0}'.format(generic_content.__class__.__name__)
@@ -733,7 +736,17 @@ class AppReleaseBuilder(AppBuilderBase):
             error_message = _('The nature guide %(name)s has no setting for what happens if the identification has finished.') % {'name':nature_guide.name}                      
             error = ValidationError(nature_guide, nature_guide, [error_message])
             result['errors'].append(error)
-            
+
+        elif result_action.get('model', None) == 'GenericForm':
+            generic_form_content_type = ContentType.objects.get_for_model(GenericForm)
+            generic_form_id = result_action['id']
+            generic_form_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app, content_type=generic_form_content_type, object_id=generic_form_id)
+            generic_form = generic_form_link.generic_content
+            if generic_form_link.publication_status != 'publish':
+                error_message = _('The nature guide %(name)s has the Observation Form %(observation_form_name)s set as the result action, but this observation form is a draft.') % {'name':nature_guide.name, 'observation_form_name': generic_form.name}                      
+                error = ValidationError(nature_guide, nature_guide, [error_message])
+                result['errors'].append(error)
+
 
         nodes = NatureGuidesTaxonTree.objects.filter(nature_guide=nature_guide,
                                                      meta_node__node_type__in=['node', 'root']).order_by('taxon_nuid')
@@ -1120,7 +1133,7 @@ class AppReleaseBuilder(AppBuilderBase):
         glossary_link = MetaAppGenericContent.objects.filter(meta_app=self.meta_app,
                                                              content_type=glossary_content_type).first()
 
-        if glossary_link:
+        if glossary_link and glossary_link.publication_status == 'publish':
             self.logger.info('Building {0} {1}'.format(glossary_link.generic_content.__class__.__name__,
                                                  glossary_link.generic_content.uuid))
 
@@ -1133,6 +1146,10 @@ class AppReleaseBuilder(AppBuilderBase):
             content_type__in=exclude_content_types)
 
         for link in generic_content_links:
+
+            if link.publication_status != 'publish':
+                continue
+
             generic_content = link.generic_content            
             self.logger.info('Building {0} {1}'.format(generic_content.__class__.__name__, generic_content.uuid))
 

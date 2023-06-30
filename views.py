@@ -13,7 +13,7 @@ from django.core import mail
 from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
 from .generic import AppContentTaxonomicRestriction
 
-from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm,
+from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm, GenericContentStatusForm,
                     CreateGenericContentForm, AddExistingGenericContentForm, TranslateAppForm,
                     EditGenericContentNameForm, ManageContentImageWithTextForm,
                     ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm)
@@ -1488,6 +1488,44 @@ class TagAnyElement(TagsMixin, FormView):
 class ReloadTags(TagsMixin, TemplateView):
 
     template_name = 'app_kit/ajax/tags.html'
+
+
+class ChangeGenericContentPublicationStatus(MetaAppMixin, FormView):
+
+    form_class = GenericContentStatusForm
+    template_name = 'app_kit/ajax/change_generic_content_status.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_generic_content_link(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_generic_content_link(self, **kwargs):
+        self.generic_content_link = MetaAppGenericContent.objects.get(pk=kwargs['generic_content_link_id'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['generic_content_link'] = self.generic_content_link
+        context['success'] = False
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['publication_status'] = self.generic_content_link.publication_status
+        return initial
+
+    def form_valid(self, form):
+
+        if not self.generic_content_link.options:
+            self.generic_content_link.options = {}
+
+        self.generic_content_link.options['publication_status'] = form.cleaned_data['publication_status']
+        self.generic_content_link.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        return self.render_to_response(context)
+
 
 
 # LEGAL

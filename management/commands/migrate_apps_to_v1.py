@@ -1,4 +1,3 @@
-from curses import meta
 from django.core.management.base import BaseCommand, CommandError
 
 from app_kit.models import MetaApp, MetaAppGenericContent

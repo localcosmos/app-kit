@@ -47,6 +47,8 @@ urlpatterns = [
          views.EditGenericContentName.as_view(), name='edit_generic_content_name'),
     path('generic-content-card/<int:meta_app_id>/<int:generic_content_link_id>/',
          views.GetGenericContentCard.as_view(), name='generic_content_card'),
+    path('change_generic_content_status/<int:meta_app_id>/<int:generic_content_link_id>/',
+         views.ChangeGenericContentPublicationStatus.as_view(), name='change_generic_content_status'),
     # app languages
     path('manage-app-languages/<int:meta_app_id>/', views.ManageAppLanguages.as_view(),
          name='manage_app_languages'),

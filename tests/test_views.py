@@ -18,13 +18,14 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             ManageContentImage, ManageContentImageWithText, DeleteContentImage, ReloadTags,
             MockButton, DeleteLocalizedContentImage, TagAnyElement,
             ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
-            ManageLocalizedContentImage)
+            ManageLocalizedContentImage, ChangeGenericContentPublicationStatus)
 
 from localcosmos_server.generic_views import StoreObjectOrder
 
 from app_kit.forms import (CreateGenericContentForm, CreateAppForm, EditGenericContentNameForm,
                            TranslateAppForm, AddExistingGenericContentForm, AddLanguageForm,
-                           ManageContentImageForm, ManageContentImageWithTextForm, TagAnyElementForm)
+                           ManageContentImageForm, ManageContentImageWithTextForm, TagAnyElementForm,
+                           GenericContentStatusForm)
 
 from app_kit.models import MetaApp, MetaAppGenericContent, ContentImage, LocalizedContentImage
 from app_kit.features.nature_guides.models import NatureGuide
@@ -2124,7 +2125,7 @@ class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTen
 
 
         data_no_text = {
-            'target-language' : 'EN-US',
+            'target-language' : 'EN',
         }
 
         response = self.tenant_client.post(url, data_no_text, **url_kwargs)
@@ -2133,7 +2134,7 @@ class TestGetDeepLTranslation(ViewTestMixin, WithLoggedInUser, WithUser, WithTen
 
         valid_data = {
             'text' : 'Test text',
-            'target-language' : 'EN-US',
+            'target-language' : 'EN',
         }
 
         response = self.tenant_client.post(url, valid_data, **url_kwargs)
@@ -2521,3 +2522,94 @@ class TestReloadTags(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
             'object_id' : self.taxon_profile.id,
         }
         return url_kwargs
+
+
+class TestChangeGenericContentPublicationStatus(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
+            WithUser, WithTenantClient, WithMetaApp, WithFormTest, TenantTestCase):
+    
+    url_name = 'change_generic_content_status'
+    view_class = ChangeGenericContentPublicationStatus
+
+    def setUp(self):
+        super().setUp()
+        self.create_all_generic_contents(self.meta_app)
+        self.generic_content_link = self.get_generic_content_link(GenericForm)
+        self.generic_form = self.generic_content_link.generic_content
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'generic_content_link_id': self.generic_content_link.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_set_generic_content_link(self):
+
+        view = self.get_view()
+        view.set_generic_content_link(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+        self.assertEqual(view.generic_content_link, self.generic_content_link)
+
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.set_generic_content_link(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['generic_content_link'], self.generic_content_link)
+        self.assertFalse(context['success'])
+
+
+    @test_settings
+    def test_get_initial(self):
+
+        view = self.get_view()
+        view.set_generic_content_link(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['publication_status'], 'publish')
+
+    
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_generic_content_link(**view.kwargs)
+        view.set_meta_app(**view.kwargs)
+
+        self.assertEqual(self.generic_content_link.publication_status, 'publish')
+        post_data = {
+            'publication_status' : 'draft',
+        }
+        form = GenericContentStatusForm(data=post_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        self.generic_content_link.refresh_from_db()
+        self.assertEqual(self.generic_content_link.publication_status, 'draft')
+
+        post_data = {
+            'publication_status' : 'publish',
+        }
+        form = GenericContentStatusForm(data=post_data)
+
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        self.generic_content_link.refresh_from_db()
+        self.assertEqual(self.generic_content_link.publication_status, 'publish')
