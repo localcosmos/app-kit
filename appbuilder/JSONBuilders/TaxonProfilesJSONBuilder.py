@@ -268,6 +268,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     if len(current_nuid) > 3:
                         parent_nuids.add(current_nuid)
 
+        # postprocess traits
+        postprocessed_traits = self.postprocess_traits(taxon_profile_json['traits'])
+        taxon_profile_json['traits'] = postprocessed_traits
+
         # collect all traits of all parent nuids
         #parents = NatureGuidesTaxonTree.objects.filter(taxon_nuid__in=parent_nuids)
 
@@ -361,6 +365,40 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         self.built_taxon_profiles_cache[str(profile_taxon.name_uuid)] = taxon_profile_json
 
         return taxon_profile_json
+
+
+    '''
+        if MatrixFilter with the same occur on multiple levels, mark those who are on the higher levels
+        eg if 'Leaf Shape' occurs on the root level (001) and on a lower level (001003001), the one
+        on the root level will be marked
+    '''
+    def postprocess_traits(self, traits):
+
+        postprocessed_traits = []
+
+        for trait in traits:
+            matrix_filter = trait['matrixFilter']
+            trait_taxon_nuid = matrix_filter['treeNode']['taxonNuid']
+
+            trait_has_more_specific_occurrence = False
+
+            for other_trait in traits:
+                other_matrix_filter = other_trait['matrixFilter']
+
+                if matrix_filter['uuid'] == other_matrix_filter['uuid'] or matrix_filter['name'] != other_matrix_filter['name']:
+                    continue
+                
+                other_trait_taxon_nuid = other_matrix_filter['treeNode']['taxonNuid']
+
+                if other_trait_taxon_nuid.startswith(trait_taxon_nuid):
+                    trait_has_more_specific_occurrence = True
+                    break
+            
+            trait['hasMoreSpecificOccurrence'] = trait_has_more_specific_occurrence
+        
+            postprocessed_traits.append(trait)
+        
+        return postprocessed_traits
 
 
     # look up taxonomic data by name_uuid

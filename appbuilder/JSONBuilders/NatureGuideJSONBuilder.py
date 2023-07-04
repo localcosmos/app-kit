@@ -383,6 +383,8 @@ class MatrixFilterSerializer:
             allow_multiple_values = self.matrix_filter.definition.get('allow_multiple_values', False)
             identification_means = self.matrix_filter.definition.get('identification_means', [])
 
+        tree_node = self.matrix_filter.meta_node.natureguidestaxontree
+
         matrix_filter_json = {
             'uuid' : str(self.matrix_filter.uuid),
             'name' : self.matrix_filter.name,
@@ -396,6 +398,12 @@ class MatrixFilterSerializer:
             'identificationMeans' : identification_means,
             'space' : [],
             'definition' : {},
+            'treeNode': {
+                'taxonNuid': tree_node.taxon_nuid,
+            },
+            'metaNode' : {
+                'name': self.matrix_filter.meta_node.name,
+            }
         }
 
 
