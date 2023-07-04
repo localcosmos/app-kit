@@ -33,9 +33,9 @@ class TaxonFilterSpaceMixin:
 
 class WithNatureGuide(TaxonFilterSpaceMixin):
 
-    def create_nature_guide(self):
+    def create_nature_guide(self, name='Test Nature Guide'):
 
-        nature_guide = NatureGuide.objects.create('Test Nature Guide', 'en')
+        nature_guide = NatureGuide.objects.create(name, 'en')
 
         return nature_guide
 

@@ -555,6 +555,24 @@ class AppReleaseBuilder(AppBuilderBase):
                     result['errors'].append(error)
 
 
+        for configuration_type, configuration_definition in frontend_settings['userContent']['configuration'].items():
+
+            configuration_is_required = configuration_definition.get('required', False)
+
+            if configuration_is_required:
+
+                configuration = {}
+                
+                if frontend.configuration:
+                    configuration = frontend.configuration
+                
+                if configuration_type not in configuration or not configuration[configuration_type]:
+                    error_message = _('Your frontend is missing the configuration for "{0}"'.format(configuration_type))
+                    error = ValidationError(self.meta_app, frontend, [error_message])
+                    result['errors'].append(error)
+
+
+
         return result
     
 
@@ -1938,8 +1956,6 @@ class AppReleaseBuilder(AppBuilderBase):
     # - one file for all languages ???
 
     def _build_NatureGuide(self, app_generic_content):
-
-        nature_guide = app_generic_content.generic_content
 
         jsonbuilder = self.get_json_builder(app_generic_content)
 

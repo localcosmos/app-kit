@@ -14,7 +14,6 @@ class NatureGuideJSONBuilder(JSONBuilder):
     def build_features_json_entry(self):
         features_json_entry = super().build_features_json_entry()
 
-
         image_urls = None
 
         content_image = self.generic_content.image()

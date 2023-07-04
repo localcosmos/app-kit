@@ -691,6 +691,10 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
                 meta_node__node_type='root')[:15]
 
         return nodes
+
+
+    def get_displayed_name(self, node):
+        return node.meta_node.name
         
         
     @method_decorator(ajax_required)
@@ -706,8 +710,10 @@ class SearchForNode(MetaAppFormLanguageMixin, TemplateView):
 
             url = self.get_on_click_url(node)
 
+            displayed_name = self.get_displayed_name(node)
+
             choice = {
-                'name' : node.meta_node.name,
+                'name' : displayed_name,
                 'id' : node.id,
                 'url' : url,
             }
@@ -1183,6 +1189,10 @@ class MoveNatureGuideNode(MetaAppFormLanguageMixin, FormView):
 
 
 class SearchMoveToGroup(SearchForNode):
+
+    def get_displayed_name(self, node):
+        displayed_name = '{0} ({1})'.format(node.meta_node.name, node.nature_guide)
+        return displayed_name
 
     def get_queryset(self, request, **kwargs):
 

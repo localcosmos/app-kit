@@ -23,18 +23,20 @@
 
 			<div id="content_image_{{ link.generic_content|ctype_id }}_{{ link.generic_content.id }}" class="generic-content-image" {% if link.generic_content.image %}style="background-image:url('{{ link.generic_content.image_url }}')"{% endif %}></div>
 
-			<div class="row">
-				<div class="col-4"></div>
-				<div class="col-4 text-left">
-					{% get_generic_content_option link.generic_content 'publication_status' as publication_status %}
-					{% if publication_status == 'draft' %}
-						<span class="badge badge-warning">{% trans 'draft' %}</span>
-					{% endif %}
-				</div>
-				<div class="col-4 text-right">
-					<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
-				</div>
+			<div class="generic-content-publication-status">
+				{% get_generic_content_option link.generic_content 'publication_status' as publication_status %}
+				{% if publication_status == 'draft' %}
+					<span class="badge badge-warning">{% trans 'draft' %}</span>
+				{% endif %}
 			</div>
+
+			<div class="text-right">
+				<div class="text-left">
+					
+				</div>
+				<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
+			</div>
+
 		</div>
 	</div>
 </div>

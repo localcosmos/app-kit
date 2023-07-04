@@ -892,6 +892,41 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
 
         self.assertEqual(left_1.taxon_nuid, '{0}002'.format(root_node.taxon_nuid))
 
+
+    @test_settings
+    def test_move_to_between_nature_guides(self):
+        
+        nature_guide_1 = self.create_nature_guide()
+        nature_guide_2 = self.create_nature_guide(name='Test nature guide 2')
+
+        n1_root_node = nature_guide_1.root_node
+        n2_root_node = nature_guide_2.root_node
+
+        n1_left = self.create_node(n1_root_node, 'First')        
+        n1_left_1 = self.create_node(n1_left, 'Second')
+        n1_left_1_1 = self.create_node(n1_left_1, 'Third')
+
+        n2_left = self.create_node(n2_root_node, '2-First')
+        
+        n1_left.move_to(n2_left)
+
+        n1_left.refresh_from_db()
+        self.assertEqual(n1_left.nature_guide, nature_guide_2)
+        self.assertEqual(n1_left.meta_node.nature_guide, nature_guide_2)
+        self.assertTrue(n1_left.taxon_nuid.startswith(n2_left.taxon_nuid))
+        
+        n1_left_1.refresh_from_db()
+        self.assertEqual(n1_left_1.nature_guide, nature_guide_2)
+        self.assertEqual(n1_left_1.meta_node.nature_guide, nature_guide_2)
+        self.assertTrue(n1_left_1.taxon_nuid.startswith(n2_left.taxon_nuid))
+        self.assertTrue(n1_left_1.taxon_nuid.startswith(n1_left.taxon_nuid))
+
+        n1_left_1_1.refresh_from_db()
+        self.assertEqual(n1_left_1_1.nature_guide, nature_guide_2)
+        self.assertEqual(n1_left_1_1.meta_node.nature_guide, nature_guide_2)
+        self.assertTrue(n1_left_1_1.taxon_nuid.startswith(n2_left.taxon_nuid))
+        self.assertTrue(n1_left_1_1.taxon_nuid.startswith(n1_left_1.taxon_nuid))
+
             
 
 class TestCrosslinkManager(WithNatureGuide, TenantTestCase):

@@ -141,6 +141,12 @@ footer {
 	background-size: contain;
 }
 
+.generic-content-publication-status {
+	position: absolute;
+	left: 40%;
+	bottom: 1.25rem;
+}
+
 .text-type-order-entry {
 	font-size: 1.2rem;
 	background: #efefef;

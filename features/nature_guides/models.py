@@ -983,10 +983,16 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
 
         return True
             
-        
+    
+    '''
+        also supports moving to another nature_guide
+    '''
     def move_to(self, new_parent):
 
         old_parent = self.parent
+
+        old_nature_guide = self.nature_guide
+        new_nature_guide = new_parent.nature_guide
 
         old_self_nuid = self.taxon_nuid
         old_self_nuid_len = len(self.taxon_nuid)
@@ -1003,11 +1009,15 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         self.taxon_nuid = new_self_nuid
 
         self.source_id = new_self_nuid
+        self.nature_guide = new_nature_guide
         
         self.save(new_parent)
 
+        self.meta_node.nature_guide = new_nature_guide
+        self.meta_node.save()
+
         # update all nuids, parent stays the same
-        descendants_and_self = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide,
+        descendants_and_self = NatureGuidesTaxonTree.objects.filter(nature_guide=old_nature_guide,
             taxon_nuid__startswith=old_self_nuid).order_by('taxon_nuid')
         
         for descendant in descendants_and_self:
@@ -1017,8 +1027,12 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
             descendant.taxon_nuid = new_descendant_nuid
 
             descendant.source_id = new_descendant_nuid
+            descendant.nature_guide = new_nature_guide
 
             descendant.save(descendant.parent)
+
+            descendant.meta_node.nature_guide = new_nature_guide
+            descendant.meta_node.save()
 
             # update nuid in TaxonProfiles
             if descendant.meta_node.node_type == 'result':

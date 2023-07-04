@@ -602,6 +602,7 @@ class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, Wit
 
         required_image_types = []
         required_text_types = ['legal_notice']
+        required_configuration_types = []
 
         for image_type, image_definition in frontend_settings['userContent']['images'].items():
             
@@ -612,13 +613,21 @@ class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, Wit
 
         for text_type, text_definition in frontend_settings['userContent']['texts'].items():
 
-            text_is_required = image_definition['required']
+            text_is_required = text_definition.get('required', False)
 
             if text_is_required == True:
                 required_text_types.append(text_type)
 
+        
+        for configuration_type, configuration_definition in frontend_settings['userContent']['configuration'].items():
 
-        required_count = len(required_text_types) + len (required_image_types)
+            configuration_is_required = configuration_definition.get('required', False)
+
+            if configuration_is_required == True:
+                required_configuration_types.append(configuration_type)
+
+
+        required_count = len(required_text_types) + len (required_image_types) + len(required_configuration_types)
 
         self.assertEqual(len(result['errors']), required_count)
 
@@ -635,6 +644,13 @@ class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, Wit
 
             frontend_text.save()
 
+        
+        # create all confs
+        frontend.configuration = {}
+        for configuration_type in required_configuration_types:
+            frontend.configuration[configuration_type] = 'test conf'
+        
+        frontend.save()
         
         result = self.release_builder.validate_Frontend(frontend)
         required_count = len(required_image_types)
@@ -788,6 +804,9 @@ class TestReleaseBuilder(WithPublicDomain, WithMetaApp, WithUser, WithMedia, Wit
         generic_form = link.generic_content
 
         result = self.release_builder.validate_GenericForm(generic_form)
+
+        for error in result['errors']:
+            print(error.messages)
 
         self.assertEqual(result['errors'], [])
         self.assertEqual(result['warnings'], [])
