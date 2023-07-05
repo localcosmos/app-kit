@@ -293,7 +293,7 @@ class TestMoveNodeForm(WithNatureGuide, TenantTestCase):
         
         left = self.create_node(root_node, 'Left')
 
-        form = MoveNodeForm(left)
+        form = MoveNodeForm(left, root_node)
         self.assertEqual(form.child_node, left)
 
     @test_settings
@@ -333,7 +333,7 @@ class TestMoveNodeForm(WithNatureGuide, TenantTestCase):
             'new_parent_node_id' : left.id,
         }
 
-        form = MoveNodeForm(right_1, data=post_data)
+        form = MoveNodeForm(right_1, right, data=post_data)
         
         is_valid = form.is_valid()
         self.assertFalse(is_valid)
@@ -346,11 +346,68 @@ class TestMoveNodeForm(WithNatureGuide, TenantTestCase):
             'new_parent_node_id' : right_1.parent.id,
         }
 
-        form_2 = MoveNodeForm(right_1, data=post_data_2)
+        form_2 = MoveNodeForm(right_1, right, data=post_data_2)
         
         is_valid_2 = form_2.is_valid()
         self.assertFalse(is_valid_2)
         self.assertIn('new_parent_node_id', form_2.errors)
+
+
+    @test_settings
+    def test_clean_crosslinks(self):
+        
+        nature_guide = self.create_nature_guide()
+        nature_guide_2 = self.create_nature_guide('ng 2')
+        root_node = nature_guide.root_node
+        n2_root_node = nature_guide_2.root_node
+        
+        n2_left = self.create_node(n2_root_node, 'Left')
+        middle = self.create_node(root_node, 'Middle')
+        right = self.create_node(root_node, 'Right')
+
+        right_1 = self.create_node(right, 'Right child')
+
+        # parent of this one will be moved
+        crosslink = NatureGuideCrosslinks(
+            parent=middle,
+            child=right_1,
+        )
+        crosslink.save()
+
+        # move right_1 to left, right_1 is crosslink, but the old parent is not the crosslink parent
+        post_data = {
+            'input_language' : 'en',
+            'new_parent_node_id' : n2_left.id,
+        }
+
+        form = MoveNodeForm(right_1, right, data=post_data)
+
+        is_valid = form.is_valid()
+
+        self.assertIn('new_parent_node_id', form.errors)
+        self.assertEqual(form.errors['new_parent_node_id'][0],
+            'Moving Right child to Left (ng 2) is forbidden because the branch contains crosslinks.')
+
+
+        # move right_1 to left, right_1 is crosslink, the old parent IS the crosslink parent
+        form_2 = MoveNodeForm(right_1, middle, data=post_data)
+
+        is_valid_2 = form.is_valid()
+
+        self.assertIn('new_parent_node_id', form_2.errors)
+        self.assertEqual(form_2.errors['new_parent_node_id'][0],
+            'Moving Right child to Left (ng 2) is forbidden because the branch contains crosslinks.')
+
+        
+        # move right to left, downstream contains crosslink
+        form_3 = MoveNodeForm(right, root_node, data=post_data)
+
+        is_valid_2 = form_3.is_valid()
+
+        self.assertIn('new_parent_node_id', form_3.errors)
+        self.assertEqual(form_3.errors['new_parent_node_id'][0],
+            'Moving Right to Left (ng 2) is forbidden because the branch contains crosslinks.')
+
 
 
 class MockMatrixFilterValueChoicesMixin(MatrixFilterValueChoicesMixin):

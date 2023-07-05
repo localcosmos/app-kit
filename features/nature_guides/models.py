@@ -971,6 +971,11 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if new_parent == self.parent:
             return False
 
+        # check if the moved child is a crosslink. if so, disallow the move
+
+        # check if the moved branch contains a crosslink AND the new parent node is another nature guide
+        # if so, disallow the move
+
         # before saving anything, perform a circularity check for the new stuff        
         is_circular = self.move_to_check_crosslinks(new_parent)
 

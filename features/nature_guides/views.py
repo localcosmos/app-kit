@@ -1155,7 +1155,7 @@ class MoveNatureGuideNode(MetaAppFormLanguageMixin, FormView):
 
         if form_class is None:
             form_class = self.get_form_class()
-        return form_class(self.child_node, **self.get_form_kwargs())
+        return form_class(self.child_node, self.old_parent_node, **self.get_form_kwargs())
 
 
     def get_context_data(self, **kwargs):

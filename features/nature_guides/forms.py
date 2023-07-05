@@ -7,7 +7,8 @@ from localcosmos_server.forms import LocalizeableForm
 
 from localcosmos_server.taxonomy.fields import TaxonField
 
-from .models import MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction
+from .models import (MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction,
+    NatureGuideCrosslinks)
 
 from app_kit.utils import get_appkit_taxon_search_url
 
@@ -318,9 +319,27 @@ class MoveNodeForm(LocalizeableForm):
     new_parent_node_id = forms.IntegerField(widget=forms.HiddenInput, label=_('New group'))
 
 
-    def __init__(self, child_node, *args, **kwargs):
+    def __init__(self, child_node, old_parent_node, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.child_node = child_node
+        self.old_parent_node = old_parent_node
+
+    def downstream_crosslink_exists(self):
+
+        downstream_crosslinks_exist = False
+        
+        # check if downstream crosslinks exist
+        crosslinks = NatureGuideCrosslinks.objects.filter(parent__nature_guide=self.old_parent_node.nature_guide)
+
+        child_taxon_nuid = self.child_node.taxon_nuid
+
+        for crosslink in crosslinks:
+            if crosslink.parent.taxon_nuid.startswith(child_taxon_nuid) or crosslink.child.taxon_nuid.startswith(child_taxon_nuid):
+                downstream_crosslinks_exist = True
+                break
+
+        return downstream_crosslinks_exist
+        
 
     # check circularity
     def clean(self):
@@ -330,15 +349,27 @@ class MoveNodeForm(LocalizeableForm):
         new_parent_node_id = cleaned_data.get('new_parent_node_id', None)
 
         if new_parent_node_id:
+
             new_parent_node = NatureGuidesTaxonTree.objects.get(pk=new_parent_node_id)
 
+            
+            if self.downstream_crosslink_exists():
+
+                if self.child_node.nature_guide != new_parent_node.nature_guide:
+                    del cleaned_data['new_parent_node_id']
+                    self.add_error('new_parent_node_id',
+                                _('Moving {0} to {1} ({2}) is forbidden because the branch contains crosslinks.'.format(
+                                    self.child_node, new_parent_node, new_parent_node.nature_guide)))
+
+            
             is_valid = self.child_node.move_to_is_valid(new_parent_node)
 
             if not is_valid:
-                del cleaned_data['new_parent_node_id']
+                if 'new_parent_node_id' in cleaned_data:
+                    del cleaned_data['new_parent_node_id']
                 self.add_error('new_parent_node_id',
-                               _('Moving {0} to {1} would result in an invalid tree.'.format(
-                                   self.child_node, new_parent_node)))
+                            _('Moving {0} to {1} would result in an invalid tree.'.format(
+                                self.child_node, new_parent_node)))
 
         return cleaned_data
         
