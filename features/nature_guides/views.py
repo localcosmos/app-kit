@@ -794,9 +794,13 @@ class ManageMatrixFilter(FormLanguageMixin, MetaAppMixin, FormView):
         initial = super().get_initial()
         initial['filter_type'] = self.filter_type
 
+        initial['is_active'] = True
+
         if self.matrix_filter is not None:
             initial['matrix_filter_id'] = self.matrix_filter.id
             initial['name'] = self.matrix_filter.name
+
+            initial['is_active'] = self.matrix_filter.is_active
 
             if self.matrix_filter.definition:
                 for key in self.matrix_filter.definition:
@@ -874,6 +878,11 @@ class ManageMatrixFilter(FormLanguageMixin, MetaAppMixin, FormView):
             )
 
         self.matrix_filter.name = form.cleaned_data['name']
+
+        if not self.matrix_filter.additional_data:
+            self.matrix_filter.additional_data = {}
+
+        self.matrix_filter.additional_data['is_active'] = form.cleaned_data.get('is_active', True)
 
         self.set_definition(form, self.matrix_filter)
 

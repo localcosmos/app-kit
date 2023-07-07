@@ -1286,6 +1286,8 @@ class MatrixFilter(models.Model):
     position = models.IntegerField(default=0)
     weight = models.IntegerField(default=1) # 0-10: how discriminative the trait is for this node
 
+    additional_data = models.JSONField(null=True)
+
     ### NON_MODEL_FIELD ATTRIBUTES
     # the class from .matrix_filters - the type of the filter as a class
     matrix_filter_type = None
@@ -1340,6 +1342,14 @@ class MatrixFilter(models.Model):
         if self.pk:
             return MatrixFilterRestriction.objects.filter(restricted_matrix_filter=self).exists()
         return False
+
+    @property
+    def is_active(self):
+
+        if self.additional_data:
+            return self.additional_data.get('is_active', True)
+        
+        return True
     
     def __str__(self):
         return '{0}'.format(self.name)

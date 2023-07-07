@@ -37,6 +37,10 @@
 								<span id="{{ field.field.matrix_filter.uuid }}_restriction_indicator" class="badge badge-danger">{% trans 'visibility' %}</span>
 								<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
 							{% endif %}
+
+							{% if not field.field.matrix_filter.is_active %}
+								&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>
+							{% endif %}
 							
 							<div class="btn-group dropup">
 								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

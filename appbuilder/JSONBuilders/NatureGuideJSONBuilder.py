@@ -126,6 +126,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             # build all matrix filters
             for matrix_filter in matrix_filters:
+
+                if matrix_filter.is_active == False:
+                    continue
+
                 matrix_filter_json = self._get_matrix_filter_json(matrix_filter)
 
                 parent_node_json['matrixFilters'][str(matrix_filter.uuid)] = matrix_filter_json
@@ -151,6 +155,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 for node_filter_space in space_query:
 
                     node_matrix_filter = node_filter_space.matrix_filter
+
+                    if node_matrix_filter.is_active == False:
+                        continue
+
                     node_matrix_filter_uuid = str(node_matrix_filter.uuid)
 
                     nfs_serializer = NodeFilterSpaceListSerializer(self, node_filter_space)
@@ -180,6 +188,9 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 # apply taxon filters
                 taxon_filters = matrix_filters.filter(filter_type='TaxonFilter')
                 for matrix_filter in taxon_filters:
+
+                    if matrix_filter.is_active == False:
+                        continue
                     
                     matrix_filter_uuid = str(matrix_filter.uuid)
                     

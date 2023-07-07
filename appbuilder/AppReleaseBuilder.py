@@ -816,6 +816,9 @@ class AppReleaseBuilder(AppBuilderBase):
 
             for matrix_filter in matrix_filters:
 
+                if matrix_filter.is_active == False:
+                    continue
+
                 # check if the matrix_filter does have a space assigned
                 space = matrix_filter.get_space()
 

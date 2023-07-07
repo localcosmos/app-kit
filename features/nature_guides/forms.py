@@ -137,6 +137,8 @@ META_NODE_DESCRIPTION_WIDGET = forms.HiddenInput
 if settings.APP_KIT_ENABLE_META_NODE_DESCRIPTION == True:
     META_NODE_DESCRIPTION_WIDGET = forms.Textarea
 
+is_active_field = forms.BooleanField(required=False, label=_('included in app'),
+                    help_text=_('Marks if this node is included in your app.'))
 
  # parent_node is fetched using view kwargs
 class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
@@ -152,8 +154,7 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
                        taxon_search_url=get_appkit_taxon_search_url, required=False)
 
-    is_active = forms.BooleanField(required=False, label=_('included in app'),
-                    help_text=_('Marks if this node is included in your app.'))
+    is_active = is_active_field
 
     # decision rule is currently hidden, might be deprecated in the future
     decision_rule = forms.CharField(required=False, label=_('Decision rule'),

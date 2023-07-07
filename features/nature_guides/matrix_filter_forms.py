@@ -8,6 +8,8 @@ from localcosmos_server.forms import LocalizeableForm
 from .models import MatrixFilter
 from .matrix_filters import MATRIX_FILTER_TYPES
 
+from .forms import is_active_field
+
 
 IDENTIFICATION_MEANS = (
     #('', '--------'),
@@ -31,6 +33,8 @@ class MatrixFilterManagementForm(LocalizeableForm):
 
     weight = forms.IntegerField(min_value=0, max_value=10, initial=1,
                                 help_text=_('0-10. Use a high value if the trait is easily recoginzed, and a low one if it is more difficult.'))
+
+    is_active = is_active_field
 
     localizeable_fields = ['name'] #, 'description']
 
