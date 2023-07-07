@@ -92,8 +92,20 @@ FIELDCLASS_DATATYPE = {
     'PointJSONField' : 'json',
     'GeoJSONField' : 'json',
     'PictureField' : 'json',
-}  
-        
+}
+
+class GenericFormVersionBumpMixin:
+    
+    def check_generic_form_version_bump(self, generic_field):
+
+        form_links = GenericFieldToGenericForm.objects.filter(generic_field=generic_field)
+        for form_link in form_links:
+            generic_form = form_link.generic_form
+
+            generic_form.check_version()        
+
+
+
 class GenericForm(GenericContent):
 
     fields = models.ManyToManyField('GenericField', through='GenericFieldToGenericForm')
@@ -209,7 +221,7 @@ NON_DJANGO_FIELD_OPTIONS = ['step', 'unit']
     fields can be shared across forms
     - somehow check language, generic_forms primary_language have to be the same
 '''
-class GenericField(models.Model):
+class GenericField(GenericFormVersionBumpMixin, models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     field_class = models.CharField(max_length=255, choices=DJANGO_FIELD_CLASSES) # forms.XYfields according to django
     render_as = models.CharField(max_length=255, choices=DJANGO_FIELD_WIDGETS) # django widgets
@@ -221,7 +233,6 @@ class GenericField(models.Model):
 
     label = models.CharField(max_length=255)
     help_text = models.CharField(max_length=255, null=True)
-
 
     taxonomic_restrictions = GenericRelation(AppContentTaxonomicRestriction)
     
@@ -259,6 +270,12 @@ class GenericField(models.Model):
             if exists:
                 raise ValueError('This form already has got one field with the role {0}'.format(self.role))
         super().save(*args, **kwargs)
+
+        self.check_generic_form_version_bump(self)
+
+    def delete(self, *args, **kwargs):
+        self.check_generic_form_version_bump(self)
+        super().delete(*args, **kwargs)
         
 
     def __str__(self):
@@ -295,7 +312,15 @@ class GenericFieldToGenericForm(models.Model):
                                                               generic_field__role=self.generic_field.role).exists()
             if exists:
                 raise ValueError('This form already has got one field with the role %s' % self.generic_field.role)
+
         super().save(*args, **kwargs)
+
+        self.generic_form.check_version()
+
+    def delete(self, *args, **kwargs):
+        self.generic_form.check_version()
+        super().delete(*args, **kwargs)
+        
 
     class Meta:
         unique_together = ('generic_form', 'generic_field')
@@ -311,7 +336,7 @@ VALUE_TYPES = (
     ('choice', _('Choice')),
 )
 
-class GenericValues(models.Model):
+class GenericValues(GenericFormVersionBumpMixin, models.Model):
     generic_field = models.ForeignKey(GenericField, on_delete=models.CASCADE)
     text_value = models.CharField(max_length=255) # numbers need a cast when used, depending on generic_field.field_class
     value_type = models.CharField(max_length=20, choices=VALUE_TYPES)
@@ -328,6 +353,13 @@ class GenericValues(models.Model):
                 default.save()
 
         super().save(*args, **kwargs)
+
+        self.check_generic_form_version_bump(self.generic_field)
+
+    
+    def delete(self, *args, **kwargs):
+        self.check_generic_form_version_bump(self.generic_field)
+        super().delete(*args, **kwargs)
 
 
     def value(self):

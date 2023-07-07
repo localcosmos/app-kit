@@ -129,6 +129,11 @@ class GenericContentMethodsMixin:
             del self.messages['lock_reason']
         
         self.save()
+
+
+    def check_version(self):
+        if self.published_version == self.current_version:
+            self.save()
     
 '''
     Abstract Content Model
@@ -158,6 +163,18 @@ class GenericContent(GenericContentMethodsMixin, models.Model):
 
     zip_import_supported = False
     zip_import_class = None
+
+
+    def save(self, *args, **kwargs):
+        set_published_version = kwargs.pop('set_published_version', False)
+
+        if set_published_version == True:
+            self.published_version = self.current_version
+
+        elif self.published_version == self.current_version:
+            self.current_version += 1
+        
+        super().save(*args, **kwargs)
 
 
     def __str__(self):

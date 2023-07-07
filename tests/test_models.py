@@ -487,6 +487,51 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
             generic_content.refresh_from_db()
             self.assertFalse(generic_content.is_locked)
 
+    @test_settings
+    def test_save_generic_contents_with_published_version(self):
+
+        self.create_all_generic_contents(self.meta_app)
+
+        content_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app)
+
+        for link in content_links:
+            generic_content = link.generic_content
+
+            self.assertEqual(generic_content.published_version, None)
+            self.assertEqual(generic_content.current_version, 1)
+
+            generic_content.save(set_published_version=True)
+
+            self.assertEqual(generic_content.published_version, 1)
+            self.assertEqual(generic_content.current_version, 1)
+
+            generic_content.save()
+
+            self.assertEqual(generic_content.published_version, 1)
+            self.assertEqual(generic_content.current_version, 2)
+
+    @test_settings
+    def test_publish_generic_contents(self):
+
+        self.create_all_generic_contents(self.meta_app)
+
+        content_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app)
+
+        for link in content_links:
+            generic_content = link.generic_content
+
+            self.assertEqual(generic_content.published_version, None)
+            self.assertEqual(generic_content.current_version, 1)
+
+        self.meta_app.publish_generic_contents()
+
+        for link in content_links:
+            generic_content = link.generic_content
+            generic_content.refresh_from_db()
+
+            self.assertEqual(generic_content.published_version, 1)
+            self.assertEqual(generic_content.current_version, 1)
+
 
     @test_settings
     def test_get_primary_localization(self):
@@ -724,12 +769,12 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         #self.assertTrue(self.meta_app.app.ipa_url != None)
         self.assertTrue(self.meta_app.app.pwa_zip_url != None)
 
-        for feature in self.meta_app.features():
-            generic_content = feature.generic_content
-            old_version = feature_versions[feature.content_type.id][generic_content.id]
-            # version bump is done when a new version is created
-            self.assertEqual(old_version, generic_content.current_version)
-            self.assertEqual(old_version, generic_content.published_version)
+        #for feature in self.meta_app.features():
+        #    generic_content = feature.generic_content
+        #    old_version = feature_versions[feature.content_type.id][generic_content.id]
+        #    # version bump is done when a new version is created
+        #    self.assertEqual(old_version, generic_content.current_version)
+        #    self.assertEqual(old_version, generic_content.published_version)
 
         self.assertEqual(self.meta_app.app.published_version, 1)
         self.assertEqual(self.meta_app.current_version, 1)

@@ -367,7 +367,32 @@ class TestCreateGenericFormField(WithGenericField, ViewTestMixin, WithLoggedInUs
         for tup in DJANGO_FIELD_CLASSES:
             field_class = tup[0]
             
+            self.assertEqual(self.generic_content.published_version, None)
+            self.assertEqual(self.generic_content.current_version, 1)
             self.perform_test_form_valid(field_class, self.field_role)
+
+            self.generic_content.refresh_from_db()
+
+            self.assertEqual(self.generic_content.published_version, None)
+            self.assertEqual(self.generic_content.current_version, 1)
+
+    @test_settings
+    def test_form_valid_form_version_bump(self):
+
+        self.generic_content.save(set_published_version=True)
+        self.generic_content.refresh_from_db()
+
+        field_class = DJANGO_FIELD_CLASSES[0][0]
+        
+        self.assertEqual(self.generic_content.published_version, 1)
+        self.assertEqual(self.generic_content.current_version, 1)
+        self.perform_test_form_valid(field_class, self.field_role)
+
+        self.generic_content.refresh_from_db()
+
+        self.assertEqual(self.generic_content.published_version, 1)
+        self.assertEqual(self.generic_content.current_version, 2)
+    
         
 
 class TestCreateReferenceField(WithGenericField, ViewTestMixin, WithLoggedInUser, WithUser,  WithGenericForm,
@@ -551,6 +576,10 @@ class TestManageGenericFormField(WithGenericField, ViewTestMixin, WithLoggedInUs
         for field_link in self.generic_field_links:
 
             generic_field = field_link.generic_field
+            generic_form = field_link.generic_form
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
 
             url_kwargs = {
                 'meta_app_id' : self.meta_app.id,
@@ -584,6 +613,49 @@ class TestManageGenericFormField(WithGenericField, ViewTestMixin, WithLoggedInUs
             
             generic_field.refresh_from_db()
             self.assertEqual(generic_field.label, data['label'])
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
+    
+    @test_settings
+    def test_form_valid_version_bump(self):
+        
+        field_link = self.generic_field_links[0]
+
+        generic_field = field_link.generic_field
+        generic_form = field_link.generic_form
+
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 1)
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'generic_form_id' : self.generic_content.id,
+            'generic_field_id' : generic_field.id,
+        }
+
+        view = self.get_view(url_kwargs)
+        view.set_generic_field(**view.kwargs)
+        view.set_primary_language()
+
+        data = self.get_form_data(generic_field.field_class, generic_field.role)
+        data['label'] = 'Edited label {0}'.format(generic_field.field_class)
+
+        form = GenericFieldForm(data=data)
+
+        is_valid = form.is_valid()
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        generic_form.refresh_from_db()
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 2)
+
 
 
     @test_settings
@@ -785,6 +857,10 @@ class TestDeleteGenericField(WithGenericField, ViewTestMixin, WithLoggedInUser, 
         for field_link in self.generic_field_links:
 
             generic_field = field_link.generic_field
+            generic_form = field_link.generic_form
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
 
             url_kwargs = {
                 'meta_app_id' : self.meta_app.id,
@@ -809,6 +885,46 @@ class TestDeleteGenericField(WithGenericField, ViewTestMixin, WithLoggedInUser, 
 
             link_exists = GenericFieldToGenericForm.objects.filter(generic_field_id=generic_field.id)
             self.assertFalse(link_exists.exists())
+
+            generic_form.refresh_from_db()
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
+
+    @test_settings
+    def test_post_form_version_bump(self):
+        
+        field_link = self.generic_field_links[0]
+
+        generic_field = field_link.generic_field
+        generic_form = field_link.generic_form
+
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 1)
+
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'generic_field_id' : generic_field.id,
+        }
+
+        view_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        url = reverse(self.url_name, kwargs=url_kwargs)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.post(url, **view_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+        generic_form.refresh_from_db()
+        self.assertEqual(generic_form.current_version, 2)
+        self.assertEqual(generic_form.published_version, 1)
 
 
 class TestManageFieldValueCommon(WithGenericField, ViewTestMixin, WithLoggedInUser, WithUser, WithGenericForm,
@@ -919,6 +1035,8 @@ class TestAddFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, WithU
     def test_post(self):
 
         for link in self.generic_field_links:
+
+            generic_form = link.generic_form
             generic_field = link.generic_field
 
             post_data = {
@@ -940,6 +1058,9 @@ class TestAddFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, WithU
 
             url = reverse(self.url_name, kwargs=url_kwargs)
 
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
             # test with admin role
             self.make_user_tenant_admin(self.user, self.tenant)
             response = self.tenant_client.post(url, post_data, **view_kwargs)
@@ -949,6 +1070,54 @@ class TestAddFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, WithU
             created_value = GenericValues.objects.filter(generic_field=generic_field).order_by('pk').last()
             self.assertEqual(created_value.value_type, post_data['generic_value_type'])
             self.assertEqual(created_value.text_value, post_data['value'])
+
+            generic_form.refresh_from_db()
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
+    @test_settings
+    def test_generic_form_version_bump(self):
+
+        link = self.generic_field_links[0]
+
+        generic_form = link.generic_form
+        generic_field = link.generic_field
+        
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 1)
+
+
+        post_data = {
+            'input_language' : self.generic_content.id,
+            'generic_field_id' : generic_field.id,
+            'generic_value_type' : 'choice',
+            'value' : 'choice value' 
+        }
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'generic_form_id' : self.generic_content.id,
+            'generic_field_id' : generic_field.id,
+        }
+
+        view_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        url = reverse(self.url_name, kwargs=url_kwargs)
+
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.post(url, post_data, **view_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+        generic_form.refresh_from_db()
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 2)
+
             
 
 class TestDeleteFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, WithUser, WithGenericForm,
@@ -982,6 +1151,21 @@ class TestDeleteFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, Wi
         url = reverse(self.url_name, kwargs=url_kwargs)
 
         return url
+
+
+    def create_generic_value(self, generic_field):
+        # create a value
+        generic_value = GenericValues(
+            generic_field = generic_field,
+            text_value = 'value for {0}'.format(generic_field.field_class),
+            value_type = 'choice',
+            name = 'value name'
+        )
+
+        generic_value.save()
+
+        return generic_value
+
     
         
     @test_settings
@@ -990,16 +1174,7 @@ class TestDeleteFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, Wi
         for link in self.generic_field_links:
             generic_field = link.generic_field
 
-            # create a value
-            generic_value = GenericValues(
-                generic_field = generic_field,
-                text_value = 'value for {0}'.format(generic_field.field_class),
-                value_type = 'choice',
-                name = 'value name'
-            )
-
-            generic_value.save()
-
+            generic_value = self.create_generic_value(generic_field)
 
             url = self.get_url(generic_field, generic_value)
 
@@ -1018,18 +1193,15 @@ class TestDeleteFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, Wi
     def test_post(self):
 
         for link in self.generic_field_links:
+
+            generic_form = link.generic_form
             generic_field = link.generic_field
 
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
             # create a value
-            generic_value = GenericValues(
-                generic_field = generic_field,
-                text_value = 'value for {0}'.format(generic_field.field_class),
-                value_type = 'choice',
-                name = 'value name'
-            )
-
-            generic_value.save()
-
+            generic_value = self.create_generic_value(generic_field)
 
             url = self.get_url(generic_field, generic_value)
 
@@ -1047,3 +1219,42 @@ class TestDeleteFieldValue(WithGenericField, ViewTestMixin, WithLoggedInUser, Wi
             self.assertEqual(response.status_code, 200)
 
             self.assertFalse(generic_value_exists.exists())
+
+            generic_form.refresh_from_db()
+
+            self.assertEqual(generic_form.published_version, None)
+            self.assertEqual(generic_form.current_version, 1)
+
+    
+    @test_settings
+    def test_post_form_version_bump(self):
+
+        link = self.generic_field_links[0]
+
+        generic_form = link.generic_form
+        generic_field = link.generic_field
+
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 1)
+
+
+        # create a value
+        generic_value = self.create_generic_value(generic_field)
+
+        url = self.get_url(generic_field, generic_value)
+
+        view_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)        
+        response = self.tenant_client.post(url, **view_kwargs)
+        self.assertEqual(response.status_code, 200)
+
+        generic_form.refresh_from_db()
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 2)

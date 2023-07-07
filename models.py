@@ -365,6 +365,14 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         for link in contents:
             link.generic_content.is_locked = False
             link.generic_content.save()
+            
+    def publish_generic_contents(self):
+
+        contents = MetaAppGenericContent.objects.filter(meta_app=self)
+
+        for link in contents:
+            link.generic_content.save(set_published_version=True)
+            
 
     def get_primary_localization(self, meta_app=None):
         locale = {}
@@ -678,11 +686,12 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             self.last_published_at = timezone.now()
 
             # publish all generic contents
-            for feature_link in self.features():
+            # generi content version bumps are now handled in 
+            #for feature_link in self.features():
 
-                generic_content = feature_link.generic_content
-                generic_content.published_version = generic_content.current_version
-                generic_content.save()
+            #    generic_content = feature_link.generic_content
+            #    generic_content.published_version = generic_content.current_version
+            #    generic_content.save()
 
             # set meta_app.app.published_version_path and meta_app.published_version
             self.app.published_version = self.published_version

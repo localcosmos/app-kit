@@ -420,3 +420,97 @@ class TestGenericField(WithGenericForm, TenantTestCase):
 
             name = str(field)
             self.assertEqual(name, field.label)
+
+
+class TestGenericFormVersionBumps(WithGenericForm, TenantTestCase):
+
+    @test_settings
+    def test_form_version_bump(self):
+
+        generic_form = self.create_generic_form()
+
+        all_fields = self.create_all_fields(generic_form)
+
+        generic_field = all_fields[0]
+
+        self.assertEqual(generic_form.published_version, None)
+        self.assertEqual(generic_form.current_version, 1)
+
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 1)
+
+        generic_field.save(generic_form)
+        generic_form.refresh_from_db()
+
+        self.assertEqual(generic_form.published_version, 1)
+        self.assertEqual(generic_form.current_version, 2)
+
+        generic_form.save(set_published_version=True)
+
+        self.assertEqual(generic_form.published_version, 2)
+        self.assertEqual(generic_form.current_version, 2)
+
+        generic_field.delete()
+
+        generic_form.refresh_from_db()
+
+        self.assertEqual(generic_form.published_version, 2)
+        self.assertEqual(generic_form.current_version, 3)
+
+        generic_field_2 = all_fields[1]
+        field_link_2 = GenericFieldToGenericForm.objects.get(
+            generic_form=generic_form,
+            generic_field=generic_field_2,
+        )
+
+        generic_form.save(set_published_version=True)
+        self.assertEqual(generic_form.published_version, 3)
+        self.assertEqual(generic_form.current_version, 3)
+
+        field_link_2.save()
+        generic_form.refresh_from_db()
+        self.assertEqual(generic_form.published_version, 3)
+        self.assertEqual(generic_form.current_version, 4)
+
+        generic_form.save(set_published_version=True)
+        field_link_2.refresh_from_db()
+        self.assertEqual(generic_form.published_version, 4)
+        self.assertEqual(generic_form.current_version, 4)
+
+        field_link_2.delete()
+        generic_form.refresh_from_db()
+        self.assertEqual(generic_form.published_version, 4)
+        self.assertEqual(generic_form.current_version, 5)
+
+
+        choice_field_link = GenericFieldToGenericForm.objects.get(generic_form=generic_form,
+            generic_field__field_class='ChoiceField')
+
+        choice_field = choice_field_link.generic_field
+
+        values = GenericValues.objects.filter(generic_field=choice_field)
+
+        value_1 = values[0]
+
+        generic_form.save(set_published_version=True)
+        self.assertEqual(generic_form.published_version, 5)
+        self.assertEqual(generic_form.current_version, 5)
+
+        value_1.save()
+
+        generic_form.refresh_from_db()
+        self.assertEqual(generic_form.published_version, 5)
+        self.assertEqual(generic_form.current_version, 6)
+
+        generic_form.save(set_published_version=True)
+        self.assertEqual(generic_form.published_version, 6)
+        self.assertEqual(generic_form.current_version, 6)
+
+        value_1.delete()
+
+        generic_form.refresh_from_db()
+        self.assertEqual(generic_form.published_version, 6)
+        self.assertEqual(generic_form.current_version, 7)
+

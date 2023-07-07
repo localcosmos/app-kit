@@ -1113,8 +1113,14 @@ class AppReleaseBuilder(AppBuilderBase):
         build_report['finished_at'] = int(time.time())
         self.meta_app.last_build_report = build_report
         
+        
         self.meta_app.save()
+
+        # if the build was successful, update the versions
         self.meta_app.unlock_generic_contents()
+
+        if success == True:
+            self.meta_app.publish_generic_contents()
 
         return build_report
 
