@@ -128,10 +128,10 @@
 					<div>
 						Mode: 
 						<div class="btn-group btn-group-toggle" data-toggle="buttons">
-							<label class="btn btn-sm btn-outline-primary {% if meta_node.settings.identification_mode == 'strict' %}{% else %}active{% endif %} identification-mode-label" data-input-id="identification-mode-fluid" data-value="fluid">
+							<label class="btn btn-sm btn-outline-primary {% if meta_node.identification_mode == 'strict' %}{% else %}active{% endif %} identification-mode-label" data-input-id="identification-mode-fluid" data-value="fluid">
 								<input id="identification-mode-fluid" type="radio" name="identificationmode" value="fluid"> {% trans 'ranking' %}
 							</label>
-							<label class="btn btn-sm btn-outline-primary identification-mode-label {% if meta_node.settings.identification_mode == 'strict' %}active{% else %}{% endif %}" data-value="strict" data-input-id="identification-mode-strict">
+							<label class="btn btn-sm btn-outline-primary identification-mode-label {% if meta_node.identification_mode == 'strict' %}active{% else %}{% endif %}" data-value="strict" data-input-id="identification-mode-strict">
 								<input id="identification-mode-strict" type="radio" name="identificationmode" value="strict"> {% trans 'exclusion criterion' %}
 							</label>
 						</div>

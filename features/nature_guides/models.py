@@ -597,6 +597,12 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
         self.delete_images()
         super().delete(*args, **kwargs)
 
+    @property
+    def identification_mode(self):
+        if self.settings:
+            return self.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
+        return IDENTIFICATION_MODE_STRICT
+
     def __str__(self):
         return '{0}'.format(self.name)
 
