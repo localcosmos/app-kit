@@ -52,24 +52,28 @@ class Command(BaseCommand):
 
                 if descendant.nature_guide != root_node.nature_guide:
 
+                    old_nature_guide = descendant.nature_guide
+
                     descendant.nature_guide = root_node.nature_guide
                     descendant.save(descendant.parent)
 
                     changed_nodes += 1
                     logger.info('Assigning new nature guide to NatureGuidesTaxonTree instance {0} (id:{1}). Old Nature Guide: {2} (id:{3}) . New Nature Guide: {4} (id:{5})'.format(
-                        descendant.meta_node.name, descendant.id, descendant.nature_guide, descendant.nature_guide.id,
+                        descendant.meta_node.name, descendant.id, old_nature_guide, old_nature_guide.id,
                         root_node.nature_guide, root_node.nature_guide.id
                     ))
 
                 elif descendant.meta_node.nature_guide != root_node.nature_guide:
+
+                    old_nature_guide = descendant.meta_node.nature_guide
 
                     descendant.meta_node.nature_guide = root_node.nature_guide
                     descendant.meta_node.save()
 
                     changed_meta_nodes += 1
                     logger.info('Assigning new nature guide to MetaNode instance {0} (id:{1}). Old Nature Guide: {2} (id:{3}) . New Nature Guide: {4} (id:{5})'.format(
-                        descendant.meta_node.name, descendant.meta_node.id, descendant.nature_guide,
-                        descendant.nature_guide.id, root_node.nature_guide, root_node.nature_guide.id
+                        descendant.meta_node.name, descendant.meta_node.id, old_nature_guide,
+                        old_nature_guide.id, root_node.nature_guide, root_node.nature_guide.id
                     ))
         
         logger.info('Done. Fixed {0} NatureGuidesTaxonTree entries and {1} MetaNode entries'.format(changed_nodes,
