@@ -11,8 +11,6 @@ from .setup_forms import CreateInitialAppKitForm
 
 from .models import Tenant, Domain
 
-from app_kit.models import MetaApp
-
 import threading
 
 User = get_user_model()
