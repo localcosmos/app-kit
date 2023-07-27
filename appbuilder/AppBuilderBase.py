@@ -620,6 +620,9 @@ class AppBuilderBase:
         else:
             api_url = self._app_api_url()
 
+        root_url = api_url[:api_url.rfind("api/")]
+        media_url = '{0}media/'.format(root_url)
+
         settings = {
             "NAME" : self.meta_app.name,
             "PACKAGE_NAME" : self.meta_app.package_name,
@@ -629,6 +632,7 @@ class AppBuilderBase:
             "APP_UUID" : str(self.meta_app.uuid),
             "APP_VERSION" : self.meta_app.current_version,
             "API_URL" : api_url,
+            "MEDIA_URL": media_url,
             "PREVIEW" : preview, # True is only needed for previewing template_content
         }
 
