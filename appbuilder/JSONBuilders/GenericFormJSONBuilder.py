@@ -10,6 +10,8 @@ from app_kit.utils import underscore_to_camelCase
     generates a json according to GenericFormJSON specification v1
     - do not store label etc texts directly in the form, use i18next to look up the localized texts
 '''
+REFERENCE_FIELD_ROLES = ['taxonomic_reference', 'geographic_reference', 'temporal_reference']
+
 class GenericFormJSONBuilder(JSONBuilder):
 
     def build_features_json_entry(self):
@@ -50,7 +52,7 @@ class GenericFormJSONBuilder(JSONBuilder):
 
             generic_form_json['fields'].append(generic_field_dic)
 
-            if generic_field.role in ['taxonomic_reference', 'geographic_reference', 'temporal_reference']:
+            if generic_field.role in REFERENCE_FIELD_ROLES:
                 key = self.to_camel_case(generic_field_dic['role'])
                 generic_form_json[key] = generic_field_dic['uuid']
 
@@ -67,6 +69,11 @@ class GenericFormJSONBuilder(JSONBuilder):
 
         taxonomic_restriction = self.get_taxonomic_restriction(generic_field)
 
+        is_required = generic_field_link.is_required
+
+        if generic_field.role in ['geographic_reference', 'temporal_reference']:
+            is_required = True
+
         field_dic = {
             'uuid' : str(generic_field.uuid),
             'fieldClass' : generic_field.field_class,
@@ -74,7 +81,7 @@ class GenericFormJSONBuilder(JSONBuilder):
             'role' : underscore_to_camelCase(generic_field.role),
             'definition' : {
                 'widget' : widget,
-                'required' : generic_field_link.is_required,
+                'required' : is_required,
                 'isSticky' : generic_field_link.is_sticky,
                 'label' : generic_field.label,
                 'helpText' : generic_field.help_text,

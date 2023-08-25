@@ -30,6 +30,7 @@ DJANGO_FIELD_WIDGETS = (
     ('BackboneTaxonAutocompleteWidget', _('Taxon input with backend search')),
     ('CameraAndAlbumWidget', _('Camera and album')),
     ('FixedTaxonWidget', _('Fixed taxon')),
+    ('SelectTaxonWidget', _('Select taxon widget')),
 )
 
 DJANGO_FIELD_CLASSES = (
@@ -42,6 +43,7 @@ DJANGO_FIELD_CLASSES = (
     ('MultipleChoiceField', _('Multiple choice field')),
     ('DateTimeJSONField', _('Datetime field')),
     ('TaxonField', _('Taxon field')),
+    ('SelectTaxonField', _('Select taxon field')),
     ('PointJSONField', _('Point field')),
     ('GeoJSONField', _('Geometry field')),
     ('PictureField', _('Image field')),
@@ -60,6 +62,7 @@ DEFAULT_WIDGETS = {
     'DateTimeJSONField' : 'SelectDateTimeWidget', # JSONField
     'PointJSONField' : 'MobilePositionInput', # JSONField
     'TaxonField' : 'BackboneTaxonAutocompleteWidget',
+    'SelectTaxonField': 'SelectTaxonWidget',
     'PictureField' : 'CameraAndAlbumWidget',
     'GeoJSONField' : 'PointOrAreaInput',
 }
@@ -76,6 +79,7 @@ ALLOWED_WIDGETS = {
     'PointJSONField' : ['MobilePositionInput'], # JSONField + JSONWidget
     'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
     'TaxonField' : ['BackboneTaxonAutocompleteWidget', 'FixedTaxonWidget'],
+    'SelectTaxonField' : ['SelectTaxonWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
 }
 

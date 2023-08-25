@@ -886,6 +886,8 @@ class AppReleaseBuilder(AppBuilderBase):
            ERRORS:
            - fields with the roles taxonomic_reference, temporal_reference, geographic_reference have to be present
            - multiplechoicefields need at least 2 choices
+           - FixedTaxon Widgets require exactly one taxonomic restriction
+           - SelectTaxon Fields require at least one taxon
            WARNINGS:
            None
         '''
@@ -900,6 +902,8 @@ class AppReleaseBuilder(AppBuilderBase):
         for generic_field_link in generic_field_links:
 
             generic_field = generic_field_link.generic_field
+
+            taxonomic_restrictions = generic_field.taxonomic_restrictions.all()
     
             # check specific field requirements
             # choicefield, multiplechoicefield
@@ -918,6 +922,24 @@ class AppReleaseBuilder(AppBuilderBase):
                         'field_class':verbose_field_class }
                     error = ValidationError(generic_form, generic_field, [error_message])
                     result['errors'].append(error)
+
+            if generic_field.render_as == 'FixedTaxonWidget':
+                if (taxonomic_restrictions.count() != 1):
+
+                    error_message = _('%(render_as)s requires exactly one taxonomic restriction') % {
+                        'render_as':generic_field.render_as }
+                    error = ValidationError(generic_form, generic_field, [error_message])
+                    result['errors'].append(error)
+
+            if generic_field.field_class == 'SelectTaxonField':
+                if (taxonomic_restrictions.count() == 0):
+
+                    error_message = _('%(field_class)s requires at least one taxonomic restriction') % {
+                        'field_class':generic_field.field_class }
+                    error = ValidationError(generic_form, generic_field, [error_message])
+                    result['errors'].append(error)
+                
+
 
 
         for role in ['taxonomic_reference', 'temporal_reference', 'geographic_reference']:
@@ -2150,6 +2172,9 @@ class AppReleaseBuilder(AppBuilderBase):
             build_zip=True
         
         browser_built_folder, browser_zip_filepath = cordova_builder.build_browser(rebuild=True, build_zip=build_zip)
+
+        if not os.path.isdir(self._review_served_root):
+            os.makedirs(self._review_served_root)
 
         if os.path.islink(self._review_browser_served_www_path):
             os.unlink(self._review_browser_served_www_path)

@@ -114,6 +114,35 @@ class DynamicField:
             widget_kwargs.update(additional_params)
 
 
+        elif generic_field.field_class == 'SelectTaxonField':
+
+            choices = []
+
+            taxonomic_restrictions = generic_field.taxonomic_restrictions.all()
+
+            if generic_field_link.is_required == False:
+                choices.append(('','-------'))
+
+            elif not taxonomic_restrictions:
+                choices.append(('', _('Please add taxa using taxonomic restritions')))
+
+            initial = None
+            
+            for taxonomic_restriction in taxonomic_restrictions:
+                                
+                choices.append(
+                    (taxonomic_restriction.name_uuid, taxonomic_restriction.taxon_latname)
+                )
+
+                #if generic_value.is_default == True:
+                #    initial = generic_value.text_value
+
+            initparams.update({
+                'choices' : choices,
+                'initial' : initial,
+            })
+
+
         widget_kwargs['attrs'] = widget_attrs
         initparams['widget'] = widget(**widget_kwargs)
 

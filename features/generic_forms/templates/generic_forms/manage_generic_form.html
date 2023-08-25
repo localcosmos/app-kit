@@ -38,6 +38,7 @@
 									</button>
 									<div class="dropdown-menu">
 										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'TaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Taxon field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'SelectTaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Select Taxon field' %}</a>
 									</div>
 								</div>
 							</li>
