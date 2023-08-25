@@ -218,7 +218,10 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
             )
 
         ##### LINK PARAMETERS #####
-        self.generic_field_link.is_required = form.cleaned_data.get('is_required', False)
+        if self.generic_field.role in ['temporal_reference', 'geographic_reference']:
+            self.generic_field_link.is_required = True
+        else:
+            self.generic_field_link.is_required = form.cleaned_data.get('is_required', False)
         self.generic_field_link.is_sticky = form.cleaned_data.get('is_sticky', False)
 
         # save generic_field_link
