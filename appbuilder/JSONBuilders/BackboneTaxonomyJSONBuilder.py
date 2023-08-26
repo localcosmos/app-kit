@@ -115,15 +115,20 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
     ##############################################################################################################
     # BUILD VERNACULAR NAMES
+    # create a search index with all vernacular names
+    # create a nameUuid: vernacularNames[] lookup dictionary
     
     def build_vernacular_names(self, use_gbif):
 
         for language_code in self.meta_app.languages():
             
-            occurred_names = {}
-            vernacular_names = []
+            #occurred_names = {}
+            #vernacular_names = []
+
+            vernacular_names = VernacularNames()
 
             for lazy_taxon in self.meta_app.taxa():
+
                 if lazy_taxon.taxon_include_descendants and not isinstance(lazy_taxon.instance, AppContentTaxonomicRestriction):
 
                     for d_taxon in lazy_taxon.descendants():
@@ -131,20 +136,13 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                         vernacular_dic = self._create_vernacular_dic(lazy_d_taxon, language_code, use_gbif)
 
                         if vernacular_dic:
-                            vernacular_name = vernacular_dic['name']
-                            name_uuid = vernacular_dic['nameUuid']
-                            if vernacular_name not in occurred_names:
-                                vernacular_names.append(vernacular_dic)
-                                occurred_names[vernacular_name] = vernacular_dic['nameUuid']
+                            vernacular_names.add(vernacular_dic, lazy_taxon)
+
                 else:
                     vernacular_dic = self._create_vernacular_dic(lazy_taxon, language_code, use_gbif)
 
                     if vernacular_dic:
-                        vernacular_name = vernacular_dic['name']
-                        name_uuid = vernacular_dic['nameUuid']
-                        if vernacular_name not in occurred_names:
-                            vernacular_names.append(vernacular_dic)
-                            occurred_names[vernacular_name] = vernacular_dic['nameUuid']
+                        vernacular_names.add(vernacular_dic)
 
 
             # collect and add vernacular nams from nature guides
@@ -152,14 +150,9 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                 language_code)
                 
             for name_uuid, vernacular_dic in vernacular_names_from_nature_guides.items():
-
-                vernacular_name = vernacular_dic['name']
-                name_uuid = vernacular_dic['nameUuid']
-
-                if vernacular_name not in occurred_names:
-                    vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_taxon)
-                    vernacular_names.append(vernacular_dic)
-                    occurred_names[vernacular_name] = vernacular_dic['nameUuid']
+                vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_taxon)
+                vernacular_names.add(vernacular_dic, is_primary=True, force_add=True)
+                
 
             yield language_code, vernacular_names
 
@@ -199,3 +192,40 @@ class TaxonSerializer:
         }
 
         return taxon_json
+
+
+class VernacularNames:
+
+    def __init__(self):
+        self.occurred_names = {}
+        self.vernacular_names = []
+        self.lookup = {}
+
+    def add(self, vernacular_dic, is_primary=False, force_add=False):
+
+        vernacular_name = vernacular_dic['name']
+        name_uuid = vernacular_dic['nameUuid']
+        if vernacular_name not in self.occurred_names or force_add == True:
+            self.vernacular_names.append(vernacular_dic)
+            self.occurred_names[vernacular_name] = name_uuid
+
+            if name_uuid not in self.lookup:
+
+                self.lookup[name_uuid] = {
+                    'primary': vernacular_name,
+                    'secondary': [],
+                }
+
+            else:
+
+                current_primary = self.lookup[name_uuid]['primary']
+
+                if is_primary == True:
+                    if current_primary != vernacular_name:
+                        self.lookup[name_uuid]['primary'] = vernacular_name
+                        self.lookup[name_uuid]['secondary'].append(current_primary)
+
+                elif vernacular_name not in self.lookup[name_uuid]['secondary']:
+                    self.lookup[name_uuid]['secondary'].append(vernacular_name)
+
+        

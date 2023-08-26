@@ -1644,6 +1644,7 @@ class AppReleaseBuilder(AppBuilderBase):
         feature_entry.update({
             'alphabet' : '/{0}'.format(alphabet_relative_path), # a folder
             'vernacular' : {}, # one file per language
+            'vernacularLookup': {}, # one file per language
         })
 
 
@@ -1690,7 +1691,10 @@ class AppReleaseBuilder(AppBuilderBase):
         if not os.path.isdir(vernacular_absolute_path):
             os.makedirs(vernacular_absolute_path)
 
-        for language_code, vernacular_names_list in jsonbuilder.build_vernacular_names(self.use_gbif):
+        for language_code, vernacular_names in jsonbuilder.build_vernacular_names(self.use_gbif):
+
+            vernacular_names_list = vernacular_names.vernacular_names
+            vernacular_names_lookup = vernacular_names.lookup
 
             # remove duplicates
             vernacular_names_distinct = []
@@ -1714,6 +1718,15 @@ class AppReleaseBuilder(AppBuilderBase):
 
             vernacular_language_specific_path = os.path.join(vernacular_relative_path, locale_filename)
             feature_entry['vernacular'][language_code] = '/{0}'.format(vernacular_language_specific_path)
+
+
+            lookup_locale_filename = '{0}_lookup.json'.format(language_code)
+            lookup_language_file = os.path.join(vernacular_absolute_path, lookup_locale_filename)
+            with open(lookup_language_file, 'w', encoding='utf-8') as lookup_f:
+                json.dump(vernacular_names_lookup, lookup_f, indent=4, ensure_ascii=False)
+
+            lookup_vernacular_language_specific_path = os.path.join(vernacular_relative_path, lookup_locale_filename)
+            feature_entry['vernacularLookup'][language_code] = '/{0}'.format(lookup_vernacular_language_specific_path)
 
 
         # add to settings, there is only one BackboneTaxonomy per app
