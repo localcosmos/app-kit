@@ -40,6 +40,10 @@ class TaxonProfiles(GenericContent):
 
     def collected_taxa(self):
 
+        # taxa that have explicit taxon profiles
+        taxa_with_profile = TaxonProfile.objects.filter(taxon_profiles=self)
+        existing_name_uuids = taxa_with_profile.values_list('name_uuid', flat=True)
+
         taxon_profiles_ctype = ContentType.objects.get_for_model(self)
         applink = MetaAppGenericContent.objects.get(content_type=taxon_profiles_ctype, object_id=self.pk)
 
@@ -47,16 +51,19 @@ class TaxonProfiles(GenericContent):
         from app_kit.features.nature_guides.models import NatureGuide
 
         nature_guide_ctype = ContentType.objects.get_for_model(NatureGuide)
-        content_types = [nature_guide_ctype]
 
         nature_guide_links = MetaAppGenericContent.objects.filter(meta_app=applink.meta_app,
                                                                   content_type=nature_guide_ctype)
 
         taxonlist = LazyTaxonList()
+        taxonlist.add(taxa_with_profile)
 
         for link in nature_guide_links:
             nature_guide = link.generic_content
-            taxonlist.add_lazy_taxon_list(nature_guide.taxa())
+            nature_guide_taxa = nature_guide.taxa()
+            nature_guide_taxa.exclude(name_uuid__in=existing_name_uuids)
+
+            taxonlist.add_lazy_taxon_list(nature_guide_taxa)
 
         return taxonlist
 
