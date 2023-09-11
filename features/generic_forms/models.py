@@ -123,6 +123,10 @@ class GenericForm(GenericContent):
             
             if generic_field.label:
                 locale[generic_field.label] = generic_field.label
+
+            if generic_field.help_text:
+                locale[generic_field.help_text] = generic_field.help_text
+
             
             # min, max and decimal_places are translated automatically
             generic_values = GenericValues.objects.filter(generic_field=generic_field, value_type='choice')
