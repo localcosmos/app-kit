@@ -13,7 +13,7 @@ from localcosmos_server.models import App
 
 from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
 
-import hashlib, base64, math
+import hashlib, base64, math, uuid
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
@@ -254,6 +254,8 @@ class TranslateAppForm(forms.Form):
 
         for key, primary_language_value in page_items:
 
+            language_independant_identifier = uuid.uuid4()
+
             languages = meta_app.secondary_languages()
 
             translation_complete = True
@@ -323,6 +325,7 @@ class TranslateAppForm(forms.Form):
                                             required=False)
 
                     field.is_image = False
+                    field.language_independant_identifier = language_independant_identifier
                     
                 field.language = language_code
                 field.is_first = False
