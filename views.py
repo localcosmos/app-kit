@@ -641,9 +641,12 @@ class TranslateApp(MetaAppMixin, FormView):
     }
 '''
 LANGUAGE_TERRITORIES = {
-    'de' : 'DE-DE',
+    'de' : 'DE',
     'en' : 'EN-US',
     'EN' : 'EN-US',
+    'it' : 'IT',
+    'nl' : 'NL',
+    'fr' : 'FR',
 }
 
 class GetDeepLTranslation(MetaAppMixin, TemplateView):
@@ -677,6 +680,7 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
     def get_translation(self, text, target_language):
 
         translation = None
+        target_language = target_language.lower()
         success = False
 
         if target_language not in LANGUAGE_TERRITORIES:
