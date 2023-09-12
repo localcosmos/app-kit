@@ -1306,7 +1306,7 @@ class AppReleaseBuilder(AppBuilderBase):
             # build folder for LocalizedContentImages
             localized_images_path = self._app_localized_content_images_path(language_code)
 
-            if not os.pathisdir(localized_images_path):
+            if not os.path.isdir(localized_images_path):
                 os.makedirs(localized_images_path)
 
             for locale_key, image_definition in localized_content_images.items():
