@@ -97,10 +97,10 @@ class BackboneTaxonomy(GenericContent):
         translation = super().get_primary_localization(meta_app)
 
         # add taxon locales for custom taxonomy
-        custom_taxa = BackboneTaxa.objects.filter(backbonetaxonomy=self, taxon_source=CUSTOM_TAXONOMY_SOURCE)
+        custom_backbone_taxa = BackboneTaxa.objects.filter(backbonetaxonomy=self, taxon_source=CUSTOM_TAXONOMY_SOURCE)
         models = TaxonomyModelRouter(CUSTOM_TAXONOMY_SOURCE)
 
-        for backbone_taxon in custom_taxa:
+        for backbone_taxon in custom_backbone_taxa:
 
             taxontree_instance = backbone_taxon.taxon.tree_instance()
 
@@ -114,6 +114,15 @@ class BackboneTaxonomy(GenericContent):
 
                 else:
                     translation[backbone_taxon.taxon_latname] = None
+
+        # add all custom taxon locales to translation
+        # a custom taxon might not be a BackboneTaxon, it can be added to a GenericForm etc
+        all_custom_taxa_locales = models.TaxonLocaleModel.objects.all()
+
+        for locale in all_custom_taxa_locales:
+            taxon_latname = locale.taxon.taxon_latname
+            if taxon_latname not in translation:
+                translation[taxon_latname] = locale.name
 
         return translation
 
