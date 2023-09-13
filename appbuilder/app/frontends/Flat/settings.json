@@ -58,11 +58,6 @@
 			}
 		},
 		"texts": {
-            "privacyPolicy": {
-                "required": true,
-                "helpText": "Privacy Policy of your App.",
-				"format": "layoutability-full"
-            },
             "termsOfUse": {
                 "required": false,
                 "helpText": "Terms Of Use of your App."

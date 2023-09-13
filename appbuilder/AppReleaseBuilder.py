@@ -518,6 +518,11 @@ class AppReleaseBuilder(AppBuilderBase):
             error = ValidationError(self.meta_app, frontend, [error_message])
             result['errors'].append(error)
 
+        if 'privacy_policy' not in text_types:
+            error_message = _('Your app requires a privacy policy.')
+            error = ValidationError(self.meta_app, frontend, [error_message])
+            result['errors'].append(error)
+
         # check all required images and texts - defined by the frontend settings
         frontend_settings = self._get_frontend_settings()
 
