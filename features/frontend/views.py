@@ -54,6 +54,7 @@ class FrontendSettingsMixin:
         frontend_settings = self.get_frontend_settings()
         text_types = list(frontend_settings['userContent']['texts'].keys())
         text_types.append('legal_notice')
+        text_types.append('privacy_policy')
 
         return text_types
 
@@ -77,7 +78,7 @@ class FrontendSettingsMixin:
         for text_type in text_types:
 
             frontend_text = FrontendText.objects.filter(frontend=self.generic_content,
-                                identifier=text_type).first()
+                        identifier=text_type, frontend_name=self.generic_content.frontend_name).first()
 
             if frontend_text:
                 initial[text_type] = frontend_text.text
