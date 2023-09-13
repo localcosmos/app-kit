@@ -135,4 +135,4 @@ class FrontendText(models.Model):
     text = models.TextField()
 
     class Meta:
-        unique_together=('frontend', 'identifier')
+        unique_together=('frontend', 'identifier', 'frontend_name')
