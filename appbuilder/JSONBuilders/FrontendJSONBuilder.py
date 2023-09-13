@@ -31,7 +31,7 @@ class FrontendJSONBuilder(JSONBuilder):
 
         for text_type in text_types:
             
-            frontend_text = FrontendText.objects.filter(frontend=frontend, identifier=text_type).first()
+            frontend_text = FrontendText.objects.filter(frontend=frontend, frontend_name=frontend.frontend_name, identifier=text_type).first()
 
             text = None
 
