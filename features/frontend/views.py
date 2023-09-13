@@ -137,7 +137,8 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
 
                 text = form.cleaned_data[text_type]
 
-                frontend_text = FrontendText.objects.filter(frontend=self.frontend, identifier=text_type).first()
+                frontend_text = FrontendText.objects.filter(frontend=self.frontend,
+                    frontend_name=self.frontend.frontend_name, identifier=text_type).first()
 
                 if not frontend_text:
                     frontend_text = FrontendText(
