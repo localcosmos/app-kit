@@ -631,6 +631,7 @@ class AppBuilderBase:
             "APP_UID" : self.meta_app.app.uid,
             "APP_UUID" : str(self.meta_app.uuid),
             "APP_VERSION" : self.meta_app.current_version,
+            "BUILD_NUMBER" : self.meta_app.build_number,
             "API_URL" : api_url,
             "MEDIA_URL": media_url,
             "PREVIEW" : preview, # True is only needed for previewing template_content

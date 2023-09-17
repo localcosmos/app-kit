@@ -1,6 +1,6 @@
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 
-from app_kit.features.frontend.models import FrontendText
+from app_kit.features.frontend.models import FrontendText, REQUIRED_FRONTEND_TEXTS
 
 import os
 
@@ -27,7 +27,7 @@ class FrontendJSONBuilder(JSONBuilder):
 
         frontend_settings = self.app_release_builder._get_frontend_settings()
 
-        text_types = list(frontend_settings['userContent']['texts'].keys()) + ['legal_notice']
+        text_types = list(frontend_settings['userContent']['texts'].keys()) + REQUIRED_FRONTEND_TEXTS
 
         for text_type in text_types:
             
@@ -39,7 +39,7 @@ class FrontendJSONBuilder(JSONBuilder):
                 text = frontend_text.text
 
             text_key_json = text_type
-            if text_type == 'legal_notice':
+            if text_type in REQUIRED_FRONTEND_TEXTS:
                 text_key_json = self.to_camel_case(text_type)
 
             frontend_json['userContent']['texts'][text_key_json] = text

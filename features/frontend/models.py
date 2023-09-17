@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from taxonomy.lazy import LazyTaxonList
 
+REQUIRED_FRONTEND_TEXTS = ['legal_notice', 'privacy_policy']
 
 # Frontend images are ContentImages
 class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):

@@ -102,9 +102,9 @@
 	},
 	"cordova": {
 		"platforms": {
-			"android": "android@11.0.0",
-			"ios": "ios@6.2.0",
-			"browser": "browser@6.0.0"
+			"android": "android@12.0.1",
+			"ios": "ios@7.0.1",
+			"browser": "browser@7.0.0"
 		},
 		"plugins": [
 			"cordova-plugin-camera@6.0.0",
