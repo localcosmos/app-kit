@@ -167,11 +167,12 @@ class GenericContent(GenericContentMethodsMixin, models.Model):
 
     def save(self, *args, **kwargs):
         set_published_version = kwargs.pop('set_published_version', False)
+        increment_version = kwargs.pop('increment_version', True)
 
         if set_published_version == True:
             self.published_version = self.current_version
 
-        elif self.published_version == self.current_version:
+        elif self.published_version == self.current_version and increment_version == True:
             self.current_version += 1
         
         super().save(*args, **kwargs)

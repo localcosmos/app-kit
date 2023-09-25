@@ -358,13 +358,13 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         contents = MetaAppGenericContent.objects.filter(meta_app=self)
         for link in contents:
             link.generic_content.is_locked = True
-            link.generic_content.save()
+            link.generic_content.save(increment_version=False)
 
     def unlock_generic_contents(self):
         contents = MetaAppGenericContent.objects.filter(meta_app=self)
         for link in contents:
             link.generic_content.is_locked = False
-            link.generic_content.save()
+            link.generic_content.save(increment_version=False)
             
     def publish_generic_contents(self):
 

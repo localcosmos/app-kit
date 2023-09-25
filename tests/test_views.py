@@ -963,16 +963,22 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
     def test_post_donothing(self):
         view = self.get_view()
 
+        self.meta_app.build_number = 7
+        self.meta_app.save()
+
         response = view.post(view.request)
         self.assertEqual(response.status_code, 302) 
         self.assertIn('manage-app', response.url)
 
         self.meta_app.refresh_from_db()
         self.assertEqual(self.meta_app.current_version, 1)
-        
+        self.assertEqual(self.meta_app.build_number, 7)
 
     @test_settings
     def test_post_new_version(self):
+
+        self.meta_app.build_number = 7
+        self.meta_app.save()
 
         appbuilder = self.meta_app.get_preview_builder()
         appbuilder.build()
@@ -994,6 +1000,7 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
 
         self.meta_app.refresh_from_db()
         self.assertEqual(self.meta_app.current_version, 2)
+        self.assertEqual(self.meta_app.build_number, None)
 
         version_2_folder = appbuilder._app_version_root_path
         self.assertIn('version/2', version_2_folder)

@@ -447,7 +447,7 @@ class ManageGenericContent(ViewClassMixin, MetaAppFormLanguageMixin, TemplateVie
 
                 if altered_options == True:
                     app_generic_content.options = options
-                    app_generic_content.save()
+                    app_generic_content.save(increment_version=False)
 
                 saved_options = True
 
@@ -858,6 +858,7 @@ class StartNewAppVersion(TemplateView):
         if self.meta_app.current_version == self.meta_app.published_version:
             new_version = self.meta_app.current_version + 1
             self.meta_app.current_version = new_version
+            self.meta_app.build_number = None
 
             # reset status reports. otherwise the build page will show results of the last version
             self.meta_app.build_status = None

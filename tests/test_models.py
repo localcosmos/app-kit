@@ -487,6 +487,33 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
             generic_content.refresh_from_db()
             self.assertFalse(generic_content.is_locked)
 
+        # text generic content version incrementation
+        current_version_dict = {}
+        published_version_dict = {}
+        self.meta_app.publish_generic_contents()
+        for link in content_links:
+            generic_content = link.generic_content
+            generic_content.refresh_from_db()
+            current_version_dict[generic_content.uuid] = generic_content.current_version
+            published_version_dict[generic_content.uuid] = generic_content.published_version
+            self.assertEqual(generic_content.current_version, generic_content.published_version)
+
+        self.meta_app.lock_generic_contents()
+        for link in content_links:
+            generic_content = link.generic_content
+            generic_content.refresh_from_db()
+            self.assertEqual(generic_content.current_version, current_version_dict[generic_content.uuid])
+            self.assertEqual(generic_content.current_version, generic_content.published_version)
+
+        self.meta_app.unlock_generic_contents()
+        for link in content_links:
+            generic_content = link.generic_content
+            generic_content.refresh_from_db()
+            self.assertEqual(generic_content.current_version, current_version_dict[generic_content.uuid])
+            self.assertEqual(generic_content.current_version, generic_content.published_version)
+
+
+
     @test_settings
     def test_save_generic_contents_with_published_version(self):
 
