@@ -217,13 +217,13 @@ FIELD_ROLES = (
 
 
 FIELD_OPTIONS = {
-    'DecimalField' : ['min_value', 'max_value', 'decimal_places', 'step', 'unit'],
-    'FloatField' : ['min_value', 'max_value', 'step', 'unit'],
-    'IntegerField' : ['min_value', 'max_value', 'step', 'unit'],
-    #'DateTimeJSONField' : ['datetime_mode'],
+    'DecimalField' : ['min_value', 'max_value', 'decimal_places', 'step', 'initial', 'unit'],
+    'FloatField' : ['min_value', 'max_value', 'step', 'initial', 'unit'],
+    'IntegerField' : ['min_value', 'max_value', 'step', 'initial', 'unit'],
+    'DateTimeJSONField' : ['datetime_mode'],
 }
 
-NON_DJANGO_FIELD_OPTIONS = ['step', 'unit']
+NON_DJANGO_FIELD_OPTIONS = ['step', 'unit', 'datetime_mode']
 
 '''
     fields can be shared across forms

@@ -94,20 +94,21 @@ class GenericFormJSONBuilder(JSONBuilder):
             'taxonomicRestrictions' : taxonomic_restriction,
         }
 
-        if generic_field.field_class == 'SelectDateTime':
+        if generic_field.field_class == 'DateTimeJSONField':
             # default mode
-            field_dic['widgetAttrs']['mode'] = 'datetime'
+            field_dic['definition']['mode'] = 'datetime-local'
 
             if generic_field.options and 'datetime_mode' in generic_field.options:
-                field_dic['widgetAttrs']['mode'] = generic_field.options['datetime_mode']
+                field_dic['definition']['mode'] = generic_field.options['datetime_mode']
 
         # generate widget_attrs from options
         if generic_field.field_class in ['DecimalField', 'FloatField', 'IntegerField']:
             if generic_field.options:
 
                 # defaults
-                min_vale = None
+                min_value = None
                 max_value = None
+                initial = None
 
                 if 'min_value' in generic_field.options:
                     min_value = generic_field.options['min_value']
@@ -116,6 +117,10 @@ class GenericFormJSONBuilder(JSONBuilder):
                 if 'max_value' in generic_field.options:
                     max_value = generic_field.options['max_value']
                     field_dic['widgetAttrs']['max'] = max_value
+
+                if 'initial' in generic_field.options:
+                    initial = generic_field.options['initial']
+                field_dic['definition']['initial'] = initial
 
                 # apply the step - necessary for html in-browser validation of forms
                 # default and fallback

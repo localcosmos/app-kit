@@ -142,6 +142,10 @@ class DynamicField:
                 'initial' : initial,
             })
 
+        elif generic_field.field_class == 'DateTimeJSONField':
+            datetime_mode = generic_field.get_option('datetime_mode')
+            widget_attrs['datetime_mode'] = datetime_mode
+
 
         widget_kwargs['attrs'] = widget_attrs
         initparams['widget'] = widget(**widget_kwargs)
@@ -165,7 +169,7 @@ class DynamicField:
 
 DATETIME_MODES = (
     ('date', _('Date')),
-    ('datetime', _('Date and time')),
+    ('datetime-local', _('Date and time')),
 )
 
 OPTION_FIELDS = {
@@ -174,6 +178,7 @@ OPTION_FIELDS = {
     'unit' : forms.CharField(required=False, max_length=255, help_text=_('abbreviated unit, eg cm or m')),
     'decimal_places' : forms.IntegerField(required=False),
     'step' : forms.FloatField(required=False, help_text=_('Defines the step for the + and - buttons.')),
+    'initial': forms.FloatField(label=_('Initial'), required=False, help_text=_('The initial value of this field')),
     'datetime_mode' : forms.ChoiceField(required=False, label=_('Mode'), choices=DATETIME_MODES,
                                       initial='datetime'),
     'quadrant_size' : forms.IntegerField(label=_('Quadrant size in meters'), initial=5, min_value=5),
