@@ -464,7 +464,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 # build the localized registry, same structure as BackboneTaxonomy vernacular_dic
                 preferred_name = localized_preferred_vernacular_name
                 if not preferred_name:
-                    preferred_name = '{0} {1}'.format(lazy_taxon.taxon_latname, lazy_taxon.taxon_author)
+                    if lazy_taxon.taxon_author:
+                        preferred_name = '{0} {1}'.format(lazy_taxon.taxon_latname, lazy_taxon.taxon_author)
+                    else:
+                        preferred_name = lazy_taxon.taxon_latname
                     
                 if language_code not in localized_registries:
                     localized_registries[language_code] = []
@@ -553,7 +556,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 synonyms = lazy_taxon.synonyms()
                 for synonym in synonyms:
 
-                    synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
+                    if synonym.taxon_author:
+                        synonym_full_latname = '{0} {1}'.format(synonym.taxon_latname, synonym.taxon_author)
+                    else:
+                        synonym_full_latname = synonym.taxon_latname
 
                     synonym_start_letter = synonym_full_latname[0]
 
