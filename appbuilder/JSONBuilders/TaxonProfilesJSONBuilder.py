@@ -472,13 +472,17 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if language_code not in localized_registries:
                     localized_registries[language_code] = []
 
+                preferred_image_url = None
+                if preferred_image:
+                    preferred_image_url = preferred_image['imageUrl']
+
                 vernacular_dic = {
                     'taxonSource': lazy_taxon.taxon_source,
                     'taxonLatname': lazy_taxon.taxon_latname,
                     'taxonAuthor': lazy_taxon.taxon_author,
                     'nameUuid': str(lazy_taxon.name_uuid),
                     'taxonNuid': lazy_taxon.taxon_nuid ,
-                    'imageUrl': preferred_image,
+                    'imageUrl': preferred_image_url,
                     'name': preferred_name,
                 }
 
