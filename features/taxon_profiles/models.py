@@ -38,7 +38,7 @@ class TaxonProfiles(GenericContent):
     def higher_taxa(self):
         return LazyTaxonList()
 
-    def collected_taxa(self):
+    def collected_taxa(self, published_only=True):
 
         # taxa that have explicit taxon profiles
         taxa_with_profile = TaxonProfile.objects.filter(taxon_profiles=self)
@@ -59,6 +59,9 @@ class TaxonProfiles(GenericContent):
         taxonlist.add(taxa_with_profile)
 
         for link in nature_guide_links:
+
+            if published_only == True and link.publication_status != 'publish':
+                continue
             nature_guide = link.generic_content
             nature_guide_taxa = nature_guide.taxa()
             nature_guide_taxa.exclude(name_uuid__in=existing_name_uuids)

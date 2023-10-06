@@ -868,7 +868,7 @@ class AppReleaseBuilder(AppBuilderBase):
         missing_profile_count = 0
 
         # warn if a taxon has no profile
-        for taxon in taxon_profiles.collected_taxa():
+        for taxon in taxon_profiles.collected_taxa(published_only=True):
             taxon_profile = TaxonProfile.objects.filter(taxon_source=taxon.taxon_source,
                                 taxon_latname=taxon.taxon_latname, taxon_author=taxon.taxon_author).first()
 
@@ -1790,7 +1790,7 @@ class AppReleaseBuilder(AppBuilderBase):
             os.makedirs(app_absolute_taxonprofiles_path)
 
 
-        collected_taxa = taxon_profiles.collected_taxa()
+        collected_taxa = taxon_profiles.collected_taxa(published_only=True)
 
         active_collected_taxa = []
 
