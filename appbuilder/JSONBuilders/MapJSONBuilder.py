@@ -80,8 +80,7 @@ class MapJSONBuilder(JSONBuilder):
                 generic_form = generic_form_link.generic_content
 
                 generic_form_filter = {
-                    'observationFormId' : generic_form.id,
-                    'observationformUuid' : str(generic_form.uuid),
+                    'observationFormUuid' : str(generic_form.uuid),
                     'name' : generic_form.name,
                 }
 
