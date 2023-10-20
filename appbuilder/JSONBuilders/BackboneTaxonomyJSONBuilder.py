@@ -226,7 +226,7 @@ class VernacularNames:
                 current_primary = self.lookup[name_uuid]['primary']
 
                 if is_primary == True:
-                    if current_primary != vernacular_name and current_primary.length > vernacular_name.length:
+                    if current_primary != vernacular_name and len(current_primary) > len(vernacular_name):
                         self.lookup[name_uuid]['primary'] = vernacular_name
 
                         if current_primary not in self.lookup[name_uuid]['secondary']:
