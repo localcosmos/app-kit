@@ -121,12 +121,26 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
     def build_vernacular_names(self, use_gbif):
 
         for language_code in self.meta_app.languages():
-            
-            #occurred_names = {}
-            #vernacular_names = []
 
             vernacular_names = VernacularNames()
 
+            # collect and add vernacular nams from nature guides
+            vernacular_names_from_nature_guides = self.app_release_builder._collect_vernacular_names_from_nature_guides(
+                language_code)
+                
+            for name_uuid, vernacular_dic in vernacular_names_from_nature_guides.items():
+                taxon_kwargs = {
+                    'taxon_source': vernacular_dic['taxonSource'],
+                    'taxon_latname': vernacular_dic['taxonLatname'],
+                    'taxon_author': vernacular_dic['taxonAuthor'],
+                    'name_uuid': vernacular_dic['nameUuid'],
+                    'taxon_nuid': vernacular_dic['taxonNuid'],
+                }
+                lazy_ng_taxon = LazyTaxon(**taxon_kwargs)
+                vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_ng_taxon)
+                vernacular_names.add(vernacular_dic, is_primary=True, force_add=True)
+
+            # secondly, use taxa from col and others, not using force_add
             for lazy_taxon in self.meta_app.taxa():
 
                 if lazy_taxon.taxon_include_descendants and not isinstance(lazy_taxon.instance, AppContentTaxonomicRestriction):
@@ -143,15 +157,6 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
                     if vernacular_dic:
                         vernacular_names.add(vernacular_dic)
-
-
-            # collect and add vernacular nams from nature guides
-            vernacular_names_from_nature_guides = self.app_release_builder._collect_vernacular_names_from_nature_guides(
-                language_code)
-                
-            for name_uuid, vernacular_dic in vernacular_names_from_nature_guides.items():
-                vernacular_dic['imageUrl'] = self.get_image_urls_for_lazy_taxon(lazy_taxon)
-                vernacular_names.add(vernacular_dic, is_primary=True, force_add=True)
                 
 
             yield language_code, vernacular_names
@@ -221,9 +226,14 @@ class VernacularNames:
                 current_primary = self.lookup[name_uuid]['primary']
 
                 if is_primary == True:
-                    if current_primary != vernacular_name:
+                    if current_primary != vernacular_name and current_primary.length > vernacular_name.length:
                         self.lookup[name_uuid]['primary'] = vernacular_name
-                        self.lookup[name_uuid]['secondary'].append(current_primary)
+
+                        if current_primary not in self.lookup[name_uuid]['secondary']:
+                            self.lookup[name_uuid]['secondary'].append(current_primary)
+
+                    elif vernacular_name not in self.lookup[name_uuid]['secondary']:
+                        self.lookup[name_uuid]['secondary'].append(vernacular_name)
 
                 elif vernacular_name not in self.lookup[name_uuid]['secondary']:
                     self.lookup[name_uuid]['secondary'].append(vernacular_name)
