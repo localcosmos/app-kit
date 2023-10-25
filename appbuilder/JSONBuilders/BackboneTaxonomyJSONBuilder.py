@@ -150,7 +150,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                         vernacular_dic = self._create_vernacular_dic(lazy_d_taxon, language_code, use_gbif)
 
                         if vernacular_dic:
-                            vernacular_names.add(vernacular_dic, lazy_taxon)
+                            vernacular_names.add(vernacular_dic)
 
                 else:
                     vernacular_dic = self._create_vernacular_dic(lazy_taxon, language_code, use_gbif)
@@ -229,13 +229,8 @@ class VernacularNames:
                     if current_primary != vernacular_name and len(current_primary) > len(vernacular_name):
                         self.lookup[name_uuid]['primary'] = vernacular_name
 
-                        if current_primary not in self.lookup[name_uuid]['secondary']:
-                            self.lookup[name_uuid]['secondary'].append(current_primary)
-
-                    elif vernacular_name not in self.lookup[name_uuid]['secondary']:
-                        self.lookup[name_uuid]['secondary'].append(vernacular_name)
-
-                elif vernacular_name not in self.lookup[name_uuid]['secondary']:
+                new_primary = self.lookup[name_uuid]['primary']
+                if vernacular_name != new_primary and vernacular_name not in self.lookup[name_uuid]['secondary']:
                     self.lookup[name_uuid]['secondary'].append(vernacular_name)
 
         
