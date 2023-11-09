@@ -443,11 +443,11 @@ class ManageGenericContent(ViewClassMixin, MetaAppFormLanguageMixin, TemplateVie
                 # save altered options on app and link
                 if altered_global_options == True:
                     self.generic_content.global_options = global_options
-                    self.generic_content.save()
+                    self.generic_content.save(increment_version=False)
 
                 if altered_options == True:
                     app_generic_content.options = options
-                    app_generic_content.save(increment_version=False)
+                    app_generic_content.save()
 
                 saved_options = True
 

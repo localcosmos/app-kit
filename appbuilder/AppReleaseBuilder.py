@@ -1858,7 +1858,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 json.dump(localized_registry, f, indent=4, ensure_ascii=False)
 
             
-            self.build_features[generic_content_type]['localizedRegistries'][language_code] = relative_localized_registry_filepath
+            self.build_features[generic_content_type]['localizedRegistries'][language_code] = '/{0}'.format(relative_localized_registry_filepath)
             
 
         # store search indices
