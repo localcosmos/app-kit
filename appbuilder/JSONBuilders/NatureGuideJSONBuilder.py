@@ -434,7 +434,7 @@ class MatrixFilterSerializer:
                 
                 matrix_filter_json['definition'].update({
                     'unit' : self.matrix_filter.definition.get('unit', None),
-                    'unit_verbose' : self.matrix_filter.definition.get('unit_verbose', None),
+                    'unitVerbose' : self.matrix_filter.definition.get('unit_verbose', None),
                 })
         
         return matrix_filter_json
@@ -550,7 +550,7 @@ class SpaceListSerializerMixin:
                     space_json.update({
                         'html' : html,
                         'gradient' : gradient,
-                        'color_type': color_type,
+                        'colorType': color_type,
                         'description' : description,
                     })
 
