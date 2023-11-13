@@ -82,6 +82,12 @@ class MatrixFilterManagementFormWithMultipleValues(MatrixFilterManagementForm):
                                 required=False)
 
 
+
+class MatrixFilterManagementFormWithTolerance(MatrixFilterManagementFormWithUnit):
+    tolerance = forms.IntegerField(required=False, label=_('Tolerance (percentage)'), help_text='eg if set to 10, the user input is still valid if it is off by 10% of your configured range')
+
+    field_order = ['input_language', 'name', 'filter_type', 'unit', 'unit_verbose', 'tolerance']
+
 '''
 class MatrixFilterManagementFormWithMultipleValuesAndUnit(MatrixFilterManagementFormWithUnit):
     allow_multiple_values = forms.BooleanField(label=_('allow the user to select multiple values'), required=False)
@@ -93,7 +99,7 @@ class DescriptiveTextAndImagesFilterManagementForm(MatrixFilterManagementFormWit
 class TextOnlyFilterManagementForm(MatrixFilterManagementFormWithMultipleValues):
     pass
 
-class RangeFilterManagementForm(MatrixFilterManagementFormWithUnit):
+class RangeFilterManagementForm(MatrixFilterManagementFormWithTolerance):
 
     localizeable_fields = ['name', 'unit_verbose']
 
@@ -102,7 +108,7 @@ class RangeFilterManagementForm(MatrixFilterManagementFormWithUnit):
     step = forms.FloatField(help_text=_('Range will be rendered as a slider. Step defines the step of this slider.'))
 
     field_order = ['input_language', 'name', 'filter_type', 'min_value', 'max_value', 'step', 'unit',
-                   'unit_verbose']
+                   'unit_verbose', 'tolerance']
     
     
     def clean_max_value(self):

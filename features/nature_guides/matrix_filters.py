@@ -339,7 +339,7 @@ class MultiSpaceFilterMixin:
 class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     verbose_name = _('Range filter')
-    definition_parameters = ['identification_means', 'step', 'unit', 'unit_verbose']
+    definition_parameters = ['identification_means', 'step', 'unit', 'unit_verbose', 'tolerance']
 
     help_text = _("What is described by this trait, e.g. 'length of nose'")
 
@@ -630,7 +630,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
 
     def encoded_space_to_hex(self, encoded_space):
-        print(encoded_space)
+        # print(encoded_space)
         return self.rgb_to_hex(encoded_space[0], encoded_space[1], encoded_space[2], encoded_space[3])
         
 

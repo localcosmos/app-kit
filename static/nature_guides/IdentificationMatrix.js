@@ -380,7 +380,9 @@ class MatrixFilterSpace {
   //  - all MatrixFilters listed in this.restricts are informed
   activate() {
 
-    console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being activated.");
+    if (this.DEBUG == true){
+      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being activated.");
+    }
 
     this.status = STATUS_ACTIVE; 
 
@@ -428,8 +430,11 @@ class MatrixFilterSpace {
   deactivate() {
 
     if (this.status == STATUS_ACTIVE){
-      console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being deactivated.");
 
+      if (this.DEBUG == true){
+        console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " is being deactivated.");
+      }
+      
       this.status = STATUS_INACTIVE;
 
       if (this.input_element.checked == true){
@@ -476,7 +481,7 @@ class MatrixFilterSpace {
     this.signal_matching_matrix_items();
 
     if (IDENTIFICATION_MODE == MODE_STRICT){
-      this.signal_mismaching_matrix_items();
+      this.signal_mismatching_matrix_items();
     }
   }
 
@@ -488,7 +493,7 @@ class MatrixFilterSpace {
     for (let matrix_item_uuid in this.matching_matrix_items){
       let matrix_item = this.matching_matrix_items[matrix_item_uuid];
 
-      if(this.status == STATUS_ACTIVE){
+      if (this.status == STATUS_ACTIVE) {
         matrix_item.add_matching_matrix_filter_space(this);
       }
       else {
@@ -497,14 +502,14 @@ class MatrixFilterSpace {
     }
   }
 
-  signal_mismaching_matrix_items (){
+  signal_mismatching_matrix_items (){
     if (this.DEBUG == true){
 			console.log("[MatrixFilterSpace] " + this.matrix_filter.matrix_filter_type + " " + this.space_identifier + " is signaling mismatching_matrix_items");
 		}
 
     for (let matrix_item_uuid in this.mismatching_matrix_items){
       let matrix_item = this.mismatching_matrix_items[matrix_item_uuid];
-      if(this.status == STATUS_ACTIVE){
+      if (this.status == STATUS_ACTIVE) {
         matrix_item.add_mismatching_matrix_filter_space(this);
       }
       else {
@@ -612,15 +617,15 @@ class RangeSpace extends MatrixFilterSpace {
 
   on_change(event) {
 
-    throw new Error("[RangeFilterSpace] method on_change can only be called from RangeFilter");
+    throw new Error("[RangeSpace] method on_change can only be called from RangeFilter");
   }
 
   get_input_element () {
     return this.matrix_filter.input_element;
   }
 
+  // called from RangeFilter if the selected value is within this range
   activate() {    
-
     if (this.status == STATUS_INACTIVE){
 
       if (this.DEBUG == true){
@@ -640,6 +645,8 @@ class RangeSpace extends MatrixFilterSpace {
     }
   }
 
+  // called from RangeFilter if the selected value is NOT within this range
+  // and on reset
   deactivate() {
 
     if (this.status == STATUS_ACTIVE){
@@ -669,7 +676,7 @@ class TaxonFilterSpace extends MatrixFilterSpace {
 
 class MatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
     this.DEBUG = true;
 
     // for firing events
@@ -681,6 +688,8 @@ class MatrixFilter {
     this.name = name;
 
     this.allow_multiple_values = allow_multiple_values;
+
+    this.definition = definition
 
     // {space_identifier : MatrixFilterSpace}
     // contains the spaces of this filter
@@ -1054,9 +1063,9 @@ class ObjectBasedMatrixFilter extends MatrixFilter {
 
 class DescriptiveTextAndImagesFilter extends StringBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = DescriptiveTextAndImagesSpace;
   }
@@ -1065,9 +1074,9 @@ class DescriptiveTextAndImagesFilter extends StringBasedMatrixFilter {
 
 class TextOnlyFilter extends StringBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = TextOnlySpace;
   }
@@ -1077,9 +1086,9 @@ class TextOnlyFilter extends StringBasedMatrixFilter {
 
 class ColorFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = ColorSpace;
   }
@@ -1088,9 +1097,9 @@ class ColorFilter extends ObjectBasedMatrixFilter {
 
 class NumberFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = NumberSpace;
   }
@@ -1102,11 +1111,16 @@ class NumberFilter extends ObjectBasedMatrixFilter {
 */
 class RangeFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = RangeSpace;
+
+    this.tolerance = 0;
+    if ('tolerance' in definition && typeof definition.tolerance === 'number') {
+      this.tolerance = definition.tolerance;
+    }
 
     // all RangeFilteSpace instances share the same input_element which is bound to RangeFilter
     this.input_element = null;
@@ -1143,6 +1157,10 @@ class RangeFilter extends ObjectBasedMatrixFilter {
 
   }
 
+  /**
+   * a specific value is selected
+   * if the value is within a given range of a space, activate this space
+   */
   on_change(event){
 
     let value_str = this.get_value_from_input_element(event.currentTarget);
@@ -1158,7 +1176,13 @@ class RangeFilter extends ObjectBasedMatrixFilter {
       let value_is_within_range = false;
       if (value_str.length > 0){
         let value = parseFloat(value_str);
-        if (value >= specific_range[0] && value <= specific_range[1]){
+        let upper_limit = specific_range[1];
+        let lower_limit = specific_range[0];
+        if (this.tolerance) {
+          upper_limit = upper_limit + (upper_limit * ( this.tolerance / 100));
+          lower_limit = lower_limit - (lower_limit * ( this.tolerance / 100));
+        }
+        if (value >= lower_limit && value <= upper_limit){
           value_is_within_range = true;
         }
       }
@@ -1200,9 +1224,9 @@ class RangeFilter extends ObjectBasedMatrixFilter {
 
 class TaxonFilter extends ObjectBasedMatrixFilter {
 
-  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values) {
+  constructor(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition) {
 
-    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values);
+    super(form_element, uuid, matrix_filter_type, name, weight, allow_multiple_values, definition);
 
     this.MatrixFilterSpaceClass = TaxonFilterSpace;
   }
@@ -1246,8 +1270,12 @@ class MatrixItem {
     // { matrix_filter_uuid : { space_identifier : MatrixfilterSpace } }
     this.matrix_filter_spaces = {}; // constant
 
-    this.active_matching_matrix_filter_spaces = {};
-    this.active_mismatching_matrix_filter_spaces = {};
+    this.active_matching_matrix_filter_spaces = {}; // non-RangeSpace
+    this.active_mismatching_matrix_filter_spaces = {}; // non-RangeSpace
+
+    this.active_matching_range_spaces = {};
+    this.active_mismatching_range_spaces = {};
+
     this.status = STATUS_ACTIVE;
 
   }
@@ -1266,13 +1294,18 @@ class MatrixItem {
   // ALL MODES
   calculate_points () {
     let points = 0;
-		for (let matrix_filter_uuid in this.active_matching_matrix_filter_spaces) {
 
-			for (let space_identifier in this.active_matching_matrix_filter_spaces[matrix_filter_uuid]){
-        let weight = this.active_matching_matrix_filter_spaces[matrix_filter_uuid][space_identifier];
-				points = points + weight;
-			}
-		}
+    const registries = [this.active_matching_matrix_filter_spaces, this.active_matching_range_spaces];
+
+    registries.forEach((registry) => {
+      for (let matrix_filter_uuid in registry) {
+
+        for (let space_identifier in registry[matrix_filter_uuid]){
+          let weight = registry[matrix_filter_uuid][space_identifier];
+          points = points + weight;
+        }
+      }
+    });
 
 		if (this.DEBUG == true){
 			console.log("[MatrixItem] " + this.name + " total points: "  + points);
@@ -1281,41 +1314,78 @@ class MatrixItem {
 		return points;
   }
 
+  // if a matching matrix filter space is added points are calculated
   add_matching_matrix_filter_space(matrix_filter_space) {
-
-    if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " is adding space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrix_filter_type);
-    }
 
     let matrix_filter = matrix_filter_space.matrix_filter;
 
-    if (!this.active_matching_matrix_filter_spaces.hasOwnProperty(matrix_filter.uuid)) {
-      this.active_matching_matrix_filter_spaces[matrix_filter.uuid] = {};
+    let registry = this.active_matching_matrix_filter_spaces;
+    if (matrix_filter.matrix_filter_type === 'RangeFilter'){
+      registry = this.active_matching_range_spaces;
     }
 
-    this.active_matching_matrix_filter_spaces[matrix_filter.uuid][matrix_filter_space.space_identifier] = matrix_filter.weight;
+    if (this.DEBUG == true){
+      console.log("[MatrixItem] " + this.name + " is adding space " + matrix_filter_space.space_identifier + " of " + matrix_filter.matrix_filter_type);
+    }
+
+    if (!registry.hasOwnProperty(matrix_filter.uuid)) {
+      registry[matrix_filter.uuid] = {};
+    }
+
+    registry[matrix_filter.uuid][matrix_filter_space.space_identifier] = matrix_filter.weight;
+
+    // it might be necessary to active the item if it was a range filter
+    if (matrix_filter.matrix_filter_type === 'RangeFilter') {
+      const range_filter_is_deactivating = this.range_filter_is_deactivating(matrix_filter);
+      if (range_filter_is_deactivating === false && Object.keys(this.active_mismatching_matrix_filter_spaces).length === 0 && this.status === STATUS_INACTIVE) {
+        this.activate();
+      }
+    }
 
     this.update();
 
   }
 
-  remove_matching_matrix_filter_space(matrix_filter_space) {
+  range_filter_is_deactivating(range_filter) {
 
-    if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " is removing space " + matrix_filter_space.space_identifier + " of " + matrix_filter_space.matrix_filter.matrix_filter_type);
+    if (range_filter.uuid in this.active_matching_range_spaces || Object.keys(this.active_mismatching_range_spaces).length === 0) {
+      return false;
+    } else if (range_filter.uuid in this.active_mismatching_range_spaces) {
+      return true;
     }
+
+    return false;
+
+  }
+
+  remove_matching_matrix_filter_space(matrix_filter_space) {
 
     let matrix_filter = matrix_filter_space.matrix_filter;
 
-    if (this.active_matching_matrix_filter_spaces.hasOwnProperty(matrix_filter.uuid)) {
-      let matrix_item_space = this.active_matching_matrix_filter_spaces[matrix_filter.uuid];
+    let registry = this.active_matching_matrix_filter_spaces;
+    if (matrix_filter.matrix_filter_type === 'RangeFilter'){
+      registry = this.active_matching_range_spaces;
+    }
+
+    if (this.DEBUG == true){
+      console.log("[MatrixItem] " + this.name + " is removing space " + matrix_filter_space.space_identifier + " of " + matrix_filter.matrix_filter_type);
+    }
+
+    if (registry.hasOwnProperty(matrix_filter.uuid)) {
+      let matrix_item_space = registry[matrix_filter.uuid];
 
       if (matrix_item_space.hasOwnProperty(matrix_filter_space.space_identifier)){
-        delete this.active_matching_matrix_filter_spaces[matrix_filter.uuid][matrix_filter_space.space_identifier];
+        delete registry[matrix_filter.uuid][matrix_filter_space.space_identifier];
       }
 
-      if (Object.keys(this.active_matching_matrix_filter_spaces[matrix_filter.uuid]).length == 0){
-        delete this.active_matching_matrix_filter_spaces[matrix_filter.uuid];
+      if (Object.keys(registry[matrix_filter.uuid]).length == 0){
+        delete registry[matrix_filter.uuid];
+      }
+    }
+
+    if (matrix_filter.matrix_filter_type === 'RangeFilter') {
+      if (Object.keys(this.active_mismatching_range_spaces).length > 0 && !(matrix_filter.uuid in this.active_matching_range_spaces) && this.status === STATUS_ACTIVE) {
+        //this.deactivate();
       }
     }
 
@@ -1386,6 +1456,8 @@ class MatrixItem {
 
     this.active_matching_matrix_filter_spaces = {};
     this.active_mismatching_matrix_filter_spaces = {};
+    this.active_matching_range_spaces = {};
+    this.active_mismatching_range_spaces = {};
     
     this.activate();
   }
@@ -1393,48 +1465,86 @@ class MatrixItem {
   //
   // STRICT MODE ONLY
   //
+  // a mismatch will deactivate a matrix item. RangeSpace mismatches require a special treatment
   add_mismatching_matrix_filter_space(matrix_filter_space) {
 
-    if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " received an added mismatch from " + matrix_filter_space.matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
-    }
-
     let matrix_filter = matrix_filter_space.matrix_filter;
-    let matrix_item_is_initially_visible = Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0 ? false : true;
 
-    if(!this.active_mismatching_matrix_filter_spaces.hasOwnProperty(matrix_filter.uuid)){
-      this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid] = {}; 
+    let registry = this.active_mismatching_matrix_filter_spaces;
+    if (matrix_filter.matrix_filter_type === 'RangeFilter') {
+      registry = this.active_mismatching_range_spaces;
     }
 
-    this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid][matrix_filter_space.space_identifier] = matrix_filter_space;
+    if (this.DEBUG == true){
+      console.log("[MatrixItem] " + this.name + " received an added mismatch from " + matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
+    }
+    
+    let matrix_item_has_initial_mismatches = Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0 ? false : true;
 
-    if (matrix_item_is_initially_visible == false){
+    if(!registry.hasOwnProperty(matrix_filter.uuid)){
+      registry[matrix_filter.uuid] = {}; 
+    }
+
+    registry[matrix_filter.uuid][matrix_filter_space.space_identifier] = matrix_filter_space;
+
+    let deactivate_self = true;
+    // evaluate RangeFilter situation only if there are no other mismatches
+    if (Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0) {
+      // check if the range filter situation should trigger a deactivation
+      // range filters can overlap and are item specific
+      // deactivate if the RangeFilter (uuid) has only mismatches and no matches 
+      if (matrix_filter.uuid in this.active_matching_range_spaces) {
+        deactivate_self = false;
+      }
+    }
+
+    //if (matrix_item_has_initial_mismatches == false){
+    if (deactivate_self === true && this.status === STATUS_ACTIVE) {
       this.deactivate();
     }
+    
   }
 
   remove_mismatching_matrix_filter_space(matrix_filter_space) {
 
-    if (this.DEBUG == true){
-      console.log("[MatrixItem] " + this.name + " received a removed mismatch from " + matrix_filter_space.matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
+    let matrix_filter = matrix_filter_space.matrix_filter;
+
+    let registry = this.active_mismatching_matrix_filter_spaces;
+    if (matrix_filter.matrix_filter_type === 'RangeFilter') {
+      registry = this.active_mismatching_range_spaces;
     }
 
-    let matrix_filter = matrix_filter_space.matrix_filter;
+    if (this.DEBUG == true){
+      console.log("[MatrixItem] " + this.name + " received a removed mismatch from " + matrix_filter.matrix_filter_type + " : " + matrix_filter_space.space_identifier);
+    }
+
     let matrix_item_is_initially_visible = Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0 ? false : true;
 
-    if (this.active_mismatching_matrix_filter_spaces.hasOwnProperty(matrix_filter.uuid)) {
-      let matrix_item_space = this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid];
+    if (registry.hasOwnProperty(matrix_filter.uuid)) {
+      let matrix_item_space = registry[matrix_filter.uuid];
 
       if (matrix_item_space.hasOwnProperty(matrix_filter_space.space_identifier)){
-        delete this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid][matrix_filter_space.space_identifier];
+        delete registry[matrix_filter.uuid][matrix_filter_space.space_identifier];
       }
 
-      if (Object.keys(this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid]).length == 0){
-        delete this.active_mismatching_matrix_filter_spaces[matrix_filter.uuid];
+      if (Object.keys(registry[matrix_filter.uuid]).length == 0){
+        delete registry[matrix_filter.uuid];
       }
     }
 
-    if (Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0 && matrix_item_is_initially_visible == true) {
+    let activate_self = false;
+    if (Object.keys(this.active_mismatching_matrix_filter_spaces).length === 0) {
+      activate_self = true;
+
+      const range_filter_is_deactivating = this.range_filter_is_deactivating(matrix_filter);
+
+      if (range_filter_is_deactivating === true) {
+        activate_self = false;
+      }      
+    }
+
+    // if (Object.keys(this.active_mismatching_matrix_filter_spaces).length == 0 && matrix_item_is_initially_visible == true) {
+    if (activate_self === true && this.status == STATUS_INACTIVE) {
       this.activate();
     }
   }
@@ -1539,7 +1649,7 @@ class IdentificationMatrix {
         let matrix_filter_data = matrix_filters_and_items_json["matrix_filters"][matrix_filter_uuid];
         let MatrixFilterClass = MATRIX_FILTER_CLASSES[matrix_filter_data.type];
 
-        let matrix_filter = new MatrixFilterClass(self.form_element, matrix_filter_uuid, matrix_filter_data.type, matrix_filter_data.name, matrix_filter_data.weight, matrix_filter_data.allow_multiple_values);
+        let matrix_filter = new MatrixFilterClass(self.form_element, matrix_filter_uuid, matrix_filter_data.type, matrix_filter_data.name, matrix_filter_data.weight, matrix_filter_data.allow_multiple_values, matrix_filter_data.definition);
 
         MATRIX_FILTERS[matrix_filter_uuid] = matrix_filter;
       }

@@ -426,6 +426,7 @@ class MatrixFilterSerializer:
                     'min' : self.matrix_filter.definition.get('min', None),
                     'max' : self.matrix_filter.definition.get('max', None),
                     'step' : self.matrix_filter.definition.get('step', None),
+                    'tolerance': self.matrix_filter.definition.get('tolerance', 0),
                 })
 
         if self.matrix_filter.filter_type in ['RangeFilter', 'NumberFilter']:

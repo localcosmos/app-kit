@@ -207,7 +207,7 @@ FeatureModel = NatureGuide
     - removing a trait_property or _value from parent_node
     - adding a trait_property or _value to parent_node
     - altering parent_node space for anything else than color
-    -- explanation: TestAndImages do not change encoded_space, but localization
+    -- explanation: TextAndImages do not change encoded_space, but localization
     -- for Range/Numbers false values are acceptable, numbers are never changed - only added or deleted
 
     When building the app, the json is rebuilt
@@ -403,7 +403,8 @@ class ChildrenCacheManager:
             'type' : matrix_filter.filter_type,
             'name' : matrix_filter.name,
             'weight' : matrix_filter.weight,
-            'allow_multiple_values' : allow_multiple_values,
+            'allow_multiple_values' : allow_multiple_values, # do not just remove this, this is tied to IdentificationMatrix.js
+            'definition': matrix_filter.definition,
         }
             
         return data
@@ -473,7 +474,16 @@ class ChildrenCacheManager:
         
         self.meta_node.children_cache = data
         self.meta_node.save()
-            
+
+    '''
+    update matrix filter
+    '''
+    def update_matrix_filter(self, matrix_filter):
+
+        data = self.get_data()
+        data = self.add_matrix_filter_to_cache(data, matrix_filter)
+        self.meta_node.children_cache = data
+        self.meta_node.save()
         
 
     '''

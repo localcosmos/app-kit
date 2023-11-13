@@ -888,6 +888,10 @@ class ManageMatrixFilter(FormLanguageMixin, MetaAppMixin, FormView):
 
         self.matrix_filter.save()
 
+        if self.matrix_filter.filter_type == 'RangeFilter':
+            cache_manager = ChildrenCacheManager(self.meta_node)
+            cache_manager.update_matrix_filter(self.matrix_filter)
+
         # matrix filter needs to be saved first, encoded_space is stored on MatrixFilterSpace Model
         # with FK to MatrixFilter
         self.save_encoded_space(form, self.matrix_filter)
