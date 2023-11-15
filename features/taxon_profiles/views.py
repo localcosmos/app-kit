@@ -14,7 +14,7 @@ from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 
-from app_kit.features.nature_guides.models import MetaNode, NatureGuidesTaxonTree, NodeFilterSpace
+from app_kit.features.nature_guides.models import MetaNode, NatureGuidesTaxonTree, NodeFilterSpace, NatureGuide
 
 from localcosmos_server.decorators import ajax_required
 
@@ -22,6 +22,8 @@ from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
+
+from localcosmos_server.generic_views import AjaxDeleteView
 
 
 
@@ -111,6 +113,20 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        nature_guides = []
+        if self.taxon_profile.taxon_source == 'app_kit.features.nature_guides':
+            tree_entry = NatureGuidesTaxonTree.objects.filter(name_uuid=self.taxon_profile.name_uuid).first()
+            print(tree_entry)
+            nature_guides = [tree_entry.nature_guide]
+        else:
+            nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid).values_list('nature_guide', flat=True).distinct()
+            nature_guides = NatureGuide.objects.filter(pk__in=nature_guide_ids)
+
+        context['nature_guides'] = nature_guides
+        models = TaxonomyModelRouter(self.taxon_profile.taxon_source)
+        context['taxon_tree_model'] = models.TaxonTreeModel._meta.verbose_name
+
         context['taxon'] = self.taxon
         context['taxon_profile'] = self.taxon_profile
         context['vernacular_name_from_nature_guides'] = self.taxon.get_primary_locale_vernacular_name_from_nature_guides(
@@ -120,6 +136,10 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         context['generic_content'] = self.taxon_profiles
         context['text_types'] = TaxonTextType.objects.all().exists()
         context['show_text_length_badges'] = settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True
+
+        # show possible duplicates
+        possible_duplicates = TaxonProfile.objects.filter(taxon_latname=self.taxon_profile.taxon_latname).exclude(pk=self.taxon_profile.pk)
+        context['possible_duplicates'] = possible_duplicates
         return context
 
 
@@ -147,6 +167,24 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         context['form'] = form
         context['saved'] = True
         return self.render_to_response(context)
+    
+
+
+class DeleteTaxonProfile(AjaxDeleteView):
+    model = TaxonProfile
+    template_name = 'taxon_profiles/ajax/delete_taxon_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        content_type = ContentType.objects.get_for_model(TaxonProfiles)
+        url_kwargs = {
+            'meta_app_id': self.kwargs['meta_app_id'],
+            'content_type_id': content_type.id,
+            'object_id': self.object.taxon_profiles.id,
+        }
+        context['next'] = reverse('manage_taxonprofiles', kwargs=url_kwargs)
+        return context
+
 
 
 class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
@@ -257,7 +295,7 @@ class ManageTaxonTextType(MetaAppFormLanguageMixin, FormView):
         return self.render_to_response(context)
 
 
-from localcosmos_server.generic_views import AjaxDeleteView
+
 class DeleteTaxonTextType(AjaxDeleteView):
 
     model = TaxonTextType

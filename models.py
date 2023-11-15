@@ -668,7 +668,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
             for taxon in query:
 
-                label = taxon.name
+                label = '{0}'.format(taxon.name)
                 lazy_taxon = LazyTaxon(instance=taxon.taxon)
                 result = lazy_taxon.as_typeahead_choice(label=label)
 

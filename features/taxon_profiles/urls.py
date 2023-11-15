@@ -6,6 +6,8 @@ urlpatterns = [
          views.ManageTaxonProfiles.as_view(), name='manage_taxonprofiles'),
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
+    path('delete-taxon-profile/<int:meta_app_id>/<int:pk>/',
+        views.DeleteTaxonProfile.as_view(), name='delete_taxon_profile'),
     path('create-taxon-text-type/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.ManageTaxonTextType.as_view(), name='create_taxon_text_type'),
     path('manage-taxon-text-type/<int:meta_app_id>/<int:taxon_text_type_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
