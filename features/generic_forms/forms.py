@@ -3,6 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from django.contrib.gis import forms
 from django.urls import reverse
+from django.utils import timezone
+from datetime import datetime
 
 from .models import (GenericForm, DJANGO_FIELD_WIDGETS, NUMBER_FIELDS, FIELD_OPTIONS,
     NON_DJANGO_FIELD_OPTIONS)
@@ -150,6 +152,17 @@ class DynamicField:
         elif generic_field.field_class == 'DateTimeJSONField':
             datetime_mode = generic_field.get_option('datetime_mode')
             widget_attrs['datetime_mode'] = datetime_mode
+            if datetime_mode == 'date':
+                widget_attrs['type'] = 'date'
+                initial = datetime.now().strftime('%Y-%m-%d')
+                print(initial)
+            else:
+                widget_attrs['type'] = 'datetime-local'
+                initial = timezone.now()
+
+            initparams.update({
+                'initial' : initial,
+            })
 
 
         widget_kwargs['attrs'] = widget_attrs
