@@ -11,6 +11,8 @@ from . import fields, widgets
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
 from localcosmos_server.forms import LocalizeableForm
+from localcosmos_server.taxonomy.widgets import (get_choices_from_taxonomic_restrictions,
+                                                 get_taxon_map_from_taxonomic_restrictions)
 
 class DynamicForm(forms.Form):
     
@@ -120,26 +122,29 @@ class DynamicField:
 
             taxonomic_restrictions = generic_field.taxonomic_restrictions.all()
 
-            if generic_field_link.is_required == False:
-                choices.append(('','-------'))
+            if taxonomic_restrictions:
+                choices = get_choices_from_taxonomic_restrictions(taxonomic_restrictions)
 
             elif not taxonomic_restrictions:
                 choices.append(('', _('Please add taxa using taxonomic restritions')))
 
             initial = None
+            taxon_map = get_taxon_map_from_taxonomic_restrictions(taxonomic_restrictions)
+
+            if generic_field_link.is_required == False:
+                choices.prepend(('','-------'))
+
+            # initial?
             
-            for taxonomic_restriction in taxonomic_restrictions:
-                                
-                choices.append(
-                    (taxonomic_restriction.name_uuid, taxonomic_restriction.taxon_latname)
-                )
-
-                #if generic_value.is_default == True:
-                #    initial = generic_value.text_value
-
             initparams.update({
                 'choices' : choices,
                 'initial' : initial,
+                'taxon_map': taxon_map,
+            })
+
+            widget_kwargs.update({
+                'choices': choices,
+                'taxon_map': taxon_map,
             })
 
         elif generic_field.field_class == 'DateTimeJSONField':
