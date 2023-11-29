@@ -654,6 +654,8 @@ class NatureGuidesTaxonTreeManager(models.Manager):
     
 from taxonomy.models import TaxonTree, TaxonSynonym, TaxonNamesView, TaxonLocale
 class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
+
+    taxon_source = 'app_kit.features.nature_guides'
     
     # NatureGuide specific fields
     nature_guide = models.ForeignKey(NatureGuide, on_delete=models.CASCADE)

@@ -18,8 +18,15 @@
 					{% endif %}
 				{% else %}
 					{% get_nature_guide_taxon meta_node nature_guide as taxon %}
-					{{ taxon }}
+					{% get_taxon_profile taxon as non_taxon_profile %}
+					<a href="{ url 'manage_taxon_profile' meta_app.id generic_content.id taxon.taxon_source taxon.name_uuid }">
+						{{ meta_node.name }}
+					</a>
 					<span class="badge badge-warning">{% trans 'no taxon set' %}</span>
+					{% if non_taxon_profile %}
+					{% else %}
+						<span class="badge badge-warning">{% trans 'no profile' %}</span>
+					{% endif %}
 				{% endif %}
 			</li>
 		{% endfor %}
