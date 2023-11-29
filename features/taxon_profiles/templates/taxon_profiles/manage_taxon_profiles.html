@@ -32,7 +32,7 @@
 				<ul>
 					{% for profile in non_nature_guide_taxon_profiles %}
 						<li>
-							<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id profile.taxon_source profile.name_uuid }">
+							<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id profile.taxon_source profile.name_uuid %}">
 								<i>{{ profile.taxon_latname }} {{ profile.taxon_author }}</i>
 							</a>
 						</li>
