@@ -7,7 +7,7 @@
 				{% if meta_node.taxon %}
 					{% get_taxon_profile meta_node.taxon as profile %}
 					<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id meta_node.taxon.taxon_source meta_node.taxon.name_uuid %}">
-						{{ meta_node.name }} (<i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>)
+						{{ meta_node.name }} (<i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
 					</a>
 					{% if profile %}
 					{% else %}
