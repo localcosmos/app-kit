@@ -14,7 +14,7 @@ from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 
-from app_kit.features.nature_guides.models import MetaNode, NatureGuidesTaxonTree, NodeFilterSpace, NatureGuide
+from app_kit.features.nature_guides.models import (MetaNode, NatureGuidesTaxonTree, NodeFilterSpace, NatureGuide)
 
 from localcosmos_server.decorators import ajax_required
 
@@ -48,6 +48,39 @@ class ManageTaxonProfiles(ManageGenericContent):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        nature_guide_results = []
+        nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
+
+        nature_guide_taxa_name_uuids = []
+
+        for nature_guide_link in nature_guide_links:
+            nature_guide = nature_guide_link.generic_content
+
+            results = MetaNode.objects.filter(nature_guide=nature_guide,
+                node_type='result').order_by('name')
+
+            entry = {
+                'nature_guide': nature_guide,
+                'results': results,
+            }
+
+            for meta_node in results:
+                if meta_node.taxon:
+                    nature_guide_taxa_name_uuids.append(meta_node.name_uuid)
+                else:
+                    fallback_taxa = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node, nature_guide=nature_guide)
+                    for fallback_taxon in fallback_taxa:
+                        nature_guide_taxa_name_uuids.append(fallback_taxon.name_uuid)
+
+            nature_guide_results.append(entry)
+
+        context['nature_guide_results'] = nature_guide_results
+        non_nature_guide_taxon_profiles = TaxonProfile.objects.exclude(
+            name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
+        
+        context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
+
         context['taxa'] = self.generic_content.collected_taxa()
 
         form_kwargs = {
@@ -85,9 +118,13 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
         self.taxon = LazyTaxon(instance=taxon)
 
-        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                    taxon_source=self.taxon.taxon_source, name_uuid=name_uuid).first()
+        # unique constraing covers source, latname authot
+        #taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+        #            taxon_source=self.taxon.taxon_source, name_uuid=name_uuid).first()
 
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+            taxon_source=self.taxon.taxon_source, taxon_latname=self.taxon.taxon_latname,
+            taxon_author=self.taxon.taxon_author).first()
 
         if not taxon_profile:
             taxon_profile = TaxonProfile(
