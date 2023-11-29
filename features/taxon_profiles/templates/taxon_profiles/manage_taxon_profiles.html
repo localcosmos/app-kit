@@ -1,5 +1,5 @@
 {% extends 'app_kit/manage_generic_content.html' %}
-{% load i18n localcosmos_tags el_pagination_tags %}
+{% load i18n localcosmos_tags taxon_profile_tags %}
 
 {% block generic_content_specific %}
 
@@ -18,7 +18,8 @@
 				{% for entry in nature_guide_results %}
 					<div>
 						<h5>{{ entry.nature_guide }}</h5>
-						<div id="taxa_{{ entry.nature_guide.id }}" class="card-body endless_page_template">
+						{% url 'get_nature_guide_taxonprofile_page' meta_app.id content_type.id generic_content.id entry.nature_guide.id as pagination_url %}
+						<div id="ng_taxonlist_{{ entry.nature_guide.id }}" class="endless_page_template">
 							{% with nature_guide=entry.nature_guide results=entry.results %}
 								{% include 'taxon_profiles/ajax/nature_guide_taxonlist.html' %}
 							{% endwith %}
@@ -27,21 +28,10 @@
 				{% endfor %}
 			</div>
 			<h5>{% trans 'Taxon Profiles with no occurrence in any nature guide' %}</h5>
-			<div id="non_ng_taxa">
-				{% paginate 15 non_nature_guide_taxon_profiles %}
-				<ul>
-					{% for profile in non_nature_guide_taxon_profiles %}
-						<li>
-							<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id profile.taxon_source profile.name_uuid %}">
-								<i>{{ profile.taxon_latname }} {{ profile.taxon_author }}</i>
-							</a>
-						</li>
-					{% endfor %}
-				</ul>
+			
+			<div id="non_ng_taxa" class="endless_page_template">
+				{% include 'taxon_profiles/ajax/non_nature_guide_taxonlist.html' %}
 			</div>
-			<p>
-				{% show_pages %}
-			</p>
 		</div>
 	</div>
 
@@ -73,6 +63,10 @@
 				
 			}
 		});
+		{% for entry in nature_guide_results %}
+			$('#ng_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate();
+		{% endfor %}
+		$('#non_ng_taxa').endlessPaginate();
 	</script>
 
 {% endblock %}

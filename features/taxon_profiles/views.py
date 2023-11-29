@@ -25,8 +25,6 @@ from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
-
-
 def get_taxon(taxon_source, name_uuid):
     models = TaxonomyModelRouter(taxon_source)
 
@@ -45,6 +43,13 @@ class ManageTaxonProfiles(ManageGenericContent):
 
     options_form_class = TaxonProfilesOptionsForm
     template_name = 'taxon_profiles/manage_taxon_profiles.html'
+
+    page_template_name = 'taxon_profiles/ajax/non_nature_guide_taxonlist.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            self.template_name = self.page_template_name
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -75,12 +80,11 @@ class ManageTaxonProfiles(ManageGenericContent):
 
             nature_guide_results.append(entry)
 
-        context['nature_guide_results'] = nature_guide_results
         non_nature_guide_taxon_profiles = TaxonProfile.objects.exclude(
-            name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
-        
-        context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
+                name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
 
+        context['nature_guide_results'] = nature_guide_results
+        context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
         context['taxa'] = self.generic_content.collected_taxa()
 
         form_kwargs = {
@@ -91,6 +95,31 @@ class ManageTaxonProfiles(ManageGenericContent):
         context['searchbackboneform'] = AddSingleTaxonForm(**form_kwargs)
         return context
 
+
+class NatureGuideTaxonProfilePage(ManageGenericContent):
+    template_name = 'taxon_profiles/ajax/nature_guide_taxonlist.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
+
+        results = MetaNode.objects.filter(nature_guide=nature_guide,
+            node_type='result').order_by('name')
+        
+        print(results)
+
+        context['nature_guide'] = nature_guide
+        context['results'] = results
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'content_type_id': kwargs['content_type_id'],
+            'object_id': self.generic_content.id,
+            'nature_guide_id': kwargs['nature_guide_id'],
+        }
+        context['pagination_url'] = reverse('get_nature_guide_taxonprofile_page', kwargs=url_kwargs)
+
+        return context
 
 '''
     since the "copy tree branches" requirement has been implemented (AWI), name duplicates are possible

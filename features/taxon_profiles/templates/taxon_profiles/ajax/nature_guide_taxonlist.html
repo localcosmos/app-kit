@@ -1,9 +1,6 @@
 {% load i18n el_pagination_tags taxon_profile_tags %}
-
 <div id="taxonlist_{{ nature_guide.id }}">
-
-	{% paginate 15 results %}
-
+	{% paginate 15 results with pagination_url %}
 	<ul>
 		{% for meta_node in results %}
 			<li>
