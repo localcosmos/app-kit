@@ -440,10 +440,10 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
 
     def set_taxon(self, **kwargs):
         self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['pk'])
-        taxon_source = kwargs['taxon_source']
-        name_uuid = kwargs['name_uuid']
-        taxon = get_taxon(taxon_source, name_uuid)
-        self.taxon = LazyTaxon(instance=taxon)
+        #taxon_source = kwargs['taxon_source']
+        #name_uuid = kwargs['name_uuid']
+        #taxon = get_taxon(taxon_source, name_uuid)
+        self.taxon = LazyTaxon(instance=self.taxon_profile)
 
 
     def get_taxon_profile_images(self):
@@ -533,9 +533,11 @@ class CollectTaxonTraits(TemplateView):
         taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
 
-        taxon = get_taxon(taxon_source, name_uuid)
+        taxon_profile = TaxonProfile.objects.get(taxon_source=taxon_source, name_uuid=name_uuid)
 
-        self.taxon = LazyTaxon(instance=taxon)
+        #taxon = get_taxon(taxon_source, name_uuid)
+
+        self.taxon = LazyTaxon(instance=taxon_profile)
 
 
     def get_taxon_traits(self):
