@@ -140,11 +140,14 @@ FeatureModel = TaxonProfiles
 '''
     TaxonProfile
 '''
+from app_kit.generic import PUBLICATION_STATUS
 class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
     LazyTaxonClass = LazyTaxon
 
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
+
+    publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
 
     tags = TaggableManager()
 

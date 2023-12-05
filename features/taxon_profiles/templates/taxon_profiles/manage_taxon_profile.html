@@ -29,12 +29,16 @@
 							{% trans 'Modify' %}
 						</button>
 						<div class="dropdown-menu">
-							<a class="dropdown-item xhr" data-url="{% url 'delete_taxon_profile' meta_app.id taxon_profile.id%}" ajax-target="ModalContent">{% trans 'delete' %}</a>
+							<a class="dropdown-item xhr" data-url="{% url 'change_taxon_profile_publication_status' meta_app.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'Change publication status' %}</a>
+							<a class="dropdown-item xhr" data-url="{% url 'delete_taxon_profile' meta_app.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'delete' %}</a>
 						</div>
 					</div>
 				</small>
 			</div>
 			<div class="col">
+				{% if taxon_profile.publication_status == 'draft' %}
+					<span class="badge badge-warning">{% trans 'draft' %}</span>
+				{% endif %}
 				{% if nature_guides %}
 					{% for nature_guide in nature_guides %}
 					<span class="badge badge-success">

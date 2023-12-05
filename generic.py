@@ -183,3 +183,9 @@ class GenericContent(GenericContentMethodsMixin, models.Model):
 
     class Meta:
         abstract = True
+
+
+PUBLICATION_STATUS = (
+    ('draft', _('draft')),
+    ('publish', _('publish')),
+)

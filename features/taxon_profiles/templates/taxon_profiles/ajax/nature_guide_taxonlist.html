@@ -10,6 +10,9 @@
 						{{ meta_node.name }} (<i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
 					</a>
 					{% if profile %}
+						{% if profile.publication_status == 'draft' %}
+							<span class="badge badge-warning">{% trans 'draft' %}</span>
+						{% endif %}
 					{% else %}
 						<span class="badge badge-warning">{% trans 'no profile' %}</span>
 					{% endif %}
@@ -21,6 +24,9 @@
 					</a>
 					<span class="badge badge-warning">{% trans 'no taxon set' %}</span>
 					{% if non_taxon_profile %}
+						{% if non_taxon_profile.publication_status == 'draft' %}
+							<span class="badge badge-warning">{% trans 'draft' %}</span>
+						{% endif %}
 					{% else %}
 						<span class="badge badge-warning">{% trans 'no profile' %}</span>
 					{% endif %}

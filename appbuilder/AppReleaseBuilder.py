@@ -1793,7 +1793,6 @@ class AppReleaseBuilder(AppBuilderBase):
         collected_taxa = taxon_profiles.collected_taxa(published_only=True)
 
         active_collected_taxa = []
-
         
         nature_guide_only = taxon_profiles.get_option(self.meta_app,
                                                     'include_only_taxon_profiles_from_nature_guides')
@@ -1803,6 +1802,12 @@ class AppReleaseBuilder(AppBuilderBase):
                                                              meta_app=self.meta_app).values_list('object_id')
 
         for profile_taxon in collected_taxa:
+
+            db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
+                    taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
+        
+            if db_profile.publication_status == 'draft':
+                continue
 
             is_inactive = self.check_taxon_is_inactive(profile_taxon)
 

@@ -118,6 +118,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get the profile
         db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
                     taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
+        
+        if db_profile.publication_status == 'draft':
+            return None
 
         taxon_profile_json = {
             'taxonSource' : profile_taxon.taxon_source,

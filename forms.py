@@ -421,10 +421,7 @@ class TagAnyElementForm(forms.Form):
     tags = TagField(required=False)
 
 
-GENERIC_CONTENT_STATUS = (
-    ('draft', _('draft')),
-    ('publish', _('publish')),
-)
+from app_kit.generic import PUBLICATION_STATUS
 class GenericContentStatusForm(forms.Form):
-    publication_status = forms.ChoiceField(choices=GENERIC_CONTENT_STATUS)
+    publication_status = forms.ChoiceField(choices=PUBLICATION_STATUS)
 

@@ -252,6 +252,44 @@ class DeleteTaxonProfile(AjaxDeleteView):
         return context
 
 
+from app_kit.forms import GenericContentStatusForm
+class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
+
+    form_class = GenericContentStatusForm
+    template_name = 'taxon_profiles/ajax/change_taxon_profile_publication_status.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profile(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_taxon_profile(self, **kwargs):
+        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profile'] = self.taxon_profile
+        context['success'] = False
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.taxon_profile.publication_status == None:
+            initial['publication_status'] = 'publish'
+        else:
+            initial['publication_status'] = self.taxon_profile.publication_status
+
+        return initial
+
+    def form_valid(self, form):
+
+        self.taxon_profile.publication_status = form.cleaned_data['publication_status']
+        self.taxon_profile.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        return self.render_to_response(context)
+
 
 class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
 

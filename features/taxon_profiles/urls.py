@@ -16,6 +16,9 @@ urlpatterns = [
         views.ManageTaxonTextType.as_view(), name='manage_taxon_text_type'),
     path('delete-taxon-text-type/<int:pk>/', views.DeleteTaxonTextType.as_view(), name='delete_taxon_text_type'),
     path('manage-taxon-text-types-order/<int:taxon_profiles_id>/', views.ManageTaxonTextTypesOrder.as_view(), name='manage_taxon_text_types_order'),
+    # change publicatin status
+    path('change-taxon-profile-publication-status/<int:meta_app_id>/<int:taxon_profile_id>/',
+         views.ChangeTaxonProfilePublicationStatus.as_view(), name='change_taxon_profile_publication_status'),
     # this one is only for the autocomplete redirect
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/',
         views.ManageTaxonProfile.as_view(), name='manage_taxon_profile_baseurl'),
