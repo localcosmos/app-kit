@@ -1,5 +1,5 @@
 {% extends 'app_kit/manage_generic_content.html' %}
-{% load i18n localcosmos_tags taxon_profile_tags %}
+{% load i18n localcosmos_tags taxon_profile_tags app_tags %}
 
 {% block generic_content_specific %}
 
@@ -27,7 +27,13 @@
 					</div>
 				{% endfor %}
 			</div>
-			<h5>{% trans 'Taxon Profiles with no occurrence in any nature guide' %}</h5>
+			<h5>
+				{% trans 'Taxon Profiles with no occurrence in any nature guide' %}
+				{% get_generic_content_option generic_content 'include_only_taxon_profiles_from_nature_guides' as ng_only %}
+				{% if ng_only %}
+					({% trans 'not included in app' %})
+				{% endif %}
+			</h5>
 			
 			<div id="non_ng_taxa" class="endless_page_template">
 				{% include 'taxon_profiles/ajax/non_nature_guide_taxonlist.html' %}

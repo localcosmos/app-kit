@@ -13,11 +13,9 @@ from localcosmos_server.models import App
 
 from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
 
-import hashlib, base64, math, uuid
+import base64, math, uuid
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
-
-import os
 
 from django_tenants.utils import get_tenant_model, get_tenant_domain_model
 Domain = get_tenant_domain_model()
@@ -205,13 +203,17 @@ class AddExistingGenericContentForm(forms.Form):
 class MetaAppOptionsForm(GenericContentOptionsForm):
 
     global_options_fields = ['allow_user_create_matrices', 'allow_anonymous_observations',
-                             'localcosmos_private', 'localcosmos_private_api_url']
+                             'localcosmos_private', 'localcosmos_private_api_url',
+                             'do_not_build_large_images']
 
     '''
     allow_user_create_matrices = forms.BooleanField(required=False,
                         label=_('allow the user to create his own button matrices'),
                         help_text=_('only applies if your app contains at least one Button Matrix'))
     '''
+    do_not_build_large_images = forms.BooleanField(required=False,
+                        label=_('Do not build large image sizes'),
+                        help_text=_('Reduces app package sizes. Use this option if your packages exceed the app store limits.'))
     allow_anonymous_observations = forms.BooleanField(required=False,
                         label=_('Allow unregistered users to report observations'),
                         help_text=_('Only applies if your app contains observation forms.'))

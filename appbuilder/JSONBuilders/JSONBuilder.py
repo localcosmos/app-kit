@@ -84,8 +84,8 @@ class JSONBuilder:
 
         return content_image
 
-
-    def _get_image_urls(self, content_image_mixedin, image_type='image', image_sizes='regular'):
+    # images_sizes = [] means that the image_sizes will be set by app_release_builder.build_content_image
+    def _get_image_urls(self, content_image_mixedin, image_type='image', image_sizes=[]):
 
         content_image = self._get_content_image(content_image_mixedin, image_type=image_type)
 

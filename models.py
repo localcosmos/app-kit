@@ -680,6 +680,11 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
     def save(self, publish=False, *args, **kwargs):
 
+        # do not use increment_version for MetaApp
+        # this kwarg is inheriteg form GenericContent and uses for all
+        # GenericContents except MetaApp
+        increment_version = kwargs.pop('increment_version', False)
+
         if publish == True:
 
             self.published_version = self.current_version

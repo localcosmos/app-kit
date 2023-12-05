@@ -33,7 +33,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         # primary language only
         self.vernacular_names_from_nature_guide_cache = {}
-
+        
 
     small_image_size = (200,200)
     large_image_size = (1000, 1000)

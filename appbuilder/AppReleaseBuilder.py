@@ -25,7 +25,7 @@ from urllib.error import HTTPError, URLError
 from app_kit.appbuilder.ContentImageBuilder import ContentImageBuilder
 
 ### FEATURES
-from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MatrixFilter
+from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MatrixFilter, MetaNode
 from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGenericForm, FIELD_ROLES,
                                                        GenericValues, DJANGO_FIELD_CLASSES)
 
@@ -1219,7 +1219,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self._build_TaxonProfiles(taxon_profiles_link)        
 
         # build TemplateContent
-        self._build_TemplateContent()
+        #self._build_TemplateContent()
 
         # store settings as json
         
@@ -1794,12 +1794,37 @@ class AppReleaseBuilder(AppBuilderBase):
 
         active_collected_taxa = []
 
+        
+        nature_guide_only = taxon_profiles.get_option(self.meta_app,
+                                                    'include_only_taxon_profiles_from_nature_guides')
+        
+        nature_guide_content_type = ContentType.objects.get_for_model(NatureGuide)
+        nature_guide_ids = MetaAppGenericContent.objects.filter(content_type=nature_guide_content_type,
+                                                             meta_app=self.meta_app).values_list('object_id')
+
         for profile_taxon in collected_taxa:
 
             is_inactive = self.check_taxon_is_inactive(profile_taxon)
 
             if is_inactive == False:
-                active_collected_taxa.append(profile_taxon)
+                add = False
+
+                # check nature guide only
+                if nature_guide_only == True:
+                    if profile_taxon.taxon_source == 'app_kit.features.nature_guides':
+                        add = True
+                    else:
+                        if nature_guide_ids.exists():
+                            exists_in_nature_guide = MetaNode.objects.filter(
+                                nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid).exists()
+                            
+                            if exists_in_nature_guide:
+                                add = True
+                else:
+                    add = True
+
+                if add == True:
+                    active_collected_taxa.append(profile_taxon)
 
 
         self.logger.info('Building taxon profiles for {0} collected taxa'.format(len(active_collected_taxa)))
@@ -2153,7 +2178,14 @@ class AppReleaseBuilder(AppBuilderBase):
         return image_urls
 
 
-    def build_content_image(self, content_image, image_sizes='regular'):
+    def build_content_image(self, content_image, image_sizes=[]):
+
+        if not image_sizes:
+            image_sizes = ['regular', 'large']
+            
+            if self.meta_app.get_global_option('do_not_build_large_images') == True:
+                image_sizes = ['regular']
+
 
         absolute_path = self._app_content_images_path
         relative_path = self._app_relative_content_images_path

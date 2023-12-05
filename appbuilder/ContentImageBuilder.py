@@ -15,6 +15,8 @@ IMAGE_SIZES = {
     },
     'large' : {
         '4x' : 1000,
+    },
+    'xlarge' : {
         '8x' : 2000,
     },
     'all' : {
@@ -68,7 +70,7 @@ class ContentImageBuilder:
         return image_filepath
 
 
-    def build_cached_images(self, content_image, image_sizes='regular', force_build=False):
+    def build_cached_images(self, content_image, image_sizes=['regular', 'large'], force_build=False):
 
         if not os.path.isdir(self.cache_folder):
             os.makedirs(self.cache_folder)
@@ -79,17 +81,18 @@ class ContentImageBuilder:
 
         if ext != '.svg':
 
-            for size_name, size in IMAGE_SIZES[image_sizes].items():
+            for image_sizes_key in image_sizes:
+                for size_name, size in IMAGE_SIZES[image_sizes_key].items():
 
-                # cached image filepath
-                absolute_image_filepath = self.get_on_disk_cached_image_filepath(content_image, size)
-                if not os.path.isfile(absolute_image_filepath) or force_build == True:
+                    # cached image filepath
+                    absolute_image_filepath = self.get_on_disk_cached_image_filepath(content_image, size)
+                    if not os.path.isfile(absolute_image_filepath) or force_build == True:
 
-                    original_image = Image.open(source_image_path)
-                    processed_image = content_image.get_in_memory_processed_image(original_image, size)
+                        original_image = Image.open(source_image_path)
+                        processed_image = content_image.get_in_memory_processed_image(original_image, size)
 
-                    output_format = 'WEBP'
-                    processed_image.save(absolute_image_filepath, output_format, quality=70)
+                        output_format = 'WEBP'
+                        processed_image.save(absolute_image_filepath, output_format, quality=70)
 
 
     def get_on_disk_cached_image(self, content_image, size):
@@ -110,72 +113,73 @@ class ContentImageBuilder:
         shutil.copyfile(absolute_image_filepath, on_disk_cached_image_filepath)
         
 
-    def build_content_image(self, content_image, absolute_path, relative_path, image_sizes='regular'):
+    def build_content_image(self, content_image, absolute_path, relative_path, image_sizes=['regular', 'large']):
 
         image_urls = {}
         
-        for size_name, size in IMAGE_SIZES[image_sizes].items():
+        for image_sizes_key in image_sizes:
+            for size_name, size in IMAGE_SIZES[image_sizes_key].items():
 
-            if content_image.__class__.__name__ == 'ServerContentImage':
-                cache_key = '{0}-s-{1}'.format(content_image.id, size)
-            else:
-                cache_key = '{0}-{1}'.format(content_image.id, size)
-
-
-            output_filename = self.get_output_filename(content_image, size)
-
-            relative_image_filepath = os.path.join(relative_path, output_filename)
-            absolute_image_filepath = os.path.join(absolute_path, output_filename)
-
-            image_url = '/{0}'.format(relative_image_filepath)
+                if content_image.__class__.__name__ == 'ServerContentImage':
+                    cache_key = '{0}-s-{1}'.format(content_image.id, size)
+                else:
+                    cache_key = '{0}-{1}'.format(content_image.id, size)
 
 
-            if cache_key in self.image_cache:
-                image_urls[size_name] = self.image_cache[cache_key]
+                output_filename = self.get_output_filename(content_image, size)
 
-            else:
-                # create the on disk imagefile for the app
+                relative_image_filepath = os.path.join(relative_path, output_filename)
+                absolute_image_filepath = os.path.join(absolute_path, output_filename)
 
-                if not os.path.isdir(absolute_path):
-                    os.makedirs(absolute_path)
+                image_url = '/{0}'.format(relative_image_filepath)
 
-                # check if the imag exists in the on_disk_cache
-                cached_image = self.get_on_disk_cached_image(content_image, size)
-                if cached_image:
-                    # simply copy the file
-                    shutil.copyfile(cached_image, absolute_image_filepath)
+
+                if cache_key in self.image_cache:
+                    image_urls[size_name] = self.image_cache[cache_key]
 
                 else:
-                    # create a new file
-                    source_image_path = content_image.image_store.source_image.path
+                    # create the on disk imagefile for the app
 
-                    ext = self.get_file_extension(source_image_path)
+                    if not os.path.isdir(absolute_path):
+                        os.makedirs(absolute_path)
 
-                    # no image processing for svgs
-                    if ext == '.svg':
-                        shutil.copyfile(source_image_path, absolute_image_filepath)
+                    # check if the imag exists in the on_disk_cache
+                    cached_image = self.get_on_disk_cached_image(content_image, size)
+                    if cached_image:
+                        # simply copy the file
+                        shutil.copyfile(cached_image, absolute_image_filepath)
 
                     else:
+                        # create a new file
+                        source_image_path = content_image.image_store.source_image.path
 
-                        if not os.path.isfile(absolute_image_filepath):
-                    
-                            original_image = Image.open(source_image_path)
-                            processed_image = content_image.get_in_memory_processed_image(original_image, size)
+                        ext = self.get_file_extension(source_image_path)
 
-                            # all processed images are webp
-                            #original_format = original_image.format
-                            #output_format = original_format
-                            #allowed_formats = ['png', 'jpg', 'jpeg']
-                            
-                            output_format = 'WEBP'
-                            processed_image.save(absolute_image_filepath, output_format)
+                        # no image processing for svgs
+                        if ext == '.svg':
+                            shutil.copyfile(source_image_path, absolute_image_filepath)
 
-                        self.save_to_on_disk_cache(content_image, size, absolute_image_filepath)
-                    
-                    
-                image_urls[size_name] = image_url
+                        else:
 
-                self.image_cache[cache_key] = image_url
+                            if not os.path.isfile(absolute_image_filepath):
+                        
+                                original_image = Image.open(source_image_path)
+                                processed_image = content_image.get_in_memory_processed_image(original_image, size)
+
+                                # all processed images are webp
+                                #original_format = original_image.format
+                                #output_format = original_format
+                                #allowed_formats = ['png', 'jpg', 'jpeg']
+                                
+                                output_format = 'WEBP'
+                                processed_image.save(absolute_image_filepath, output_format)
+
+                            self.save_to_on_disk_cache(content_image, size, absolute_image_filepath)
+                        
+                        
+                    image_urls[size_name] = image_url
+
+                    self.image_cache[cache_key] = image_url
         
         return image_urls
 

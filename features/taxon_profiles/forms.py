@@ -23,6 +23,7 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
     enable_wikipedia_button = forms.BooleanField(required=False)
     enable_gbif_occurrence_map_button = forms.BooleanField(required=False)
     enable_observation_button = forms.ChoiceField(required=False)
+    include_only_taxon_profiles_from_nature_guides = forms.BooleanField(required=False)
 
 
 

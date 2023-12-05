@@ -94,7 +94,7 @@ class NatureGuideJSONBuilder(JSONBuilder):
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 
             overview_image = None
-            overview_image_urls = self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes='large')
+            overview_image_urls = self._get_image_urls(parent_node.meta_node, image_type='overview', image_sizes=['large', 'xlarge'])
 
             if overview_image_urls:
                 overview_content_image = parent_node.meta_node.image(image_type='overview')

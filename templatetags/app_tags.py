@@ -145,7 +145,6 @@ def get_generic_content_option(context, generic_content, option):
     return None
 
 
-
 @register.filter
 def generic_content_link_deletable(generic_content_link):
     

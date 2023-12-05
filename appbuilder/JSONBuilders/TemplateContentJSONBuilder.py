@@ -63,7 +63,7 @@ class TemplateContentJSONBuilder(JSONBuilder):
 
         else: 
             image_urls = self._get_image_urls(localized_template_content, image_type=image_type,
-                image_sizes='all')
+                image_sizes=['all'])
 
             licence = {}
 
