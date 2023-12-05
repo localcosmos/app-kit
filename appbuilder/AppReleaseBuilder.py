@@ -1806,7 +1806,7 @@ class AppReleaseBuilder(AppBuilderBase):
             db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
                     taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
         
-            if db_profile.publication_status == 'draft':
+            if db_profile and db_profile.publication_status == 'draft':
                 continue
 
             is_inactive = self.check_taxon_is_inactive(profile_taxon)
