@@ -143,9 +143,12 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
 
-        taxon = get_taxon(taxon_source, name_uuid)
+        taxon_profile = TaxonProfile.objects.get(taxon_source=taxon_source, name_uuid=name_uuid)
 
-        self.taxon = LazyTaxon(instance=taxon)
+        # the taxcon might not exist anymore in the source
+        #taxon = get_taxon(taxon_source, name_uuid)
+
+        self.taxon = LazyTaxon(instance=taxon_profile)
 
         # unique constraing covers source, latname authot
         #taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
