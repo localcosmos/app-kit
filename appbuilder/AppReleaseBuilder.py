@@ -1219,7 +1219,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self._build_TaxonProfiles(taxon_profiles_link)        
 
         # build TemplateContent
-        #self._build_TemplateContent()
+        self._build_TemplateContent()
 
         # store settings as json
         
@@ -2182,7 +2182,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         if not image_sizes:
             image_sizes = ['regular', 'large']
-            
+
             if self.meta_app.get_global_option('do_not_build_large_images') == True:
                 image_sizes = ['regular']
 
