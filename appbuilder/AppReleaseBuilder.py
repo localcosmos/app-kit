@@ -1811,15 +1811,21 @@ class AppReleaseBuilder(AppBuilderBase):
 
                 # check nature guide only
                 if nature_guide_only == True:
+
+                    exists_in_nature_guide = False
                     if profile_taxon.taxon_source == 'app_kit.features.nature_guides':
-                        add = True
+                        # the profile might exist, but the taxon in the nature guide might
+                        # already have been deleted
+                        exists_in_nature_guide = NatureGuidesTaxonTree.objects.filter(
+                            name_uuid=profile_taxon.name_uuid).exists()
                     else:
                         if nature_guide_ids.exists():
                             exists_in_nature_guide = MetaNode.objects.filter(
                                 nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid).exists()
                             
-                            if exists_in_nature_guide:
-                                add = True
+                    if exists_in_nature_guide:
+                        add = True
+                        
                 else:
                     add = True
 
