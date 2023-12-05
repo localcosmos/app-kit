@@ -171,7 +171,7 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = self.ajax_template_name
-            
+    
 
     def get_form(self, form_class=None):
         if form_class is None:
@@ -186,8 +186,8 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         nature_guides = []
         if self.taxon_profile.taxon_source == 'app_kit.features.nature_guides':
             tree_entry = NatureGuidesTaxonTree.objects.filter(name_uuid=self.taxon_profile.name_uuid).first()
-            print(tree_entry)
-            nature_guides = [tree_entry.nature_guide]
+            if tree_entry:
+                nature_guides = [tree_entry.nature_guide]
         else:
             nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid).values_list('nature_guide', flat=True).distinct()
             nature_guides = NatureGuide.objects.filter(pk__in=nature_guide_ids)
