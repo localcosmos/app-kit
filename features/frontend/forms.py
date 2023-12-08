@@ -16,6 +16,7 @@ from localcosmos_server.widgets import TwoStepFileInput
 '''
 class FrontendSettingsForm(forms.Form):
 
+    support_email = forms.EmailField(required=False)
     legal_notice = forms.CharField(max_length=4000, widget=forms.Textarea, required=False)
     privacy_policy = forms.CharField(max_length=10000, widget=forms.Textarea, required=False)
 
@@ -113,6 +114,7 @@ class FrontendSettingsForm(forms.Form):
 
                 field_order.append(image_type)
 
+            field_order.append('support_email')
             field_order.append('legal_notice')
             field_order.append('privacy_policy')
             self.order_fields(field_order)

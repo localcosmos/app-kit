@@ -3,7 +3,7 @@
 <form method="POST" action="{% url 'manage_frontend_settings' meta_app.id frontend.id %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
     {% for field in form %}
 
-        {% if field.name == 'legal_notice' %}
+        {% if field.name == 'support_email' %}
             <hr>
         {% endif %}
 

@@ -23,7 +23,9 @@ class FrontendJSONBuilder(JSONBuilder):
         }
 
         if frontend.configuration:
-            frontend_json['userContent']['configuration'] = frontend.configuration
+            for configuration_key, configuration_value in frontend.configuration.items():
+                configuration_key_json = self.to_camel_case(configuration_key)
+                frontend_json['userContent']['configuration'][configuration_key_json] = configuration_value
 
         frontend_settings = self.app_release_builder._get_frontend_settings()
 

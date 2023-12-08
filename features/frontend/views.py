@@ -60,11 +60,11 @@ class FrontendSettingsMixin:
 
     def get_configuration_keys(self):
 
-        configuration_keys = []
+        configuration_keys = ['support_email']
         frontend_settings = self.get_frontend_settings()
 
         if 'configuration' in frontend_settings['userContent']:
-            configuration_keys = list(frontend_settings['userContent']['configuration'].keys())
+            configuration_keys = configuration_keys + list(frontend_settings['userContent']['configuration'].keys())
         
         return configuration_keys
 

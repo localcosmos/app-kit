@@ -523,6 +523,12 @@ class AppReleaseBuilder(AppBuilderBase):
             error = ValidationError(self.meta_app, frontend, [error_message])
             result['errors'].append(error)
 
+        if not frontend.configuration or 'support_email' not in frontend.configuration:
+            error_message = _('Your app requires a support email.')
+            error = ValidationError(self.meta_app, frontend, [error_message])
+            result['errors'].append(error)
+
+
         # check all required images and texts - defined by the frontend settings
         frontend_settings = self._get_frontend_settings()
 
