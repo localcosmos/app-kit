@@ -106,8 +106,6 @@ class NatureGuideTaxonProfilePage(ManageGenericContent):
 
         results = MetaNode.objects.filter(nature_guide=nature_guide,
             node_type='result').order_by('name')
-        
-        print(results)
 
         context['nature_guide'] = nature_guide
         context['results'] = results
@@ -205,7 +203,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
 
-        taxon_profile = TaxonProfile.objects.get(taxon_source=taxon_source, name_uuid=name_uuid)
+        taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
+                                                 taxon_source=taxon_source, name_uuid=name_uuid)
 
         # the taxcon might not exist anymore in the source
         #taxon = get_taxon(taxon_source, name_uuid)
