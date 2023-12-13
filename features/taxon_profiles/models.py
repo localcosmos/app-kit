@@ -152,7 +152,7 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     tags = TaggableManager()
 
     def texts(self):
-        return TaxonText.objects.filter(taxon_profile=self).order_by('position')
+        return TaxonText.objects.filter(taxon_profile=self).order_by('taxon_text_type__position')
 
     '''
     this checks taxon texts and vernacularnames[latter missing]
