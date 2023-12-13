@@ -1225,7 +1225,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self._build_TaxonProfiles(taxon_profiles_link)        
 
         # build TemplateContent
-        #self._build_TemplateContent()
+        self._build_TemplateContent()
 
         # store settings as json
         
