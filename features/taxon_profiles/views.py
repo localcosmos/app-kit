@@ -63,7 +63,7 @@ class ManageTaxonProfiles(ManageGenericContent):
             nature_guide = nature_guide_link.generic_content
 
             results = MetaNode.objects.filter(nature_guide=nature_guide,
-                node_type='result').order_by('name')
+                node_type='result').order_by('name').distinct()
 
             entry = {
                 'nature_guide': nature_guide,
