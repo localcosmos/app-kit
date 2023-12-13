@@ -136,7 +136,8 @@ msgstr ""
 msgid ""
 "The nature guide %(name)s has the Observation Form %(observation_form_name)s "
 "set as the result action, but this observation form is a draft."
-msgstr ""
+msgstr "Der Naturführer %(name)s hat das Beobachtungsformular %(observation_form_name)s"
+"als Standard gesetzt, aber das Formular ist ein Entwurf"
 
 #: appbuilder/AppReleaseBuilder.py:806 appbuilder/AppReleaseBuilder.py:860
 msgid "Image is missing."
@@ -171,7 +172,7 @@ msgstr "%(field_class)s benötigt mindestens 2 Wahlmöglichkeiten"
 #: appbuilder/AppReleaseBuilder.py:940
 #, python-format
 msgid "%(render_as)s requires exactly one taxonomic restriction"
-msgstr ""
+msgstr "%(render_as)s braucht exakt eine taxonomische Restriktion"
 
 #: appbuilder/AppReleaseBuilder.py:948
 msgid "%(field_class)s requires at least one taxonomic restriction"
@@ -185,7 +186,7 @@ msgstr "%(role)s Feld fehlt"
 #: appbuilder/AppReleaseBuilder.py:997
 #, python-format
 msgid "%(taxonomic_filter_name)s has no taxa"
-msgstr ""
+msgstr "%(taxonomic_filter_name)s hat keine Taxa"
 
 #: features/backbonetaxonomy/forms.py:21
 msgid "Search app taxa"
@@ -592,40 +593,45 @@ msgid ""
 "Found more than one subitem in the Frontend zip file. The Frontend zip file "
 "may only contain one folder"
 msgstr ""
+"Mehr als ein Element in der .zip-Datei des Frontends gefunden. Eine Frontend "
+".zip Datei darf nur einen Ordner enthalten"
 
 #: features/frontend/PrivateFrontendImporter.py:87
 msgid "Invalid json in settings.json file."
-msgstr ""
+msgstr "Ungültiges json in der settings.json Datei"
 
 #: features/frontend/PrivateFrontendImporter.py:90
 msgid "The uploaded Frontend is missing the settings.json file."
-msgstr ""
+msgstr "Das hochgeladene Frontend enthält keine settings.json Datei."
 
 #: features/frontend/PrivateFrontendImporter.py:126
 msgid ""
 "The folder inside your zip-file does not match the frontend name in settings."
 "json"
 msgstr ""
+"Der Ordner in der .zip Datei entspricht nicht dem Namen des Frontends in der "
+"settings.json"
 
 #: features/frontend/PrivateFrontendImporter.py:129
 #: features/frontend/PrivateFrontendImporter.py:132
 msgid "'version' not found in settings.json"
-msgstr ""
+msgstr "'version' in der settings.json nicht gefunden"
 
 #: features/frontend/PrivateFrontendImporter.py:137
 msgid "'images' not found in settings.userContent"
-msgstr ""
+msgstr "'images' in settings.userContent nicht gefunden"
 
 #: features/frontend/PrivateFrontendImporter.py:144
 #, python-format
 msgid "'%(image_key)s' not found in settings.userContent.images"
-msgstr ""
+msgstr "'%(image_key)s' in settings.userContent.images nicht gefunden"
 
 #: features/frontend/PrivateFrontendImporter.py:154
 #, python-format
 msgid ""
 "settings.userContent.images.%(image_key)s.required has to be set to true"
 msgstr ""
+"settings.userContent.images.%(image_key)s.required muss auf true gesetzt sein"
 
 #: features/frontend/PrivateFrontendImporter.py:162
 #, python-format
@@ -633,6 +639,8 @@ msgid ""
 "settings.userContent.images.%(image_key)s.restrictions.fileType has to be "
 "[\"svg\"]"
 msgstr ""
+"settings.userContent.images.%(image_key)s.restrictions.fileType muss "
+"[\"svg\"] sein"
 
 #: features/frontend/PrivateFrontendImporter.py:168
 #, python-format
@@ -640,16 +648,18 @@ msgid ""
 "settings.userContent.images.%(image_key)s.restrictions.ratio has to be "
 "\"1:1\""
 msgstr ""
+"settings.userContent.images.%(image_key)s.restrictions.ratio muss "
+"\"1:1\" sein"
 
 #: features/frontend/PrivateFrontendImporter.py:186
 #, python-format
 msgid "%(subitem)s of your frontend is not a folder"
-msgstr ""
+msgstr "%(subitem)s des Frontends ist kein Ordner"
 
 #: features/frontend/PrivateFrontendImporter.py:191
 #, python-format
 msgid "%(subitem)s of your frontend is not a file"
-msgstr ""
+msgstr "%(subitem)s des Frontends ist keine Datei"
 
 #: features/frontend/forms.py:165 features/frontend/models.py:31
 #: features/frontend/templates/frontend/ajax/upload_private_frontend.html:20
@@ -718,7 +728,7 @@ msgstr "abbrechen"
 
 #: features/frontend/templates/frontend/ajax/upload_private_frontend.html:35
 msgid "Install"
-msgstr ""
+msgstr "Installieren"
 
 #: features/frontend/templates/frontend/manage_frontend.html:20
 msgid "change frontend"
@@ -742,7 +752,7 @@ msgstr "Datum und Uhrzeit"
 
 #: features/generic_forms/forms.py:196
 msgid "abbreviated unit, eg cm or m"
-msgstr ""
+msgstr "Abkürzung der Einheit. Z.B. cm oder m"
 
 #: features/generic_forms/forms.py:198
 msgid "Defines the step for the + and - buttons."
@@ -754,7 +764,7 @@ msgstr "Vorgabewert"
 
 #: features/generic_forms/forms.py:199
 msgid "The initial value of this field"
-msgstr ""
+msgstr "Der Vorausgefüllte dieses Feldes"
 
 #: features/generic_forms/forms.py:200
 msgid "Mode"
@@ -762,7 +772,7 @@ msgstr "Modus"
 
 #: features/generic_forms/forms.py:202
 msgid "Quadrant size in meters"
-msgstr ""
+msgstr "Quadrantengröße in Metern"
 
 #: features/generic_forms/forms.py:218
 msgid "A widget defines how the field is displayed to the user."
@@ -1300,7 +1310,7 @@ msgstr "Karten Filter"
 
 #: features/maps/templates/maps/manage_maps.html:42
 msgid "You can offer multiple filters which your users can apply to the map."
-msgstr ""
+msgstr "Due kannst mehrere Filter anbieten. Diese können Nutzer auf die Karte anwenden."
 
 #: features/maps/templates/maps/manage_maps.html:47
 msgid "Taxonomic Filters"
@@ -1406,6 +1416,7 @@ msgstr "Neue Gruppe"
 msgid ""
 "Moving {0} to {1} ({2}) is forbidden because the branch contains crosslinks."
 msgstr ""
+"{0} nach {1} ({2}) zu verschieben ist verboten, da der Ast Querverbindungen enthält."
 
 #: features/nature_guides/forms.py:372
 #, python-brace-format
@@ -1432,7 +1443,7 @@ msgstr ""
 
 #: features/nature_guides/matrix_filter_forms.py:16
 msgid "visual"
-msgstr ""
+msgstr "visuell"
 
 #: features/nature_guides/matrix_filter_forms.py:17
 msgid "tactile"
@@ -1514,7 +1525,7 @@ msgstr ""
 
 #: features/nature_guides/matrix_filter_forms.py:87
 msgid "Tolerance (percentage)"
-msgstr ""
+msgstr "Toleranz (in Prozent)"
 
 #: features/nature_guides/matrix_filter_forms.py:106
 msgid "Min"
@@ -1555,7 +1566,7 @@ msgstr "Text"
 
 #: features/nature_guides/matrix_filter_space_forms.py:54
 msgid "single color"
-msgstr ""
+msgstr "einzelne Farbe"
 
 #: features/nature_guides/matrix_filter_space_forms.py:55
 msgid "gradient"
@@ -1563,7 +1574,7 @@ msgstr "Gradient"
 
 #: features/nature_guides/matrix_filter_space_forms.py:56
 msgid "triplet"
-msgstr ""
+msgstr "Triplet"
 
 #: features/nature_guides/matrix_filter_space_forms.py:62
 msgid "Color type"
@@ -2127,6 +2138,8 @@ msgid ""
 "Length of %(decision_rule)s is too long: %(inserted_decision_rule)s. Maximum "
 "length is %(max_length)s"
 msgstr ""
+"Länge der %(decision_rule)s ist zu lang: %(inserted_decision_rule)s. Maximale "
+"Länge ist %(max_length)s"
 
 #: features/nature_guides/zip_import.py:181
 #, python-format
@@ -2188,7 +2201,7 @@ msgstr "Ungültiger Wert für %(trait_type)s: %(range_value)s."
 #, python-format
 msgid ""
 "Length of value is too long: %(value)s. Maximum length is %(max_length)s"
-msgstr ""
+msgstr "Zu langer Wert: %(value)s. Die maximale Länge ist %(max_length)s"
 
 #: features/nature_guides/zip_import.py:479
 msgid "You defined a Colors trait, but no Colors sheet found."
@@ -2235,7 +2248,7 @@ msgstr "Artensteckbriefe"
 #: features/taxon_profiles/templates/taxon_profiles/ajax/change_taxon_profile_publication_status.html:9
 #, python-format
 msgid "Change publication status of %(taxon_profile)s"
-msgstr ""
+msgstr "Veröffentlichung von %(taxon_profile)s ändern"
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:57
 #: templates/app_kit/ajax/get_content_image_suggestions.html:27
@@ -2254,7 +2267,7 @@ msgstr "Steckbrief für %(taxon)s erstellen"
 #: features/taxon_profiles/templates/taxon_profiles/ajax/create_taxon_profile.html:16
 #, python-format
 msgid "The profile for %(taxon)s does not exist. Do you want to create it now?"
-msgstr ""
+msgstr "Der Artensteckbrief von %(taxon)s existiert nicht. Willst du ihn jetzt anlegen?"
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/create_taxon_profile.html:21
 msgid "Create taxon profile"
@@ -2338,19 +2351,19 @@ msgstr "kein Taxon gesetzt"
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:32
 #: templates/app_kit/ajax/component_card.html:15
 msgid "Change publication status"
-msgstr ""
+msgstr "Veröffentlichung ändern"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:50
 msgid "does not occur in any nature guide"
-msgstr ""
+msgstr "kommt in keinem Naturführer vor"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:55
 msgid "not linked to any taxonomic source"
-msgstr ""
+msgstr "mit keiner taxonomischen Quelle verbunden"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:70
 msgid "This profile has possible duplicates"
-msgstr ""
+msgstr "Dieser Steckbrief hat mögliche Duplikate"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:87
 msgid "manage tags"
@@ -2402,7 +2415,7 @@ msgstr "Taxa aus Naturführern"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:31
 msgid "Taxon Profiles with no occurrence in any nature guide"
-msgstr ""
+msgstr "Artensteckbriefe deren Arten nich in Naturführern vorkommen"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:34
 msgid "not included in app"
@@ -2483,13 +2496,15 @@ msgstr "Sprache wählen"
 
 #: forms.py:215
 msgid "Do not build large image sizes"
-msgstr ""
+msgstr "Bilder nicht in großen Größen bauen"
 
 #: forms.py:216
 msgid ""
 "Reduces app package sizes. Use this option if your packages exceed the app "
 "store limits."
 msgstr ""
+"Reduziert die Größe der App Pakete. Nutze diese Option, falls dein Paket die"
+" in den App Stores zulässige Größe überschreitet."
 
 #: forms.py:218
 msgid "Allow unregistered users to report observations"
@@ -3416,7 +3431,7 @@ msgstr "Datei zu groß. Die Größe sollte %(size)s MiB nicht überschreiten."
 
 #: validators.py:20
 msgid "You text contains invalid characters."
-msgstr ""
+msgstr "Dein Text enthält ungültige Zeichen."
 
 #: views.py:246
 #, python-format

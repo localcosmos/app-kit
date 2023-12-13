@@ -8,6 +8,8 @@ from app_kit.features.nature_guides.models import NatureGuidesTaxonTree
 
 @register.simple_tag
 def get_taxon_profile(taxon):
+    # col may have duplicates
+    # since copying of bature guide branches (AWI), nature guide taxa may have duplicates if querying taxon_latname and taxon_author (taxon_source=app_kit.features.nature_guides)
     '''
     return TaxonProfile.objects.filter(taxon_source=taxon.taxon_source,
                                        taxon_latname=taxon.taxon_latname,
