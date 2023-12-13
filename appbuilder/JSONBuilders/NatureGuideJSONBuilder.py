@@ -106,9 +106,13 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
 
             # the overview image should not be square
+            parent_node_name = parent_node.meta_node.name
+            if parent_node.meta_node.node_type == 'root':
+                parent_node_name = parent_node.nature_guide.name
+
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
-                'name' : parent_node.meta_node.name,
+                'name' : parent_node_name,
                 'morphotype': parent_node.meta_node.morphotype,
                 'taxon' : None,
                 'children' : [],

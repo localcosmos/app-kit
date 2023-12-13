@@ -121,11 +121,69 @@ class NatureGuideTaxonProfilePage(ManageGenericContent):
 
         return context
 
+
+class CreateTaxonProfileMixin:
+
+    def create_taxon_profile(self, taxon_profiles, taxon):
+
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
+            taxon_source=taxon.taxon_source, taxon_latname=taxon.taxon_latname,
+            taxon_author=taxon.taxon_author).first()
+
+        if not taxon_profile:
+            taxon_profile = TaxonProfile(
+                taxon_profiles=taxon_profiles,
+                taxon=taxon,
+            )
+            taxon_profile.save()
+
+        return taxon_profile
+
+
+class CreateTaxonProfile(CreateTaxonProfileMixin, MetaAppMixin, TemplateView):
+    template_name = 'taxon_profiles/ajax/create_taxon_profile.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_taxon(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+        taxon_source = kwargs['taxon_source']
+        name_uuid = kwargs['name_uuid']
+        
+        #taxon = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname, taxon_author=taxon_author)
+        taxon = get_taxon(taxon_source, name_uuid)
+
+        self.taxon = LazyTaxon(instance=taxon)
+
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon'] = self.taxon
+        context['success'] = False
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        
+        taxon_profile = self.create_taxon_profile(self.taxon_profiles, self.taxon)
+
+        context = self.get_context_data(**kwargs)
+        context['taxon_profile'] = taxon_profile
+        context['success'] = True
+
+        return self.render_to_response(context)
+
+
 '''
     since the "copy tree branches" requirement has been implemented (AWI), name duplicates are possible
     -> lookup of profiles can only be done by name_uuid
 '''
-class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
+class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, FormView):
 
     form_class = ManageTaxonTextsForm
     template_name = 'taxon_profiles/manage_taxon_profile.html'
@@ -154,20 +212,8 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
         #taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
         #            taxon_source=self.taxon.taxon_source, name_uuid=name_uuid).first()
 
-        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-            taxon_source=self.taxon.taxon_source, taxon_latname=self.taxon.taxon_latname,
-            taxon_author=self.taxon.taxon_author).first()
-
-        if not taxon_profile:
-            taxon_profile = TaxonProfile(
-                taxon_profiles = self.taxon_profiles,
-                taxon=self.taxon,
-            )
-            taxon_profile.save()
-            
-
-        self.taxon_profile = taxon_profile
-            
+        
+        self.taxon_profile = self.create_taxon_profile(self.taxon_profiles, self.taxon)
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = self.ajax_template_name
@@ -189,7 +235,9 @@ class ManageTaxonProfile(MetaAppFormLanguageMixin, FormView):
             if tree_entry:
                 nature_guides = [tree_entry.nature_guide]
         else:
-            nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid).values_list('nature_guide', flat=True).distinct()
+            possible_nature_guide_ids = self.meta_app.get_generic_content_links(NatureGuide).values_list('object_id', flat=True)
+            nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid,
+                nature_guide_id__in=possible_nature_guide_ids).values_list('nature_guide', flat=True).distinct()
             nature_guides = NatureGuide.objects.filter(pk__in=nature_guide_ids)
 
         context['nature_guides'] = nature_guides
@@ -321,17 +369,27 @@ class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
 
+        taxon_profile_exists = TaxonProfile.objects.filter(taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid).exists()
+
+        url = None
+
         url_kwargs = {
             'meta_app_id':self.meta_app.id,
             'taxon_profiles_id' : self.taxon_profiles.id,
             'taxon_source' : self.taxon.taxon_source,
             'name_uuid' : self.taxon.name_uuid,
         }
-        
-        url = reverse('manage_taxon_profile', kwargs=url_kwargs)
+
+        if taxon_profile_exists:
+            url = reverse('manage_taxon_profile', kwargs=url_kwargs)
+
+        else:
+            url = reverse('create_taxon_profile', kwargs=url_kwargs)
+            
 
         data = {
             'url' : url,
+            'exists': taxon_profile_exists,
         }
         
         return JsonResponse(data)

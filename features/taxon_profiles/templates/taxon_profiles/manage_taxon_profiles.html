@@ -63,7 +63,16 @@
 				var determineURL_url = get_manage_or_create_baseurl + '?taxon_source=' + taxon_source_input.value + '&name_uuid=' + name_uuid_input.value;
 				$.get(determineURL_url, function(data){
 					if (typeof data == "object"){
-						window.location = data.url;
+						if (data.exists) {
+							window.location = data.url;
+						}
+						else {
+							$.get(data.url, function(html) {
+								$("#ModalContent").html(html);
+								ajaxify("ModalContent");
+								$("#Modal").modal("show");
+							});
+						}
 					}
 				}); 
 				

@@ -57,7 +57,13 @@
 					<div class="row justify-content-center">
 					
 						<div class="col-12 text-center">
-							<span class="h4 align-middle">{% blocktrans %}Traits of {{ parent_node }}{% endblocktrans %}</span>&nbsp;
+							<span class="h4 align-middle">
+								{% if parent_node.meta_node.node_type == 'root' %}
+									{% blocktrans with name=parent_node.nature_guide.name%}Traits of {{ name }}{% endblocktrans %}
+								{% else %}
+									{% blocktrans %}Traits of {{ parent_node }}{% endblocktrans %}
+								{% endif %}
+							</span>&nbsp;
 
 							<div class="btn-group dropdown">
 								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

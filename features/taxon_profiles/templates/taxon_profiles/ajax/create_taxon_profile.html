@@ -1,0 +1,38 @@
+{% extends 'localcosmos_server/modals/modal_base.html' %}
+{% load i18n localcosmos_tags %}
+
+
+{% block above %}
+	<form method="POST" action="{% url 'create_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" class="xhr">{% csrf_token %}
+{% endblock %}
+
+
+{% block title %}
+	{% blocktrans %}Create profile for {{ taxon }}{% endblocktrans %}
+{% endblock %}
+
+
+{% block body %}
+        {% blocktrans %}The profile for {{ taxon }} does not exist. Do you want to create it now?{% endblocktrans %}
+{% endblock %}
+
+{% block footer %}
+    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+    <button type="submit" class="btn btn-outline-primary">{% trans 'Create taxon profile' %}</button>
+{% endblock %}
+
+{% block below %}
+	</form>
+{% endblock %}
+
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			var modal = $("#Modal");
+			modal.modal("hide");
+			window.location = "{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}";
+		</script>
+	{% endif %}
+{% endblock %}
