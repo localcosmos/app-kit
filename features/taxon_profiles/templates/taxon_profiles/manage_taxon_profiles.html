@@ -79,9 +79,17 @@
 			}
 		});
 		{% for entry in nature_guide_results %}
-			$('#ng_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate();
+			$('#ng_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate({
+				onCompleted: function() {
+					ajaxify('ng_taxonlist_{{ entry.nature_guide.id }}');
+				}
+			});
 		{% endfor %}
-		$('#non_ng_taxa').endlessPaginate();
+		$('#non_ng_taxa').endlessPaginate({
+				onCompleted: function() {
+					ajaxify('non_ng_taxa');
+				}
+			});
 	</script>
 
 {% endblock %}
