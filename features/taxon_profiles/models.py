@@ -176,7 +176,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     
 
     class Meta:
-        unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
+        # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
+        unique_together=('taxon_profiles', 'taxon_source', 'name_uuid')
 
 
 class TaxonTextType(models.Model):
