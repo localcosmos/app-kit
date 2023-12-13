@@ -126,9 +126,13 @@ class CreateTaxonProfileMixin:
 
     def create_taxon_profile(self, taxon_profiles, taxon):
 
+        '''
         taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
             taxon_source=taxon.taxon_source, taxon_latname=taxon.taxon_latname,
             taxon_author=taxon.taxon_author).first()
+        '''
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
+            taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid).first()
 
         if not taxon_profile:
             taxon_profile = TaxonProfile(
