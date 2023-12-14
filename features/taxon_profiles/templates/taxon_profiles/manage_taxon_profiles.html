@@ -2,7 +2,6 @@
 {% load i18n localcosmos_tags taxon_profile_tags app_tags %}
 
 {% block generic_content_specific %}
-
 	<div class="card">
 		<div class="card-body">
 			<h4 class="card-title">{% trans 'Create your taxon profiles' %}</h4>
@@ -12,35 +11,92 @@
 					{{ searchbackboneform }}
 				</div>
 			</form>
-			<hr>
-			<h5>{% trans 'Taxa from nature guides' %}</h5>
-			<div>
-				{% for entry in nature_guide_results %}
-					<div>
-						<h5>{{ entry.nature_guide }}</h5>
-						{% url 'get_nature_guide_taxonprofile_page' meta_app.id content_type.id generic_content.id entry.nature_guide.id as pagination_url %}
-						<div id="ng_taxonlist_{{ entry.nature_guide.id }}" class="endless_page_template">
-							{% with nature_guide=entry.nature_guide results=entry.results %}
-								{% include 'taxon_profiles/ajax/nature_guide_taxonlist.html' %}
-							{% endwith %}
+		</div>
+	</div>
+	{% if nature_guide_results %}
+		<div class="mt-5">
+			<h3>
+				{% trans 'Taxa from nature guides' %}
+			</h3>
+		</div>
+		{% for entry in nature_guide_results %}
+			<div class="card mt-3">
+				<div class="card-header">
+					{{ entry.nature_guide }}
+					<div class="btn-group dropup">
+						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'modify' %} <span class="caret"></span>
+						</button>
+						<div class="dropdown-menu">
+							<a href="{% url 'batch_change_taxon_profile_publication_status' meta_app.id generic_content.id entry.nature_guide.id %}" class="xhr dropdown-item text-center" ajax-target="ModalContent">
+								{% blocktrans with name=entry.nature_guide %}Change publication of all taxon profiles of {{ name }}{% endblocktrans %}
+							</a>
 						</div>
 					</div>
-				{% endfor %}
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-12 col-lg-6">
+							<div>
+								<strong>
+									{% trans 'Identification results with taxonomic reference' %}
+								</strong>
+							</div>
+							{% if entry.results %}
+								{% url 'get_nature_guide_taxonprofile_page' meta_app.id content_type.id generic_content.id entry.nature_guide.id 'results' as pagination_url %}
+								<div id="ng_taxonlist_{{ entry.nature_guide.id }}" class="endless_page_template">
+									{% with nature_guide=entry.nature_guide results=entry.results %}
+										{% include 'taxon_profiles/ajax/nature_guide_taxonlist.html' %}
+									{% endwith %}
+								</div>
+							{% else %}
+								<div>
+									{% trans 'no taxa found' %}
+								</div>
+							{% endif %}
+						</div>
+						<div class="col-12 col-lg-6">
+							{% if entry.non_taxon_results %}
+								<div>
+									<div>
+										<strong>
+											{% trans 'Identification results without taxonomic reference' %}
+										</strong>
+									</div>
+									<div>
+										{% trans 'It is recommended to link a taxonomic reference first.' %}
+									</div>
+									{% url 'get_nature_guide_taxonprofile_page' meta_app.id content_type.id generic_content.id entry.nature_guide.id 'non-taxon-results' as pagination_url %}
+									<div id="ng_internal_taxonlist_{{ entry.nature_guide.id }}" class="endless_page_template">
+										{% with nature_guide=entry.nature_guide results=entry.non_taxon_results %}
+											{% include 'taxon_profiles/ajax/nature_guide_taxonlist.html' %}
+										{% endwith %}
+									</div>
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				</div>
 			</div>
-			<h5>
-				{% trans 'Taxon Profiles with no occurrence in any nature guide' %}
-				{% get_generic_content_option generic_content 'include_only_taxon_profiles_from_nature_guides' as ng_only %}
-				{% if ng_only %}
-					({% trans 'not included in app' %})
-				{% endif %}
-			</h5>
-			
+		{% endfor %}
+	{% endif %}
+	
+	<div class="mt-5">
+		<h3>
+			{% trans 'Taxon Profiles with no occurrence in any nature guide' %}
+		</h3>
+		{% get_generic_content_option generic_content 'include_only_taxon_profiles_from_nature_guides' as ng_only %}
+		{% if ng_only %}
+			({% trans 'not included in app' %})
+		{% endif %}
+	</div>
+	<div class="card mt-3">
+		<div class="card-body">
 			<div id="non_ng_taxa" class="endless_page_template">
 				{% include 'taxon_profiles/ajax/non_nature_guide_taxonlist.html' %}
 			</div>
 		</div>
 	</div>
-
 {% endblock %}
 
 {% block extra_script %}
@@ -80,6 +136,11 @@
 		});
 		{% for entry in nature_guide_results %}
 			$('#ng_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate({
+				onCompleted: function() {
+					ajaxify('ng_taxonlist_{{ entry.nature_guide.id }}');
+				}
+			});
+			$('#ng_internal_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate({
 				onCompleted: function() {
 					ajaxify('ng_taxonlist_{{ entry.nature_guide.id }}');
 				}

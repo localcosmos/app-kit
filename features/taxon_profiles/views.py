@@ -39,7 +39,24 @@ def get_taxon(taxon_source, name_uuid):
 '''
     profiles can occur in NatureGuides or IdentificationKeys, check these in the validation method
 '''
-class ManageTaxonProfiles(ManageGenericContent):
+class GetNatureGuideTaxaMixin:
+
+    def get_nature_guide_taxon_results(self, nature_guide):
+        taxon_results_pks = MetaNode.objects.filter(nature_guide=nature_guide,
+            node_type='result', taxon_latname__isnull=False).distinct('name_uuid').values_list('pk', flat=True)
+            
+        results = MetaNode.objects.filter(pk__in=taxon_results_pks).order_by('name')
+
+        return results
+    
+    def get_nature_guide_non_taxon_results(self, nature_guide):
+        non_taxon_results = MetaNode.objects.filter(nature_guide=nature_guide,
+            node_type='result', taxon_latname__isnull=True).order_by('name')
+
+        return non_taxon_results
+
+
+class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
     options_form_class = TaxonProfilesOptionsForm
     template_name = 'taxon_profiles/manage_taxon_profiles.html'
@@ -62,12 +79,14 @@ class ManageTaxonProfiles(ManageGenericContent):
         for nature_guide_link in nature_guide_links:
             nature_guide = nature_guide_link.generic_content
 
-            results = MetaNode.objects.filter(nature_guide=nature_guide,
-                node_type='result').order_by('name')
+            results = self.get_nature_guide_taxon_results(nature_guide)
+            
+            non_taxon_results = self.get_nature_guide_non_taxon_results(nature_guide)
 
             entry = {
                 'nature_guide': nature_guide,
                 'results': results,
+                'non_taxon_results': non_taxon_results,
             }
 
             for meta_node in results:
@@ -96,7 +115,7 @@ class ManageTaxonProfiles(ManageGenericContent):
         return context
 
 
-class NatureGuideTaxonProfilePage(ManageGenericContent):
+class NatureGuideTaxonProfilePage(GetNatureGuideTaxaMixin, ManageGenericContent):
     template_name = 'taxon_profiles/ajax/nature_guide_taxonlist.html'
 
     def get_context_data(self, **kwargs):
@@ -104,21 +123,25 @@ class NatureGuideTaxonProfilePage(ManageGenericContent):
 
         nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
 
-        results = MetaNode.objects.filter(nature_guide=nature_guide,
-            node_type='result').order_by('name')
+        if kwargs['list_type'] == 'results':
+            results = self.get_nature_guide_taxon_results(nature_guide)
+        else:
+            results = self.get_nature_guide_non_taxon_results(nature_guide)
 
         context['nature_guide'] = nature_guide
         context['results'] = results
+ 
+
         url_kwargs = {
             'meta_app_id': self.meta_app.id,
             'content_type_id': kwargs['content_type_id'],
             'object_id': self.generic_content.id,
             'nature_guide_id': kwargs['nature_guide_id'],
+            'list_type': kwargs['list_type']
         }
         context['pagination_url'] = reverse('get_nature_guide_taxonprofile_page', kwargs=url_kwargs)
 
         return context
-
 
 class CreateTaxonProfileMixin:
 
@@ -278,7 +301,7 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
                 if field_name in form.short_text_fields:
                     taxon_text.text = value
 
-                elif  field_name in form.long_text_fields:
+                elif field_name in form.long_text_fields:
                     taxon_text.long_text = value
 
                 taxon_text.save()
@@ -343,6 +366,84 @@ class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
         context = self.get_context_data(**self.kwargs)
         context['success'] = True
         return self.render_to_response(context)
+
+
+
+class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormView):
+
+    form_class = GenericContentStatusForm
+    template_name = 'taxon_profiles/ajax/batch_change_taxon_profiles_publication_status.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_nature_guide(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_nature_guide(self, **kwargs):
+        self.set_meta_app(**kwargs)
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.nature_guide = NatureGuide.objects.get(pk=kwargs['nature_guide_id'])
+        nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide).exclude(object_id=self.nature_guide.id)
+        self.meta_app_nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['nature_guide'] = self.nature_guide
+        context['success'] = False
+        return context
+    
+    def change_taxon_profile_publication_status(self, taxon_profile, publication_status):
+        # check if the taxon occurs in another nature guide which is published
+        change_status = True
+
+        if publication_status == 'draft':
+            occurrences = MetaNode.objects.filter(taxon_source=taxon_profile.taxon_source,
+                name_uuid=taxon_profile.name_uuid, nature_guide__in=self.meta_app_nature_guide_ids)
+            
+            for occurrence in occurrences:
+                nature_guide = occurrence.nature_guide
+                ng_publication_status = nature_guide.get_option(self.meta_app, 'publication_status')
+                if ng_publication_status != 'draft':
+                    change_status = False
+                    break
+                
+        if change_status == True:
+            taxon_profile.publication_status = publication_status
+            taxon_profile.save()
+    
+    def form_valid(self, form):
+
+        publication_status = form.cleaned_data['publication_status']
+        
+        results = MetaNode.objects.filter(nature_guide=self.nature_guide,
+                node_type='result')
+        
+        for meta_node in results:
+            taxon_profile = None
+
+            if meta_node.taxon:
+                taxon_source = meta_node.taxon_source
+                name_uuid = meta_node.name_uuid
+                taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                                                taxon_source=taxon_source, name_uuid=name_uuid).first()
+                
+                if taxon_profile:
+                    self.change_taxon_profile_publication_status(taxon_profile, publication_status)
+            
+            else:
+                fallback_taxa = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node, nature_guide=self.nature_guide)
+                for fallback_taxon in fallback_taxa:
+                    fallback_taxon_profile = TaxonProfile.objects.filter(taxon_source='app_kit.features.nature_guides',
+                                                                         name_uuid=fallback_taxon.name_uuid).first()
+                    if fallback_taxon_profile:
+                        self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
+
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        return self.render_to_response(context)
+
 
 
 class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):

@@ -1,23 +1,19 @@
-from gettext import install
-from django.test import TestCase, RequestFactory
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
-
-from django.http import QueryDict
 
 from app_kit.tests.common import test_settings
 
-from app_kit.models import MetaAppGenericContent, ContentImage
+from app_kit.models import MetaAppGenericContent
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, ViewTestMixin, WithImageStore, WithMedia)
 
 
 from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTaxonProfile, ManageTaxonTextType,
-                                                   DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits,
-                                                   ManageTaxonProfileImage, DeleteTaxonProfileImage,
-                                                   GetManageOrCreateTaxonProfileURL, ManageTaxonTextTypesOrder)
+                DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits, ManageTaxonProfileImage,
+                DeleteTaxonProfileImage, GetManageOrCreateTaxonProfileURL, ManageTaxonTextTypesOrder,
+                ChangeTaxonProfilePublicationStatus, BatchChangeNatureGuideTaxonProfilesPublicationStatus,
+                CreateTaxonProfile)
 
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
@@ -81,15 +77,15 @@ class WithNatureGuideNode:
     # create a nature guide with taxon to populate context['taxa']
     def setUp(self):
         super().setUp()
-        nature_guide = NatureGuide.objects.create('Test Nature Guide', 'en')
+        self.nature_guide = NatureGuide.objects.create('Test Nature Guide', 'en')
         link = MetaAppGenericContent(
             meta_app = self.meta_app,
             content_type = ContentType.objects.get_for_model(NatureGuide),
-            object_id = nature_guide.id,
+            object_id = self.nature_guide.id,
         )
         link.save()
 
-        self.start_node = NatureGuidesTaxonTree.objects.get(nature_guide=nature_guide,
+        self.start_node = NatureGuidesTaxonTree.objects.get(nature_guide=self.nature_guide,
                                                             meta_node__node_type='root')
 
         models = TaxonomyModelRouter('taxonomy.sources.col')
@@ -99,7 +95,7 @@ class WithNatureGuideNode:
         # add a child with taxon
         self.meta_node = MetaNode(
             name='Test meta node',
-            nature_guide=nature_guide,
+            nature_guide=self.nature_guide,
             node_type='result',
             taxon=self.lazy_taxon,
         )
@@ -107,13 +103,13 @@ class WithNatureGuideNode:
         self.meta_node.save()
 
         self.node = NatureGuidesTaxonTree(
-            nature_guide=nature_guide,
+            nature_guide=self.nature_guide,
             meta_node=self.meta_node,
         )
 
         self.node.save(self.start_node)
 
-        taxa = nature_guide.taxa()
+        taxa = self.nature_guide.taxa()
         self.assertEqual(taxa.count(), 1)
 
 
@@ -150,8 +146,8 @@ class TestManageTaxonProfiles(WithNatureGuideNode, WithTaxonProfiles, ViewTestMi
 class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser, WithLoggedInUser,
                              WithMetaApp, WithTenantClient, TenantTestCase):
 
-    url_name = 'manage_taxon_profile'
-    view_class = ManageTaxonProfile
+    url_name = 'create_taxon_profile'
+    view_class = CreateTaxonProfile
 
     def setUp(self):
         super().setUp()
@@ -181,7 +177,9 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
 
         url = self.get_url()
         
-        url_kwargs = {}
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
 
         response = self.tenant_client.get(url, **url_kwargs)
         self.assertEqual(response.status_code, 403)
@@ -189,6 +187,7 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
         # test with admin role
         self.make_user_tenant_admin(self.user, self.tenant)
         response = self.tenant_client.get(url, **url_kwargs)
+
         self.assertEqual(response.status_code, 200)
 
 
@@ -196,67 +195,40 @@ class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMix
     def test_set_taxon(self):
 
         view = self.get_view()
-        view.set_taxon(view.request, **view.kwargs)
+        view.set_taxon(**view.kwargs)
         self.assertEqual(view.taxon_profiles, self.generic_content)
         self.assertEqual(view.taxon, self.lazy_taxon)
-
-        profile = TaxonProfile.objects.get(taxon_latname=self.lazy_taxon.taxon_latname)
-        self.assertEqual(view.taxon_profile, profile)
-
-    @test_settings
-    def test_set_form(self):
-
-        view = self.get_view()
-        view.set_taxon(view.request, **view.kwargs)
-
-        form = view.get_form()
-        self.assertEqual(form.__class__, ManageTaxonTextsForm)
 
 
     @test_settings
     def test_get_context_data(self):
 
         view = self.get_view()
-        view.set_taxon(view.request, **view.kwargs)
-
-        taxon_profile = TaxonProfile.objects.get(taxon_latname=self.lazy_taxon.taxon_latname)
+        view.set_taxon(**view.kwargs)
 
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['taxon'], self.lazy_taxon)
-        self.assertEqual(context['taxon_profile'], taxon_profile)
-        self.assertEqual(list(context['node_names']), [self.meta_node.name])
         self.assertEqual(context['taxon_profiles'], self.generic_content)
-        self.assertEqual(context['generic_content'], self.generic_content)
-        self.assertIn('text_types', context)
+        self.assertEqual(context['success'], False)
         
 
     @test_settings
     def test_form_valid(self):
 
         view = self.get_view()
-        view.set_taxon(view.request, **view.kwargs)
+        view.set_taxon(**view.kwargs)
 
-        text_type = self.create_text_type('Test text type')
+        taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+                                                    taxon_source=self.lazy_taxon.taxon_source,
+                                                    name_uuid=self.lazy_taxon.name_uuid)
 
-        text_content = 'Test text content'
-
-        post_data = {
-            'input_language' : self.generic_content.primary_language,
-        }
-        post_data[text_type.text_type] = text_content
-
-        form = ManageTaxonTextsForm(self.generic_content, data=post_data)
-        form.is_valid()
-        self.assertEqual(form.errors, {})
-
-        response = view.form_valid(form)
+        self.assertFalse(taxon_profile_qry.exists())
+        response = view.post(view.request, **view.kwargs)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context_data['saved'], True)
+        self.assertEqual(response.context_data['success'], True)
 
-        taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
-        self.assertEqual(taxon_text.text, text_content)
-        
+        self.assertTrue(taxon_profile_qry.exists())
 
 
 class TestGetManageOrCreateTaxonProfileURL(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser,
@@ -350,14 +322,21 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         # test with nature guide taxon, not col taxon
         ng_taxon = self.start_node
 
+        lazy_ng_taxon = LazyTaxon(instance=ng_taxon)
+
+        ng_taxon_profile = TaxonProfile(
+            taxon_profiles = self.generic_content,
+            taxon=lazy_ng_taxon,
+        )
+
+        ng_taxon_profile.save()
+
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
             'taxon_profiles_id' : self.generic_content.id,
             'taxon_source' : 'app_kit.features.nature_guides',
             'name_uuid' : str(ng_taxon.name_uuid),
         }
-
-        lazy_ng_taxon = LazyTaxon(instance=ng_taxon)
 
         view = self.get_view()
         view.set_taxon(view.request, **url_kwargs)
@@ -969,3 +948,256 @@ class TestDeleteTaxonProfileImage(TestManageTaxonProfileImage):
             'pk' : self.content_image.id,
         }
         return url_kwargs
+
+
+class TestChangeTaxonProfilePublicationStatus(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles,
+                ViewTestMixin, WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+                TenantTestCase):
+    
+    url_name = 'change_taxon_profile_publication_status'
+    view_class = ChangeTaxonProfilePublicationStatus
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profile_id' : self.taxon_profile.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_taxon_profile(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+        self.assertEqual(view.taxon_profile, self.taxon_profile)
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['taxon_profile'], self.taxon_profile)
+        self.assertFalse(context_data['success'])
+
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(self.taxon_profile.publication_status, None)
+        self.assertEqual(initial['publication_status'], 'publish')
+
+        self.taxon_profile.publication_status = 'draft'
+        self.taxon_profile.save()
+        view.set_taxon_profile(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['publication_status'], 'draft')
+
+        self.taxon_profile.publication_status = 'publish'
+        self.taxon_profile.save()
+        view.set_taxon_profile(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['publication_status'], 'publish')
+
+
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+
+        post_data = {
+            'publication_status' : 'draft',
+        }
+
+        form = view.form_class(data=post_data)
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        self.assertEqual(self.taxon_profile.publication_status, None)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+
+        self.taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'draft')
+
+
+class TestBatchChangeNatureGuideTaxonProfilesPublicationStatus(WithNatureGuideNode, WithTaxonProfile,
+        WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp,
+        WithTenantClient, TenantTestCase):
+    
+    
+    url_name = 'batch_change_taxon_profile_publication_status'
+    view_class = BatchChangeNatureGuideTaxonProfilesPublicationStatus
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'nature_guide_id': self.nature_guide.id,
+        }
+        return url_kwargs
+    
+
+    def create_second_nature_guide(self):
+        self.second_nature_guide = NatureGuide.objects.create('Test Nature Guide 2', 'en')
+        link = MetaAppGenericContent(
+            meta_app = self.meta_app,
+            content_type = ContentType.objects.get_for_model(NatureGuide),
+            object_id = self.second_nature_guide.id,
+        )
+        link.save()
+
+        self.second_start_node = NatureGuidesTaxonTree.objects.get(nature_guide=self.second_nature_guide,
+                                                            meta_node__node_type='root')
+        
+    def add_taxon_to_nature_guide(self, lazy_taxon, nature_guide):
+
+        # add a child with taxon
+        self.second_meta_node = MetaNode(
+            name='Test meta node',
+            nature_guide=nature_guide,
+            node_type='result',
+            taxon=lazy_taxon,
+        )
+
+        self.second_meta_node.save()
+
+        self.second_node = NatureGuidesTaxonTree(
+            nature_guide=nature_guide,
+            meta_node=self.second_meta_node,
+        )
+
+        self.second_node.save(nature_guide.root_node)
+    
+    @test_settings
+    def test_set_nature_guide(self):
+        view = self.get_view()
+        view.set_nature_guide(**view.kwargs)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.nature_guide, self.nature_guide)
+        self.assertEqual(list(view.meta_app_nature_guide_ids), [])
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.set_nature_guide(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['taxon_profiles'], self.generic_content)
+        self.assertEqual(context_data['nature_guide'], self.nature_guide)
+        self.assertFalse(context_data['success'])
+
+    @test_settings
+    def test_change_taxon_profile_publication_status(self):
+        view = self.get_view()
+        view.set_nature_guide(**view.kwargs)
+
+        self.assertEqual(self.taxon_profile.publication_status, None)
+
+        view.change_taxon_profile_publication_status(self.taxon_profile, 'draft')
+        self.taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'draft')
+
+        view.change_taxon_profile_publication_status(self.taxon_profile, 'publish')
+        self.taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'publish')
+
+        self.create_second_nature_guide()
+        self.add_taxon_to_nature_guide(self.lazy_taxon, self.second_nature_guide)
+
+        # does not change to draft beecause taxon is active in second published nature guide
+        view.change_taxon_profile_publication_status(self.taxon_profile, 'draft')
+        self.taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'publish')
+
+
+    @test_settings
+    def test_form_valid(self):
+        view = self.get_view()
+        view.set_nature_guide(**view.kwargs)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        picea_abies = models.TaxonTreeModel.objects.get(taxon_latname='Picea abies')
+        lazy_taxon_2 = LazyTaxon(instance=picea_abies)
+        self.add_taxon_to_nature_guide(lazy_taxon_2, self.nature_guide)
+
+        self.second_taxon_profile = TaxonProfile(
+            taxon_profiles=self.generic_content,
+            taxon=lazy_taxon_2,
+        )
+
+        self.second_taxon_profile.save()
+
+        post_data = {
+            'publication_status' : 'draft',
+        }
+
+        form = view.form_class(data=post_data)
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        self.assertEqual(self.taxon_profile.publication_status, None)
+        self.assertEqual(self.second_taxon_profile.publication_status, None)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+
+        self.taxon_profile.refresh_from_db()
+        self.second_taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'draft')
+        self.assertEqual(self.second_taxon_profile.publication_status, 'draft')
+
+
+    @test_settings
+    def test_form_valid_fallback_taxa(self):
+        
+        view = self.get_view()
+        view.set_nature_guide(**view.kwargs)
+
+        self.add_taxon_to_nature_guide(None, self.nature_guide)
+
+        lazy_taxon_2 = LazyTaxon(instance=self.second_node)
+
+        non_taxon_profile = TaxonProfile(
+            taxon_profiles=self.generic_content,
+            taxon=lazy_taxon_2,
+        )
+
+        non_taxon_profile.save()
+
+        post_data = {
+            'publication_status' : 'draft',
+        }
+
+        form = view.form_class(data=post_data)
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        self.assertEqual(self.taxon_profile.publication_status, None)
+        self.assertEqual(non_taxon_profile.publication_status, None)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+
+        self.taxon_profile.refresh_from_db()
+        non_taxon_profile.refresh_from_db()
+        self.assertEqual(self.taxon_profile.publication_status, 'draft')
+        self.assertEqual(non_taxon_profile.publication_status, 'draft')
+
