@@ -2,10 +2,13 @@
 {% load i18n static app_tags localcosmos_tags %}
 
 {% block generic_content_specific_top %}
-	<div id="app-components" class="row">
+	<div id="app-components" class="row" data-store-positions-url="{% url 'store_app_kit_object_order' app_generic_content_type.id %}">
 		{% for link in generic_content_links %}
 			{% include 'app_kit/ajax/component_card.html' %}
 		{% endfor %}
+	</div>
+	<hr>
+	<div class="row">
 		<div class="col-12 col-md-6 col-lg-4 mb-4">
 			<div class="card">
 				<div class="card-header">
@@ -66,6 +69,15 @@
 		(function(){
 			$('[data-toggle="popover"]').popover({
 				trigger: 'hover'
+			});
+
+			// drag and drop
+			const componentsContainer = document.getElementById('app-components');
+			var sortable = Sortable.create(componentsContainer, {
+				onEnd: function (evt) {
+					const itemEl = evt.item;  // dragged HTMLElement
+					positionmanager.store_positions($(itemEl));
+				}
 			});
 		})();
 	</script>

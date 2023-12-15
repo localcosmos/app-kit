@@ -37,7 +37,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
 
         else:
             # respect taxon_include_descendants, using the lazytaxon.descendants() method
-            higher_taxa = self.meta_app.higher_taxa()
+            higher_taxa = self.meta_app.higher_taxa(include_draft_contents=False)
 
             # first iterate over higher taxa and their descendants
             for queryset in higher_taxa.querysets:
@@ -60,7 +60,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                             yield start_letters, letters_taxa
                         
             # higher taxa are done, work 'normal' taxa
-            taxa = self.meta_app.taxa()
+            taxa = self.meta_app.taxa(include_draft_contents=False)
 
             # iterating over the queryset directly might need creating LazyTaxon instance manually
             for taxon_queryset in taxa.querysets:
@@ -141,7 +141,7 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                 vernacular_names.add(vernacular_dic, is_primary=True, force_add=True)
 
             # secondly, use taxa from col and others, not using force_add
-            for lazy_taxon in self.meta_app.taxa():
+            for lazy_taxon in self.meta_app.taxa(include_draft_contents=False):
 
                 if lazy_taxon.taxon_include_descendants and not isinstance(lazy_taxon.instance, AppContentTaxonomicRestriction):
 

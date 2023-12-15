@@ -468,7 +468,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
     # return a LazyTaxonList instance
 
-    def higher_taxa(self):
+    def higher_taxa(self, include_draft_contents=True):
         # get a list of all taxa, extract with_descendants
         taxonlist = LazyTaxonList()
 
@@ -476,6 +476,9 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         for link in feature_links:
             generic_content = link.generic_content
+
+            if include_draft_contents == False and link.publication_status == 'draft':
+                continue
 
             lazy_list = generic_content.higher_taxa()
 
@@ -487,7 +490,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
     # returns a LazyTaxonList
     # all generic_contents do need a taxa() method, nothing else
 
-    def taxa(self):
+    def taxa(self, include_draft_contents=False):
 
         taxonlist = LazyTaxonList()
 
@@ -495,6 +498,9 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         for link in feature_links:
             generic_content = link.generic_content
+
+            if include_draft_contents == False and link.publication_status == 'draft':
+                continue
 
             lazy_list = generic_content.taxa()
 
@@ -778,6 +784,8 @@ class MetaAppGenericContent(models.Model):
     object_id = models.IntegerField()
     generic_content = GenericForeignKey('content_type', 'object_id')
 
+    position = models.IntegerField(default=0)
+
     options = models.JSONField(null=True)
 
     def feature_type(self):
@@ -809,6 +817,7 @@ class MetaAppGenericContent(models.Model):
 
     class Meta:
         unique_together = ('meta_app', 'content_type', 'object_id')
+        ordering=['position']
 
 
 '''--------------------------------------------------------------------------------------------------------------

@@ -20,10 +20,10 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
     generic_form_choicefield = 'enable_observation_button'
     instance_fields = ['enable_observation_button']
 
-    enable_wikipedia_button = forms.BooleanField(required=False)
-    enable_gbif_occurrence_map_button = forms.BooleanField(required=False)
-    enable_observation_button = forms.ChoiceField(required=False)
-    include_only_taxon_profiles_from_nature_guides = forms.BooleanField(required=False)
+    enable_wikipedia_button = forms.BooleanField(required=False, label=_('Enable Wikipedia button'))
+    enable_gbif_occurrence_map_button = forms.BooleanField(required=False, label=_('Enable GBIF occurrence map button'))
+    enable_observation_button = forms.ChoiceField(required=False, label=_('Enable observation button'))
+    include_only_taxon_profiles_from_nature_guides = forms.BooleanField(required=False, label=_('Include only taxon profiles from Nature Guides'))
 
 
 

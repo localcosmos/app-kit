@@ -486,6 +486,7 @@ class ManageApp(ManageGenericContent):
         context['appbuilder'] = appbuilder
         context['form'] = AddLanguageForm()
         context['generic_content_links'] = MetaAppGenericContent.objects.filter(meta_app=self.generic_content)
+        context['app_generic_content_type'] = ContentType.objects.get_for_model(MetaAppGenericContent)
         return context
 
 

@@ -1,5 +1,5 @@
 {% load i18n static localcosmos_tags app_tags %}
-<div id="ctype-{{ link|ctype_id }}-{{ link.id }}" class="col-12 col-md-6 col-lg-4 mb-4">
+<div id="ctype-{{ link|ctype_id }}-{{ link.id }}" class="col-12 col-md-6 col-lg-4 mb-4" data-object-id="{{ link.id }}">
 	<div class="card">
 		<div class="card-header">
 			<img src="{% get_static_prefix %}app_kit/images/features/{{ link.generic_content|class_name }}.svg" alt="{{ link.generic_content|verbose_name }}" width="30" height="auto"/>
