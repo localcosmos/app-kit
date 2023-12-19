@@ -10,7 +10,6 @@ import json
 
 class ApiTokenSerializer(TokenObtainPairSerializer):
 
-
     def validate(self, attrs):
         username = attrs[self.username_field]
 

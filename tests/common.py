@@ -9,6 +9,7 @@ LARGE_SQUARE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'Leaf-large.jp
 TEST_SVG_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'localcosmos-logo.svg')
 
 TEST_BACKGROUND_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'app-background.jpg')
+TEST_IPA_FILEPATH = os.path.join(TESTS_ROOT, 'ipa_for_tests', 'TestApp.ipa')
 
 TEST_TEMPLATE_PATH = os.path.join(TESTS_ROOT, 'templates', 'neobiota.html')
 

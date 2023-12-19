@@ -2,39 +2,25 @@ from app_kit.tests.common import test_settings
 from django.conf import settings
 
 from django_tenants.test.cases import TenantTestCase
-from django.test import TestCase
 from django_tenants.utils import tenant_context
 
 from rest_framework import status
 from django.urls import reverse
 
-from app_kit.tests.mixins import WithTenantClient, WithUser, WithMetaApp
+from app_kit.tests.mixins import WithTenantClient, WithUser
 
+from app_kit.app_kit_api.tests.mixins import WithAppKitApiUser
 
 from localcosmos_server.tests.mixins import WithApp, WithObservationForm
-
-from localcosmos_server.models import LocalcosmosUser
 
 import json, subprocess
 
 
-from app_kit.app_kit_api.views import ObtainLCAuthToken
-
-
-class TestObtainLCAuthToken(WithUser, WithTenantClient, TenantTestCase):
+class TestObtainLCAuthToken(WithAppKitApiUser, WithUser, WithTenantClient, TenantTestCase):
 
     def setUp(self):
         super().setUp()
-
         self.superuser = self.create_superuser()
-
-        # create the app kit api user
-        self.username = settings.APP_KIT_APIUSER_USERNAME
-        self.password = settings.APP_KIT_APIUSER_PASSWORD
-        self.email = settings.APP_KIT_APIUSER_EMAIL = 'api@localcosmos.org'
-
-        self.app_kit_api_user = LocalcosmosUser.objects.create_user(self.username, self.email, self.password)
-
 
     def get_post_data(self):
 
@@ -56,6 +42,11 @@ class TestObtainLCAuthToken(WithUser, WithTenantClient, TenantTestCase):
         response = self.client.post(url, post_data, follow=True, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+'''
+APP KIT JOBS API
+'''
+
 
 
 '''
@@ -92,6 +83,7 @@ class TestAnyclusterViews(WithDatasetPostData, WithObservationForm, WithUser, Wi
     def get_anycluster_url_kwargs(self):
 
         url_kwargs = {
+            'app_uuid': self.ao_app.uuid,
             'zoom': ZOOM,
             'grid_size': GRID_SIZE,
         }

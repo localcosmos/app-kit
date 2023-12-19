@@ -61,7 +61,7 @@ class ObtainLCAuthToken(TokenObtainPairView):
 ###################################################################################################################
 # LIST JOBS
 # - GET
-# - View to list all jobs in the system.
+# - View to list all open jobs in the system.
 # - allow filtering
 
 class AppKitJobList(AppKitApiMixin, mixins.ListModelMixin, GenericAPIView):
@@ -73,11 +73,7 @@ class AppKitJobList(AppKitApiMixin, mixins.ListModelMixin, GenericAPIView):
     filterset_fields = ['platform']
 
     def get_queryset(self):
-        """
-        Optionally restricts the returned purchases to a given user,
-        by filtering against a `username` query parameter in the URL.
-        """
-        queryset = AppKitJobs.objects.all()
+        queryset = AppKitJobs.objects.filter(job_status='waiting_for_assignment')
         assigned_to = self.request.query_params.get('assigned_to', None)
         
         queryset = queryset.filter(assigned_to=assigned_to)
