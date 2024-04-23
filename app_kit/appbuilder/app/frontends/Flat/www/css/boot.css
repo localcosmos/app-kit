@@ -1,0 +1,48 @@
+html, body {
+	margin :0;
+	padding : 0;
+	width: 100%;
+	height: 100%;
+}
+
+img.app-button {
+	width: 2rem;
+	height: auto;
+	cursor: pointer;
+}
+
+
+img.app-button.large {
+	width: 3rem;
+}
+
+.picturewidget {
+	position: relative;
+}
+
+.picturewidget .add-button {
+	width: 5rem;
+	height: auto;
+}
+
+.picturewidget input[type=file] {
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+
+#sponsors-page {
+	background: rgba(255,255,255,.8);
+	color: rgb(50,50,50);
+	width: 100%;
+	padding: 1rem;
+	text-align: center;
+}
+
+.sponsors-page-sponsor {
+	text-align: center;
+	padding: 1rem;
+}

@@ -1,0 +1,11 @@
+
+<div>
+	{{#each matrices}}
+		<a class="tap" link="{{url 'buttonmatrix' uuid }}">{{ name }}</a> <br>
+	{{/each}}
+
+
+</div>
+<div class="dialogbox-bottom">
+	<button type="button" action="modalDialog.close" class="btn flat tap closeperm">{{t 'CANCEL'}}</button>
+</div>

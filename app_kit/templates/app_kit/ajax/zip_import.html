@@ -1,0 +1,149 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+
+{% load i18n static localcosmos_tags %}
+
+{% block above %}
+	<form id="spreadsheet-import-form" method="POST" action="{% url 'import_from_zip' meta_app.id content_type.id generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
+{% endblock %}
+
+{% block title %}{% trans 'Import from spreadsheet' %}{% endblock %}
+
+{% block body %}
+	<div class="row">
+		<div class="col-12">
+
+			{% if form_valid %}
+
+				<div class="alert alert-success">
+					{% trans 'Your spreadsheet has been uploaded and will now be validated.' %}
+				</div>			
+
+			{% else %}
+
+				<div class="alert alert-info">
+					{% trans 'Read the spreadsheet specifications first.' %}<br>
+					<a href="https://localcosmos-app-kit.readthedocs.io/en/latest/" target="_blank">{% trans 'Spreadsheet specification' %}</a>
+				</div>
+				{% render_bootstrap_form form %}
+
+				{% if form_valid and not zip_is_valid %}
+					<div id="zip-errors">
+						<div class="alert alert-danger">
+							<b>{% trans 'Your zip package contained the following errors:' %}</b><br>
+							<ul>
+								{% for error in zip_importer.errors %}
+									<li>{{ error }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+					</div>
+				{% endif %}
+
+			{% endif %}
+		</div>
+
+		<div class="col-12">
+			<div id="spreadsheet-upload-progress" class="progress" style="display:none;">
+				<div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+			</div>
+		</div>
+		<div id="spreadsheet-import-checking-upload" class="col-12 mt-5 text-center" style="display:none;">
+			<img src="{% static 'app_kit/images/spinner.gif' %}" />
+			<div class="alert alert-info mt-3">
+				{% trans 'Upload complete. Verifying zip contents and importing data. This can take several minutes.' %}
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block footer %}
+	{% if form_valid and zip_is_valid %}
+	{% else %}
+		<button id="spreadsheet-import-form-close-button" type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Import' %}</button>
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+	<script>
+		function ajaxifyForm(){
+
+			document.getElementById("spreadsheet-import-form").addEventListener("submit", function(event){
+				event.preventDefault();
+
+				let form = this;
+
+				let zip_errors = document.getElementById("zip-errors");
+				if (zip_errors != null){
+					zip_errors.textContent = "";
+				}
+
+				var submit_button = form.querySelectorAll('button[type=submit]')[0];
+				submit_button.setAttribute("disabled", "disabled")
+
+				var close_button = document.getElementById("spreadsheet-import-form-close-button");
+				close_button.parentElement.removeChild(close_button);
+
+				let progress_bar_container = document.getElementById("spreadsheet-upload-progress");
+				let progress_bar = progress_bar_container.firstElementChild;
+
+				progress_bar.style.width = "0%";
+				progress_bar.setAttribute("aria-valuenow", "0");
+				progress_bar.textContent = "0%";
+
+				progress_bar_container.style.display = "";
+
+				let data = new FormData( form );
+
+				let xhr = new XMLHttpRequest();
+
+				xhr.open("POST", this.getAttribute("action"), true);
+
+				xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+				xhr.setRequestHeader("X-CSRFToken", getCookieValue('csrftoken'));
+
+				xhr.onload = function(){
+					console.log("[xhr] finished with status " + xhr.status);
+					let result = parseInt(xhr.status/100);
+
+					if ((result == 2 || result == 0) && xhr.response){
+
+						let form_container = form.parentElement;
+
+						$(form_container).html(xhr.response);
+
+					}
+					else {
+						alert("Error uploading file: " + xhr.status);
+					}
+				}
+
+				xhr.upload.onprogress = function(event){
+
+					let loaded = event.loaded;
+	  				let total = event.total;
+				
+					let percent = parseInt( (loaded/total) * 100);
+
+					let percent_string = "" + percent.toString() + "%"
+					progress_bar.style.width = percent_string;
+					progress_bar.setAttribute("aria-valuenow", percent.toString());
+					progress_bar.textContent = percent_string;
+
+					if (percent == 100){
+						document.getElementById("spreadsheet-import-checking-upload").style.display = "";
+					}
+				}
+
+				xhr.send(data);
+				 
+			});
+		}
+
+		{% if form_valid %}
+			window.location.href = "{% url generic_content.manage_url meta_app.id content_type.id generic_content.id %}";
+		{% else %}
+			ajaxifyForm();
+		{% endif %}
+	</script>
+{% endblock %}

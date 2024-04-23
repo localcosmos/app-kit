@@ -1,0 +1,199 @@
+{% extends 'nature_guides/manage_node.html' %}
+{% load i18n static localcosmos_tags app_tags %}
+
+{% block extra_style %}{% endblock %}
+{% block extra_head_script %}
+	<script src="{% static 'app_kit/ckeditor5/build/ckeditor.js' %}"></script>
+{% endblock%}
+
+{% block container_class %}class="container-fluid"{% endblock %}
+
+{% block options_form_block %}
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-5">
+			{% include 'app_kit/ajax/options_form.html' %}
+		</div>
+	</div>
+{% endblock %}
+
+{% block generic_content_specific %}
+
+	<script type="text/javascript" src="{% static 'nature_guides/IdentificationMatrix.js' %}"></script>
+
+
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-5">
+		
+			{% render_bootstrap_form search_for_node_form %}
+		
+		</div>
+	</div>
+
+	
+	<div class="row">
+		<div class="col-12 h5">
+
+			{% if parent_node.meta_node.node_type == 'root' %}
+			{% else %}
+				{% for tree_node in tree_path %}
+					<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">{{ tree_node }}</a> &xrarr; 
+				{%	endfor %}
+				
+				{% for crosslink in parent_crosslinks %}
+					&nbsp;, <a href="{% url 'manage_natureguide' meta_app.id content_type.id crosslink.parent.nature_guide.id crosslink.parent.id %}">&uarr; {{ crosslink.parent }}</a>
+				{% endfor %}
+				{{ parent_node }}
+			{% endif %}
+
+		</div>
+	</div>
+	
+	<div class="row">
+	
+		<div class="col-12 col-md-7 col-lg-8">
+
+			<div class="card">
+				<div class="card-header">
+					<div class="row justify-content-center">
+					
+						<div class="col-12 text-center">
+							<span class="h4 align-middle">
+								{% if parent_node.meta_node.node_type == 'root' %}
+									{% blocktrans with name=parent_node.nature_guide.name%}Traits of {{ name }}{% endblocktrans %}
+								{% else %}
+									{% blocktrans %}Traits of {{ parent_node }}{% endblocktrans %}
+								{% endif %}
+							</span>&nbsp;
+
+							<div class="btn-group dropdown">
+								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Add trait or filter' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu dropdown-menu-right">
+									{% for filter_type in matrix_filter_types %}
+										<a data-url="{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+									{% endfor %}
+								</div>
+							</div>
+
+						</div>
+					</div> 
+					
+				</div>
+				<div class="card-body">
+					<div id="matrix-filters-collapsible"></div>
+					
+					<div class="text-left">
+						<div class="btn-group dropup">
+							<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								{% trans 'Add trait or filter' %} <span class="caret"></span>
+							</button>
+							<div class="dropdown-menu">
+								{% for filter_type in matrix_filter_types %}
+									<a data-url="{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
+								{% endfor %}
+							</div>
+						</div>
+						
+						
+					</div>
+				</div>
+			</div>
+			<br>
+
+		</div>
+		
+		<div class="col-12 col-md-5 col-lg-4">
+			<div class="card">
+				<div class="card-header">
+					<span class="h4 align-center">
+						{% if parent_node.meta_node.node_type == 'root' %}
+							{{ parent_node.nature_guide.name }}
+						{% else %}
+							{{ parent_node.meta_node }}
+							<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
+						{% endif %}
+					</span>
+					{% content_image parent_node.meta_node 'overview' as overview_image %}
+					
+					<span id="overview-image-indicator" class="badge badge-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
+					<div class="btn-group dropdown">
+						{% with menualign='alignright' %}
+							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+						{% endwith %}
+					</div>
+					{% if parent_node.meta_node.description %}
+						<hr>
+						<div>
+							{{ parent_node.meta_node.description|safe }}
+						</div>
+					{% endif %}
+				
+					<hr />
+					
+					<div>
+						Mode: 
+						<div class="btn-group btn-group-toggle" data-toggle="buttons">
+							<label class="btn btn-sm btn-outline-primary {% if meta_node.identification_mode == 'strict' %}{% else %}active{% endif %} identification-mode-label" data-input-id="identification-mode-fluid" data-value="fluid">
+								<input id="identification-mode-fluid" type="radio" name="identificationmode" value="fluid"> {% trans 'ranking' %}
+							</label>
+							<label class="btn btn-sm btn-outline-primary identification-mode-label {% if meta_node.identification_mode == 'strict' %}active{% else %}{% endif %}" data-value="strict" data-input-id="identification-mode-strict">
+								<input id="identification-mode-strict" type="radio" name="identificationmode" value="strict"> {% trans 'exclusion criterion' %}
+							</label>
+						</div>
+						<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large mr-1"  data-toggle="popover" title="{% trans 'Identification mode' %}" data-content="{% blocktrans %}RANKING: Entries are ranked according to user selection. Entries are not sorted out. EXCLUSION: Entries are sorted out if an selection does not match.{% endblocktrans %}" data-placement="top" />
+					</div>
+				
+
+				</div>
+				<div class="card-body">
+					<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
+					
+					<div>
+						<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+						
+						<div id="sorted-out-container" class="collapse mt-4">
+							<h5>{% trans 'Sorted out:' %}</h5>
+							<div id="sorted-out-keynodes" class="row"></div>	
+						</div>
+					</div>
+					
+					<hr>
+
+					<div class="btn-group dropup">
+						{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+{% endblock %}
+{% block extra_script %}
+
+	<script type="text/javascript" src="{% static 'nature_guides/jquery-searchfornode-autocomplete.js' %}"></script>
+	<script>
+		var url = "{% url 'search_for_node' meta_app.id parent_node.nature_guide.id %}";
+		$('#id_search_node_name').searchfornodeautocomplete(url);
+		
+		$("a.sort-alpha").on("click", function(event){
+			positionmanager.sort_alphabetically("keynodes", function(item){
+				var node_name = item.getElementsByClassName("node-name")[0];
+				return node_name.textContent;
+			});
+		});
+		
+		(function(){
+			$('[data-toggle="popover"]').popover({
+				trigger: 'hover'
+			});
+		})();
+
+	</script>
+
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+
+	{% include 'nature_guides/ajax/node_loader.html' %}
+	
+	
+{% endblock %}

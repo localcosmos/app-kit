@@ -1,0 +1,182 @@
+.horizontal-slide {
+	margin: 0;
+	padding: 0;
+	display: block;
+	width: 100%;
+	position: relative;
+}
+
+.horizontal-slide > div {
+	width: 100%;
+	display: flex;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	gap: .5rem;
+}
+
+.horizontal-slide > div.stretch {
+	align-items: stretch;
+}
+
+.horizontal-slide > div.stretch label {
+	height: 2.5rem;
+}
+
+@media (min-width: 768px) {
+	.horizontal-slide > div {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+}
+
+
+.horizontal-slide > div > div {
+	flex: 0 0 auto;
+	width: 5rem;
+	word-wrap: break-word;
+	position: relative;
+	white-space: normal;
+}
+
+
+.horizontal-slide.xlarge > div > div {
+	width: 14rem;
+}
+
+
+.horizontal-slide.large > div > div {
+	width: 9rem;
+}
+
+.horizontal-slide.medium > div > div {
+	width: 7rem;
+}
+
+.horizontal-slide .slide-element-text {
+	font-weight: normal;
+	font-size: 0.9rem;
+	min-height: 2rem;
+}
+
+.horizontal-slide .text-only {
+	padding: .5rem;
+}
+
+.horizontal-slide .text-only > div {
+	padding: 0.3rem 0.3rem 0rem 0.3rem;
+	background-color: rgba(224,224,224,0.8);
+	color: rgb(50,50,50);
+	height: 100%;
+	border-radius: .3rem;
+	display: flex;
+	flex-direction: column;
+}
+
+.horizontal-slide .text-only > input:checked + div {
+	background-color: rgb(92,184,92);
+}
+
+.horizontal-slide .text-only > input:checked + div > div > label {
+	background-image: url(../../../img/checkbox-on.svg);
+}
+
+.horizontal-slide .text-only > div > div:first-child {
+	flex : 1;
+}
+
+.horizontal-slide label.slide-element-indicator {
+	display: block;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0.3rem;
+	background-image: url(../../../img/checkbox-off.svg);
+	background-repeat: no-repeat;
+	background-size:contain;
+	background-position: center center;
+	margin-top: .3rem;
+}
+
+.horizontal-slide label.slide-element-indicator img {
+	height: 2rem;
+	width: auto;
+}
+
+.horizontal-slide .text-only .slide-element-text {
+	background-color: #e0e0e0;
+	color: #646464;
+	padding: .5rem;
+}
+
+.horizontal-slide > div::-webkit-scrollbar {
+	width: 0px !important;
+	height: 0px !important;
+}
+
+.horizontal-slide > div::-webkit-scrollbar-thumb {
+	background: none;
+}
+
+.horizontal-slide input[type='checkbox'], .horizontal-slide input[type='radio'] {
+	display: none;
+}
+
+.horizontal-slide input[type='checkbox'] + label, .horizontal-slide input[type='radio'] + label {
+	display: block;
+	padding: 0.3rem;
+	border-radius: .5em;
+	background-color: rgba(224,224,224,0.8);
+}
+
+.horizontal-slide input[type='checkbox']:checked + label, .horizontal-slide input[type='radio']:checked + label {
+	background-color: rgb(92,184,92);
+	-webkit-border-radius: 0.5rem;
+	border-radius: 0.5rem;
+}
+
+.horizontal-slide label {
+	cursor: pointer;
+	white-space: normal;
+}
+
+
+.responsiveback {
+	background-size: cover;
+	background-position: center center;
+	background-repeat: no-repeat;
+}
+
+.responsiveback.contain {
+	background-size: contain;
+}
+
+
+.square {
+	width: 100%;
+}
+
+.square:after {
+	content: "";
+	display: block;
+	padding-bottom: 100%;
+}
+
+.square.numbercontainer {
+	position: relative;
+	background-color: rgba(224,224,224,0.8);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.square.numbercontainer > span {
+	position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+	color: rgb(100,100,100);
+	font-size: 2rem;
+}
+
+.border-black {
+	border: 1px solid black;
+}

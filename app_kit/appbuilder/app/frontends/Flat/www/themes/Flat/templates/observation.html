@@ -1,0 +1,134 @@
+<div class="page faded-out">
+
+	{{#if dataset}}
+	{{else}}
+		<div class="solid white">
+			<div class="container">
+				<div class="row justify-content-center toppadding">
+					<div class="col-12 col-md-8 col-lg-7 col-xl-6">
+						<div class="form-group">
+							<select id="observation-form-select" class="form-control">
+								{{#each available_forms}}
+									<option value="{{ uuid }}" {{#if selected}}selected{{/if}}>{{tp name }}</option>
+								{{/each}}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{{/if}}
+
+	<div class="translucent dark toppadding">
+		<div class="container">
+
+			{{#ifequal device.platform 'browser'}}
+				{{#if dataset}}
+					{{#ifequal dataset.validation_step 'completed' }}
+						{{#if dataset.is_valid}}
+						{{else}}
+							<div class="row justify-content-center">
+								<div class="col-12 col-md-8 col-lg-7 col-xl-6 my-3">
+									<div class="alert alert-danger">
+										{{tp 'This dataset has been marked as invaliud.'}}
+										<ul>
+											{{#each dataset.validation_errors}}
+												<li>{{message}}</li>
+												{{#if comment}}
+													<li>{{comment}}</li>
+												{{/if}}
+											{{/each}}
+										</ul>
+									</div>
+								</div>
+							</div>
+						{{/if}}
+					{{ else }}
+						<div class="row justify-content-center">
+							<div class="col-12 col-md-8 col-lg-7 col-xl-6 my-3">
+								<div class="alert alert-warning">
+									{{tp 'Validation of this observation is currently in progress.'}}
+								</div>
+							</div>
+						</div>
+					{{/ifequal}}
+				{{/if}}
+			{{/ifequal}}
+
+			<div class="row justify-content-center">
+				<div class="col-12 col-md-8 col-lg-7 col-xl-6">
+
+					<form id="{{ observation_form_uuid }}" {{#if dataset}}action="{{url 'edit_observation' dataset.id dataset.storage_location }}"{{else}}action="{{url 'new_observation' observation_form_uuid }}"{{/if}} method="POST" enctype="multipart/form-data">
+
+						{{#each form.fieldlist}}
+			
+							<div data-uuid="{{ form_field.uuid }}" class="{{#ifequal form_field.fieldClass 'BooleanField'  }}form-check bottompadding{{else}}form-group{{/ifequal}} {{ form_field.fieldClass }} {{#if errors }}is-invalid{{/if}} {{#if form_field.taxonomic_restriction}} taxonomic_restriction{{/if}}" {{#if form_field.taxonomic_restriction}}disabled style="display:none;"{{/if}} data-required="{{#if form_field.required}}1{{else}}0{{/if}}">
+
+								{{#if is_hidden}}
+									{{{ field }}}
+								{{ else }}
+									{{#ifequal form_field.fieldClass 'BooleanField'  }}
+										{{{ field }}}
+										<label class="form-check-label" for="id_{{ name }}">{{t label }}</label>
+									{{ else }}
+										<label>{{t label }}</label> {{#if form_field.required}}{{else}}<small>({{tp 'optional' }})</small>{{/if}}<br>
+										{{{ field }}}
+									{{/ifequal}}
+								{{/if}}
+								{{#if errors }}
+									<div class="alert alert-danger">
+										{{ errors }}
+									</div>
+								{{/if}}
+							</div>
+		
+						{{/each}}
+
+						{{#if form.non_field_errors}}
+							<div class="alert alert-danger">
+								{{#each form.non_field_errors }}
+									<div>
+										<b>{{@key}}</b> : {{this}}
+									</div>
+								{{/each}}
+							</div>
+						{{/if}}
+
+						{{#if success}}
+							<div id="observation-save-success" class="alert alert-success">
+								{{t 'Your observation has been saved'}}
+							</div>
+						{{/if}}
+
+						{{#if dataset}}
+							{{#if dataset.is_locked}}
+								<div class="alert alert-info">
+									{{t 'This dataset is being validated and cannot be altered.'}}
+								</div>
+							{{/if}}
+						{{/if}}
+						<div class="text-left my-3">
+
+							<button class="btn btn-light" {{#if dataset}}{{#if dataset.is_locked}}disabled{{/if}}{{/if}} type="submit">{{t 'save'}}</button>
+
+							{{#if dataset}}
+								<div class="observation-delete ml-3">
+									<div id="DeleteObservationYesNo" class="yesno yesno-bottom text-center p-3">
+										<div class="pb-3">
+											{{tp 'Delete this observation ?'}}
+										</div>
+										<div>
+											<button type="button" class="btn btn-sm btn-danger tap" link="{{url 'delete_observation' dataset.id dataset.storage_location}}">{{tp 'yes'}}</button> &nbsp; &nbsp;
+											<button type="button" class="btn btn-sm btn-light tap" action="DeleteObservation.close_confirm">{{tp 'no'}}</button>
+										</div>
+									</div>
+									<button type="button" class="btn btn-danger tap" action="DeleteObservation.yesno">{{tp 'delete'}}</button>
+								</div>
+							{{/if}}
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

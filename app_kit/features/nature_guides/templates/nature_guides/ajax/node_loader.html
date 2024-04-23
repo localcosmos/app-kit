@@ -1,0 +1,25 @@
+<script>
+	(function(){
+		
+		$.get("{% url 'load_keynodes' meta_app.id parent_node.id %}", function(html){
+			$("#keynodes").html(html);
+			ajaxify("keynodes");
+
+			$("#keynodes .moveforwardbutton").on("click", positionmanager.onMoveForward);
+			$("#keynodes .movebackbutton").on("click", positionmanager.onMoveBack);
+			
+			
+			// drag and drop
+			var keynodes = document.getElementById('keynodes');
+			var sortable = Sortable.create(keynodes, {
+				onEnd: function (evt) {
+					var itemEl = evt.item;  // dragged HTMLElement
+					positionmanager.store_positions($(itemEl));
+				}
+			});
+
+			
+		});
+
+	}());
+</script>

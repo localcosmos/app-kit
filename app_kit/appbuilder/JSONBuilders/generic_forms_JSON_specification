@@ -1,0 +1,164 @@
+ObservationFormJSON
+
+Das ObservationFormJSON enthaelt:
+- alle Felder des Beobachtungsformulars in einer Form die es erlaubt, das Formular dem Endnutzer auszugeben
+- Texte (label, choices etc) in allen Sprachen, in die das Formular uebersetzt wurde
+- [optional] die durch den Nutzer eingegeben daten in der fuer das Feld spezifizierten Datenstruktur (z.b. einfach eine zahl, oder aber etwas komplexeres wie GeoJson)
+
+
+es gibt 4 Feldtypen ("field_role") bezogen auf die Rolle im Beobachtungsformular:
+
+- taxonomic_reference : Das Beobachtete. z.B. ingabe des Taxons (Art etc)
+- geographic_reference : raeumliches Bezugsobjekt der Sichtung. Punktkoordinate (GeoJSON), oder auch ein Gebietsname oder polygon, falls fuer das Projekt relevant
+- temporal_reference : zeitliches Bezugsobjekt der Sichtung. Zeitpunkt (oder auch Zeitraum denkbar)
+
+- regular : zusatzinformationen, z.b. ein Textfeld, Select usw. Diese Felder koennen eine taxonomische Restriktion beinhalten.
+
+
+Felder haben uuids.
+Die Feldklasse ("field_class") legt ua den Datentyp fest. z.B. TextInput, NumberInput, aber auch komplexeres wie PointField (zB Punktkoordinate im GeoJson format)
+
+
+die 3 Referenz-Felder (*_reference) muessen in jedem Beobachtungsformular enthalten sein, wobei die "field_class" des Feldes vom Formularersteller ausgewahlet wird. In welcher Form die daten gesammelt werden (Datum mit Uhrzeit/ohne Uhrzeit, Punktkoordinate oder Gebiet usw) legt also der Formularersteller fest.
+
+Eine beliebige Anzahl an regular-Feldern kann durch den Formularersteller hinzugefuegt werden.
+
+
+
+
+
+example (work in progress):
+
+{
+  "type": "Feature",
+  "observation_form": {
+    "type": "LocalCosmos", /* LocalCosmos Observation form type */
+	"specification_version" : 1,
+	"observation_form_version" : 1,
+	"temporal_reference" : "dfa0611c-423f-4237-9420-596ae123fbf9", /* das feld der zeitlichen referenz */
+	"taxonomic_reference" : "dfa0611c-423f-4237-9420-596ae123fbf7", /* das feld der taxonomischen Referenz */
+	"geographic_reference" : "dfa0611c-423f-4237-9420-596ae123fbf8", /* das feld der geographischen referenz */
+	"uuid" : uuid_of_the_observation_form,
+	"name" : {
+		"de" : "Beobachtungsformular fuer Tiere im Wald",
+		"en" : "Observation form for forest animals"
+	},
+	"fields" : [
+		{
+            "definition": {
+                "widget": "BackboneTaxonAutocompleteWidget", 
+                "required": true, 
+                "initial": null, 
+                "label": {
+					"de" : "TaxonField Deutsch",
+					"en" : "TaxonField english"
+				}, 
+                "help_text": null
+            }, 
+            "role": "taxonomic_reference", 
+            "uuid": "dfa0611c-423f-4237-9420-596ae123fbf7", 
+            "widget_attrs": {}, 
+            "position": 1, 
+            "field_class": "TaxonField", 
+            "options": null
+        },
+		{
+            "definition": {
+                "widget": "GPSInputWithMap", 
+                "required": true,
+                "initial": null, 
+                "label": {
+					"de" : "Position",
+					"en" : "Position"
+				}, 
+                "help_text": null
+            }, 
+            "role": "geographic_reference", 
+            "uuid": "dfa0611c-423f-4237-9420-596ae123fbf8", 
+            "widget_attrs": {}, 
+            "position": 2, 
+            "field_class": "PointField", 
+            "options": null
+        },
+		{
+            "definition": {
+                "widget": "DateTimeInputWithAutofill", 
+                "required": true,
+                "initial": null, 
+                "label": {
+					"de" : "Zeitpunkt der Sichtung",
+					"en" : "Time of observation"
+				}, 
+                "help_text": null
+            }, 
+            "role": "temporal_reference", 
+            "uuid": "dfa0611c-423f-4237-9420-596ae123fbf9", 
+            "widget_attrs": {}, 
+            "position": 2, 
+            "field_class": "DateTimeField", 
+            "options": null
+        },
+		{
+            "definition": {
+                "widget": "Select", 
+                "required": false, 
+                "initial": null, 
+                "label": {
+					"de":"ChoiceField Deutsch",
+					"en":"ChoiceField English"
+				}, 
+                "help_text": null, 
+                "choices": [
+                    [
+                        "", 
+                        {"de" : "-----", "en" : "-----"}
+                    ], 
+                    [
+                        "choice 1", 
+                        {"de" : "choice 1 Deutsch", "en": "choice 1 english" }
+                    ], 
+                    [
+                        "choice 2", 
+                        {"de" : "choice 2 Deutsch", "en" : "choice 2 english" }
+                    ], 
+                    [
+                        "choice 3", 
+                        {"de" : "choice 3 Deutsch", "en" : "choice 2 english" }
+                    ]
+                ]
+            }, 
+            "role": "regular", 
+            "uuid": "a8dfe10a-148a-4eb3-a103-68bf3b419931", 
+            "widget_attrs": {}, 
+            "position": 3, 
+            "field_class": "ChoiceField", 
+            "options": null
+        },
+		{
+            "definition": {
+                "widget": "TextInput", 
+                "required": false, 
+                "initial": null, 
+                "label": {
+					"de":"Freitextfeld",
+					"en":"Free text input"
+				}, 
+                "help_text": null
+            }, 
+            "role": "regular", 
+            "uuid": "a8dfe10a-148a-4eb3-a103-68bf3b419932", 
+            "widget_attrs": {}, 
+            "position": 4, 
+            "field_class": "CharField", 
+            "options": null,
+			"taxonomic_restriction" : [{"taxon_source" : "taxonomy.sources.col", "name_uuid" : "ghuk611c-423f-4237-9420-596ae123aba6", "taxon_nuid":"0", "taxon_latname":"Animalia"}]
+        }
+	],
+	data : { /* Daten, die vom Nutzer in das Formular eingegeben wurden. Mapping von Feld-uuid zu Eingabe. */
+		"dfa0611c-423f-4237-9420-596ae123fbf9" : 1234567,       /* field_role: temporal_reference_field. Hier ein zeitpunkt als unixtime */
+		"dfa0611c-423f-4237-9420-596ae123fbf7" : {"taxon_source" : "taxonomy.sources.col", "name_uuid" : "ghuk611c-423f-4237-9420-596ae123aba6", "taxon_nuid":"001387012", "taxon_latname":"Phyllobius arborator"},        /* taxonomic_reference_field. Hier ein Taxon in form eines TaxonJSON, welches quelle, uuid , wiss. name und nuid (position im taxonomischen baum als zahl. 0: Tiere, 00: Insekten usw) beinhaltet */
+		"dfa0611c-423f-4237-9420-596ae123fbf8" : {GEOJSON},        /* geographische referenz, z.b. ein punkt im geojson format */
+		"a8dfe10a-148a-4eb3-a103-68bf3b419932" : "Gefunden bei Sonnenschein"     /* regular field, in diesem Fall die Eingabe in ein Freitextfeld */
+	}
+  }
+}

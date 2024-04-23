@@ -1,0 +1,17 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+
+{% block extra_style %}{% endblock %}
+
+
+{% block options_form_block %}
+	{% if parent_node.meta_node.node_type == 'root' %}
+		{% include 'app_kit/ajax/options_form.html' %}
+	{% else %}
+	{% endif %}
+{% endblock %}
+
+	
+
+
+{% block generic_content_specific %}{% endblock %}
+{% block extra_script %}{% endblock %}

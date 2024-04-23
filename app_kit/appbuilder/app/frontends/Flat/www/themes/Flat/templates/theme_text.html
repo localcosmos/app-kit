@@ -1,0 +1,45 @@
+<div class="page faded-out">
+	<div class="container p-0">
+		<div class="translucent white p-3">
+			<div class="row">
+                {{#if app_version}}
+                    <div class="col-12">
+                        App version: {{app_version}}
+                    </div>
+                {{/if}}
+				<div class="col-12">
+					{{tp key}}
+				</div>
+			</div>
+			{{#if licences}}
+				
+				{{#each licences}}
+					<div class="row my-2 align-items-center">
+						<div class="col-auto">
+							<img class="licenced-image img-thumbnail" src="{{image}}" />
+						</div>
+						<div class="col">
+							{{tp 'Creator'}}: {{licence.creatorName}}<br>
+							{{tp 'Licence'}}: {{licence.licence.shortName}}
+						</div>
+					</div>
+				{{/each}}
+				<div class="row justify-content-center">
+					<div class="col-auto">
+						<nav aria-label="Page navigation example">
+							<ul class="pagination">
+								{{#if previous_page}}
+									<li class="page-item"><a class="page-link tap" href="#" link="{{url 'theme_text' key}}?page={{previous_page}}">{{tp 'Previous'}}</a></li>
+								{{/if}}
+								<li class="page-item active"><a class="page-link" href="#">{{ current_page}}</a></li>
+								{{#if next_page}}
+									<li class="page-item"><a href="#" class="page-link tap" link="{{url 'theme_text' key}}?page={{next_page}}">{{tp 'Next'}}</a></li>
+								{{/if}}
+							</ul>
+						</nav>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+	</div>
+</div>

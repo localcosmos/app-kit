@@ -1,0 +1,22 @@
+{% load i18n localcosmos_tags %}
+<form class="xhr" method="POST" action="{% url 'add_glossary_entry' meta_app.id generic_content.id %}" enctype="multipart/form-data">{% csrf_token %}
+
+	{% include 'app_kit/ajax/form_extended_with_content_image.html' %}
+
+	{% if saved_glossary_entry %}
+		<div class="alert alert-success">{% blocktrans with term=glossary_entry.term %}Successfully saved glossary entry for the term {{ term }}.{% endblocktrans %}</div>
+	{% endif %}
+	<div class="row mt-3">
+		<div class="col-12">
+			<button type="submit" class="btn btn-outline-primary">{% trans 'Add' %}</button>
+		</div>
+	</div>
+</form>
+{% if saved_glossary_entry %}
+	<script>
+		$.get("{% url 'get_glossary_entries' meta_app.id generic_content.id %}", function(html){
+			$("#glossary-entries").html(html);
+			ajaxify("glossary-entries");
+		});
+	</script>
+{% endif %}

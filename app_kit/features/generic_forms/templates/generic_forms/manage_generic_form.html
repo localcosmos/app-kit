@@ -1,0 +1,185 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static genericforms localcosmos_tags app_tags %}
+
+{% block generic_content_specific %}
+
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Taxonomic restriction' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large" data-toggle="popover" data-placement="top" title="{% trans 'Taxonomic restriction' %}" data-content="{% trans 'You can optionally define which taxa your observation form can be used for. If you add a higher taxon (e.g. birds/aves) only descendants of that taxon can use this form. You can also restrict only certain fields to taxa.' %}" /></h4>
+			<div>
+			
+				{% render_taxonomic_restriction meta_app.app generic_content %}
+			
+			</div>
+		</div>	
+	</div>
+
+	<hr>
+	
+	<div class="card">
+		<div class="card-body">
+			<h4>{% trans 'Observation form fields' %}</h4>
+			<p>
+				<h5>{% trans 'Fundamental fields' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'Basic fields' %}" data-content="{% trans 'Every observation form needs at least fields for Taxon (e.g. Species), Time of Observation and Geographic Reference (e.g. GPS).' %}" /></h5>
+				<div>
+					<ul id="generic-form-taxonomic_reference-fields" class="simpleul">
+						{% if taxonomic_reference_field %}
+							{% with generic_field_link=taxonomic_reference_field %}
+								{% include 'generic_forms/generic_field_modify.html' %}
+							{% endwith %}
+						{% else %}
+							<li>
+								<div class="text-danger">
+									{% trans 'Your form has no taxon field yet.' %}
+								</div>
+								<div class="btn-group dropup">
+									<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% trans 'Add taxon field' %} <span class="caret"></span>
+									</button>
+									<div class="dropdown-menu">
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'TaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Taxon field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'SelectTaxonField' 'taxonomic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Select Taxon field' %}</a>
+									</div>
+								</div>
+							</li>
+						{% endif %}
+					</ul>
+				</div>
+				<div class="mt-3">
+					<ul id="generic-form-geographic_reference-fields" class="simpleul">
+						{% if geographic_reference_field %}
+						
+							{% with generic_field_link=geographic_reference_field %}
+								{% include 'generic_forms/generic_field_modify.html' %}
+							{% endwith %}
+
+						{% else %}
+							<li>
+								<div class="text-danger">
+									{% trans 'Your form has no geographic reference field yet.' %}
+								</div>
+								<div class="btn-group dropup">
+									<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% trans 'Add geographic reference field' %} <span class="caret"></span>
+									</button>
+									<div class="dropdown-menu">
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'PointJSONField' 'geographic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Point field' %}</a>
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'GeoJSONField' 'geographic_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Geometry field' %}</a>
+									</div>
+								</div>
+							</li>
+						{% endif %}
+					</ul>
+				</div>
+
+				<div class="mt-3">
+					<ul id="generic-form-temporal_reference-fields" class="simpleul">
+						{% if temporal_reference_field %}
+							{% with generic_field_link=temporal_reference_field %}
+								{% include 'generic_forms/generic_field_modify.html' %}
+							{% endwith %}
+						{% else %}
+							<li>
+								<div class="text-danger">
+									{% trans 'Your form has no temporal reference field yet.' %}
+								</div>
+								<div class="btn-group dropup">
+									<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% trans 'Add timestamp field' %} <span class="caret"></span>
+									</button>
+									<div class="dropdown-menu">
+										<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'DateTimeJSONField' 'temporal_reference' %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'datetime field' %}</a>
+									</div>
+								</div>
+							</li>
+						{% endif %}
+					</ul>
+				</div>	
+			</p>
+
+			<div class="mt-3">
+				<h5>{% trans 'Additional fields' %}</h5>
+	
+				<ul id="generic-form-regular-fields" data-store-positions-url="{% url 'store_app_kit_object_order' generic_field_link_content_type.id %}" class="simpleul clearfix">
+					{% for generic_field_link in generic_fields %}
+						{% include 'generic_forms/generic_field_modify.html' %}
+					{% endfor %}
+				</ul>
+
+
+				<p class="text-center">
+					<div class="btn-group dropup">
+						<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'Add field' %} <span class="caret"></span>
+						</button>
+						<div class="dropdown-menu">
+							{% for class in fieldclasses %}
+								<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id class.0 %}" class="dropdown-item xhr" ajax-target="ModalContent">{{ class.1 }}</a>
+							{% endfor %}
+						</div>
+					</div>
+				</p>
+			</div>
+		</div>
+	</div>
+
+{% endblock %}
+{% block extra_head_script %}
+
+	<link rel="stylesheet" href="{% static 'maps/leaflet/leaflet.css' %}" />
+	<script src="{% static 'maps/leaflet/leaflet.js' %}"></script>
+	
+	<link rel="stylesheet" href="{% static 'maps/leaflet-draw/src/leaflet.draw.css' %}"/>
+	<script src="{% static 'maps/leaflet-draw/src/Leaflet.draw.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Leaflet.Draw.Event.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Poly.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.SimpleShape.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Rectangle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Marker.js' %}"></script>
+  	<script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.CircleMarker.js' %}"></script>
+  	<script src="{% static 'maps/leaflet-draw/src/edit/handler/Edit.Circle.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Feature.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Polyline.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Polygon.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.SimpleShape.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Rectangle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Circle.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.Marker.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/draw/handler/Draw.CircleMarker.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/ext/TouchEvents.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/LatLngUtil.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/GeometryUtil.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/LineUtil.Intersect.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/Polyline.Intersect.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/ext/Polygon.Intersect.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/Control.Draw.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Tooltip.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/Toolbar.js' %}"></script>
+
+    <script src="{% static 'maps/leaflet-draw/src/draw/DrawToolbar.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/EditToolbar.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/EditToolbar.Edit.js' %}"></script>
+    <script src="{% static 'maps/leaflet-draw/src/edit/handler/EditToolbar.Delete.js' %}"></script>
+
+	<script type="text/javascript" src="{% static 'maps/MapManager.js' %}"></script>
+
+{% endblock %}
+
+{% block extra_script %}
+	<script type="text/javascript" src="{% static 'generic_forms/datePicker.js' %}"></script>
+	<script>
+		(function(){
+			$("#generic-form-regular-fields .moveforwardbutton").on("click", positionmanager.onMoveForward);
+			$("#generic-form-regular-fields .movebackbutton").on("click", positionmanager.onMoveBack);
+
+			$('[data-toggle="popover"]').popover({
+				trigger: 'hover'
+			});
+		})();
+	</script>
+
+{% endblock %}

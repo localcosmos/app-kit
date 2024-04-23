@@ -1,0 +1,36 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n app_tags localcosmos_tags %}
+
+{% block action %}
+	{% if matrix_filter %}{% url 'manage_matrix_filter' meta_app.id matrix_filter.id %}{% else %}{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type %}{% endif %}
+{% endblock %}
+
+{% block title %}
+	{% if matrix_filter %}{% blocktrans %}Manage {{ matrix_filter }}{% endblocktrans %}{% else %}{% blocktrans %}Create new {{ verbose_filter_name }}{% endblocktrans %}{% endif %}
+{% endblock %}
+
+{% block body %}
+	<p>
+		<div>
+			{% render_bootstrap_form form %}
+		</div>
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% trans 'Successfully saved matrix filter.' %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+		<script>
+			$("#LargeModal").modal('hide');
+		</script>
+		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+	{% endif %}
+{% endblock %}

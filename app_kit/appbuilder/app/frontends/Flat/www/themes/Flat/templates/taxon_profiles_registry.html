@@ -1,0 +1,129 @@
+<div id="alphabet-bar" class="fixed-top bg-grey d-none d-md-block" style="top:55px">
+	<div class="container">
+		<div class="row pt-3">
+			<div class="col-12 col-md-7 col-lg-5">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="alphabet-search" type="text" class="alphabet-search form-control" results-container="alphabet-search-results" placeholder="Chromista">
+				</div>
+				<div id="alphabet-search-results" class="p-3 alphabet-search-results lg hidden" data-input-id="alphabet-search">results</div>
+			</div>
+			{{#if has_vernacularNames}}
+				<div class="col-12 col-md-5 col-lg-7 text-right">
+				{{#if use_vernacularNames}}
+					<button class="tap btn btn-sm btn-secondary" link="{{url 'taxon_profiles_registry' }}">{{t 'scientific names'}}</button>
+				{{else}}
+					<button class="tap btn btn-sm btn-secondary" link="{{url 'taxon_profiles_registry' }}?vernacular=1">{{t 'vernacular names'}}</button>
+				{{/if}}
+
+				</div>
+			{{/if}}
+		</div>
+		<div class="row py-3">
+			<div class="col-12">
+				<div class="taxon-profiles-alphabet">
+					{{#if use_vernacularNames}}
+						{{#each vernacularNames }}
+							<div class="alphabet-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="alphabet-{{@key}}">
+								{{@key}}
+							</div>
+						{{/each}}
+					{{ else }}
+						{{#each search_index.taxonLatname }}
+							<div class="alphabet-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="alphabet-{{@key}}">
+								{{@key}}
+							</div>
+						{{/each}}
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="taxon-profiles-page" class="page faded-out d-flex solid">
+
+	<div class="container">
+		<div class="row pb-5">
+			<div class="col-12">
+				{{#if use_vernacularNames}}
+					{{#each vernacularNames }}
+					
+						{{#with this as | taxonProfile |}}
+
+							<div class="row mt-4">
+								<div class="col-12 bg-light pt-2">
+									<h3 id="alphabet-{{@key}}">{{ @key }}</h3>
+								</div>
+								{{#each taxonProfile}}
+									<div id="alphabet-entry-{{nameUuid}}" class="col-12 mt-3">
+										<div>
+											<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxonSource nameUuid }}"><i>{{ name }}</i></a>
+										</div>
+									</div>
+									
+								{{/each}}
+							</div>
+						{{/with}}
+						
+					{{/each}}
+				{{ else }}
+					{{#each search_index.taxonLatname }}
+						
+						{{#with this as | taxonProfile |}}
+						
+							<div class="row mt-4">
+								<div class="col-12 bg-light pt-2">
+									<h3 id="alphabet-{{@key}}">{{@key}}</h3>
+								</div>
+								{{#each taxonProfile}}
+									{{#if isSynonym}}
+									{{else}}
+										<div id="alphabet-entry-{{@key}}" class="col-12 mt-3">
+											<div>
+												<a href="#" class="tap" link="{{url 'TaxonProfilesUUID' taxonSource nameUuid }}"><i>{{taxonLatname}}</i></a>
+											</div>
+										</div>
+									{{/if}}
+								{{/each}}
+							</div>
+
+						{{/with}}
+
+					{{/each}}
+				{{/if}}
+			</div>
+		</div>
+		
+	</div>
+</div>
+<div class="fixed-bottom bg-grey d-md-none">
+	<div class="container">
+		<div class="row py-3">
+			<div class="col-4 text-center">
+				<select id="alphabet-select" class="custom-select">
+					{{#if use_vernacularNames}}
+					{{ else }}
+						{{#each search_index.taxonLatname }}
+							<option value="alphabet-{{@key}}">{{@key}}</option>
+						{{/each}}
+					{{/if}}
+				</select>
+			</div>
+			<div class="col-8">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="alphabet-search-sm" type="text" class="alphabet-search form-control" results-container="alphabet-search-results-sm" placeholder="Chromista">
+				</div>
+				<div id="alphabet-search-results-sm" class="p-3 alphabet-search-results sm hidden" data-input-id="alphabet-search-sm">results</div>
+			</div>
+		</div>
+	</div>
+</div>

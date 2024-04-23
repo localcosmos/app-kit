@@ -1,0 +1,55 @@
+<div>
+	<div class="sidemenucontent shadow2 swiperight" action="Sidemenu.close">
+
+		<div class="sidemenuhead">
+			<div class="tap" link="/">{{ app_name }}</div>
+		</div>
+		<div id="sidemenubody" class="sidemenubody">
+			<div class="menulist">
+				{{#if preview}}
+					<div class="alert alert-info">{{tp 'App Preview'}}</div>
+				{{else}}
+					<div class="menutitle">{{#if request.user.is_authenticated }}{{ request.user.username }}{{ else }}{{tp 'Account'}}{{/if}}</div>
+					<div class="menucatcontent">
+						{{#if request.user.is_authenticated}}
+							<div class="tap menulink" link="{{url 'myaccount' }}">{{tp 'Account'}}</div>
+							<div class="tap menulink" link="{{url 'logout' }}">{{tp 'Log out'}}</div>
+						{{else}}
+							<div class="tap menulink" link="{{url 'login' }}">{{tp 'Log in'}}</div>
+							<div class="tap menulink" link="{{url 'registration' }}">{{tp 'Register'}}</div>
+						{{/if}}
+					</div>
+					{{#each categories}}
+						<div class="menutitle">{{tp category_name }}</div>
+						<div class="menucatcontent">
+							{{#each buttons}}
+								<div class="tap menulink" link="{{ action }}">{{tp button_name }}</div>
+							{{/each}}
+						</div>
+					{{/each}}
+				{{/if}}
+				<div class="menutitle">{{tp 'Online Content' }}</div>
+				<div online-content="main_navigation" data-indicate-offline="1"></div>
+				{{#if preview}}
+				{{else}}
+					<div class="menutitle">App</div>
+					{{#if sponsors}}
+						<div class="tap menulink small" link="{{url 'sponsors' }}">{{tp 'Sponsors'}}</div>
+					{{/if}}
+					{{#if funding_partners}}
+						<div class="tap menulink small" link="{{url 'funding_partners' }}">{{tp 'Funding Partners'}}</div>
+					{{/if}}
+					{{#if app_requires_geolocation}}
+						<div class="tap menulink small" link="{{url 'geolocation_report' }}">{{tp 'Geolocation'}}</div>
+					{{/if}}
+					<div class="tap menulink small" link="{{url 'theme_text' 'about_app' }}">{{tp 'About'}}</div>
+					<div class="tap menulink small" link="{{url 'theme_text' 'app_sources' }}">{{tp 'Sources'}}</div>
+					<div class="tap menulink small" link="{{url 'legalNotice' }}">{{tp 'Legal notice'}}</div>
+					<div class="tap menulink small" link="{{url 'privacy_statement' }}">{{tp 'Privacy statement'}}</div>
+				{{/if}}
+			</div>
+		</div>
+
+	</div>
+	<div class="sidemenuoverlay tap" action="Sidemenu.close"></div>
+</div>

@@ -1,0 +1,57 @@
+{% load i18n %}
+{% if taxon_traits %}
+	<div class="row">
+		{% for node_space in taxon_traits %}
+			<div class="col-6 col-md-4 col-lg-3 mb-3">
+				<div class="card" style="height:100%;">
+					<div class="card-body">
+						<div class="text-center"><strong>{{ node_space.matrix_filter.name }}</strong></div>
+						{% if node_space.matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
+							{% for space in node_space.values.all %}
+								<div class="row no-gutters justify-content-center">
+									<div class="col-12 col-md-10 col-lg-8">
+										<div class="w-50" style="margin: 0 auto;"><img src="{{ space.image_url }}" class="img-fluid" /></div>
+										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
+									</div>
+								</div>
+							{% endfor %}
+						{% elif node_space.matrix_filter.filter_type == 'TextOnlyFilter' %}
+							{% for space in node_space.values.all %}
+								<div class="row no-gutters justify-content-center">
+									<div class="col-12 col-md-10 col-lg-8">
+										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
+									</div>
+								</div>
+							{% endfor %}
+						{% elif node_space.matrix_filter.filter_type == 'RangeFilter' %}
+							<div class="text-center">
+								{{ node_space.encoded_space.0 }}{{ node_space.matrix_filter.definition.unit }} - {{ node_space.encoded_space.1 }}{{ node_space.matrix_filter.definition.unit }}
+							</div>
+						{% elif node_space.matrix_filter.filter_type == 'ColorFilter' %}
+							<div class="row no-gutters justify-content-center">
+								{% for space in node_space.values.all %}
+									<div class="col-6 text-center">
+										<div class="trait-color" {% if space.additional_information.gradient %}style="background-image: {{ space.decode }};"{% else %}style="background-color: {{ space.decode }};"{% endif %}>&nbsp;</div>
+										{% if space.additional_information.description %}
+											<div>
+												<small>{{ space.additional_information.description }}</small>
+											</div>										
+										{% endif %}
+									</div>
+								{% endfor %}
+							</div>
+						{% elif node_space.matrix_filter.filter_type == 'NumberFilter' %}
+							<div class="text-center">
+								{% for number in node_space.encoded_space %}
+									{{ number }},
+								{% endfor %}
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+{% else %}
+	{% trans 'No traits found.' %}
+{% endif %}

@@ -1,0 +1,35 @@
+<div class="page faded-out">
+	<div class="translucent dark pt-3">
+		<div class="container">
+			<div class="row justify-content-center pt-3 pb-5">
+				<div class="col-12 col-md-8 col-lg-6 col-xl-5">
+
+					<h3 class="mb-4">{{tp 'Delete Account' }}</h3>
+
+					{{#if success}}
+						<div class="alert alert-success">
+							{{tp 'Your Account has been deleted.'}}
+						</div>
+					{{else}}
+
+						<div class="alert alert-danger">
+							{{tp 'Deleting your accout will delete all references to you as a person. This cannot be undone.'}}
+						</div>
+
+						<form action="{{url 'delete_account' }}" method="DELETE">
+
+							{{{html}}}
+
+							<div class="row align-items-center mt-5">
+								<div class="col-6 text-left">
+									<button class="btn btn-danger" type="submit">{{tp 'delete account'}}</button>
+								</div>
+							</div>
+
+						</form>
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

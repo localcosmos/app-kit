@@ -1,0 +1,28 @@
+{% load i18n genericforms %}
+<li id="li-{{ generic_field_link.id }}" data-object-id="{{ generic_field_link.id }}" {% if generic_field_link.generic_field.id in errorfields %}class="error"{% endif %}>
+	<div class="row">
+		<div id="field-{{ generic_field_link.generic_field.id }}" class="col-12 col-md-10 col-lg-11">
+			{% render_generic_field generic_field_link meta_app %}
+		</div>
+
+		<div class="col-12 col-md-2 col-lg-1 text-right">
+			<div class="btn-group">
+				<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					{% trans 'Modify' %} <span class="caret"></span>
+				</button>
+				<div class="dropdown-menu pull-right">
+					<a data-url="{% url 'edit_generic_field' meta_app.id generic_field_link.generic_form.id generic_field_link.generic_field.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit field' %}</a>
+					<div class="dropdown-divider"></div>
+					<a data-url="{% url 'delete_generic_field' meta_app.id generic_field_link.generic_field.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+					{% if generic_field_link.generic_field.role == "regular" %}
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item text-center moveforwardbutton" data-targetid="li-{{ generic_field_link.id }}">&#x25B2; {% trans 'Move up' %}</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item text-center movebackbutton" data-targetid="li-{{ generic_field_link.id }}">&#x25BC; {% trans 'Move down' %}</a>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+</li>

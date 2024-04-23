@@ -1,0 +1,45 @@
+{% load i18n %}
+<form method="POST", action="{% url 'add_backbone_taxon' meta_app.id backbone.id %}" class="xhr">{% csrf_token %}
+
+	{% for field in form %}
+		<div class="form-group {% if field.errors %}has-error{% endif %}">
+			<div>
+				{{ field.label_tag }}
+			</div>
+			{{ field }}
+			{% if field.help_text %}
+				<small class="form-text text-muted">{{ field.help_text }}</small>
+			{% endif %}
+		</div>
+	{% endfor %}
+
+	{% if form.errors %}
+		<div class="alert alert-danger">
+			{{ form.errors.as_text }}
+		</div>
+	{% endif %}
+
+	{% if success is True %}
+		{% if exists %}
+			<div class="alert alert-warning">
+				{% trans 'This taxon already exists in your app.' %}
+			</div>
+		{% else %}
+			<div class="alert alert-success">
+				{% blocktrans with name=taxon %}Successfully added {{ name }}.{% endblocktrans %}
+			</div>
+		{% endif %}
+	{% endif %}
+	<p>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Add' %}</button>
+	</p>
+</form>
+{% if success is True %}
+<script>
+	var url = "{% url 'manage_backbonetaxonomy' meta_app.id content_type.id backbone.id %}";
+	$.get(url, function(html){
+		$("#taxa").html(html);
+		ajaxify("taxa");
+	});
+</script>
+{% endif %}

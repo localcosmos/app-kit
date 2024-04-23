@@ -1,0 +1,86 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static app_tags localcosmos_tags %}
+
+{% block generic_content_specific_top %}
+	<div id="app-components" class="row" data-store-positions-url="{% url 'store_app_kit_object_order' app_generic_content_type.id %}">
+		{% for link in generic_content_links %}
+			{% include 'app_kit/ajax/component_card.html' %}
+		{% endfor %}
+	</div>
+	<hr>
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-4 mb-4">
+			<div class="card">
+				<div class="card-header">
+					<img src="{% get_static_prefix %}app_kit/images/features/template_content.svg" alt="Template Content" width="30" height="auto"/>
+					<small>{% trans 'Template content' %}</small>
+					<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large float-right"  data-toggle="popover" title="{% trans 'Template content' %}" data-content="{% trans 'Template content supplies layouted templates and pages can be made available instantly. Similar to a content management system.' %}" data-placement="left" />
+				</div>
+				<div class="card-body" style="position:relative;">
+					<h5 class="card-title">{% trans 'Template content' %}</h5>
+					<div class="text-right">
+						{% if meta_app.is_localcosmos_private %}
+							<strong><span class="text-danger">{% trans 'Managed on your private server.' %}</span></strong>
+						{% else %}
+							<strong><a class="stretched-link" href="{% url 'template_content_home' meta_app.app.uid %}">{% trans 'Edit' %}</a></strong>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-12">
+			<div class="btn-group dropup">
+				<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					{% trans 'Add component' %}
+				</button>
+				<div class="dropdown-menu">
+					{% for feature in meta_app.addable_features %}
+						<a class="dropdown-item xhr" data-url="{% url 'create_generic_appcontent' meta_app.id feature|ctype_id %}" ajax-target="ModalContent">{{ feature|verbose_name }}</a>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+	<h3>{% trans 'Configuration' %}</h3>
+	<div class="card">
+		<div class="card-body">
+			<h5 class="card-title">{% trans 'Languages' %}</h5>
+			<div id="applanguages" >
+				<div>
+					{% include 'app_kit/ajax/manage_app_languages.html' %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
+{% endblock %}
+
+
+{% block generic_content_specific %}
+	
+{% endblock %}
+
+{% block extra_script %}
+
+	<script>
+		(function(){
+			$('[data-toggle="popover"]').popover({
+				trigger: 'hover'
+			});
+
+			// drag and drop
+			const componentsContainer = document.getElementById('app-components');
+			var sortable = Sortable.create(componentsContainer, {
+				onEnd: function (evt) {
+					const itemEl = evt.item;  // dragged HTMLElement
+					positionmanager.store_positions($(itemEl));
+				}
+			});
+		})();
+	</script>
+
+{% endblock %}
+

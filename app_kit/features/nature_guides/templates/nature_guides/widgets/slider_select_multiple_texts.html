@@ -1,0 +1,12 @@
+{% extends 'nature_guides/widgets/horizontal_choices.html' %}
+
+{% block size %}xlarge{% endblock %}
+
+{% block label %}
+	<div class="text-only">
+		<div class="slide-element-text">{{ option.label}}</div>
+		<div>
+			<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-left text-only-label">&nbsp;</label>
+		</div>
+	</div>
+{% endblock %}

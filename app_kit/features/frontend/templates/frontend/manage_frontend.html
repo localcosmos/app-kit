@@ -1,0 +1,51 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block extra_head_script %}
+	<script src="{% static 'template_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
+{% endblock%}
+
+{% block content_title %}
+	<br>
+	<h3>
+		<span id="generic-content-name">{{ generic_content }}</span>
+		{% if generic_content.is_locked %}
+		{% else %}
+			<small>
+				<div class="btn-group">
+					<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						{% trans 'Modify' %}
+					</button>
+					<div class="dropdown-menu">
+						<a class="dropdown-item xhr" data-url="{% url 'change_frontend' meta_app.id generic_content.id %}" ajax-target="ModalContent">{% trans 'change frontend' %}</a>
+					</div>
+				</div>
+				{% block badges %}
+					<span class="badge badge-info">version {{ generic_content.current_version }}</span>
+				{% endblock %}
+			</small>
+		{% endif %}
+	</h3>
+
+	<hr>
+{% endblock %}
+
+{% block generic_content_specific %}
+	<div class="my-4">
+		{% blocktrans %}You are currently using the following frontend:{% endblocktrans %} <b>{{ generic_content.frontend_name }}, version {{ frontend_settings.version }} </b>
+	</div>
+	<div>
+		{% with form=frontend_settings_form %}
+			{% include 'frontend/ajax/manage_frontend_settings.html' %}
+		{% endwith %}
+	</div>
+
+{% endblock %}
+
+{% block extra_script %}
+	<script>
+		{% with form=frontend_settings_form %}
+			{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+		{% endwith %}
+	</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% if node %}{% url 'manage_nodelink' meta_app.id parent_node.id node.id %}{% else %}{% url 'create_nodelink' node_type meta_app.id parent_node.id %}{% endif %}{% endblock %}
+
+{% block title %}
+	{% if node %}
+		{% blocktrans with name=node.meta_node.name %}Manage {{ name }}{% endblocktrans %}
+	{% else %}
+		{% if node_type == 'result' %}
+			{% trans 'Create entry' %}
+		{% else %}
+			{% trans 'Create group' %}
+		{% endif %}
+	{% endif %}
+{% endblock %}
+
+{% block body %}
+		<p class="nodelinkform">
+			{% block form %}
+				
+				{% for field in form %}
+					{% include 'localcosmos_server/bootstrap_field.html' %}
+					{% if field.name == 'decision_rule' and parent_node.has_matrix_filters %}
+						<div class="mt-5">
+							{% if nodelink.child %}
+								<h4>{% blocktrans with name=nodelink.child.name %}Traits of {{ name }}{% endblocktrans %}</h4>
+							{% else %}
+								<h4>{% blocktrans %}Traits of this entry{% endblocktrans %}</h4>
+							{% endif %}
+						</div>
+					{% endif %}
+				{% endfor %}
+
+				{% if success is True %}
+					<script>
+						if (typeof identification != 'undefined' && identification != null){
+							identification.reload();
+						}
+					</script>
+				{% endif %}
+
+			{% endblock %}
+		</p>
+		{% if success is True %}
+			<div class="alert alert-success">
+				{% trans 'Successfully saved node.' %}
+			</div>
+		{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if success is True %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}
+
+{% block open_modal %}
+	<script>
+		{% if success is True %}
+
+			var html = '{% filter escapejs %}{% include "nature_guides/ajax/natureguide_node.html" %}{% endfilter %}';	
+
+			var node = $("#{{ node.name_uuid }}");
+
+			if ( node.length ) {
+				node.replaceWith(html);
+			}
+			else {
+				$("#keynodes").append(html);
+			}
+
+			ajaxify('{{ node.name_uuid }}');
+
+			$("#{{ node.name_uuid }} .moveforwardbutton").on("click", positionmanager.onMoveForward);
+			$("#{{ node.name_uuid }} .movebackbutton").on("click", positionmanager.onMoveBack);
+
+			$("#LargeModal").modal("hide");
+			$("#LargeModalContent").empty();
+			$("#key_nochildren").hide();
+		{% else %}
+			$("#LargeModal").modal("show");
+		{% endif %}
+	</script>
+{% endblock %}
+
+{% block script %}
+<script>
+	
+	/* update source element data on every keystroke to prevent HTML5 validation to kick in before submit is called - which triggers updateSourceElement */
+	{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+	
+</script>
+{% endblock %}

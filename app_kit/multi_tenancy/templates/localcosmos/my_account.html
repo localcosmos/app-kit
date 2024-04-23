@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load i18n static %}
+
+{% block content %}
+	<div class="container">
+		<div class="row">
+			<div class="col-12">
+				<div class="slogan text-left">
+					{% trans 'My profile' %}
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12">
+				<table class="table">
+					<tbody>
+						<tr>
+							<th scope="row" style="width: 20%">{% trans 'Username' %}</th>
+							<td>{{ request.user.username }}</td>
+						</tr>
+						<tr>
+							<th scope="row">{% trans 'First name' %}</th>
+							<td>{{ request.user.first_name }}</td>
+						</tr>
+						<tr>
+							<th scope="row">{% trans 'Surname' %}</th>
+							<td>{{ request.user.last_name }}</td>
+						</tr>
+						<tr>
+							<th scope="row">{% trans 'Email' %}</th>
+							<td>{{ request.user.email }}</td>
+						</tr>
+						<tr>
+							<th scope="row">{% trans 'Joined' %}</th>
+							<td>{{ request.user.date_joined }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="row mt-5">
+			<div class="col-12">
+				<h4>{% trans 'Management' %}</h4>
+				<a href="{% url 'edit_account' %}">{% trans 'Edit profile' %}</a><br>
+				<a href="{% url 'password_change' %}">{% trans 'Change password' %}</a><br>
+				<a href="{% url 'delete_account' %}">{% trans 'Delete account' %}</a>
+			</div>
+		</div>
+	</div>
+{% endblock %}

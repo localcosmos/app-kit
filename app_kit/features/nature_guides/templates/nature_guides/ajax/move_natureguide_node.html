@@ -1,0 +1,52 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+
+{% block above %}
+	<form method="POST" action="{% url 'move_natureguide_node' meta_app.id old_parent_node.id child_node.id %}" class="xhr" autocomplete="off">{% csrf_token %}
+{% endblock %}
+
+{% block title %}{% trans 'Move tree entry' %}{% endblock %}
+
+{% block body %}
+		{% if success is True %}
+			<p>
+				<div class="alert alert-success">
+					{% blocktrans %}{{ child_node }} has successfully been moved to {{ new_parent_node }}{% endblocktrans %}
+				</div>
+			</p>
+			<p>
+				<a href="{% url 'manage_natureguide' meta_app.id child_node.nature_guide|ctype_id child_node.nature_guide.id new_parent_node.id %}" class="btn btn-primary">{% blocktrans %}Go to {{ new_parent_node }}{% endblocktrans %}</a>
+			</p>
+		{% else %}
+			{% render_bootstrap_form form %}
+		{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if success is True %}
+		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}
+
+{% block open_modal %}
+	<script>
+	
+		{% if success is True %}
+			{# remove node from display #}
+			$("#{{ child_node.name_uuid }}").remove();
+		{% else %}
+			(function(){
+				var url = "{% url 'search_move_to_group' meta_app.id child_node.nature_guide.id %}";
+				$('#id_search_group_name').searchfornodeautocomplete(url, {
+					"afterSelect" : function(item){
+						$("#id_new_parent_node_id").val(item.id);
+					}
+				});
+			})();
+			$("#Modal").modal("show");
+		{% endif %}
+	</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block above %}
+	<form method="POST" action="{% if content_image %}{% url 'manage_taxon_profile_image' meta_app.id content_image.id %}{% else %}{% url 'manage_taxon_profile_image' meta_app.id content_type.id content_instance.id %}{% endif %}?{% if new %}new=1&{% endif %}{% if content_image_taxon %}taxon_source={{ content_image_taxon.taxon_source }}&name_uuid={{ content_image_taxon.name_uuid }}{% endif %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
+{% endblock %}
+
+
+{% block script %}
+	<script>
+
+		
+
+		{% if request.method == 'POST' and form.is_valid %}
+			
+			$.get("{% url 'collect_taxon_images' meta_app.id content_instance.id content_instance.taxon_source content_instance.name_uuid %}", function(html){
+				$("#taxon-images").html(html);
+				ajaxify('taxon-images');
+			});
+
+			$("#LargeModal").modal("hide");
+			$("#LargeModalContent").empty();
+		
+		{% else %}
+			{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+		{% endif %}
+	</script>
+
+<style>
+	.ck-editor__editable {
+		min-height: 50px;
+	}
+</style>
+{% endblock %}

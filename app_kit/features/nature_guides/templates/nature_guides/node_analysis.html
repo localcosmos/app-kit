@@ -1,0 +1,61 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+
+{% load i18n static app_tags localcosmos_tags %}
+
+{% block content %}
+{% include 'nature_guides/nodemenu_loader.html' %}
+<br>
+<div class="container">	
+	<div class="row">
+		<div class="col-12 col-md-6 col-lg-4">
+			{% render_bootstrap_form search_for_node_form %}
+		</div>
+	</div>
+
+	<hr>
+
+	{% if nodelinks %}
+		<div class="row">
+			<div class="col-12">
+				{% blocktrans with length=nodelinks|length %}{{ meta_node }} appears in {{ length }} locations:{% endblocktrans %}
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12">
+				<div class="card">
+					<div class="card-body">
+						{% for nodelink in nodelinks %}
+							{% with parent_node=nodelink.0 node=nodelink.1 %}
+								<div class="row">
+									<div class="col-12">
+										<h4>{% if parent_node.meta_node.node_type == 'root' %}{% trans 'Start node' %}{% else %}{{ parent_node }}{% endif %}</h4>
+									</div>
+									<div class="col-12">
+										
+										{% include 'nature_guides/ajax/natureguide_node.html' %}
+
+									</div>
+									<div class="col-12">
+										<a href="{% url 'manage_natureguide' meta_app.id content_type.id node.nature_guide.id parent_node.id %}" class="btn btn-outline-secondary">{% if parent_node.meta_node.node_type == 'root' %}{% blocktrans %}Go to start node{% endblocktrans %}{% else %}{% blocktrans with name=parent_node %}Go to {{ name }}{% endblocktrans %}{% endif %}</a>
+									</div>
+								</div>
+							{% endwith %}
+							<hr>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		</div>
+
+	{% else %}
+	{% endif %}
+</div>
+{% endblock %}
+
+{% block extra_script %}
+	<script type="text/javascript" src="{% static 'nature_guides/jquery-searchfornode-autocomplete.js' %}"></script>
+	<script>
+		var url = "{% url 'search_for_node' meta_app.id meta_node.nature_guide.id %}";
+		$('#id_search_node_name').searchfornodeautocomplete(url);
+	</script>
+{% endblock %}

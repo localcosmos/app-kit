@@ -1,0 +1,160 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags localcosmos_tags %}
+
+{% block extra_style %}{% endblock %}
+{% block extra_head_script %}
+	<script src="{% static 'app_kit/ckeditor5/build/ckeditor.js' %}"></script>
+{% endblock%}
+
+{% block content %}
+	<div class="container">
+		<div class="row align-items-center mb-4">
+			<div class="col-auto">
+				<br>
+
+				{% if vernacular_name_from_nature_guides %}
+					<h3>{{ vernacular_name_from_nature_guides }}</h3>
+					<i>{{ taxon }}</i>
+				{% elif taxon.vernacular %}
+					<h3>{{ taxon.vernacular }}</h3>
+					<i>{{ taxon }}</i>
+				{% else %}
+					<h3><i>{{ taxon }}</i></h3>
+				{% endif %}
+			</div>
+			<div class="col-auto">
+				<small>
+					<div class="btn-group">
+						<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'Modify' %}
+						</button>
+						<div class="dropdown-menu">
+							<a class="dropdown-item xhr" data-url="{% url 'change_taxon_profile_publication_status' meta_app.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'Change publication status' %}</a>
+							<a class="dropdown-item xhr" data-url="{% url 'delete_taxon_profile' meta_app.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'delete' %}</a>
+						</div>
+					</div>
+				</small>
+			</div>
+			<div class="col">
+				{% if taxon_profile.publication_status == 'draft' %}
+					<span class="badge badge-warning">{% trans 'draft' %}</span>
+				{% endif %}
+				{% if nature_guides %}
+					{% for nature_guide in nature_guides %}
+					<span class="badge badge-success">
+						{{ nature_guide }}
+					</span>
+					{% endfor %}
+				{% else %}
+					<span class="badge badge-warning">
+						{% trans 'does not occur in any nature guide' %}
+					</span>
+				{% endif %}
+				{% if taxon_profile.taxon.taxon_source == 'app_kit.features.nature_guides' %}
+					<span class="badge badge-warning">
+						{% trans 'not linked to any taxonomic source' %}
+					</span>
+				{% else %}
+					<span class="badge badge-success">
+						{{ taxon_tree_model }}
+					</span>
+				{% endif %}
+				
+			</div>
+		</div>
+		<div class="row">
+			{% if possible_duplicates %}
+				<div class="col-12">
+					<div class="alert alert-warning">
+						<div>
+							{% trans 'This profile has possible duplicates' %}:
+						</div>
+						{% for duplicate in possible_duplicates %}
+							<i>
+								<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id duplicate.taxon_source duplicate.name_uuid %}">{{ duplicate.taxon_latname }} {{ duplicate.taxon_author }}</a>
+							</i>
+						{% endfor %}
+					</div>
+				</div>
+			{% endif %}
+			<div class="col-12 mt-3">
+				<div>
+					{% with content_object=taxon_profile %}
+						{% include 'app_kit/ajax/tags.html' %}
+					{% endwith %}
+				</div>
+				<div class="mt-3">
+					<button type="button" class="btn btn-sm btn-outline-primary xhr" data-url="{% url 'tag_any_element' content_type.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'manage tags' %}</button>
+				</div>
+				<hr>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-12">
+				{% get_generic_content_options generic_content as options %}
+				{% if options.enable_wikipedia_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a wikipedia page.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/wikipedia_button.svg' %}" />
+					</a>
+				{% endif %}
+				{% if options.enable_observation_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens an observation form for this taxon.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/observation.svg' %}" />
+					</a>
+				{% endif %}
+				{% if options.enable_gbif_occurrence_map_button %}
+					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a GBIF occurrence map for this taxon.' %}" class="xhr" ajax-target="ModalContent">
+						<img class="appbutton" src="{% static 'app_kit/buttons/occurrence.svg' %}" />
+					</a>
+				{% endif %}
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<h4>{% trans 'Traits' %}</h4>
+				<div id="taxon-traits"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<h4>{% trans 'Images' %}</h4>
+				<div id="taxon-images"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+			</div>
+			<div class="col-12 mt-3">
+				<button type="button" class="btn btn-outline-primary xhr" data-url="{% url 'manage_taxon_profile_image' meta_app.id taxon_profile|ctype_id taxon_profile.id %}?taxon_source={{ taxon.taxon_source }}&name_uuid={{ taxon.name_uuid }}&new=1" ajax-target="LargeModalContent">{% trans 'Add image with text' %}</button>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div id="taxontexts" class="col-12">
+				{% include 'taxon_profiles/ajax/manage_taxon_profile_form.html' %}
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				<a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
+				<a href data-url="{% url 'manage_taxon_text_types_order' taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage text order' %}</a>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_script %}
+
+	<script>
+		$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
+			$("#taxon-images").html(html);
+			ajaxify('taxon-images');
+		});
+
+		$.get("{% url 'collect_taxon_traits' taxon.taxon_source taxon.name_uuid %}", function(html){
+			$("#taxon-traits").html(html);
+		});
+		
+		
+	</script>
+	
+{% endblock %}

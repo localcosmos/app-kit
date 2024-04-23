@@ -1,0 +1,28 @@
+{% load i18n localcosmos_tags %}
+
+<td>
+	<b>{{ glossary_entry.term }}</b>
+	{% if glossary_entry.synonyms %}
+		<br>
+		{% trans 'Also:' %}
+		{% for synonym in glossary_entry.synonyms %}
+			{{ synonym.term }},
+		{% endfor %}
+	{% endif %}
+</td>
+<td>{{ glossary_entry.definition }}</td>
+<td class="text-center">
+	<div id="content_image_{{ glossary_entry|ctype_id }}_{{ glossary_entry.id }}" class="squareimage" {% if glossary_entry.image %}style="background-image:url('{{ glossary_entry.image_url }}')"{% endif %}></div>
+</td>
+<td>
+	<div class="btn-group dropup">
+		<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			{% trans 'Modify' %} <span class="caret"></span>
+		</button>
+		<div class="dropdown-menu">
+			<a data-url="{% url 'edit_glossary_entry' meta_app.id generic_content.id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+			<a data-url="{% url 'manage_content_image' meta_app.id glossary_entry|ctype_id glossary_entry.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+			<a data-url="{% url 'delete_glossary_entry' glossary_entry.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+		</div>
+	</div>
+</td>

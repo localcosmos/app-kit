@@ -1,0 +1,68 @@
+{% load i18n %}
+<div class="row">
+	<div class="col-2 text-right">
+		{{ matrix_filter.encoded_space.0 }} {% if matrix_filter.definition.unit %}{{ matrix_filter.definition.unit }}{% endif %}
+	</div>
+	<div class="col-7">
+		<input id="{{ widget.attrs.id }}" type="range" name="{{ widget.name }}" max="{{ matrix_filter.encoded_space.1|safe }}" min="{{ matrix_filter.encoded_space.0|safe }}" step="{{ matrix_filter.definition.step|safe }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
+		<input id="{{ widget.attrs.id }}_value" type="hidden" name="{{ widget.name }}" data-widget-id="{{ widget.attrs.id }}" {% if widget.value %}value="{{ widget.value }}"{% endif %} />
+	</div>
+	<div class="col-2 text-left">
+		{{ matrix_filter.encoded_space.1 }} {% if matrix_filter.definition.unit %}{{ matrix_filter.definition.unit }}{% endif %}
+	</div>
+	<div class="col-1 text-left">
+		<button id="{{ widget.attrs.id }}_clear" type="button" class="btn btn-xs btn-secondary">{% trans 'Clear' %}</button>
+	</div>
+	<div class="col-12 text-center">
+		<div style="font-size: 2em; font-weight:bold;"><span id="{{ widget.attrs.id }}_curval">{% if widget.value %}{{ widget.value }}{% else %}off{% endif %}</span> <span id="{{ widget.attrs.id }}_unit" {% if widget.value %}{% else %}style="display:none;"{% endif %}>{% if matrix_filter.definition.unit %}{{ matrix_filter.definition.unit }}{% endif %}</span></div>
+	</div>
+</div>
+
+<script>
+	(function(){
+		var slider = document.getElementById('{{ widget.attrs.id }}');
+		var slider_value = document.getElementById('{{ widget.attrs.id }}_value');
+		var indicator = document.getElementById('{{ widget.attrs.id }}_curval');
+		var unit = document.getElementById('{{ widget.attrs.id }}_unit');
+
+		var change_event = new CustomEvent("change", {
+		  detail: {}
+		});
+
+		var clear_event = new CustomEvent("clear", {
+		  detail: {}
+		});
+
+		slider.clear = function(event){
+			slider_value.value = '';
+			unit.style.display = "none";
+			indicator.textContent = "off";
+		};
+
+		document.getElementById('{{ widget.attrs.id }}_clear').addEventListener('click', function(event){
+			slider.value = '';
+			// fire change event
+			slider.clear();
+			slider.dispatchEvent(clear_event);
+			slider_value.dispatchEvent(change_event);
+		});
+
+		function onchange(event){
+			indicator.textContent = slider.value;
+			slider_value.value = slider.value;
+			
+			if (slider.value){
+				if (unit.style.display == "none"){
+					unit.style.display = "";
+				}
+			}
+			else {
+				unit.style.display = "none";
+			}
+		}
+
+		slider.addEventListener('input', onchange);
+		slider.addEventListener('change', onchange);
+		
+	})();
+</script>

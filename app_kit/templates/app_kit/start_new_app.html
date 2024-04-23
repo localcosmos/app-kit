@@ -1,0 +1,32 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n localcosmos_tags static app_tags %}
+
+{% block extra_style %}{% endblock %}
+
+{% block header %}
+	<div class="container-fluid d-none d-md-block">
+		<div class="row">
+			<div class="col-12 text-center text-white bg-primary">
+				<h2>{{ meta_app.name }}</h2>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="row">
+		<div class="col-12">
+
+			<br>
+			<h3>
+				{{ meta_app }}
+				<small>
+					<span class="badge badge-info">version {{ meta_app.current_version }}</span>
+				</small>
+			</h3>
+			<div class="alert alert-info">{% blocktrans with version=meta_app.current_version %}You have started a new app version. You can now start creating {{ meta_app }} version {{ version }}.{% endblocktrans %}</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

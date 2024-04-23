@@ -1,0 +1,46 @@
+{% load i18n el_pagination_tags taxon_profile_tags %}
+<div id="taxonlist_{{ nature_guide.id }}">
+	{% paginate 15 results with pagination_url %}
+	<ul>
+		{% for meta_node in results %}
+			<li>
+				{% if meta_node.taxon %}
+					{% get_taxon_profile meta_node.taxon as profile %}
+					{% if profile %}
+						<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id profile.taxon_source profile.name_uuid %}">
+							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
+						</a>
+						{% if profile.publication_status == 'draft' %}
+							<span class="badge badge-warning">{% trans 'draft' %}</span>
+						{% endif %}
+					{% else %}
+						<a href="{% url 'create_taxon_profile' meta_app.id generic_content.id meta_node.taxon.taxon_source meta_node.taxon.name_uuid %}" class="xhr" ajax-target="ModalContent">
+							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
+						</a>
+						<span class="badge badge-warning">{% trans 'no profile' %}</span>
+					{% endif %}
+				{% else %}
+					{% get_nature_guide_taxon meta_node nature_guide as taxon %}
+					{% get_taxon_profile taxon as non_taxon_profile %}
+					{% if non_taxon_profile %}
+						<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id non_taxon_profile.taxon_source non_taxon_profile.name_uuid %}">
+							{{ meta_node.name }}
+						</a>
+						{% if non_taxon_profile.publication_status == 'draft' %}
+							<span class="badge badge-warning">{% trans 'draft' %}</span>
+						{% endif %}
+					{% else %}
+						<a href="{% url 'create_taxon_profile' meta_app.id generic_content.id taxon.taxon_source taxon.name_uuid %}" class="xhr" ajax-target="ModalContent">
+							{{ meta_node.name }}
+						</a>
+						<span class="badge badge-warning">{% trans 'no profile' %}</span>
+					{% endif %}
+					<span class="badge badge-warning">{% trans 'no taxon set' %}</span>
+				{% endif %}
+			</li>
+		{% endfor %}
+	</ul>
+</div>
+<p>
+	{% show_pages %}
+</p>

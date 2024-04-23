@@ -1,0 +1,30 @@
+<div class="page faded-out">
+	<div class="translucent dark padding">
+		<div class="row justify-content-center pt-3 pb-5">
+			<div class="col-12 col-md-8 col-lg-6 col-xl-5">
+
+				<h3 class="mb-4 text-center">{{tp 'Register account' }}</h3>
+
+				{{#if success}}
+					<div class="alert alert-success">
+						{{t 'Your Account has been created and you have been logged in.'}}
+					</div>
+					<div class="text-center py-3">
+						<button type="button" class="btn btn-primary tap" link="{{url 'home' }}">{{t 'Start using the app'}}</button>
+					</div>
+				{{else}}
+
+					<form action="{{url 'registration' }}" method="POST" enctype="multipart/form-data">
+
+						{{{html}}}
+
+						<p class="text-center">
+							<button class="btn btn-secondary" type="submit">{{tp 'Register'}}</button>
+						</p>
+					</form>
+
+				{{/if}}
+			</div>
+		</div>
+	</div>
+</div>

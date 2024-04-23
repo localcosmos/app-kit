@@ -1,0 +1,117 @@
+<div id="alphabet-bar" class="fixed-top bg-grey d-none d-md-block" style="top:55px">
+	<div class="container">
+		<div class="row pt-3">
+			<div class="col-12 col-md-7 col-lg-5">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="alphabet-search" type="text" class="alphabet-search form-control" results-container="alphabet-search-results" placeholder="Chromista">
+				</div>
+				<div id="alphabet-search-results" class="p-3 alphabet-search-results lg hidden" data-input-id="alphabet-search">results</div>
+			</div>
+			<div class="col-12 col-md-5 col-lg-7 text-right">
+				{{#if show_used_terms_only}}
+					<button class="tap btn btn-sm btn-secondary" action="BackButtonManager.back">{{t 'show unused'}}</button>
+				{{else}}
+					<button class="tap btn btn-sm btn-secondary" link="glossary/{{ glossary_uuid }}/?usedTerms=1">{{t 'hide unused'}}</button>
+				{{/if}}
+				{{#if csv_path}}
+					<a class="btn btn-sm btn-secondary" href="{{ csv_path }}" download>{{t 'Download'}}</a>
+				{{/if}}
+			</div>
+		</div>
+		<div class="row py-3">
+			<div class="col-12">
+				<div class="glossary-alphabet">
+					{{#each glossary }}
+						<div class="alphabet-link py-1 px-3 mx-1 mb-1 bg-white text-primary" jumpto="alphabet-{{@key}}">
+							{{@key}}
+						</div>
+					{{/each}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="glossary-page" class="page faded-out d-flex solid">
+
+	<div class="container">
+		<div class="row pb-5">
+			<div class="col-12">
+				{{#each glossary }}
+				
+					{{#with this as | glossaryEntry |}}
+
+						
+						<div class="row mt-4">
+							<div class="col-12 bg-light pt-2">
+								<h3 id="alphabet-{{@key}}">{{@key}}</h3>
+							</div>
+							{{#each glossaryEntry}}
+								<div id="alphabet-entry-{{@key}}" class="col-12 mt-3">
+									<div>
+										<div class="h5">
+											<strong>{{@key}}</strong><br>
+											{{#if this.synonyms}}
+											<div class="text-muted h6">
+												{{tp 'Synonyms'}}: 
+												{{#each this.synonyms }}
+													{{ this }}{{#if @last}}{{else}},{{/if}}
+												{{/each}}
+											</div>
+										{{/if}}
+										</div>
+										
+									</div>
+									<div>
+										<div class="row">
+											<div class="col-8 col-md-10">
+												{{ this.definition }}
+											</div>
+											<div class="col-10 col-md-2">
+												{{#if this.imageUrl}}
+													<img src="{{ this.imageUrl.1x }}" class="img-fluid" />
+												{{/if}}
+											</div>
+										</div>
+									</div>
+									<hr>
+								</div>
+								
+							{{/each}}
+						</div>
+					{{/with}}
+					
+				{{/each}}
+			</div>
+		</div>
+		
+	</div>
+</div>
+<div class="fixed-bottom bg-grey d-md-none">
+	<div class="container">
+		<div class="row py-3">
+			<div class="col-4 text-center">
+				<select id="alphabet-select" class="custom-select">
+					{{#each glossary }}
+						<option value="alphabet-{{@key}}">{{@key}}</option>
+					{{/each}}
+				</select>
+			</div>
+			<div class="col-8">
+				<div class="input-group flex-nowrap">
+					<div class="input-group-prepend">
+						<span class="input-group-text" id="addon-wrapping">
+							<img src="img/octicons/search.svg" />
+						</span>
+					</div>
+					<input id="alphabet-search-sm" type="text" class="alphabet-search form-control" results-container="alphabet-search-results-sm" placeholder="Chromista">
+				</div>
+				<div id="alphabet-search-results-sm" class="p-3 alphabet-search-results sm hidden" data-input-id="alphabet-search-sm">results</div>
+			</div>
+		</div>
+	</div>
+</div>

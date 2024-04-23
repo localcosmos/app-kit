@@ -1,0 +1,25 @@
+{% load i18n %}
+<div class="form-inline">
+	<div class="input-group">
+		<div class="input-group-prepend">
+			<span class="input-group-text">
+				{% trans 'min' %}
+				{% if unit %}
+					({{ unit }})
+				{% endif %}
+			</span>
+		</div>
+		{% with widget=widget.subwidgets.0 %}{% include widget.template_name %}{% endwith %}
+	</div>&nbsp;
+	<div class="input-group">
+		<div class="input-group-prepend">
+			<span class="input-group-text">
+				{% trans 'max' %}
+				{% if unit %}
+					({{ unit }})
+				{% endif %}
+			</span>
+		</div>
+		{% with widget=widget.subwidgets.1 %}{% include widget.template_name %}{% endwith %}
+	</div>
+</div>

@@ -1,0 +1,21 @@
+{% load i18n localcosmos_tags %}
+<a data-url="{% url 'manage_nodelink' meta_app.id parent_node.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans with name=node.meta_node.name %}Edit {{ name }}{% endblocktrans %}</a>
+<a data-url="{% url 'manage_content_image' meta_app.id node.meta_node|ctype_id node.meta_node.id %}{% if node.meta_node.taxon %}?taxon_source={{ node.meta_node.taxon.taxon_source }}&name_uuid={{ node.meta_node.taxon.name_uuid }}{% else %}?taxon_source={{ node.lazy_taxon.taxon_source }}&name_uuid={{ node.lazy_taxon.name_uuid }}{% endif %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+{% if node.meta_node.node_type == 'result' %}
+{% else %}
+	<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id node.id %}" class="dropdown-item">{% blocktrans with name=node.meta_node.name %}Enter group {{ name }}{% endblocktrans %}</a>
+{% endif %}
+<div class="dropdown-divider"></div>
+{% if is_analysis %}
+{% else %}
+	<a class="dropdown-item text-center moveforwardbutton" data-targetid="{{ node.name_uuid }}">&#9650; &nbsp; {% trans 'Move up' %}</a>
+	<div class="dropdown-divider"></div>
+	<a class="dropdown-item text-center movebackbutton" data-targetid="{{ node.name_uuid }}">&#9660; &nbsp; {% trans 'Move down' %}</a>
+	<div class="dropdown-divider"></div>
+	<a data-url="{% url 'move_natureguide_node' meta_app.id parent_node.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% blocktrans %}Move to different group{% endblocktrans %}</a>
+	{% if node.meta_node.node_type == 'node' %}
+		<a data-url="{% url 'copy_tree_branch' meta_app.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% blocktrans %}Copy this branch{% endblocktrans %}</a>
+	{% endif %}
+	<div class="dropdown-divider"></div>
+{% endif %}
+<a data-url="{% url 'delete_nodelink' parent_node.id node.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>

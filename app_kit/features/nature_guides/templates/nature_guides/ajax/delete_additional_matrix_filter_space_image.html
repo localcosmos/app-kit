@@ -1,0 +1,6 @@
+{% extends 'app_kit/ajax/delete_content_image.html' %}
+{% load i18n static %}
+
+{% block extra_success_js %}
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+{% endblock %}

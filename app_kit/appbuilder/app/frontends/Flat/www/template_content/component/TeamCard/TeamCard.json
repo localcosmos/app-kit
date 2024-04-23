@@ -1,0 +1,28 @@
+{
+  "templateName" : "TeamCard",
+  "type": "component",
+  "version" : 1,
+  "identifierContent": "name",
+  "contents": {
+    "profileImage": {
+      "type": "image",
+      "helpText": "square image",
+      "restrictions": {
+        "fileType": ["png", "jpg", "webp"]
+      }
+    },
+    "name": {
+      "type": "text",
+      "widget": "TextInput",
+      "restrictions": {
+        "maxLength": 30
+      }
+    },
+    "personDescription": {
+      "type": "text",
+      "restrictions": {
+        "maxLength": 50
+      }
+    }
+  }
+}

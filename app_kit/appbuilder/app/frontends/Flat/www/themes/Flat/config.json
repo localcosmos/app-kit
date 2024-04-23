@@ -1,0 +1,83 @@
+{
+	"header_views" : {
+		"default" : "DefaultAppbar",
+		"Home" : "HomeAppbar"
+	},
+	"css" : ["bootstrap-4.5.3-dist/css/bootstrap.css", "css/flat.css", "horizontal-slide/horizontal-slide.css"],
+	"js" : ["js/jquery-3.5.0.min.js", "bootstrap-4.5.3-dist/js/bootstrap.bundle.min.js", "js/listeners.js"],
+	"name" : "Flat",
+	"user_content" : {
+		"images" : {
+			"app_background" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"],
+					"ratio" : "10:16"
+				},
+				"helpText" : "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
+				"required" : false
+			},
+			"app_launcher_icon" : {
+				"restrictions" : {
+					"file_type" : ["svg"],
+					"ratio" : "1:1"
+				},
+				"helpText" : "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+				"required" : true
+			},
+			"app_pc_background" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"],
+					"ratio" : "2:1"
+				},
+				"helpText" : "Will be displayed in the webapp using a pc",
+				"required" : false
+			},
+			"app_splashscreen" : {
+				"restrictions" : {
+					"file_type" : ["svg"],
+					"ratio" : "1:1"
+				},
+				"helpText" : "Will be displayed during app startup",
+				"required" : true
+			},
+			"logo" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"]
+				},
+				"helpText" : "Will be displayed on the apps main page",
+				"required" : true
+			},
+			"funding_partner_1" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"]
+				},
+				"helpText" : "Will be displayed in the funding partner sections",
+				"required" : false
+			},
+			"funding_partner_2" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"]
+				},
+				"helpText" : "Will be displayed in the funding partner sections",
+				"required" : false
+			},
+			"funding_partner_3" : {
+				"restrictions" : {
+					"file_type" : ["jpg","jpeg","png","svg"]
+				},
+				"helpText" : "Will be displayed in the funding partner sections",
+				"required" : false
+			}
+		},
+		"texts" : {
+			"about_app" : {
+				"required" : false,
+				"helpText" : "Describe your app"
+			},
+			"app_sources" : {
+				"required" : false,
+				"helpText" : "Sources you used to build this app."
+			}
+		}
+	}
+}

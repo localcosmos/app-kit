@@ -1,0 +1,29 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% url 'edit_generic_content_name' content_type.id generic_content.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Change name{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+		<script>
+			{% if is_meta_app %}
+				$("#app-name-{{ generic_content.id }}").text("{{ generic_content.name }}");
+			{% else %}
+				$("#generic-content-name").text("{{ generic_content.name }}");
+			{% endif %}
+			$("#Modal").modal("hide");
+			$("#generic-content-name").text("{{ generic_content.name }}");
+		</script>
+	{% endif %}
+{% endblock %}

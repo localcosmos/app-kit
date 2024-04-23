@@ -1,0 +1,25 @@
+.mobilenumberinput {
+	padding: 0;
+	width: 100%;
+	margin: 0 auto;
+}
+
+.mobilenumberinput td {
+	padding: 5px;
+}
+
+.mobilenumberinput input {
+	text-align: center;
+}
+
+.multiple-checkbox ul {
+	list-style-type: none;
+}
+
+.blink {
+  animation: blinker 2s linear infinite;
+}
+
+@keyframes blinker {  
+  50% { opacity: 0.0; }
+}

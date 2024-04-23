@@ -1,0 +1,13 @@
+{
+  "templateName" : "free-page",
+  "type": "page",
+  "templatePath" : "/template_content/page/key-manual/key-manual.html",
+  "version" : 1,
+  "contents": {
+    "block": {
+      "type": "component",
+      "templateName": "TextBlockWithImage",
+      "allowMultiple": true
+    }
+  }
+}

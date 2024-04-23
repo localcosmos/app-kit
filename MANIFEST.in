@@ -1,0 +1,24 @@
+recursive-include app_kit/tests *
+recursive-include app_kit/static *
+recursive-include app_kit/templates *
+recursive-include app_kit/locale *
+recursive-include app_kit/features/backbonetaxonomy/templates *
+recursive-include app_kit/features/backbonetaxonomy/tests *
+recursive-include app_kit/features/buttonmatrix/templates *
+recursive-include app_kit/features/frontend/templates *
+recursive-include app_kit/features/frontend/tests *
+recursive-include app_kit/features/generic_forms/templates *
+recursive-include app_kit/features/generic_forms/tests *
+recursive-include app_kit/features/generic_forms/static *
+recursive-include app_kit/features/glossary/templates *
+recursive-include app_kit/features/glossary/tests *
+recursive-include app_kit/features/maps/templates *
+recursive-include app_kit/features/maps/tests *
+recursive-include app_kit/features/nature_guides/templates *
+recursive-include app_kit/features/nature_guides/tests *
+recursive-include app_kit/features/taxon_profiles/templates *
+recursive-include app_kit/features/taxon_profiles/tests *
+recursive-include app_kit/app_kit_api/tests *
+recursive-include app_kit/multi_tenancy/templates *
+
+

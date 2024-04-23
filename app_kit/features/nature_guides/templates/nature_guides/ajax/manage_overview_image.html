@@ -1,0 +1,18 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% block base_url %}{% url 'manage_overview_image' meta_app.id content_type.id content_instance.id 'overview' %}{% endblock %}
+
+{% block extra_script %}
+
+	<script>
+        (function() {
+            {% if request.method == 'POST' and form.is_valid %}
+                let indicator = document.getElementById("overview-image-indicator");
+                indicator.classList.remove("d-none");
+            {% endif %}
+        })();
+    </script>
+
+{% endblock %}
+
+{% block delete_url %}{% url 'delete_overview_image' meta_app.id content_image.pk %}{% endblock %}

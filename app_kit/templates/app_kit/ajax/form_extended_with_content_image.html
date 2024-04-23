@@ -1,0 +1,18 @@
+{% load i18n %}
+{% for field in form %}
+    {% if field.name == 'source_image' %}
+    
+        <div id="content-image-formcontainer" class="card bg-light">
+            <div class="card-header">
+                <strong>{% trans 'Image' %}</strong>
+            </div>
+            <div class="card-body">
+    {% endif %}
+
+    {% include 'localcosmos_server/bootstrap_field.html' %}
+
+    {% if field.name == 'licence' %}
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}

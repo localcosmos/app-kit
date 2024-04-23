@@ -1,0 +1,122 @@
+{
+	"frontend": "Flat",
+	"version": "0.1",
+	"userContent": {
+		"images": {
+			"appBackground": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					],
+					"ratio": "10:16"
+				},
+				"helpText": "Ratio: 10:16. Will be displayed using the app or webapp on a smarthpone in portrait mode.",
+				"required": false
+			},
+			"appLauncherIcon": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					],
+					"ratio": "1:1"
+				},
+				"helpText": "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+				"required": true
+			},
+			"appPcBackground": {
+				"restrictions": {
+					"fileType": [
+						"jpg",
+						"jpeg",
+						"png"
+					],
+					"ratio": "2:1"
+				},
+				"helpText": "Will be displayed in the webapp using a pc",
+				"required": false
+			},
+			"appSplashscreen": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					],
+					"ratio": "1:1"
+				},
+				"helpText": "Will be displayed during app startup",
+				"required": true
+			},
+			"logo": {
+				"restrictions": {
+					"fileType": [
+						"svg"
+					]
+				},
+				"helpText": "Will be displayed on the apps main page",
+				"required": true
+			}
+		},
+		"texts": {
+            "termsOfUse": {
+                "required": false,
+                "helpText": "Terms Of Use of your App."
+            }
+		},
+		"configuration": {
+			"cmsUrl": {
+				"helpText": "The URL of your cms"
+			}
+		}
+	},
+	"templateContent": {
+		"urlPattern": "/pages/{templateName}/{slug}/",
+		"navigations": {
+			"main": {
+				"name": "Main navigation",
+				"maxLevels": 2
+			},
+			"more": {
+				"name": "More - Burger",
+				"maxLevels": 1
+			},
+			"legal": {
+				"name": "Legal navigation",
+				"maxLevels": 1
+			}
+		},
+		"requiredOfflineContents": {
+			"home": {
+				"templateType": "page",
+				"allowedTemplates": [
+					"home"
+				]
+			},
+			"footer": {
+				"templateType": "component",
+				"allowedTemplates": [
+					"footer"
+				]
+			}
+		}
+	},
+	"cordova": {
+		"platforms": {
+			"android": "android@12.0.1",
+			"ios": "ios@7.0.1",
+			"browser": "browser@7.0.0"
+		},
+		"plugins": [
+			"cordova-plugin-camera@6.0.0",
+			"cordova-plugin-datepicker@0.9.3",
+			"cordova-plugin-device@2.0.3",
+			"cordova-plugin-dialogs@2.0.2",
+			"cordova-plugin-file@6.0.2",
+			"cordova-plugin-geolocation@4.1.0",
+			"cordova-plugin-network-information@3.0.0",
+			"cordova-plugin-statusbar@3.0.0",
+			"cordova-sqlite-storage@6.0.0",
+			"cordova-plugin-wkwebview-file-xhr@3.1.0"
+		]
+	}
+}

@@ -1,0 +1,41 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% load i18n static %}
+
+{% block base_url %}{% url 'manage_localized_content_image' content_image.id language_code %}{% endblock %}
+
+{% block footer %}
+	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+	{% if localized_content_image %}
+		<a href="#" data-url="{% block delete_url %}{% url 'delete_localized_content_image' localized_content_image.pk %}{% endblock %}" ajax-target="ModalContent" class="btn btn-danger xhr">{% trans 'Delete' %}</a>
+	{% endif %}
+	<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+{% endblock %}
+
+
+{% block script %}
+
+	{% block extra_script %}{% endblock %}
+
+	<script>
+
+		{% if request.method == 'POST' and form.is_valid %}
+			
+			var d = new Date();
+
+			var image_container = document.getElementById("localized_content_image_{{ localized_content_image.content_image.id }}_{{ language_code }}");
+			
+
+			if (image_container != null){
+				image_container.style.backgroundImage = "url('{{ localized_content_image.image_url }}?" + d.getTime() + "')";
+			}
+			else {
+				console.log("Could not find image container for localized content image")
+			}
+
+			$("#LargeModal").modal("hide");
+			$("#LargeModalContent").empty();
+		{% endif %}
+	</script>
+	
+{% endblock %}

@@ -1,0 +1,71 @@
+{% load i18n localcosmos_tags %}
+<div id="ctype-{{ meta_app|ctype_id }}-{{ meta_app.id }}" class="col-12 col-md-6 col-lg-4 mb-4">
+	<div class="card">
+		<div class="card-header">
+
+			<div class="dropdown float-right d-inline-block">
+				<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+				<div class="dropdown-menu">
+					<a class="dropdown-item xhr" data-url="{% url 'delete_app' meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Delete {{ meta_app }}{% endblocktrans %}</a>
+					<a class="dropdown-item xhr" data-url="{% url 'edit_generic_content_name' meta_app|ctype_id meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Rename {{ meta_app }}{% endblocktrans %}</a>
+				</div>
+			</div>
+
+		</div>
+		<div class="card-body">
+			<div style="position:relative;">
+				<h5 id="app-name-{{ meta_app.id }}" class="card-title">{{ meta_app }}</h5>
+				<p class="card-text">
+					<div class="text-right">
+						<strong><a href="{% url 'manage_metaapp' meta_app.id content_type.id meta_app.id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
+					</div>
+				</p>
+			</div>
+			<p class="card-text">
+				{% if meta_app.published_version %}
+					<hr>
+					<div class="mb-2">
+						{% trans 'status' %} : <span class="badge badge-success">{% trans 'live' %}</span>
+					</div>
+			
+					{% if meta_app.is_localcosmos_private %}
+					{% else %}
+						<div class="mb-2">
+							<strong>{% trans 'App admin' %}:</strong><br>
+							<a href="{% url 'appadmin:home' meta_app.app.uid %}" class="btn btn-block btn-outline-secondary" target="_blank">{% trans 'Visit app admin' %}</a>
+						</div>
+					{% endif %}
+
+					<div class="mb-2">
+						{% if meta_app.is_localcosmos_private %}
+							<strong>Web app .zip:</strong><br>
+							<a href="{{ request.scheme }}://{{ meta_app.domain }}{{ meta_app.app.pwa_zip_url }}" class="btn btn-block btn-outline-secondary" target="_blank">{% trans 'Download web app' %}</a>
+						{% else %}
+							<strong>Web app:</strong><br>
+							<a href="{{ request.scheme }}://{{ meta_app.app.get_url }}" class="btn btn-block btn-outline-secondary" target="_blank">{% trans 'visit web app' %}</a>
+						{% endif %}
+					</div>
+					<div class="mb-2">
+						<strong>Android .aab:</strong><br>
+						<a href="{{ request.scheme }}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" class="btn btn-block btn-outline-secondary" target="_blank">{% trans 'Download .apk' %}</a>
+					</div>
+					{% if meta_app.app.ipa_url %}
+						<div class="mb-2">
+							<strong>iOS .ipa:</strong><br>
+							<a href="{{ request.scheme }}://{{ meta_app.domain }}{{ meta_app.app.ipa_url }}" class="btn btn-block btn-outline-secondary" target="_blank">{% trans 'Download .ipa' %}</a>
+						</div>
+					{% endif %}
+				{% endif %}
+			</p>
+			
+		</div>
+		<div class="card-footer text-muted">
+			app uid: {{ meta_app.app.uid}} <br>
+			{% if meta_app.published_version %}
+				{% trans 'published version' %}: {{ meta_app.published_version }}
+			{% else %}
+				{% trans 'draft' %}
+			{% endif %}
+		</div>
+	</div>				
+</div>

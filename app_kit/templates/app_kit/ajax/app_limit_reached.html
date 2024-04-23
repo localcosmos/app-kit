@@ -1,0 +1,17 @@
+{% extends 'localcosmos_server/modals/modal_base.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block title %}
+	{% trans 'App limit reached' %}
+{% endblock %}
+	
+{% block body %}
+	<div class="alert alert-warning">
+		{% blocktrans %}You are not allowed to create any more apps.{% endblocktrans %}
+	</div>
+{% endblock %}
+
+{% block footer %}
+	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+{% endblock %}
+

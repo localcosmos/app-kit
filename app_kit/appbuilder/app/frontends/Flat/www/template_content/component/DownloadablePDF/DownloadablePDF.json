@@ -1,0 +1,28 @@
+{
+  "templateName" : "DownloadablePDF",
+  "type": "component",
+  "version" : 1,
+  "identifierContent": "title",
+  "contents": {
+    "title": {
+      "type": "text",
+      "widget": "TextInput",
+      "restrictions": {
+        "maxLength": 30
+      },
+      "required": true
+    },
+    "image": {
+      "type": "image",
+      "helpText": "square image"
+    },
+    "link": {
+      "type": "text",
+      "widget": "TextInput"
+    },
+    "description" : {
+      "type": "text",
+      "format": "layoutable-full"
+    }
+  }
+}

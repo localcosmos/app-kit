@@ -1,0 +1,66 @@
+{% load i18n localcosmos_tags %}
+{% if taxon_images %}
+	<div class="row mb-3">
+		{% for image in taxon_images %}
+			<div class="col-6 col-md-4 col-lg-2">
+				<img src="{{ image.image_url }}" class="img-fluid" />
+			</div>
+		{% endfor %}
+	</div>
+	<hr>
+{% endif %}
+{% if node_images %}
+	<div class="row mb-3">
+		{% for image in node_images %}
+			<div class="col-6 col-md-4 col-lg-2">
+				<img src="{{ image.image_url }}" class="img-fluid" />
+			</div>
+		{% endfor %}
+	</div>
+	<hr>
+{% endif %}
+
+<div id="taxon-profile-images" class="row" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
+	{% for image in taxon_profile_images %}
+	
+		<div id="content_image_container_{{ image.id }}" data-object-id="{{ image.id }}" class="col-6 col-md-4 col-lg-2">
+			<div>
+				<img id="content_image_{{ image.id }}" src="{{ image.image_url }}" class="img-fluid" />
+			</div>
+			{% if image.text %}
+				<div>
+					{{ image.text|safe }}
+				</div>
+			{% endif %}
+			<div>
+				<div class="btn-group dropup">
+					<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenu-{{ image.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+						{% trans 'Modify' %}
+					<span class="caret"></span>
+					</button>
+					<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ image.id }}">
+						<a data-url="{% url 'manage_taxon_profile_image' meta_app.id image.id %}?taxon_source={{ taxon.taxon_source }}&taxon_latname={{ taxon.taxon_latname }}&taxon_author={{ taxon.taxon_author }}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+
+						<a data-url="{% url 'delete_taxon_profile_image' meta_app.id image.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item text-center moveforwardbutton" data-targetid="content_image_container_{{ image.id }}">&#x25c0; {% trans 'Move left' %}</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item text-center movebackbutton" data-targetid="content_image_container_{{ image.id }}">{% trans 'Move right' %} &#x25b6;</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endfor %}
+</div>
+{% if taxon_images or node_images or taxon_profile_images %}
+{% else %}
+	{% trans 'No images found.' %}
+{% endif %}
+
+<script>
+	(function(){
+		$("#taxon-profile-images .moveforwardbutton").on("click", positionmanager.onMoveForward);
+		$("#taxon-profile-images .movebackbutton").on("click", positionmanager.onMoveBack);
+
+	})();
+</script>

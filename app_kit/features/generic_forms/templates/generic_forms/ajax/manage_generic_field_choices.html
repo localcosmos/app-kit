@@ -1,0 +1,99 @@
+{% load i18n %}
+<hr>
+<div class="row" >
+	<div class="col-12">
+		<div><strong>{% trans 'Choices' %}</strong></div>
+		{% if generic_field.choices %}
+			<div id="generic-field-choices" data-store-positions-url="{% url 'store_app_kit_object_order' generic_values_content_type.id %}">
+				{% for choice in generic_field.choices %}
+					<div id="choice-{{ choice.id }}" data-object-id="{{ choice.id }}">
+						{{ choice.name }} 
+						<div class="btn-group">
+							<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								{% trans 'Modify' %} <span class="caret"></span>
+							</button>
+							<div class="dropdown-menu">
+								<a data-url="{% url 'delete_generic_field_value' meta_app.id generic_form.id generic_field.id choice.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+								<div class="dropdown-divider"></div>
+								<a class="dropdown-item text-center moveforwardbutton" data-targetid="choice-{{ choice.id }}">&#x25B2; {% trans 'Move up' %}</a>
+								<div class="dropdown-divider"></div>
+								<a class="dropdown-item text-center movebackbutton" data-targetid="choice-{{ choice.id }}">&#x25BC; {% trans 'Move down' %}</a>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+			</div>
+		{% else %}
+			{% trans 'No choices yet.' %}
+		{% endif %}
+	</div>
+</div>
+
+{% if generic_field.field_class == "ChoiceField" %}
+	{% if generic_field.choices %}
+		<div class="row">
+			<div class="col-4 col-md-3 col-lg-2">
+				<label>{% trans 'Default' %}
+					<select name="default_value">
+						{% if not generic_field.is_required %}
+							<option value="">-----</option>
+						{% endif %}
+						{% for choice in generic_field.choices %}
+							<option value="{{ choice.id }}" {% if choice.is_default %}selected{% endif %}>{{ choice.value }}</option>
+						{% endfor %}
+					</select>
+				</label>
+			</div>
+		</div>
+	{% endif %}
+{% endif %}
+<br>
+<div class="row">
+	<div class="col-8 md-6">
+		<div class="input-group">
+			<input id="add-choice-input" type="text" class="form-control" placeholder="{% trans 'Add choice' %}">
+			<span class="input-group-btn">
+				<button id="add-choice-btn" class="btn btn-primary" type="button" data-url="{% url 'add_generic_field_value' meta_app.id generic_form.id generic_field.id %}">{% trans 'Add' %}</button>
+			</span>
+		</div>
+		{% if errors %}
+			<small class="error">
+				{{ errors.as_text }}
+			</small>
+		{% endif %}
+	</div>
+</div>
+<hr>
+<script>
+
+(function(){
+
+	$("#generic-field-choices .moveforwardbutton").on("click", positionmanager.onMoveForward);
+	$("#generic-field-choices .movebackbutton").on("click", positionmanager.onMoveBack);
+
+				
+			
+	$("#add-choice-btn").on("click", function(){
+		var url = $(this).attr("data-url");
+		var value = $("#add-choice-input").val()
+		var data = {
+			"generic_field_id" : {{ generic_field.id }},
+			"generic_value_type" : "choice",
+			"input_language" : "{{ generic_form.primary_language }}",
+			"value" : value
+		}
+
+		$.post(url, data, function(html){
+			$("#fieldchoices-{{ generic_field.id }}").html(html);
+			ajaxify("fieldchoices-{{ generic_field.id }}");
+			
+			// reload field in form preview
+			$.get("{% url 'get_generic_field' meta_app.id generic_form.id generic_field.id %}", function(html){
+				$("#li-{{ generic_field_link.id }}").html(html);
+				ajaxify("li-{{ generic_field_link.id }}");
+			});
+		});
+	});
+
+})();
+</script>

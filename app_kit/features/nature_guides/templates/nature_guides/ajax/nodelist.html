@@ -1,0 +1,16 @@
+{% load i18n %}
+
+{% if parent_node.children %}
+	{% for node in parent_node.children %}
+		{% include 'nature_guides/ajax/natureguide_node.html' %}
+	{% endfor %}
+	
+{% else %}
+<div id="key_nochildren" class="alert alert-info">
+	{% if parent_node.meta_node.node_type == 'root' %}
+		{% blocktrans with name=parent_node.meta_node.name %}This nature guide is empty. You can add entries below.{% endblocktrans %}
+	{% else %}
+		{% blocktrans with name=parent_node.meta_node.name %}The group <strong>{{ name }}</strong> has no entries yet. You can add entries below.{% endblocktrans %}
+	{% endif %}
+</div>
+{% endif %}

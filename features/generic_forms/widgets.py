@@ -1,2 +1,0 @@
-from localcosmos_server.datasets.widgets import *
-from localcosmos_server.taxonomy.widgets import TaxonAutocompleteWidget as BackboneTaxonAutocompleteWidget, FixedTaxonWidget, SelectTaxonWidget

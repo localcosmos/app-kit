@@ -1,0 +1,82 @@
+<div class="page faded-out">
+	<div class="container">
+		<div class="row justify-content-center">
+			<div class="col-12 col-lg-10">
+				<div class="buttonmatrix-container">
+
+					<div id="noPositionBlocker" class="noPositionBlocker">
+						<div>
+							<div>
+								{{t 'Waiting for GPS'}}
+							</div>
+						</div>
+					</div>
+
+					<input id="matrix_current_position" type="hidden" />
+
+					<table class="buttonmatrix-options">
+						<tr>
+							<td>
+								{{#if multiple_matrices}}
+									<button class="btn btn-secondary btn-xs tap" link="{{url 'switch_buttonmatrix'}}">{{t 'Matrix'}}</button>
+								{{else}}
+									&nbsp;
+								{{/if}}
+							</td>
+							<td id="exposedField" class="text-center">
+								{{#if exposed_field}}
+									{{{ exposed_field }}}
+								{{else}}
+									&nbsp;
+								{{/if}}
+							</td>
+							<td>
+								{{#if exposed_field}}
+									<button id="lock_exposed_field" type="button" class="btn btn-secondary" data-lock="off">{{t 'lock' }}</button>
+								{{else}}
+									&nbsp;
+								{{/if}}
+							</td>
+						</tr>
+					</table>
+
+					<table class="buttonmatrix matrixtable">
+						{{#each matrix.rows}}
+							<tr>
+								{{#each columns}}
+									<td class="matrixfield {{#if this}}hastaxon{{/if}}" action="{{url 'log_from_matrix' ../../matrix.uuid @../index @index }}">											
+										<div>
+											<div class="valign">
+												{{#if this}}
+
+													{{#if label}}
+														{{ label }}
+													{{else}}
+														{{#if taxon.taxon_vernacular }}
+															{{ taxon.taxon_vernacular }} <br>
+															<small>({{ taxon.taxonLatname }})</small>
+														{{else}}
+															{{ taxon.taxonLatname }}
+														{{/if}}
+													{{/if}}
+
+												{{else}}
+													&nbsp;
+												{{/if}}
+											</div>
+										</div>
+									</td>
+								{{/each}}
+							</tr>
+						{{/each}}
+					</table>
+		
+					<div class="horizontal-slide recent-logs">
+						<div id="recent-logs"></div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

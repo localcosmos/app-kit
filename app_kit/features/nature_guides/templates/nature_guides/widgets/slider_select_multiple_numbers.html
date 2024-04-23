@@ -1,0 +1,12 @@
+{% extends 'nature_guides/widgets/horizontal_choices.html' %}
+{% block size %}{% endblock %}
+{% block input %}
+	<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" data-value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} />
+{% endblock %}
+{% block label %}
+	<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+		<div class="square responsiveback numbercontainer">
+			<span>{{ option.value }}</span>
+		</div>
+	</label>
+{% endblock %}

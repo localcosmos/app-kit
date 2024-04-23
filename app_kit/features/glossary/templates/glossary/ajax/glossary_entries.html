@@ -1,0 +1,28 @@
+{% load i18n el_pagination_tags %}
+{% paginate 10 glossary_entries %}
+{% if glossary_entries %}
+
+	{% show_pages %}
+
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th scope="col" width="30%">{% trans 'Term' %}</th>
+				<th scope="col">{% trans 'Definition' %}</th>
+				<th scope="col" width="10%">{% trans 'Image' %}</th>
+				<th scope="col" width="10%">&nbsp;</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for glossary_entry in glossary_entries %}
+				<tr id="glossary-entry-{{ glossary_entry.id }}">
+					{% include 'glossary/ajax/glossary_entry.html' %}
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	{% show_pages %}
+{% else %}
+	<div class="alert alert-info">{% trans 'You do not have any entries in your glossary yet.' %}</div>
+{% endif %}

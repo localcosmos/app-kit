@@ -1,0 +1,34 @@
+<table>
+	<tr>
+		<td>{{t 'Timestamp' }}</td>
+		<td>{{unixToDate app_geolocation.last_position.timestamp }}</td>
+	</tr>
+	<tr>
+		<td>Latitude</td>
+		<td>{{ app_geolocation.last_position.coords.latitude }}</td>
+	</tr>
+	<tr>
+		<td>Longitude</td>
+		<td>{{ app_geolocation.last_position.coords.longitude }}</td>
+	</tr>
+	<tr>
+		<td>Accuracy</td>
+		<td>{{ app_geolocation.last_position.coords.accuracy }}</td>
+	</tr>
+	<tr>
+		<td>Altitude</td>
+		<td>{{ app_geolocation.last_position.coords.altitude }}</td>
+	</tr>
+	<tr>
+		<td>Altitude accuracy</td>
+		<td>{{ app_geolocation.last_position.coords.altitudeAccuracy }}</td>
+	</tr>
+	<tr>
+		<td>{{t 'Heading'}}</td>
+		<td>{{ app_geolocation.last_position.coords.heading }}</td>
+	</tr>
+	<tr>
+		<td>{{t 'Speed'}}</td>
+		<td>{{ app_geolocation.last_position.coords.speed }}</td>
+	</tr>
+</table>

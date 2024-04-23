@@ -1,0 +1,21 @@
+{% extends 'nature_guides/widgets/grid_choices.html' %}
+{% load i18n static app_tags %}
+
+{% block extra_menu %}
+    <div class="dropdown-divider"></div>
+    <a data-url="{% url 'manage_additional_matrix_filter_space_image' meta_app.id matrix_filter_space_ctype.id option.space_id 'secondary' %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Additional image' %}</a>
+{% endblock %}
+
+
+{% block label %}
+    <label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+        <span id="option-{{ option.space_id }}-background" class="square responsiveback" style="background-image:url('{% block image %}{% if option.image %}{{ option.image.image_url }}{% else %}{% static 'noimage.png' %}{% endif %}{% endblock %}')"></span>
+    </label>
+    {% content_image option.matrix_filter_space 'secondary'  as secondary_image %}
+    {% if secondary_image %}
+        <div class="secondary-image-container">
+            <img src="{{ secondary_image }}" data-large-image-id="option-{{ option.space_id }}-background" data-primary-image-url="{{ option.image.image_url }}" data-secondary-image-url="{{ secondary_image }}" class="secondary-dtai-image"/>
+        </div>
+    {% endif %}
+    <div class="label-text text-center">{{ option.label|safe }}</div>
+{% endblock %}

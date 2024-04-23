@@ -1,0 +1,10 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n %}
+
+{% block deletion_text %}
+<div class="alert alert-danger">
+	{% blocktrans with name=deletion_object %}WARNING: Deleting {{ name }} will delete ALL text content associated with {{ name }}. This cannot be undone. If you only want to remove the {{ name }} information for one taxon, erase only the text field of that taxon.{% endblocktrans %}
+</div>
+
+{% blocktrans with name=deletion_object %}Do you really want to delete {{ name }} and all content associated with it?{% endblocktrans %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{{#if unsynced_count}}
+	{{#ifequal page 1}}
+		<div class="col-12 text-center bg-white py-4 mb-4 mt-n3">
+			
+			<div class="alert alert-danger">
+				{{tp 'Upload required'}}
+			</div>
+			<button type="button" class="btn btn-outline-primary tap" link="{{url 'sync_observations' 'ask'}}">{{tp 'upload now'}}</button>
+
+		</div>
+	{{/ifequal}}
+{{/if}}
+
+{{#ifequal internet_status "online"}}
+{{else}}
+	{{#ifequal page 1}}
+		<div class="col-12 my-3">
+			<div class="alert alert-warning">
+				{{tp 'No internet connection. Showing only observations stored on this device.'}}
+			</div>
+		</div>
+	{{/ifequal}}
+{{/ifequal}}
+
+{{#if server_error}}
+	{{#ifequal page 1}}
+		<div class="col-12">
+			<div class="alert alert-warning">
+				{{tp 'Server error. Displaying only observations stored on this device'}}
+			</div>
+		</div>
+	{{/ifequal}}
+{{/if}}
+
+{{#if datasets}}
+	
+	{{#each datasets }}
+		<div class="col-6 col-md-4 col-lg-2 mb-3 mx-n2 px-n1 tap" link="{{url 'edit_observation' id storage_location }}">
+			<div class="observation-list-entry">
+				<div class="observation-list-entry-image-container text-center">
+					<img src="{{#if thumbnail }}{{thumbnail}}{{else}}img/noimage.svg{{/if}}" class="w-100" />
+					{{#ifequal storage_location "SQLite"}}
+						<div class="local-dataset-indicator">
+							<small><span class="badge badge-info">{{tp 'not uploaded yet'}}</span></small>
+						</div>
+					{{/ifequal}}
+				</div>
+				<div class="text-center p-2">
+					<strong>{{vernacular taxon.nameUuid }}</strong>
+					<br>
+					<i>{{ taxon.taxonLatname }}</i>
+					<br>
+					<small>{{date timestamp }}</small>
+				</div>
+			</div>
+		</div>
+	{{/each}}
+{{else}}
+	{{#ifequal page 1}}
+		<div class="col-12 translucent white mx-1 mx-md-3 mx-lg-4 p-4">
+			{{tp 'No observations yet.'}}
+		</div>
+	{{/ifequal}}
+{{/if}}

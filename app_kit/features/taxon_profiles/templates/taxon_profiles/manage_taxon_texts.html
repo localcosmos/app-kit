@@ -1,0 +1,59 @@
+{% extends base_template %}
+{% load i18n %}
+
+
+{% block main_panel %}
+<div class="container-fluid">
+	<div class="col-12 col-md-6 col-md-offset-3">
+
+		{% block top %}{% endblock %}
+
+		<p id="taxontexts">
+			{% for taxon_text in taxon_texts %}
+				<div id="taxontext-{{ taxon_text.id }}">
+					{% include 'taxon_texts/taxontext_modify.html' %}
+				</div>
+			{% endfor %}
+		</p>
+		<hr>
+		<p>
+			<div class="dropup">
+				<button id="addTaxonText" class="btn btn-outline-primary" data-toggle="dropdown"><span class="text" placeholder="{% trans 'Add text' %}"></span> <span class="caret"></span></button>
+			</div>
+		</p>
+	</div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+	<script type="text/javascript">
+		//drilldown
+		var data = {{ drilldown_data|safe }};
+
+		var new_text_type_url = "{% url 'create_taxon_text_type' node.taxon.id %}";
+
+		$('#addTaxonText').drilldownSelect(
+			{
+				appendValue: false,
+				data: data,
+				onSelected: function(event) {
+		  			var selected = $(event.target);
+					
+
+					if (selected.data("path") == 1){
+						var url = new_text_type_url;
+					}
+					else {
+						var text_type_id = selected.data('id');
+						var url = new_text_type_url + text_type_id +"/";
+					}
+
+					$.get(url, function(html){
+						$("#ModalContent").html(html);
+						ajaxify("ModalContent");
+					});
+				}
+			}
+		);
+	</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% load i18n static localcosmos_tags %}
+
+<div id="{{ widget.attrs.id }}" class="grid-choices {% block size %}{% endblock %}" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_space_ctype.id %}">
+	{% for group, options, index in widget.optgroups %}
+		
+		{% for option in options %}
+			<div {% block space_id %}id="space_{{ option.space_id }}" data-object-id="{{ option.space_id }}"{% endblock %}>
+
+				<div {% block grid_choice_class %}class="grid-choice"{% endblock %}>
+					<div>
+						{% block input %}
+							<input id="choice_{{ widget.name }}_{{ option.index }}" type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="space_{{ option.space_id }}" />
+						{% endblock %}
+						{% block label %}
+							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+								<span class="square responsiveback" style="background-image:url('{% block image %}{% if option.image %}{{ option.image.image_url }}{% else %}{% static 'noimage.png' %}{% endif %}{% endblock %}')">{% block in_label %}{% endblock %}</span>
+								<span>{{ option.label|safe }}</span>
+							</label>
+						{% endblock %}
+					</div>
+				</div>
+				
+				{% if option.modify %}
+					<div class="btn-group dropup">
+						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							{% trans 'Modify' %} <span class="caret"></span>
+						</button>
+						<div class="dropdown-menu">
+							<a data-url="{% url 'manage_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+							<a data-url="{% url 'delete_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+							{% block extra_menu %}{% endblock %}
+							<div class="dropdown-divider"></div>
+							<a class="dropdown-item text-center movespaceleftbutton" data-targetid="space_{{ option.space_id }}">&#9664; {% trans 'Move left' %}</a>
+							<div class="dropdown-divider"></div>
+							<a class="dropdown-item text-center movespacerightbutton" data-targetid="space_{{ option.space_id }}">{% trans 'Move right' %} &#9654;</a>
+						</div>
+					</div>
+				{% endif %}
+
+			</div>
+		{% endfor %}
+
+	{% endfor %}
+
+</div>
+
+<script>
+	{% if allow_multiple_values %}
+	{% else %}
+		(function(){
+			var container = document.getElementById('{{ widget.attrs.id }}');
+			
+			// enable drag and drop
+			var sortable = Sortable.create(container, {
+				onEnd: function (evt) {
+					var itemEl = evt.item;  // dragged HTMLElement
+					positionmanager.store_positions($(itemEl));
+				}
+			});
+		})()
+	{% endif %}
+	
+		$("#{{ widget.attrs.id }} .movespaceleftbutton").on("click", positionmanager.onMoveForward);
+		$("#{{ widget.attrs.id }} .movespacerightbutton").on("click", positionmanager.onMoveBack);
+
+
+		(function(){
+			var container = document.getElementById('{{ widget.attrs.id }}');
+			var secondary_images = container.getElementsByClassName('secondary-dtai-image');
+			
+			for (let i=0; i<secondary_images.length; i++){
+				
+				let secondary_image = secondary_images[i];
+				secondary_image.addEventListener("click", function(event){
+					event.preventDefault();
+					event.stopPropagation();
+
+					let small_image = event.currentTarget;
+					let large_image_id = event.currentTarget.getAttribute("data-large-image-id");
+					let large_image = document.getElementById(large_image_id);
+
+					let primary_image_url = small_image.getAttribute("data-primary-image-url");
+					let secondary_image_url = small_image.getAttribute("data-secondary-image-url");
+
+					if (large_image.style.backgroundImage.indexOf(primary_image_url) >= 0){
+						large_image.style.backgroundImage = "url(" + secondary_image_url + ")";
+						small_image.src = primary_image_url;
+					}
+					else {
+						large_image.style.backgroundImage = "url(" + primary_image_url + ")";
+						small_image.src = secondary_image_url;
+					}
+
+				});
+			}
+
+		})()
+</script>

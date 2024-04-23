@@ -1,0 +1,18 @@
+{% extends 'nature_guides/widgets/grid_choices.html' %}
+{% load static %}
+{% block size %}xlarge{% endblock %}
+
+{% block grid_choice_class %}class="grid-choice h-100"{% endblock %}
+
+{% block label %}
+	<div class="text-only">
+		<div class="slide-element-text">
+			<div>
+				{{ option.label|safe }}
+			</div>
+		</div>
+		<div>
+			<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-left text-only-label">&nbsp;</label>
+		</div>
+	</div>
+{% endblock %}

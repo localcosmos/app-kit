@@ -1,0 +1,120 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n localcosmos_tags static app_tags %}
+
+{% if generic_content.is_locked %}
+{% else %}
+	{% block extra_script %}{% endblock %}
+	{% block extra_head_script %}{% endblock %}
+{% endif %}
+
+{% block extra_style %}{% endblock %}
+
+{% block header %}
+	<div class="container-fluid d-none d-md-block">
+		<div class="row">
+			<div class="col-12 text-center text-white bg-primary">
+				<h2>{{ meta_app.name }}</h2>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+
+{% block content %}
+<br>
+<div {% block container_class %}class="container"{% endblock %}>
+	<div class="row">
+		<div class="col-12">
+
+			{% block content_title %}
+				<br>
+				<h3>
+					<span id="generic-content-name">{{ generic_content }}</span>
+					{% if generic_content.is_locked %}
+					{% else %}
+						<small>
+							<div class="btn-group">
+								<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Modify' %}
+								</button>
+								<div class="dropdown-menu">
+									<a class="dropdown-item xhr" data-url="{% url 'edit_generic_content_name' content_type.id generic_content.id %}" ajax-target="ModalContent">{% trans 'Edit name' %}</a>
+									{% if generic_content.zip_import_supported %}
+										<a class="dropdown-item xhr" data-url="{% url 'import_from_zip' meta_app.id content_type.id generic_content.id %}" ajax-target="LargeModalContent">{% trans 'Import from spreadsheet' %}</a>
+									{% endif %}
+								</div>
+							</div>
+							{% block badges %}
+								<span class="badge badge-info">version {{ generic_content.current_version }}</span>
+							{% endblock %}
+						</small>
+					{% endif %}
+				</h3>
+
+				<hr>
+			{% endblock %}
+
+
+			{% if generic_content.is_locked %}
+				<div class="alert alert-info">
+					{% if generic_content.messages %}
+						{% if generic_content.messages.lock_reason == 'zip_import' %}
+							<div class="text-center">
+								<img src="{% static 'app_kit/images/spinner.gif' %}" />
+							</div>
+							<div class="text-center mt-3">
+								{% blocktrans with name=generic_content.name %}Currently importing {{ name }} from a .zip file. This may take several minutes.{% endblocktrans %}
+							</div>
+							<script>
+								setTimeout(function(){
+									window.location.href = "{% url generic_content.manage_url meta_app.id content_type.id generic_content.id %}";
+								}, 15000);
+							</script>
+						{% elif generic_content.messages.lock_reason == 'preview_build' %}
+							<div class="text-center">
+								<img src="{% static 'app_kit/images/spinner.gif' %}" />
+							</div>
+							<div class="text-center mt-3">
+								{% blocktrans %}Currently building your frontend for previews.{% endblocktrans %}
+							</div>
+							<script>
+								setTimeout(function(){
+									window.location.href = "{% url generic_content.manage_url meta_app.id content_type.id generic_content.id %}";
+								}, 5000);
+							</script>
+						{% else %}
+							{% trans 'Your app is currently being built and this content is locked.' %}
+						{% endif %}
+					{% else %}
+						{% trans 'Your app is currently being built and this content is locked.' %}
+					{% endif %}
+				</div>
+			{% else %}
+
+
+				{% if generic_content.messages %}
+					{% if generic_content.messages.last_zip_import_errors %}
+						<div class="alert alert-danger">
+							<b>{% trans 'Your recently uploaded .zip package contained the following errors and was not imported:' %}</b><br>
+							<ul>
+								{% for error in generic_content.messages.last_zip_import_errors %}
+									<li>{{ error }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+					{% endif %}
+				{% endif %}
+
+				{% block generic_content_specific_top %}{% endblock %}
+
+				{% block options_form_block %}
+					{% include 'app_kit/ajax/options_form.html' %}
+				{% endblock %}
+				{% block generic_content_specific %}{% endblock %}
+
+			{% endif %}
+
+		</div>
+	</div>
+</div>
+{% endblock %}

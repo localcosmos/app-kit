@@ -1,0 +1,55 @@
+<form method="POST" action="{{url 'login' }}">
+	<div>
+		{{#each form.fieldlist}}
+				
+			<div class="form-group {{ form_field.fieldClass }} {{#if errors }}is-invalid{{/if}}">
+
+				{{#if is_hidden}}
+					{{{ field }}}
+				{{ else }}
+					{{#ifequal form_field.fieldClass 'BooleanField'  }}
+						{{{ field }}}
+						<label for="id_{{ name }}">{{tp label }}</label>
+					{{ else }}
+						<label>{{tp label }}</label><br>
+						{{{ field }}}
+					{{/ifequal}}
+				{{/if}}
+				{{#if errors }}
+					<div class="alert alert-fielderror">
+						{{ errors }}
+					</div>
+				{{/if}}
+			</div>
+		
+		{{/each}}
+
+		{{#if form.non_field_errors}}
+			<div class="alert alert-danger">
+				{{#each form.non_field_errors }}
+					<div>
+						<b>{{@key}}</b> : {{this}}
+					</div>
+				{{/each}}
+			</div>
+		{{/if}}
+
+		{{#if login_error}}
+			<div class="alert alert-danger">
+				{{ login_error }}
+			</div>
+		{{/if}}
+
+	</div>
+	<div>
+		<small><a href="#" link="{{url 'password_reset'}}" class="tap">{{tp 'I have forgotten my password'}}</a></small>
+	</div>
+	<hr>
+	<div>
+		{{tp 'No account yet ?'}}<br>
+		<button type="button" class="btn btn-outline-primary btn-sm tap" link="{{url 'registration'}}">{{tp 'Register new account'}}</button>
+	</div>
+	<div class="dialogbox-bottom">
+		<button type="button" action="modalDialog.close" class="btn flat tap closeperm">{{tp 'CANCEL'}}</button> <button type="submit" class="btn flat">{{tp 'LOG IN'}}</button>
+	</div>
+</form>

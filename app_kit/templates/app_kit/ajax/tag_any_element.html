@@ -1,0 +1,33 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% url 'tag_any_element' content_type.id content_object.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Manage Tags for {{ content_object }}{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			var tag_container = document.getElementById("{{ content_type.id }}-{{ content_object.id }}-tags");
+			if (tag_container != null){
+				$.get("{% url 'reload_tags' content_type.id content_object.id  %}", function(html){
+					tag_container.parentElement.innerHTML = html;
+				});
+			}
+
+			var modal = $("#Modal");
+			modal.modal("hide");
+			
+		</script>
+	{% endif %}
+{% endblock %}

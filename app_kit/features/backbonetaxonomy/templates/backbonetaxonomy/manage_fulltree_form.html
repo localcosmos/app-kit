@@ -1,0 +1,20 @@
+{% load i18n localcosmos_tags %}
+
+{% trans 'You can optionally include one taxonomic system as a whole. The taxa of the taxonomic system you include will be available in your observation forms.' %}
+
+<form method="POST" action="{% url 'manage_backbone_fulltree' content_type.id backbone.id  %}" class="xhr">{% csrf_token %}
+
+	{% render_bootstrap_form form %}
+
+	<div>
+		<button id="submit-fulltree" type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+	</div>
+</form>
+
+<script>
+	$("#submit-fulltree").removeAttr('disabled');
+	{% if success is True %}
+		window.location.reload();
+	{% endif %}
+</script>
+

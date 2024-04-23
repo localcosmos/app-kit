@@ -1,0 +1,37 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% url 'edit_glossary_entry' meta_app.id generic_content.id glossary_entry.id  %}
+{% endblock %}
+
+{% block enctype %}multipart/form-data{% endblock %}
+
+{% block title %}
+	{% trans 'Edit glossary entry' %}
+{% endblock %}
+
+{% block body %}
+	<p>
+		<div>
+			{% render_bootstrap_form form %}
+		</div>
+	</p>
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if saved_glossary_entry is True %}
+		<script>
+			$("#LargeModal").modal('hide');
+			$.get("{% url 'get_glossary_entry' meta_app.id glossary_entry.id %}", function(html){
+				var target_id = "glossary-entry-{{ glossary_entry.id }}"
+				$("#" + target_id).html(html);
+				ajaxify(target_id);
+			});
+		</script>
+	{% endif %}
+{% endblock %}

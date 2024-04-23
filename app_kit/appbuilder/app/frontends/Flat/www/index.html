@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<meta charset="utf-8"/>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' * data: gap: cdvfile: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src data: cdvfile: http: https: *; script-src 'self' 'unsafe-inline' 'unsafe-eval'">
+        <meta name="format-detection" content="telephone=no">
+        <meta name="msapplication-tap-highlight" content="no">
+
+		<!-- Required meta tags -->
+    	<!--<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">-->
+    	<meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, minimum-scale=1, viewport-fit=cover">
+
+		<link rel="stylesheet" type="text/css" href="css/boot.css">
+		
+		<link rel="stylesheet" type="text/css" href="carousel/carousel.css">
+		<link rel="stylesheet" type="text/css" href="leaflet/leaflet.css">
+		<link rel="stylesheet" type="text/css" href="anycluster/anycluster.css">
+
+		<link rel="icon" type="image/x-icon" href="lcfavicon.ico">
+        <title>Local Cosmos app</title>
+    </head>
+    <body>
+        
+		<div id="app" class="mobile">
+			<div class="loader"></div>
+        </div>
+
+        <script type="text/javascript" src="js/index.js"></script>
+
+		<script type="text/javascript" src="settings.js"></script>
+		<script type="text/javascript" src="features.js"></script>
+		<!--<script type="text/javascript" src="theme_images.js"></script>-->
+
+		<script type="text/javascript" src="js/turf.min.js"></script>
+
+		<script type="text/javascript" src="js/mango/ajax.js"></script>
+
+		<script type="text/javascript" src="leaflet/leaflet.js"></script>
+
+		<script type="text/javascript" src="anycluster/anycluster.js"></script>
+		<script type="text/javascript" src="anycluster/anycluster_marker.js"></script>
+
+
+		<script type="text/javascript" src="js/Appbar.js"></script>
+
+		<script type="text/javascript" src="js/IdentificationMatrix.js"></script>
+		<script type="text/javascript" src="js/ButtonMatrix.js"></script>
+		<script type="text/javascript" src="js/NatureGuide.js"></script>
+		<script type="text/javascript" src="js/BackboneTaxonomy.js"></script>
+
+		<script type="text/javascript" src="js/mango/History.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/handlebars-v4.1.2.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/i18next.min.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/i18nextXHRBackend.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/i18nextBrowserLanguageDetector.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/hammer.min.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/hammer-time.min.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/contact.nomodule.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/formdata.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/rangetouch.js"></script>
+		<script type="text/javascript" src="js/mango/thirdparty/exif.js"></script>
+		
+		<script type="text/javascript" src="js/mango/mango.js"></script>
+		<script type="text/javascript" src="js/mango/util/util.js"></script>
+		<script type="text/javascript" src="js/mango/middleware.js"></script>
+
+		<script type="text/javascript" src="js/mango/db/models.js"></script>
+		<script type="text/javascript" src="js/mango/db/RemoteDB.js"></script>
+		<script type="text/javascript" src="js/mango/db/SQLite.js"></script>
+
+		<script type="text/javascript" src="js/json/JSONbuilder.js"></script>
+		<script type="text/javascript" src="js/Taxon.js"></script>
+		<script type="text/javascript" src="js/json/DatasetJSON.js"></script>
+		<script type="text/javascript" src="js/json/TemporalJSON.js"></script>
+		<script type="text/javascript" src="js/json/TaxonJSON.js"></script>
+		<script type="text/javascript" src="js/json/GeoJSON.js"></script>
+
+		<script type="text/javascript" src="js/lcapi.js"></script>
+
+		<script type="text/javascript" src="js/mango/forms/forms.js"></script>
+		<script type="text/javascript" src="js/mango/forms/widgets.js"></script>
+		<script type="text/javascript" src="js/mango/forms/fields.js"></script>
+		<script type="text/javascript" src="js/mango/forms/boundfield.js"></script>
+
+		<script type="text/javascript" src="js/mango/views/views.js"></script>
+		<script type="text/javascript" src="js/mango/views/generic.js"></script>	
+		<script type="text/javascript" src="js/mango/mango_handlebars_helpers.js"></script>
+
+		<script type="text/javascript" src="js/mango/urls/urls.js"></script>
+
+		<script type="text/javascript" src="js/mango/context_processors.js"></script>
+
+		<script type="text/javascript" src="js/mango/contrib/auth/models.js"></script>
+		<script type="text/javascript" src="js/mango/contrib/auth/backends.js"></script>
+		<script type="text/javascript" src="js/mango/contrib/auth/context_processors.js"></script>
+
+		<script type="text/javascript" src="js/fields.js"></script>
+		<script type="text/javascript" src="js/widgets.js"></script>
+
+		<script type="text/javascript" src="js/authentication_backends.js"></script>
+		<script type="text/javascript" src="js/remotedb_middleware.js"></script>
+
+		<script type="text/javascript" src="js/ModalDialog.js"></script>
+		<script type="text/javascript" src="js/context_processors.js"></script>
+
+		<script type="text/javascript" src="forms.js"></script>
+		<script type="text/javascript" src="mixins.js"></script>
+		<script type="text/javascript" src="views.js"></script>
+		<script type="text/javascript" src="models.js"></script>
+
+		<script type="text/javascript" src="urls.js"></script>
+
+		<script type="text/javascript" src="js/image_tools.js"></script>
+
+		<script type="text/javascript" src="js/Geolocation.js"></script>
+
+		<script type="text/javascript" src="js/upstart.js"></script>
+
+		<script type="text/javascript" src="cordova.js"></script>
+
+    </body>
+</html>

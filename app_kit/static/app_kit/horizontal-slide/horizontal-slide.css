@@ -1,0 +1,157 @@
+/* horizontal select widget */
+.horizontal-slide {
+	margin: 0;
+	padding: 0;
+	display: block;
+	width: 100%;
+	position: relative;
+	overflow: hidden;
+	white-space: nowrap;
+}
+
+.horizontal-slide > div {
+	display: inline-block;
+	transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    -ms-transform-style: preserve-3d;
+	min-width: 100%;
+	padding-bottom: .2rem;
+}
+
+.horizontal-slide > * {
+	touch-action: pan-y !important;
+}
+
+.horizontal-slide > div > div {
+	width: 3.5rem;
+    display:inline-block;
+	word-wrap: break-word;
+	position: relative;
+	white-space: normal;
+
+	/* enabling the below disables the touch action if there are not many items */
+	/*text-overflow: ellipsis;*/ /* cut off too long text: (...)*/
+	/* Required for text-overflow to do anything */
+	/*overflow: hidden;*/
+}
+
+.horizontal-slide.large > div > div {
+	width: 10rem;
+	vertical-align: top;
+}
+
+.horizontal-slide.medium > div > div {
+	width: 6rem;
+}
+
+.horizontal-slide.xlarge > div > div {
+	width: 15rem;
+	vertical-align: top;
+}
+
+.horizontal-slide > div.is-animating {
+    transition: transform 400ms cubic-bezier( 0.5, 0, 0.5, 1 );
+}
+
+.horizontal-slide input[type='checkbox'], .horizontal-slide input[type='radio'] {
+	opacity: 0;
+	position: absolute;
+}
+
+.horizontal-slide input[type='checkbox'] + label, .horizontal-slide input[type='radio'] + label {
+	display: block;
+	padding: 0.3rem;
+}
+
+.horizontal-slide input[type='checkbox']:checked + label, .horizontal-slide input[type='radio']:checked + label {
+	background-color: rgb(92,184,92);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.horizontal-slide label {
+	cursor:pointer;
+	white-space: normal;
+}
+
+
+.responsiveback {
+	background-size: cover;
+	background-position: center center;
+	background-repeat: no-repeat;
+	position: relative;
+}
+
+.square {
+	width: 100%;
+}
+
+.horizontal-slide label > div > div.custom {
+	position: absolute;
+	left:0; top: 0; bottom:0; right:0;
+	width: 100%;
+	text-align: center;
+	color: #FFF;
+	font-size: 2rem;
+}
+
+.horizontal-slide label > div > div.custom > div {
+	position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.square:after {
+	content: "";
+	display: block;
+	padding-bottom: 100%;
+}
+
+.square.numbercontainer {
+	position: relative;
+	background-color: rgba(224,224,224,0.8);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+.square.numbercontainer > span {
+	position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+	color: rgb(100,100,100);
+	font-size: 2rem;
+}
+
+.horizontal-slide .text-only {
+	padding: .5rem;
+	background-color: rgba(255,255,255,1);
+	-webkit-border-radius: 0.15rem;
+	border-radius: 0.15rem;
+}
+
+
+.horizontal-slide .text-only .slide-element-text {
+	background-color: rgba(224,224,224,0.8);
+	padding: .5rem;
+	min-height: 10rem;
+}
+
+.horizontal-slide .text-only-label {
+	display: block;
+	width: 100%;
+	height: 2.5rem;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-image: url(../images/checkbox-off.svg);
+	margin-top: .3rem;
+}
+
+.horizontal-slide input[type='radio']:checked + div.text-only {
+	background-color: rgb(92,184,92);
+}
+
+.horizontal-slide input[type='radio']:checked + div.text-only label {
+	background-image: url(../images/checkbox-on.svg);
+}

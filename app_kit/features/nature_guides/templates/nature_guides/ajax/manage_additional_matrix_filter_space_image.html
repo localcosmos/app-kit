@@ -1,0 +1,11 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% block base_url %}{% url 'manage_additional_matrix_filter_space_image' meta_app.id content_type.id content_instance.id 'secondary' %}{% endblock %}
+
+{% block delete_url %}{% url 'delete_additional_matrix_filter_space_image' meta_app.id content_image.pk %}{% endblock %}
+
+{% block extra_script %}
+	{% if request.method == 'POST' and form.is_valid %}
+		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+	{% endif %}
+{% endblock %}

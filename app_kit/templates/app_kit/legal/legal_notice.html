@@ -1,0 +1,22 @@
+{% extends 'localcosmos_server/modals/large_modal_base.html' %}
+{% load i18n app_tags %}
+
+{% block title %}{% trans 'Legal notice' %}{% endblock %}
+
+{% block body %}
+	<h3>{% trans 'Betreiber' %}</h3>
+	<p>
+		{{ identity.name }}<br>
+		{{ identity.street }}<br>
+		{{ identity.zip_code }} {{ identity.city }}
+	</p>
+
+	<h3>{% trans 'Contact' %}</h3>
+	{{ identity.email }}<br>
+	<a href="{% root_url 'contact_us' %}">{% trans 'Contact us' %}</a>
+
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/close.html' %}
+{% endblock %}

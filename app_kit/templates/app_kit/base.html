@@ -1,0 +1,393 @@
+{% load i18n static localcosmos_tags app_tags octicons %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<link href="{% static 'fonts/fonts.css' %}" rel="stylesheet">
+
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<title>[{{ app_kit_short_name }}] {% block title %}{% endblock %}</title>
+
+		<script type="text/javascript" src="{% static 'app_kit/js/polyfills.js' %}"></script>
+
+		<!-- Bootstrap -->
+		<link href="{% static 'app_kit/bootstrap-4.3.1-dist/css/bootstrap.min.css' %}" rel="stylesheet">
+
+		<link href="{% static 'localcosmos_server/css/localcosmos_server.css' %}" rel="stylesheet">
+
+		<link href="{% static 'generic_forms/genericforms.css' %}" rel="stylesheet">
+
+		<!--konva js for arrows -->
+		<script type="text/javascript" src="{% static 'localcosmos_server/konva/konva.min.js' %}"></script>
+		<script type="text/javascript" src="{% static 'localcosmos_server/interactive-image-field/InteractiveImageField.js' %}"></script>
+		<link href="{% static 'localcosmos_server/interactive-image-field/InteractiveImageField.css' %}" rel="stylesheet">
+
+
+		<!-- app specific -->
+		<link href="{% static 'app_kit/css/app_kit.css' %}" rel="stylesheet">
+		<link href="{% static 'app_kit/css/app.css' %}" rel="stylesheet">
+
+		<!-- slider -->
+		<link href="{% static 'app_kit/horizontal-slide/horizontal-slide.css' %}" rel="stylesheet">
+
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="{% static 'app_kit/js/jquery-3.3.1.min.js' %}"></script>
+		<script src="{% static 'app_kit/js/popper.min.js' %}"></script>
+		<!-- Include all compiled plugins (below), or include individual files as needed -->
+		<script src="{% static 'app_kit/bootstrap-4.3.1-dist/js/bootstrap.min.js' %}"></script>
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/bootstrap3-typeahead.js' %}"></script>
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/jquery-taxon-autocomplete.js' %}"></script>
+
+		<!-- enable drag and drop with sortable -->
+		<script src="{% static 'app_kit/sortable/Sortable.min.js' %}"></script>
+		
+		{% block extra_head_script %}{% endblock %}
+
+		{% block extra_style %}{% endblock %}
+
+	</head>
+
+	<body>
+		<div id="page-container" class="container-fluid pr-0 pl-0 h-100 d-flex flex-column">
+			{% block header %}
+				<div class="container-fluid d-none d-md-block">
+					<div class="row">
+						<div class="col-12 text-center text-white appkit-title">
+							{% if app_kit_mode == 'sandbox' %}
+								<strong>LOCAL COSMOS SANDBOX APP KIT</strong><br>
+								{% if not request.user.is_authenticated %}
+									Login: {{ app_kit_sandbox_user }}<br>
+									Password: {{ app_kit_sandbox_password }}<br>
+								{% endif %}
+								time until reset: <span id="app-kit-reset"></span>
+								<script>
+									function getNextDayOfWeek(date, dayOfWeek) {
+
+										var resultDate = new Date(date.getTime());
+										resultDate.setDate(date.getDate() + (7 + dayOfWeek - date.getDay()) % 7);
+
+										return resultDate;
+									}
+									// Set the date we're counting down to
+									var countDownDate = getNextDayOfWeek(new Date(), 7);
+									countDownDate.setHours(23);
+									countDownDate.setMinutes(59);
+									countDownDate.setSeconds(59);
+
+									// Update the count down every 1 second
+									var x = setInterval(function() {
+
+									  // Get today's date and time
+									  var now = new Date().getTime();
+										
+									  // Find the distance between now and the count down date
+									  var distance = countDownDate - now;
+										
+									  // Time calculations for days, hours, minutes and seconds
+									  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+									  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+									  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+									  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+										
+									  // Output the result in an element with id="demo"
+									  document.getElementById("app-kit-reset").innerHTML = days + "d " + hours + "h "
+									  + minutes + "m " + seconds + "s ";
+										
+									  // If the count down is over, write some text 
+									  if (distance < 0) {
+										clearInterval(x);
+										document.getElementById("app-kit-reset").innerHTML = "EXPIRED";
+									  }
+									}, 1000);
+								</script>
+							{% else %}
+								{{ app_kit_long_name }}
+							{% endif %}
+						</div>
+
+					</div>
+				</div>
+			{% endblock %}
+
+			<header class="sticky-top">
+
+				<nav class="appbar navbar navbar-expand-lg navbar-light bg-light">
+					<a class="navbar-brand" href="{% url 'appkit_home' %}">
+						<img src="{% static 'app_kit/images/lclogo32.png' %}" height="32" width="auto"/>
+						<span class="d-lg-none align-middle text-secondary">{{ app_kit_short_name }}</span>
+					</a>
+					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+
+					<div class="collapse navbar-collapse" id="navbarSupportedContent">
+						{% if request.user.is_authenticated %}
+							<ul class="navbar-nav">
+								<li class="nav-item">
+									<a class="nav-link" href="{% url 'appkit_home' %}">{% trans 'Apps' %}</a>
+								</li>		
+							</ul>
+
+							{% if not meta_app %}
+								{% get_meta_app app as meta_app %}
+							{% endif %}
+							{% if meta_app %}
+								{% if meta_app.published_version == meta_app.current_version %}
+									<ul id="appbar-items" class="navbar-nav">
+										<li class="nav-item">
+											<a class="nav-link" href="{% url 'template_content_home' meta_app.app.uid %}">{% trans 'Template content' %}</a>
+										</li>
+									</ul>
+								{% else %}
+									{% if build_in_progress or meta_app.build_status == "in_progress" %}
+										<span class="navbar-text">{% trans 'Currently building your app! This may take several minutes. Please be patient.' %}</span>
+									{% else %}
+										<ul id="appbar-items" class="navbar-nav">
+											<li class="nav-item">
+												<a class="nav-link" href="{% url 'build_app' meta_app.id %}">{% trans 'Build' %}</a>
+											</li>
+											<li class="nav-item">
+												<a class="nav-link" href="{% url meta_app.manage_url meta_app.id meta_app|ctype_id meta_app.id %}">{% trans 'Components' %}</a>
+											</li>
+										</ul>
+
+									{% endif %}
+								{% endif %}
+							{% endif %}
+						
+							<ul class="navbar-nav flex-row ml-md-auto d-md-flex">
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% octicon "person" width="20" height="auto" %}
+									</a>
+									<div class="dropdown-menu dropdown-menu-right" aria-labelledby="accountDropdown">
+										<a href="{% url 'log_out' %}" class="dropdown-item" >{% trans 'Sign out' %}</a>
+									</div>
+								</li>
+							</ul>
+							
+						{% else %}
+							<a href="{% url 'log_in' %}" class="btn btn-outline-success ml-auto">{% trans 'Sign in' %}</a>
+						{% endif %}
+					</div>
+				</nav>
+
+			</header>
+
+
+
+			<div id="Modal" class="modal fade">
+				<div class="modal-dialog">
+					<div id="ModalContent" class="modal-content"></div>
+				</div>
+			</div>
+
+			<div id="LargeModal" class="modal fade">
+				<div class="modal-dialog modal-lg">
+					<div id="LargeModalContent" class="modal-content"></div>
+				</div>
+			</div>
+
+			<div id="mainContent" class="mb-5">
+				{% if meta_app and meta_app.validation_status == 'in_progress' or meta_app.global_build_status == 'in_progress' %}
+					<br>
+					<div class="container">
+						<div class="row justify-content-center">
+							<div class="col-12 col-md-6 col-lg-3">
+								<div class="card text-center p-3">
+									<div class="card-body">
+										<img src="{% static 'app_kit/images/gear.gif' %}" />
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="row mt-4">
+							<div class="col-12">
+								<div class="alert alert-warning">
+									{% if meta_app and meta_app.validation_status == 'in_progress' %}
+										{% trans 'Your app is currently being validated. You can continue when the validation process has finished.' %}
+									{% elif meta_app.build_status == 'in_progress' %}
+										{% trans 'Your app is currently being built. You can continue when the build process has finished.' %}
+									{% elif meta_app.global_build_status == 'in_progress' %}
+										{% trans 'Waiting for iOS app build. Build is in progress.' %}
+									{% endif %}
+								</div>
+							</div>
+						</div>
+					</div>
+					<script type="text/javascript">
+						setTimeout(function(){
+							window.location.href=window.location;
+						}, 10000);
+					</script>
+				{% elif meta_app and meta_app.published_version == meta_app.current_version and 'template-content' not in request.path %}
+					<br>
+					<div class="container">
+						<div class="row">
+							<div class="col-12">
+								<h2>{{ meta_app.name }}</h2>
+								{% if meta_app.is_localcosmos_private %}
+									<div class = "row">
+										<div class="col-12">
+										
+											<div class="card">
+												<div class="card-body">
+													<h4 class="card-title">{% trans 'App packages' %}</h4>
+													<div class="mt-3">
+														<div class="alert alert-info">
+															{% trans 'You are using Local Cosmos Private Server for this app. You can download your app packages here or start a new version.' %}
+														</div>
+													</div>
+													<p>
+														<strong>{% trans 'Web app .zip' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.pwa_zip_url }}" target="_blank" download>{% trans 'Download' %}</a><br>
+
+														<strong>{% trans 'Android .apk' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a><br>
+								
+														<strong>{% trans 'iOS .ipa' %}:</strong>
+														{% if meta_app.app.ipa_url %}
+															<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.ipa_url }}" target="_blank">{% trans 'Download' %}</a>
+														{% else %}
+															<span class="text-danger">{% trans 'not available' %}</span>
+														{% endif %}
+													</p>
+												</div>
+											</div>
+										</div>
+									</div>
+								{% else %}
+									<p>
+										<strong>{% trans 'Status' %}:</strong> <span class="badge badge-success">{% trans 'published' %}</span><br>
+										<strong>{% trans 'Published version' %}: </strong> {{ meta_app.published_version }} <br>
+										<strong>{% trans 'Web app URL' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.app.get_url }}" target="_blank">{{ request.scheme }}://{{ meta_app.app.get_url }}</a><br>
+
+										<strong>{% trans 'Android .aab' %}:</strong>
+											{% if meta_app.app.apk_url %}
+												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a>
+											{% else %}
+												<span class="text-danger">{% trans 'not available' %}</span>
+											{% endif %}
+											<br>
+										
+										<strong>{% trans 'iOS .ipa' %}:</strong>
+										{% if meta_app.app.ipa_url %}
+											<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.ipa_url }}" target="_blank">{% trans 'Download' %}</a>
+										{% else %}
+											<span class="text-danger">{% trans 'not available' %}</span>
+										{% endif %}
+									</p>
+									<p>
+										<div class="alert alert-info">
+											{% trans 'To edit your app, you have to start a new version.' %}
+										</div>
+									</p>
+								{% endif %}
+								<hr>
+								<div class = "row">
+									<div class="col-12">
+										<div class="card">
+											<div class="card-body">
+												<h4 class="card-title">{% trans 'Start new app version' %}</h4>
+												<p>
+													<form method="POST" action="{% url 'start_new_app_version' meta_app.id %}">{% csrf_token %}
+														<button id="new_app_version" type="submit" class="btn btn-outline-primary">{% trans 'Start new version' %}</button>
+													</form>
+												</p>
+											</div>
+										</div>
+									</div>
+								</div>
+								<hr>
+							</div>
+						</div>
+						
+						{% if meta_app.is_localcosmos_private %}
+							<div class = "row">
+								<div class="col-12">
+								
+									<div class="card">
+										<div class="card-body">
+											<h4 class="card-title">{% trans 'Local Cosmos Private Server instructions' %}</h4>
+
+											<h5>{% trans 'Steps to make everything work with your private server:' %}</h5>
+											<ol>
+												<li>{% trans 'Download the zipped web app:' %} <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.pwa_zip_url }}" download>{% trans 'web app .zip' %}</a></li>
+												<li>{% trans 'Go to the Server Control Panel of your private server.' %}</li>
+												<li>{% trans 'In your private Server Control Panel click "Install app" or "Update app" and follow the instructions.' %}</li>
+												<li>{% trans 'Check that everything is working on your private server.' %}</li>
+											</ol>
+
+										</div>
+									</div>
+								</div>
+							</div>
+							
+						{% endif %}
+						
+					</div>
+				{% else %}
+					{% block content %}{% endblock %}
+				{% endif %}
+			</div>	
+			
+
+			<div id="footer" class="d-flex flex-column mt-auto">
+			
+				{% block footer_first %}
+				{% endblock %}
+
+				<div class="container-fluid">
+					<div class="container">
+						<div class="row">
+							<div class="col-12 mt-2">
+								<ul class="nav justify-content-center">
+									<li class="nav-item">
+										<small><a class="nav-link text-secondary xhr" href="{% url 'legal_notice' %}" ajax-target="LargeModalContent">{% trans 'Legal notice' %}</a></small>
+									</li>
+									<li class="nav-item">
+										<small><a class="nav-link text-secondary xhr" href="{% url 'privacy_statement' %}" ajax-target="LargeModalContent">{% trans 'Privacy' %}</a></small>
+									</li>
+								</ul>
+							</div>
+							<div class="col-12 text-muted text-center">
+								{% get_build_parameters as build_params %}
+								<small>Build: {{ build_params.CI_BUILD }} | Build date: {{ build_params.CI_BUILD_DATE }} | Git Revision: {{ build_params.GIT_REVISION }}</small>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+
+		</div>
+		<script src="{% static 'localcosmos_server/js/django-ajax-csrf.js' %}"></script>
+
+		<!-- admin js -->
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/manage_object_order.js' %}"></script>
+
+		<!-- horizontal slider -->
+		<script type="text/javascript" src="{% static 'app_kit/js/hammer.js' %}"></script>
+		<script type="text/javascript" src="{% static 'app_kit/horizontal-slide/horizontal-slide.js' %}"></script>
+
+		<!-- pagination -->
+		<script type="text/javascript" src="{% static 'el-pagination/js/el-pagination.js' %}"></script>
+
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/django-ajax.js' %}"></script>
+		<script>
+			ajaxify("mainContent");
+			ajaxify("appbar-items");
+			ajaxify("footer");
+
+			$('form').submit(function() {
+				$(this).find('button[type="submit"]').attr('disabled', true);
+			});
+
+		</script>
+		{% block extra_script %}{% endblock %}
+
+	</body>
+</html>

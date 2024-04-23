@@ -1,0 +1,20 @@
+{% load i18n static %}
+<div class="row">
+	{% for group, options, index in widget.optgroups %}
+		{% for option in options %}
+			<div class="col-4 col-md-3 col-lg-2 text-center node-space-definition-item">
+				<label class="checkbox">
+					<div class="square responsiveback" style="background-image:url('{{ option.label.image_url }}')"></div>
+					<span style="font-weight:normal;">{{ option.label.encoded_space|safe }}</span><br>
+					<input type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %}>
+				</label>
+			</div>
+		{% endfor %}
+	{% endfor %}
+
+	{% if show_add_button %}
+		<div class="col-4 col-md-3 col-lg-2 text-center">
+			<a href="#" class="square add_element xhr" style="background-image:url('{% static 'app_kit/images/add_element.png' %}')" ajax-target="LargeModalContent" data-url="{% url 'create_matrix_filter_space' meta_app.id matrix_filter.matrix_filter.id %}?from_url={{ from_url }}"></a>
+		</div>
+	{% endif %}
+</div>

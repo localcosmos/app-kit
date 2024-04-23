@@ -1,0 +1,22 @@
+<div class="container translucent white">
+    <h2>
+        {{ data.title }}
+    </h2>
+
+    <h4>Not layoutable content: {{ data.contents.headline.value }}</h4>
+
+    <h4>Layoutable content (full):</h4>
+    {{{ data.contents.description.value }}}
+
+    <h4>Layoutable content (simple):</h4>
+    {{{ data.contents.addendum.value }}}
+
+    <h4>An Image:</h4>
+    <img src="{{ data.contents.titleImage.value.imageUrl.2x }}" class="img-thumbnail" />
+
+    <h4>Multiple images:</h4>
+    {{#each data.contents.images.value }}
+        <img src="{{ this.imageUrl.2x }}" class="img-thumbnail"/>
+    {{/each}}
+
+</div>

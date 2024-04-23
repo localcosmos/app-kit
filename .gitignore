@@ -1,3 +1,5 @@
 *.pyc
 __pycache__
 log
+dist/
+localcosmos_app_kit.egg-info/

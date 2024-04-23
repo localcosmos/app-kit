@@ -1,0 +1,13 @@
+{
+  "templateName" : "download",
+  "type": "page",
+  "templatePath" : "/template_content/page/download/download.html",
+  "version" : 1,
+  "contents": {
+    "pdfs": {
+      "type": "component",
+      "templateName": "DownloadablePDF",
+      "allowMultiple": true
+    }
+  }
+}

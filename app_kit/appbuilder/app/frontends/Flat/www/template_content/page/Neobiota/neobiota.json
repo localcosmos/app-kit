@@ -1,0 +1,27 @@
+{
+    "templateName" : "Neobiota",
+    "type": "page",
+    "templatePath" : "/template_content/page/Neobiota/neobiota.html",
+    "version" : 1,
+    "contents": {
+      "headline": {
+        "type": "text",
+        "widget": "TextInput"
+      },
+      "titleImage": {
+        "type": "image"
+      },
+      "description": {
+        "type": "text",
+        "format": "layoutable-full"
+      },
+      "addendum": {
+        "type": "text",
+        "format": "layoutable-simple"
+      },
+      "images": {
+        "type": "image",
+        "allowMultiple": true
+      }
+    }
+  }

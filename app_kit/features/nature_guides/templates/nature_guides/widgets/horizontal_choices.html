@@ -1,0 +1,91 @@
+{% load i18n static localcosmos_tags %}
+<div class="horizontal-slide {% block size %}large{% endblock %}">
+
+	<div id="{{ widget.attrs.id }}" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_space_ctype.id %}">
+		{% for group, options, index in widget.optgroups %}
+			
+			{% for option in options %}
+				<div id="space_{{ option.space_id }}" data-object-id="{{ option.space_id }}">
+					<div>
+						{% block input %}
+							<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} />
+						{% endblock %}
+						{% block label %}
+							<div class="square responsiveback" style="background-image:url('{% block image %}{% if option.image %}{{ option.image.image_url }}{% else %}{% static 'noimage.png' %}{% endif %}{% endblock %}')">{% block in_label %}{% endblock %}</div>
+							<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+								<span>{{ option.label }}</span>
+							</label>
+							
+						{% endblock %}
+
+						{% if option.modify %}
+							<div class="btn-group dropup">
+								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Modify' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu">
+									<a data-url="{% url 'manage_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+									<a data-url="{% url 'delete_matrix_filter_space' meta_app.id option.space_id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center movespaceleftbutton" data-targetid="space_{{ option.space_id }}">&#9664; {% trans 'Move left' %}</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center movespacerightbutton" data-targetid="space_{{ option.space_id }}">{% trans 'Move right' %} &#9654;</a>
+								</div>
+							</div>
+						{% endif %}
+
+					</div> 
+				</div>
+			{% endfor %}
+
+		{% endfor %}
+
+	</div>
+</div>
+<script>
+	horizontal_slider('{{ widget.attrs.id }}');
+	{% if allow_multiple_values %}
+	{% else %}
+		(function(){
+		
+			// improvement: uncheck if checked, preventdefault. otherwise default
+		
+			var container = document.getElementById('{{ widget.attrs.id }}');
+			var radios = container.querySelectorAll("input[type='radio']");
+
+			var change_event = new CustomEvent("change", {
+			  detail: {}
+			});
+
+			for (var r=0; r< radios.length; r++){
+				var radio = radios[r];
+
+				radio.addEventListener('click', function(event){
+					event.preventDefault();
+					
+					let radio_input = event.currentTarget;
+					
+					
+					let checked = radio_input.getAttribute("checked");
+					
+					if (checked == null || checked == "false") {
+						radio_input.checked = true;
+						radio_input.setAttribute("checked", true);
+					}
+					else if (checked == "true"){
+						radio_input.checked = false;
+						radio_input.removeAttribute("checked");
+					}
+					
+					radio_input.dispatchEvent(change_event);
+
+				
+				});
+			}
+		})()
+	{% endif %}
+	
+		$("#{{ widget.attrs.id }} .movespaceleftbutton").on("click", positionmanager.onMoveForward);
+		$("#{{ widget.attrs.id }} .movespacerightbutton").on("click", positionmanager.onMoveBack);
+
+</script>

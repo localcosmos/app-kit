@@ -1,0 +1,15 @@
+{% extends 'nature_guides/widgets/grid_choices.html' %}
+
+{% block size %}large{% endblock %}
+
+{% block input %}
+	<input id="choice_{{ widget.name }}_{{ option.index }}" type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" data-value="{{ option.value }}" {% if option.value in widget.value %}checked{% endif %} data-container-id="space_{{ option.space_id }}" />
+{% endblock %}
+{% block label %}
+	<label for="choice_{{ widget.name }}_{{ option.index }}" class="matrix-filter-color">
+		<div class="square responsiveback" {% if option.color_type == 'gradient' or option.color_type == 'triplet' %}style="background-image: {{ option.label }};"{% else %}style="background-color: {{ option.label }};"{% endif %}></div>
+		{% if option.description %}
+			<div>{{ option.description }}</div>
+		{% endif %}
+	</label>
+{% endblock %}

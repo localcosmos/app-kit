@@ -1,0 +1,5 @@
+{% extends 'localcosmos_server/ajax/server_content_image_form.html' %}
+
+{% block base_url %}{% url 'manage_content_image' meta_app.id content_type.id content_instance.id image_type %}{% endblock %}
+
+{% block delete_url %}{% url 'delete_content_image' meta_app.id content_image.pk %}{% endblock %}

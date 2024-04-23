@@ -1,0 +1,24 @@
+{
+    "frontend" : "Mountain",
+    "version" : "1.0",
+    "userContent" : {
+		"images" : {
+			"appLauncherIcon" : {
+				"restrictions" : {
+					"fileType" : ["svg"],
+					"ratio" : "1:1"
+				},
+				"helpText" : "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+				"required" : true
+			},
+			"appSplashscreen" : {
+				"restrictions" : {
+					"fileType" : ["svg"],
+					"ratio" : "1:1"
+				},
+				"helpText" : "Will be displayed during app startup",
+				"required" : true
+			}
+		}
+    }
+}

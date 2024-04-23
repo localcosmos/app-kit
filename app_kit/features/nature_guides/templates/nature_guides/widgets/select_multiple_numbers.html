@@ -1,0 +1,18 @@
+{% extends 'nature_guides/widgets/grid_choices.html' %}
+{% block size %}{% endblock %}
+
+{# there is no space_id for numbers, adjust space_id and input #}
+
+{% block space_id %}id="numberspace_{{ widget.name }}_{{ option.value }}"{% endblock %}
+
+{% block input %}
+<input id="choice_{{ widget.name }}_{{ option.index }}" type="checkbox" name="{{ widget.name }}" value="{{ option.value }}" {% if option.value|safe in widget.value %}checked{% endif %} {% if option.data_b64value %}data-value="{{ option.data_b64value }}"{% else %}data-value="{{ option.value }}"{% endif %} data-container-id="numberspace_{{ widget.name }}_{{ option.value }}" />
+{% endblock %}
+
+{% block label %}
+	<label for="choice_{{ widget.name }}_{{ option.index }}" class="text-center">
+		<div class="square responsiveback numbercontainer">
+			<span>{{ option.value }}</span>
+		</div>
+	</label>
+{% endblock %}

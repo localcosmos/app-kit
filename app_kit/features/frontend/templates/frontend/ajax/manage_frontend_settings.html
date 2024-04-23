@@ -1,0 +1,47 @@
+{% load i18n localcosmos_tags %}
+
+<form method="POST" action="{% url 'manage_frontend_settings' meta_app.id frontend.id %}" enctype="multipart/form-data" class="xhr">{% csrf_token %}
+    {% for field in form %}
+
+        {% if field.name == 'support_email' %}
+            <hr>
+        {% endif %}
+
+        {% if field.field.widget|widget_class == "TwoStepFileInput" %}
+            <div class="pt-3">
+                <strong>{{ field.label }}</strong>
+            </div>
+            <div class="pb-2">
+                <small>
+                    {{ field.help_text }}
+                </small>
+            </div>
+            
+            {{ field }}
+        {% else %}
+            {% include 'localcosmos_server/bootstrap_field.html' %}
+        {% endif %}
+        
+    {% endfor %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    {% if success is True %}
+        <div class="alert alert-success">
+            {% trans 'Your frontend settings have been saved.' %}
+        </div>
+    {% endif %}
+
+    <p>
+        <button type="submit" class="btn btn-outline-primary">{% trans 'save frontend' %}</button>
+    </p>
+</form>
+{% if request|is_ajax %}
+    <script>
+        {% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+    </script>
+{% endif %}

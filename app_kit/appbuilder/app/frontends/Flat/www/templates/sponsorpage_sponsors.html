@@ -1,0 +1,15 @@
+<div id="sponsors-page">
+
+	{{#if sponsors}}
+		{{#if sponsors.main_sponsors}}
+			<h4>{{tp 'Main Sponsors'}}</h4>
+			{{#each sponsors.main_sponsors}}
+				<div class="sponsors-page-sponsor">
+					<img src="{{ logos.400x100 }}" style="width:15rem; height:auto;"/>
+				</div>
+			{{/each}}
+		{{/if}}
+	{{else}}
+		{{tp 'No Sponsors yet.'}}
+	{{/if}}
+</div>

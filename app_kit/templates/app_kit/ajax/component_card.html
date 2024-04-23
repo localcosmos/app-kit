@@ -1,0 +1,42 @@
+{% load i18n static localcosmos_tags app_tags %}
+<div id="ctype-{{ link|ctype_id }}-{{ link.id }}" class="col-12 col-md-6 col-lg-4 mb-4" data-object-id="{{ link.id }}">
+	<div class="card">
+		<div class="card-header">
+			<img src="{% get_static_prefix %}app_kit/images/features/{{ link.generic_content|class_name }}.svg" alt="{{ link.generic_content|verbose_name }}" width="30" height="auto"/>
+			<small>{{ link.generic_content|verbose_name }}</small>
+			{% if link|generic_content_link_deletable %}
+				<div class="dropdown float-right d-inline-block">
+					<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+					<div class="dropdown-menu">
+						<a class="dropdown-item xhr" data-url="{% url 'remove_app_generic_content' link.id %}" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+						{% if link.generic_content|generic_content_may_have_image %}
+							<a data-url="{% url 'manage_content_image' meta_app.id link.generic_content|ctype_id link.generic_content.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit image' %}</a>
+						{% endif %}
+						<a data-url="{% url 'change_generic_content_status' meta_app.id link.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Change publication status' %}</a>
+					</div>
+				</div>
+			{% endif %}
+			<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large float-right mr-1"  data-toggle="popover" title="{{ link.generic_content|verbose_name }}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
+		</div>
+		<div class="card-body" style="position:relative;">
+			<h5 class="card-title">{{ link.generic_content }}</h5>
+
+			<div id="content_image_{{ link.generic_content|ctype_id }}_{{ link.generic_content.id }}" class="generic-content-image" {% if link.generic_content.image %}style="background-image:url('{{ link.generic_content.image_url }}')"{% endif %}></div>
+
+			<div class="generic-content-publication-status">
+				{% get_generic_content_option link.generic_content 'publication_status' as publication_status %}
+				{% if publication_status == 'draft' %}
+					<span class="badge badge-warning">{% trans 'draft' %}</span>
+				{% endif %}
+			</div>
+
+			<div class="text-right">
+				<div class="text-left">
+					
+				</div>
+				<strong><a href="{% url link.manage_url meta_app.id link.content_type.id link.object_id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
+			</div>
+
+		</div>
+	</div>
+</div>

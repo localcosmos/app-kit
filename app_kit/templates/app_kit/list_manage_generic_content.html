@@ -1,0 +1,30 @@
+{% extends 'app_kit/base.html' %}
+
+{% load i18n %}
+
+{% block content %}
+<br>
+<div class="container-fluid">
+	<div class="col-12 col-md-6 col-md-offset-3">
+
+		<p class="text-center">
+			<a href="{% url 'create_generic_content' content_type.id %}" class="btn btn-primary">{% blocktrans with name=content_type.name_i18n %}Create new {{ name }}{% endblocktrans %}</a>
+		</p>
+		
+		<p>
+			{% if generic_content %}
+				
+				{% for content in generic_content %}
+					<p>
+						<a href="{% url content.manage_url content_type.id content.content_object.id %}">{{ content.content_object.name }}</a>
+					</p>
+				{% endfor %}
+
+			{% else %}
+				{% blocktrans %}Your app has no contents yet.{% endblocktrans %}
+			{% endif %}
+		</p>
+
+	</div>
+</div>
+{% endblock %}

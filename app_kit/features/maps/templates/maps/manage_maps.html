@@ -1,0 +1,248 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static app_tags %}
+
+{% block generic_content_specific %}
+	<div class="row mt-4 mb-4">
+		<div class="col-12"><b>{% trans 'Type of map:' %} {{ generic_content.map_type }}</b></div>
+		<div class="col-12">
+			{% if generic_content.map_type == 'observations' %}
+				{% trans 'This map shows the observations made with your app.' %}
+			{% endif %}
+		</div>
+	</div>
+
+	<div id="map-{{ generic_content.id }}" class="map {{ generic_content.map_type }}-map"></div>
+
+	<div class="row mt-3">
+		<div class="col-12">
+			{% if project_area %}
+				<h4><span class="badge badge-success">{% trans 'project area active' %}</span></h4>
+			{% else %}
+				<h4><span class="badge badge-info">{% trans 'No area restrictions' %}</span></h4>
+			{% endif %}
+		</div>
+	</div>
+	<div class="row mt-5">
+		<div class="col-12">
+			<h4>{% trans 'Initial view' %}</h4>
+			{% trans 'You can set the initial zoom level and center for the Map in your app.' %}<br>
+			<button id="setAppMapInitialView" type="button" class="btn btn-outline-primary">{% trans 'Set current view as initial view' %}</button>
+		</div>
+	</div>
+	<div class="row mt-5">
+		<div class="col-12">
+			<h4>{% trans 'Project area' %}</h4>
+			{% trans 'Optionally restrict you project to a specific area. This only has an effect if you collect observations.' %}<br>
+			<a href="{% url 'manage_project_area' meta_app.id content_type.id generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Manage project area' %}</a>
+		</div>
+	</div>
+	<div class="row mt-5">
+		<div class="col-12">
+			<h4>{% trans 'Map filters' %}</h4>
+			{% trans 'You can offer multiple filters which your users can apply to the map.' %}<br>
+		</div>
+		<div class="col-12 mt-3">
+			<div class="card">
+				<div class="card-header">
+					{% trans 'Taxonomic Filters' %}
+				</div>
+				<div class="card-body">
+					<div id="map-taxonomic-filters">
+						{% include 'maps/ajax/taxonomic_filters.html' %}
+					</div>
+					<div class="row mt-3">
+						<div class="col-12">
+							<a href="{% url 'create_map_taxonomic_filter' meta_app.id generic_content.id %}" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent">{% trans 'Add taxonomic filter' %}</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% get_generic_content_option generic_content 'include_observation_forms_as_filters' as include_observation_form_as_filters %}
+		{% if include_observation_form_as_filters %}
+		<div class="col-12 mt-3">
+			<div class="card">
+				<div class="card-header">
+					{% trans 'Filters from Observation Forms' %}
+				</div>
+				<div class="card-body">
+					{% for observation_form_link in observation_form_links %}
+						<div>
+							<strong>{{ observation_form_link.generic_content.name }}</strong>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+		{% endif %}
+	</div>
+
+{% endblock %}
+
+{% block extra_head_script %}
+	<script src="{% static 'openlayers/v7.3.0/dist/ol.js' %}"></script>
+	<link rel="stylesheet" href="{% static 'openlayers/v7.3.0/ol.css' %}">
+{% endblock %}
+
+{% block extra_script %}
+	<script type="module">
+
+		import { AnyclusterOpenLayers } from "/static/anycluster/openlayers/anycluster-openlayers.js";
+
+		{% get_generic_content_option generic_content 'initial_longitude' as initial_longitude %}
+		{% get_generic_content_option generic_content 'initial_latitude' as initial_latitude %}
+		{% get_generic_content_option generic_content 'initial_zoom' as initial_zoom %}
+
+
+		var initial_longitude = 11,
+			initial_latitude = 47,
+			initial_zoom = 3;
+
+		{% if initial_longitude %}
+			initial_longitude = {{ initial_longitude|safe }};
+		{% endif %}
+		
+		{% if initial_latitude %}
+			initial_latitude = {{ initial_latitude|safe }};
+		{% endif %}
+
+		{% if initial_zoom %}
+			initial_zoom = {{ initial_zoom }};
+		{% endif %}
+
+
+		const Map = ol.Map;
+		const TileLayer = ol.layer.Tile;
+		const OSM = ol.source.OSM;
+		const View = ol.View;
+		const fromLonLat = ol.proj.fromLonLat;
+
+
+		const map = new Map({
+			target: 'map-{{ generic_content.id }}',
+			layers: [
+			new TileLayer({
+				source: new OSM(),
+			}),
+			],
+			view: new View({
+			center: fromLonLat([initial_longitude, initial_latitude]),
+			zoom: initial_zoom,
+			minZoom: 3,
+			constrainResolution: true,
+			}),
+		});
+
+		const apiUrl = "/api/anycluster/";
+
+		const singlePinImages = {};
+
+		const settings = {
+			srid: 'EPSG:3857',
+			singlePinImages: singlePinImages,
+			onFinalClick: function (marker, data) {
+				alert(JSON.stringify(data))
+			}
+		};
+
+		const markerFolderPath = '/static/anycluster/images/';
+
+		const anyclusterLeaflet = new AnyclusterOpenLayers(map, apiUrl, markerFolderPath, settings);
+
+
+		// set initial view
+		const setviewButton = document.getElementById("setAppMapInitialView");
+		function setAppMapInitialView(event){
+			const center_3857 = map.getView().getCenter();
+			const center = ol.proj.toLonLat(center_3857, 'EPSG:3857');
+
+			const zoom = map.getView().getZoom();	
+			
+			const initial_latitude_input = document.getElementById("id_initial_latitude");
+			const initial_longitude_input = document.getElementById("id_initial_longitude");
+			const initial_zoom_input = document.getElementById("id_initial_zoom");
+
+			initial_longitude_input.setAttribute("readonly", false);
+			initial_latitude_input.setAttribute("readonly", false);
+			initial_zoom_input.setAttribute("readonly", false);
+
+			initial_longitude_input.value = center[0];
+			initial_latitude_input.value = center[1];
+			initial_zoom_input.value = zoom;
+
+			initial_longitude_input.setAttribute("readonly", true);
+			initial_latitude_input.setAttribute("readonly", true);
+			initial_zoom_input.setAttribute("readonly", true);
+
+			document.getElementById("options-form-{{ generic_content.uuid }}").submit();
+		}
+
+		setviewButton.addEventListener("click", setAppMapInitialView);
+
+		/*
+		var map_markers = {
+
+			"taxonomy.sources.col" : {
+				"001008002001" : "{% static 'maps/markers/Anura.png' %}",
+				"001003007004" : "{% static 'maps/markers/Coleoptera.png' %}",
+				"00100300700d" : "{% static 'maps/markers/Lepidoptera.png' %}",
+				"00100300700j" : "{% static 'maps/markers/Odonata.png' %}",
+				"00100800a" : "{% static 'maps/markers/Mammalia.png' %}",
+				"001003007" : "{% static 'maps/markers/Insecta.png' %}",
+				"001008005" : "{% static 'maps/markers/Aves.png' %}",
+				"001003001" : "{% static 'maps/markers/Arachnida.png' %}",
+				"001008002" : "{% static 'maps/markers/Amphibia.png' %}",
+				"00100l" : "{% static 'maps/markers/Mollusca.png' %}",
+				"001008" : "{% static 'maps/markers/Chordata.png' %}",
+				"001003" : "{% static 'maps/markers/Arthropoda.png' %}",
+				"001" : "{% static 'maps/markers/Animalia.png' %}",
+				"006" : "{% static 'maps/markers/Plantae.png' %}",
+				"005" : "{% static 'maps/markers/Fungi.png' %}"
+			}
+		};
+
+		
+		var get_marker = function(cluster){
+
+			var pinimg = cluster["pinimg"];
+			var taxon_source = cluster["taxon_source"]
+
+			var pin_url = "{% static 'maps/markers/marker_unknown.png' %}";
+
+			for (var nuid in map_markers[taxon_source]){
+				if (pinimg.indexOf(nuid) == 0){
+					pin_url = map_markers[taxon_source][nuid];
+					break;
+				}
+			}
+			return pin_url;
+		};
+
+		var mapdiv_id = "map-{{ generic_content.id }}";
+
+		// correct markerImageSizes for the LC single pin
+		markerImageSizes[1] = [27, 40];
+
+		var anycluster_settings = {
+			"mapType" : "leaflet",
+			"clusterMethod" : "kmeans",
+			"gridSize" : 256,
+			"zoom" : initial_zoom,
+			"center" : [initial_latitude, initial_longitude],
+			"baseURL" : "/app-kit/anycluster/",
+			"minZoom" : 4,
+			singlePinImages: get_marker,
+			onFinalClick : function(entries_html){
+			
+				$("#ModalContent").html(entries_html);
+			}
+		};
+		var anycluster = new Anycluster(mapdiv_id, anycluster_settings);
+
+
+		
+		*/
+
+	</script>
+
+{% endblock %}

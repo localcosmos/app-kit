@@ -1,0 +1,153 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n %}
+
+{% block action %}{% url 'add_existing_nodes' meta_app.id parent_node.id %}{% endblock %}
+
+{% block title %}{% if is_circular %}{% trans 'Circular nodes found' %}{% else %}{% trans 'Add existing node' %}{% endif %}{% endblock %}
+
+{% block body %}
+	{% if success is True %}
+		<div id="add_existing_nodes_result" style="display:none;">
+			{% for node in added_children %}
+				{% include 'nature_guides/ajax/natureguide_node.html' %}
+			{% endfor %}
+		</div>
+
+		<script>
+			ajaxify("add_existing_nodes_result");
+			
+			$("#add_existing_nodes_result .moveforwardbutton").on("click", positionmanager.onMoveForward);
+			$("#add_existing_nodes_result .movebackbutton").on("click", positionmanager.onMoveBack);
+
+			$('#add_existing_nodes_result').contents().appendTo('#keynodes');
+
+			$("#key_nochildren").hide();
+			
+		</script>
+
+		
+		<script>
+			$("#Modal").modal("hide");
+		</script>
+
+
+	{% else %}
+	
+		{% if is_circular %}
+			<div class="alert alert-danger">
+				{% trans 'The nodes you tried to add would have resulted in a circular connection.' %}<br>
+			</div>
+		{% endif %}
+		
+		{% if nodes %}
+			<div id="existing_nodes_list" class="endless_page_template">
+				{% include 'nature_guides/ajax/add_existing_nodes_page.html' %}
+			</div>
+		{% else %}
+			<div class="alert alert-warning">{% trans 'Currently you have got no existing entries or groups that could be added.' %}</div>
+		{% endif %}
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if success is True %}
+		{% if circular_children %}
+			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Ok' %}</button>
+		{% endif %}
+	{% else %}
+		{% if nodes %}
+			{% include 'localcosmos_server/modals/footers/add_selected.html' %}
+		{% else %}
+			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Ok' %}</button>
+		{% endif %}
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+	<script>
+		/*$("#existing_nodes_list").endlessPaginate();*/
+		
+		function activate_pagination(){
+			$("#existing_nodes_list .endless_page_link").on("click", function(event){
+				event.preventDefault();
+				
+				let link = $(this).attr("href");
+				
+				let selected = [];
+				
+				let node_list = document.getElementById("existing_nodes_list");
+				
+				if (node_list != null){
+					let checkboxes = node_list.querySelectorAll("input[name='node']");
+					for (let c=0; c<checkboxes.length; c++){
+						let checkbox = checkboxes[c];
+						if (checkbox.checked == true){
+							if (selected.indexOf(checkbox.value) < 0 ){
+								selected.push(checkbox.value);
+							}
+						}
+						else {
+							let querystring = "selected=" + checkbox.value;
+							if (link.indexOf(querystring) >= 0){
+								let prepended_querystring = "&" + querystring;
+								let single_querystring = "?" + querystring;
+								
+								if (link.indexOf(prepended_querystring) >= 0){
+									querystring = prepended_querystring;
+								}
+								else if (link.endsWith(single_querystring)){
+									querystring = single_querystring;
+								}
+								
+								link = link.replaceAll(querystring, "");
+								
+								
+							}
+						}
+					}
+					
+					if (selected.length > 0){
+						for (let s=0; s<selected.length; s++){
+							
+							let selected_id = selected[s];
+							
+							let querystring = "selected=" + selected_id;
+							
+							if (link.indexOf(querystring) < 0){
+							
+								if (link.indexOf("?") < 0){
+									link = link + "?";
+								}
+								else {
+									link = link + "&";
+								}
+								
+								link = link + querystring;
+							}
+						}
+					}
+					
+					let ajax_target = $("#existing_nodes_list");
+					if (link.indexOf("page=") < 0 ){
+						ajax_target = $("#ModalContent");
+					}
+					
+					$.get(link, function(html){
+						ajax_target.html(html);
+						if (link.indexOf("page=") >= 0){
+							activate_pagination();
+						}
+						else {
+							ajaxify("ModalContent");
+						}
+					});
+				}
+				
+				
+			});
+		}
+		
+		activate_pagination();
+	</script>
+{% endblock %}

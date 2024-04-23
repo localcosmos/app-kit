@@ -1,0 +1,8 @@
+{% for error in error_report.errors %}
+	{% if error.generic_content_verbose == error.instance_verbose %}
+		[{{ error.generic_content_verbose }}]
+	{% else %}
+		[{{ error.generic_content_verbose }} - {{ error.instance_verbose }}]
+	{% endif %}
+	{% for message in error.messages %}{{ message }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}<br>
+{% endfor %}

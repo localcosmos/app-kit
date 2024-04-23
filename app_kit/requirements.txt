@@ -1,0 +1,16 @@
+wheel
+django==4.1.*
+django-tenants==3.4.7
+django-cleanup==6.0.0
+django-ipware==4.0.2
+django-filter==22.1
+uwsgi
+lxml
+localcosmos_server
+localcosmos_cordova_builder
+xlrd==2.0.1
+openpyxl==3.0.10
+deepl
+opencv-python
+opencv-python-headless
+unidecode

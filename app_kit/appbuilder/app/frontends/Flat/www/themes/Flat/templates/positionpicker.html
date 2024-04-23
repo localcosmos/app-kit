@@ -1,0 +1,15 @@
+<div class="positionPicker">
+	<div id="positionPickerMap" class="map">
+		<div class="ownpos-container leaflet-bottom leaflet-left leaflet-touch">
+			<div class="leaflet-control">
+				<a id="leaflet-ownpos" href="#"><img src="img/map/ownpos_button.svg" /></a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="position-picker-error" class="d-none mt-3 alert alert-danger"></div>
+
+<div class="dialogbox-bottom">
+	<button type="button" action="positionPicker.close" class="btn flat tap closeperm">{{t 'CANCEL'}}</button> <button type="button" action="positionPicker.accept" class="btn flat tap">{{t 'USE POSITION'}}</button>
+</div>

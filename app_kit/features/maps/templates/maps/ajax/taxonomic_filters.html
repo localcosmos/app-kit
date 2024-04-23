@@ -1,0 +1,45 @@
+{% load i18n localcosmos_tags %}
+<div class="row">
+    {% if taxonomic_filters %}
+        <div class="col-12">
+            <ul id="map-taxonomic-filters-list" data-store-positions-url="{% url 'store_app_kit_object_order' map_taxonomic_filter_content_type.id %}" class="simpleul clearfix">
+                {% for taxonomic_filter in taxonomic_filters %}
+                    <li id="ctype-{{ taxonomic_filter|ctype_id }}-{{ taxonomic_filter.id }}" data-object-id="{{ taxonomic_filter.id }}" class="col-12 my-2">
+                        <strong>{{ taxonomic_filter.name }}</strong>
+
+                        <div class="btn-group dropup">
+                            <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {% trans 'Modify' %} <span class="caret"></span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a data-url="{% url 'manage_map_taxonomic_filter' meta_app.id generic_content.id taxonomic_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                                <a data-url="{% url 'delete_map_taxonomic_filter' taxonomic_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center moveforwardbutton" data-targetid="ctype-{{ taxonomic_filter|ctype_id }}-{{ taxonomic_filter.id }}">&#x25B2; {% trans 'Move up' %}</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center movebackbutton" data-targetid="ctype-{{ taxonomic_filter|ctype_id }}-{{ taxonomic_filter.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                {% trans 'You have not defined any taxonomic filters yet.' %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+<script>
+    (function(){
+        $("#map-taxonomic-filters-list .moveforwardbutton").on("click", function(event){
+
+            positionmanager.onMoveForward.bind(this)(event);
+        });
+        $("#map-taxonomic-filters-list .movebackbutton").on("click", function(event){
+            positionmanager.onMoveBack.bind(this)(event);
+        });
+    })();
+</script>

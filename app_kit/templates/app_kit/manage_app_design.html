@@ -1,0 +1,25 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n %}
+
+
+{% block content_title %}
+	<br>
+	<h3>
+		{% trans 'Design and texts' %}
+	</h3>
+
+	<hr>
+{% endblock %}
+
+{% block generic_content_specific %}
+
+	{% if generic_content.build_status == "in_progress" %}
+	{% else %}
+
+		<p>
+			{% include 'app_kit/ajax/app_design_form.html' %}
+		</p>
+	{% endif %}
+
+{% endblock %}
+

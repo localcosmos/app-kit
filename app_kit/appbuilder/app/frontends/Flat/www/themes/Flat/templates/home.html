@@ -1,0 +1,28 @@
+<div class="page faded-out d-flex flex-column align-items-center">
+
+	<div class="logo-home"><div></div></div>
+
+	<div class="homenu d-lg-none">
+		{{#each categories}}
+			<div class="homenu-category">
+				<div class="btn btn-block btn-system tap{{#if has_submenu}} multibtn{{/if}}" {{#if has_submenu}}action="MainMenuSubmenu.toggle" kwargs='{"submenu_id":"{{ submenu_id }}-submenu"}'{{else}}link="{{buttons.0.action}}" kwargs='{"uuid" : "{{buttons.0.uuid}}"}' {{/if}}>
+					{{#if has_submenu}}<div><img src="img/downarrow.svg" /></div>{{ category_name }}{{else}}{{ buttons.0.button_name }}{{/if}}
+				</div>
+				{{#if has_submenu}}
+					<div class="home-submenu-container">
+						<div>
+							<div id="{{ submenu_id }}-submenu" class="home-submenu submenu-hidden">
+					
+								{{#each buttons}}
+									<div class="btn btn-block btn-system tap" link="{{ action }}">{{ button_name }}</div>
+								{{/each}}
+
+							</div>
+						</div>
+					</div>
+				{{/if}}
+			</div>
+		{{/each}}
+	</div>
+
+</div>

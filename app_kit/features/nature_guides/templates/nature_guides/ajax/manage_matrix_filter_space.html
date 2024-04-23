@@ -1,0 +1,157 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n app_tags localcosmos_tags %}
+
+{% block action %}
+	{% if matrix_filter_space %}{% url 'manage_matrix_filter_space' meta_app.id matrix_filter_space.id %}{% else %}{% url 'create_matrix_filter_space' meta_app.id matrix_filter.id %}{% endif %}{% if from_url %}?from_url={{ from_url }}{% endif %}
+{% endblock %}
+
+{% block enctype %}multipart/form-data{% endblock %}
+
+{% block title %}
+	{% if matrix_filter_space %}{% blocktrans %}Manage {{ matrix_filter_space }}{% endblocktrans %}{% else %}{% blocktrans with name=matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}{% endif %}
+{% endblock %}
+
+{% block body %}
+	
+	<p class="animated fadeIn">
+		{% for field in form %}
+			{% if field.name == 'source_image' %}
+				{% if content_image %}
+				{% else %}
+					<p>
+						<h5>{% trans 'Suggested images' %}</h5>
+						<div id="image-suggestions"><span class="text-secondary">{% trans 'type to start image search' %}</span></div>
+					</p>
+				{% endif %}
+			
+				<div id="content-image-formcontainer" class="card bg-light">
+					<div class="card-header">
+						<strong>{% trans 'Image' %}</strong>
+					</div>
+					<div class="card-body">
+			{% endif %}
+
+			{% include 'localcosmos_server/bootstrap_field.html' %}
+
+			{% if field.name == 'licence' %}
+					</div>
+				</div>
+			{% endif %}
+		{% endfor %}
+
+		{% if form.errors %}
+			<div class="alert alert-danger">
+				{{ form.errors }}
+			</div>
+		{% endif %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% blocktrans with name=matrix_filter.matrix_filter_type.verbose_space_name %}Successfully saved {{ name }}.{% endblocktrans %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if from_url %}
+		<button type="button" class="btn btn-outline-secondary xhr" ajax-target="LargeModalContent" data-url="{{ from_url }}">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Save' %}</button>
+	{% else %}
+		{% include 'localcosmos_server/modals/footers/save.html' %}
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+{% if success is True %}
+	<script>
+		{% if from_url %}
+			$.get("{{ from_url }}", function(html){
+				$("#LargeModalContent").html(html);
+				ajaxify("LargeModalContent");
+			});
+		{% else %}
+			$("#LargeModal").modal('hide');
+		{% endif %}
+	</script>
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+{% else %}
+	{% if from_url %}
+		<script>
+			$("#LargeModal").scrollTop(0);
+		</script>
+	{% endif %}
+{% endif %}
+
+<script>
+	var image_input = document.getElementById('id_source_image');
+	if (image_input != null){
+		image_input.addEventListener('change', function(event) {
+			document.getElementById('id_creator_name').required = true;
+		});
+	}
+	
+	
+	function load_suggested_images(searchtext){
+	
+		var image_suggestions_container = $("#image-suggestions");
+	
+		var has_selected = image_suggestions_container.attr("has-selected");
+		
+		if (has_selected != "1"){
+						
+			if (searchtext.length >= 3){
+				var url = "{% url 'manage_content_image_suggestions' content_type.id %}?searchtext=" + searchtext; 
+				$.get(url, function(html){
+					$("#image-suggestions").html(html);
+				});
+			}
+			else {
+				$("#content-image-formcontainer").show();
+				image_suggestions_container.empty();
+				$("#id_referred_content_image_id").val('');
+			}
+		}
+	}
+	
+	{% if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
+		{% if matrix_filter_space %}
+			{% if content_image %}
+			{% else %}
+				$.get("{% url 'manage_content_image_suggestions' content_type.id matrix_filter_space.id %}", function(html){
+					$("#image-suggestions").html(html);
+				});
+			{% endif %}
+		{% else %}
+		
+			var text_field = $("#id_text");
+			
+			if (text_field.length){
+				
+				text_field.on("input", function(event){
+					let searchtext = text_field.val();
+				
+					load_suggested_images(searchtext);
+				});
+			}
+		{% endif %}
+	{% endif %}
+	
+	/* update source element data on every keystroke to prevent HTML5 validation to kick in before submit is called - which triggers updateSourceElement */
+	{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}
+	
+</script>
+
+{% if matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
+	<style>
+		.ck-editor__editable {
+			min-height: 50px;
+		}
+	</style>
+{% else %}
+	<style>
+		.ck-editor__editable {
+			min-height: 300px;
+		}
+	</style>
+{% endif %}
+{% endblock %}

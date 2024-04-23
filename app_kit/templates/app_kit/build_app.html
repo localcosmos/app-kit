@@ -1,0 +1,341 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n localcosmos_tags static app_tags octicons %}
+
+{% block extra_style %}{% endblock %}
+
+{% block header %}
+	<div class="container-fluid d-none d-md-block">
+		<div class="row">
+			<div class="col-12 text-center text-white bg-primary">
+				<h2>{{ meta_app.name }}</h2>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div class="row">
+		<div class="col-12">
+
+			<br>
+			<h3>
+				{{ meta_app }}
+				<small>
+					<span class="badge badge-info">version {{ meta_app.current_version }}</span>
+					{% if meta_app.global_build_status == "in_progress" %}
+						<span class="badge badge-info">{% trans 'BUILD IN PROGRESS' %}</span>
+					{% elif meta_app.global_build_status == "passing" %}
+						<span class="badge badge-success">{% trans 'build passing' %}</span>
+					{% elif meta_app.global_build_status == "failing" %}
+						<span class="badge badge-danger">{% trans 'build failing' %}</span>
+					{% else %}
+						{% if meta_app.current_version == meta_app.published_version %}
+							<span class="badge badge-success">{% trans 'published' %}</span>
+						{% else %}
+							<span class="badge badge-warning">{% trans 'draft' %}</span>
+						{% endif %}
+					{% endif %}
+				</small>
+			</h3>
+		</div>
+	</div>
+
+	<hr>
+	
+	{% if meta_app.global_build_status == "in_progress" %}
+	{% else %}
+		<div class="row">
+			<div class="col-12">
+				
+				{% if meta_app.global_build_status == "failing" and not meta_app.last_validation_report.errors %}
+				
+					<div class="alert alert-danger my-3">{% trans 'Your app is currently failing to build although no validation errors have been found.' %} {% trans 'Our engineers have been notified and will get back to you.' %}</div>
+				{% endif %}
+
+
+				{% if meta_app.last_validation_report and meta_app.current_version == meta_app.last_validation_report.app_version %}
+					<div>
+						{% trans 'Last validation attempt:' %} {% with date=meta_app.last_validation_report.started_at|timestamp_to_datetime %} {{ date|date:"D d M Y" }} {{ date|time:"H:i" }} {% endwith %}
+					</div>
+					<div>
+						{% trans 'result:' %}
+						{% if meta_app.last_validation_report.errors %}
+							<span class="badge badge-danger">{% blocktrans with error_count=meta_app.last_validation_report.errors|length %}{{ error_count }} errors{% endblocktrans %}</span>
+						{% else %}
+							<span class="badge badge-success">{% trans 'no errors' %}</span>
+						{% endif %}
+						{% if meta_app.last_validation_report.warnings %}
+							<span class="badge badge-warning">{% blocktrans with warning_count=meta_app.last_validation_report.warnings|length %}{{ warning_count }} warnings{% endblocktrans %}</span>
+						{% else %}
+							<span class="badge badge-success">{% trans 'no warnings' %}</span>
+						{% endif %}
+					</div>
+
+					{% if meta_app.last_validation_report.errors %}
+						<div class="alert alert-danger mt-3">
+
+							<strong>{% trans 'During the last validation attempt the following errors were found:' %}</strong><br>
+							{% with error_report=meta_app.last_validation_report %}
+								{% include 'app_kit/ajax/build_errors.html' %}
+							{% endwith %}
+						</div>							
+					{% endif %}
+
+					{% if meta_app.last_validation_report.warnings %}
+						<div class="alert alert-warning mt-3">
+
+							<strong>{% trans 'During the last validation attempt the following warnings were found:' %}</strong><br>
+							{% with error_report=meta_app.last_validation_report %}
+								{% include 'app_kit/ajax/build_warnings.html' %}
+							{% endwith %}
+						</div>
+					{% endif %}
+
+				{% endif %}
+
+				{% if meta_app.secondary_languages %}
+					<div class="row mt-3">
+						<div class="col-12">
+							<div class="card">
+								<div class="card-body">
+									<h4 class="card-title">{% trans 'Translations' %}</h4>
+									<div class="row text-center">
+										<div class="col-12">
+											<div class="clearfix">
+												<div class="float-left padding">
+													<div class="text-center">
+														<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ meta_app.primary_language }}.png" /><br>
+														{{ meta_app.primary_language }}
+													</div>
+													<div>
+														<span class="badge badge-info">{% trans 'primary' %}</span>
+													</div>
+												</div>
+												{% for language in meta_app.secondary_languages %}
+													<div class="float-left padding">
+														<div class="text-center">
+															<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ language }}.png" /><br>
+															{{ language }}
+														</div>
+													</div>
+												{% endfor %}
+											</div>
+										</div>
+									</div><br>
+									<div class="row">
+										<div class="col-12">
+											<a href="{% url 'translate_app' meta_app.id %}" class="btn btn-outline-primary">{% trans 'Translate' %}</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<hr>
+				{% endif %}
+
+
+				{% if app_kit_status and app_kit_status.status == 'maintenance' %}
+					<div class="row mt-3">
+						<div class="col-12">
+							<div class="alert alert-info">
+								{% trans 'Local Cosmos is currently undergoing maintenance. You will be able to continue building apps after the maintenance has been completed.' %}
+							</div>
+						</div>
+					</div>
+				{% else %}
+				
+				
+					{% if meta_app.global_build_status == 'passing' and meta_app.last_build_report.result == 'success' %}
+						<hr>
+						<div class="card">
+							<div class="card-body">
+								<h4 class="card-title">{% trans 'Your app is ready!' %}</h4>
+								
+								<div class="row mt-3">
+									<div class="col-12">
+										<strong>{% trans 'Web app URL:' %}</strong>
+										<a href="{{ browser_review_url }}" target="_blank">{{ browser_review_url }}</a> ({% trans 'opens in new tab' %}) 
+									</div>
+								</div>
+								
+								<div class="row mt-5">
+								
+									<div class="col-12 text-center">											
+										<div class="row align-items-center">
+											<div id="AppReviewContainer" class="col-12 text-center">
+												<object id="AppReview" class="app-review phone mt-2" type="text/html" data="{{ browser_review_url }}"></object>
+											</div>
+										</div>
+									</div>
+									<div class="col-12 text-center mt-3">
+										<h2><span class="badge badge-info">version {{ meta_app.current_version }}</span></h2>
+									</div>
+			
+									{% block release_app %}
+										<div class="col-12 text-left mt-3">
+											<h4>{% trans 'App packages' %}</h4>
+											<div>
+												<strong>Android .aab:</strong> <a href="{{ aab_review_url }}" class="" download>{% trans 'Download' %}</a>
+											</div>
+											<div>
+												<strong>Android debug .apk:</strong> <a href="{{ apk_review_url }}" class="" download>{% trans 'Download' %}</a>
+											</div>
+											{% if ipa_review_url %}
+											<div>
+												<strong>iOS .ipa:</strong> <a href="{{ ipa_review_url }}" class="" download>{% trans 'Download' %}</a>
+											</div>
+										{% endif %}	
+										</div>					
+									{% endblock %}
+								</div>
+							</div>
+						</div>
+					{% endif %}
+				
+					<form id="BuildAppForm" method="POST">{% csrf_token %}
+						<div class="row mt-3">
+							<div class="col-12">
+								<div class="card">
+									<div class="card-body">
+										<h4 class="card-title">{% trans 'Distribution' %}</h4>
+										{% render_bootstrap_form form %}
+									</div>
+								</div>
+							</div>
+						</div>
+						<hr>
+
+						<div class="card">
+							<div class="card-body">
+								<h4 class="card-title">{% trans 'App creation steps' %} &rarr;</h4>						
+								
+								<div class="row text-center">
+									<div class="col-12">
+										<div class="progress">
+											<div class="progress-bar" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+											{% if meta_app.validation_status == 'valid' %}
+												<div class="progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+											{% elif meta_app.validation_status == 'errors' %}
+												<div class="progress-bar bg-danger" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+											{% elif meta_app.validation_status == 'warnings' %}
+												<div class="progress-bar bg-warning" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+											{% elif meta_app.validation_status == 'in_progress' %}
+												<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+											{% endif %}
+											{% if meta_app.validation_status == 'valid' or meta_app.validation_status == 'warnings' %}
+												{% if meta_app.global_build_status == 'passing' %}
+													<div class="progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+												{% elif meta_app.global_build_status == 'failing' %}
+													<div class="progress-bar bg-danger" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">&nbsp;</div>
+												{% endif %}
+											{% endif %}
+										</div>
+									</div>
+									<div class="col-3">
+										{% trans 'Create content' %}
+									</div>
+									<div class="col-3">
+										{% trans 'Validate' %}
+									</div>
+									<div class="col-3">
+										{% trans 'Build' %}
+									</div>
+									<div class="col-3">
+										{% trans 'Release' %}
+									</div>
+								</div>
+								
+								<div class="row no-gutters mt-3">
+								
+									{% if app_kit_mode == "sandbox" %}
+										<div class="col-12">
+											<div class="alert alert-warning">
+												{% trans 'The app kit is running in sandbox mode. You can validate, but not build.' %}
+											</div>
+										</div>
+									{% endif %}
+									
+									{% if meta_app.validation_status == 'in_progress' %}
+										<div class="col-12">
+											<div class="alert alert-warning">
+												{% trans 'Validation in progress.' %}
+											</div>
+										</div>
+									{% else %}
+										{% if meta_app.validation_status == 'valid' or meta_app.validation_status == 'warnings' %}
+											<div class="col-auto">
+												<button type="submit" action="{% url 'build_app' meta_app.id 'validate' %}" class="btn btn-outline-primary">{% trans 'Validate' %}</button>
+												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+											</div>
+											<div class="col-auto">
+												
+												<button type="submit" {% if app_kit_mode == 'live' %}action="{% url 'build_app' meta_app.id 'build' %}"{% else %}disabled{% endif %} class="btn btn-outline-primary">{% if meta_app.validation_status == 'warnings' %}{% trans 'ignore warnings and build' %}{% else %}{% trans 'Build' %}{% endif %}</button>
+												
+											</div>
+											{% if meta_app.global_build_status == 'passing' and meta_app.last_build_report.result == 'success' %}
+												<div class="col-auto">
+													
+													&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+													{% block release_button %}
+														<button type="submit" {% if app_kit_mode == 'live' %}action="{% url 'build_app' meta_app.id 'release' %}"{% else %}disabled{% endif %} class="btn btn-outline-danger">{% trans 'Release' %}</button>
+													{% endblock %}
+													
+												</div>
+
+												{% if meta_app.last_release_report %}
+													{% if meta_app.last_release_report.result == 'failure' %}
+														<div class="col-12 mt-3">
+															<div class="alert alert-danger">{% trans 'Due to an error, we could not release your app.' %} {% trans 'Our engineers have been notified and will get back to you.' %}</div>
+														</div>
+													{% endif %}
+												{% endif %}
+
+
+											{% else %}
+												<div class="col-auto">
+													&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+													<button type="button" class="btn btn-outline-primary" disabled>{% trans 'Release' %}</button>
+												</div>
+											{% endif %}
+										{% else %}
+											<div class="col-auto">
+												<button type="submit" action="{% url 'build_app' meta_app.id 'validate' %}" class="btn btn-outline-primary">{% trans 'Validate' %}</button>
+												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+											</div>
+											<div class="col-auto">
+												<button type="button" disabled class="btn btn-outline-primary">{% trans 'Build' %}</button>
+											</div>
+											<div class="col-auto">
+												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+												<button type="button" class="btn btn-outline-primary" disabled>{% trans 'Release' %}</button>
+											</div>
+										{% endif %}
+									{% endif %}
+
+								</div>
+							</div>
+						</div>
+					</form>
+					
+					
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_script %}
+	<script>
+		$('button[type="submit"]').not( "#new_app_version" ).on("click", function(event){
+			event.preventDefault();
+			var action = $(this).attr("action")
+			var form = document.getElementById("BuildAppForm");
+			form.setAttribute("action", action);
+			form.submit();
+		});
+	</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+<div class="my-4 text-center">
+	<h3>{{t 'Evaluation'}}</h3><br>
+	{{t 'Sorted by match'}}
+</div>
+<div>
+	<div class="row">
+		<div class="col-12 ml-5">
+			<strong>{{t 'Continue with...'}}</strong>
+		</div>
+	</div>
+	<div class="row next-steps mx-5 mt-2">
+		{{#each matrix_items }}
+			<div class="col-12 keynode">
+				<div class="choiceBoxNew tap nohighlight" link="{{link}}">
+					<div class="points" style="background-color:{{bgcolor}}">
+						<strong><span id="{{uuid}}-points">{{points}}/{{maxPoints}}</span></strong>
+						<div>
+							<small>{{t 'points'}}</small>
+						</div>
+						
+					</div>
+					<div class="title">{{tp name }}</div>
+					<div class="image text-right"><img src="{{#if imageUrl}}{{ imageUrl.2x }}{{else}}img/noimage.svg{{/if}}" class="img-fluid" /></div>
+				</div>
+			</div>
+		{{/each}}
+	</div>
+</div>
+<hr>
+
+<div class="dialogbox-bottom">
+	<button type="button" action="NextIdentificationStep.close" class="btn flat tap closeperm">{{tp 'CLOSE'}}</button>
+</div>

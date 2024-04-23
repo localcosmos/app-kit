@@ -1,0 +1,39 @@
+<div class="page faded-out">
+	<div class="translucent dark pt-3">
+		<div class="container">
+			<div class="row justify-content-center pt-3 pb-5">
+				<div class="col-12 col-md-8 col-lg-6 col-xl-5">
+
+					<h3 class="mb-4" >{{tp 'Manage Account' }}</h3>
+
+					{{#if success}}
+						<div class="alert alert-success">
+							{{tp 'Your Account has been updated.'}}
+						</div>
+					{{/if}}
+
+					<form action="{{url 'myaccount' }}" method="POST" enctype="multipart/form-data">
+
+						{{{html}}}
+
+						<div class="row align-items-center mt-5">
+							<div class="col-6 text-left">
+								<button class="btn btn-secondary" type="submit">{{tp 'save'}}</button>
+							</div>
+							<div class="col-6 text-right">
+								<a href="#" link="{{url 'delete_account'}}" class="text-danger tap">{{tp 'delete account'}}</a>
+							</div>
+						</div>
+
+					</form>
+
+					{{#if success}}
+						<div class="alert alert-success">
+							{{tp 'Your Account has been updated.'}}
+						</div>
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

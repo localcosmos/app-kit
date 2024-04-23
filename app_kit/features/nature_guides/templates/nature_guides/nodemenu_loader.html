@@ -1,0 +1,22 @@
+<script>
+
+	var url_start = '/app-kit/nature-guides/load-nodemenu/{{ meta_app.id }}/';
+
+	function load_nodemenu(event){
+		var target = $('#' + event.target.getAttribute('ajax-target'));
+
+		var target_id = target.attr('id');
+
+		if (target.children('a').length == 0){
+			var url = url_start + event.target.getAttribute('data-parent-node-id') + '/' + event.target.getAttribute('data-node-id') + '/';
+			$.get(url, function(html){
+				target.html(html);
+				ajaxify(target_id);
+				$("#" + target_id + " .moveforwardbutton").on("click", positionmanager.onMoveForward);
+				$("#" + target_id + " .movebackbutton").on("click", positionmanager.onMoveBack);
+			});
+		}
+	}
+
+	$('.nodemenuloader').on('click', load_nodemenu);
+</script>

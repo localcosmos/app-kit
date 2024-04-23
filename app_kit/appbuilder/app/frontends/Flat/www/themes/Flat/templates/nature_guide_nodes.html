@@ -1,0 +1,20 @@
+{{#each node.children }}
+	<div id="{{uuid}}" class="col-12 keynode">
+		<div class="choiceBoxNew tap nohighlight" link="{{#ifequal nodeType 'result'}}{{url ../result_action.feature taxon.taxonSource taxon.nameUuid taxon.taxonNuid taxon.taxonLatname }}{{else}}{{url 'nature_guide' ../uuid uuid}}{{/ifequal}}">
+			<div class="points">
+				<strong><span id="{{uuid}}-points">0</span></strong>
+				<div>
+					<small>{{t 'points'}}</small>
+				</div>
+				
+			</div>
+			<div class="title">{{tp name }}</div>
+			<div class="image"><img src="{{#if imageUrl}}{{ imageUrl.2x }}{{else}}img/noimage.svg{{/if}}" class="img-fluid" /></div>
+		</div>
+		{{#if factSheets}}
+			<div class="fact-sheet-link">
+				<a class="tap" link="{{url 'fact_sheet_modal' factSheets.0.id}}">{{tp factSheets.0.title }}</a>
+			</div>
+		{{/if}}
+	</div>
+{{/each}}

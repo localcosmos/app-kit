@@ -1,0 +1,191 @@
+{% load i18n static localcosmos_tags app_tags octicons %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<link href="{% static 'fonts/fonts.css' %}" rel="stylesheet">
+
+		<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+		<title>{{ app_kit_short_name }} {% block title %}{% endblock %}</title>
+
+		<script type="text/javascript" src="{% static 'app_kit/js/polyfills.js' %}"></script>
+
+		<!-- Bootstrap -->
+		<link href="{% static 'app_kit/bootstrap-4.3.1-dist/css/bootstrap.min.css' %}" rel="stylesheet">
+
+		<link href="{% static 'localcosmos_server/css/localcosmos_server.css' %}" rel="stylesheet">
+
+		<link href="{% static 'generic_forms/genericforms.css' %}" rel="stylesheet">
+
+
+
+		<!-- app specific -->
+		<link href="{% static 'app_kit/css/app_kit.css' %}" rel="stylesheet">
+		<link href="{% static 'app_kit/css/app.css' %}" rel="stylesheet">
+
+
+
+		<!-- slider -->
+		<link href="{% static 'app_kit/horizontal-slide/horizontal-slide.css' %}" rel="stylesheet">
+
+		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+		<script src="{% static 'app_kit/js/jquery-3.3.1.min.js' %}"></script>
+		<script src="{% static 'app_kit/js/popper.min.js' %}"></script>
+		<!-- Include all compiled plugins (below), or include individual files as needed -->
+		<script src="{% static 'app_kit/bootstrap-4.3.1-dist/js/bootstrap.min.js' %}"></script>
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/bootstrap3-typeahead.js' %}"></script>
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/jquery-taxon-autocomplete.js' %}"></script>
+
+		{% block extra_head_script %}{% endblock %}
+
+		{% block extra_style %}{% endblock %}
+
+	</head>
+
+	<body>
+		<div id="page-container" class="container-fluid pr-0 pl-0 h-100 d-flex flex-column">
+
+			<header class="sticky-top">
+
+				<nav class="appbar navbar navbar-expand-lg navbar-light bg-light">
+					<a class="navbar-brand" href="{% url 'list_app_kits' %}">
+						{% block logo %}<img src="{% static 'app_kit/images/lclogo32.png' %}" height="32" width="auto"/>{% endblock %}
+						{% block logo_name %}<span class="align-middle text-secondary">{{ app_kit_short_name }}</span>{% endblock %}
+					</a>
+					<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+
+					<div class="collapse navbar-collapse" id="navbarSupportedContent">
+						{% if request.user.is_authenticated %}
+						
+							<ul class="navbar-nav flex-row ml-md-auto d-md-flex">
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+										{% octicon "person" width="20" height="auto" %}
+									</a>
+									<div class="dropdown-menu dropdown-menu-right" aria-labelledby="accountDropdown">
+										<a href="{% url 'log_out' %}" class="dropdown-item" >{% trans 'Sign out' %}</a>
+									</div>
+								</li>
+							</ul>
+							
+						{% else %}
+							<a href="{% url 'log_in' %}" class="btn btn-outline-success ml-auto">{% trans 'Sign in' %}</a>
+						{% endif %}
+					</div>
+				</nav>
+
+			</header>
+
+
+
+			<div id="Modal" class="modal fade">
+				<div class="modal-dialog">
+					<div id="ModalContent" class="modal-content"></div>
+				</div>
+			</div>
+
+			<div id="LargeModal" class="modal fade">
+				<div class="modal-dialog modal-lg">
+					<div id="LargeModalContent" class="modal-content"></div>
+				</div>
+			</div>
+
+			<div id="mainContent" class="mb-5">
+				
+				{% block content %}
+					<div class="container-fluid">
+						<div class="row mt-3">
+							<div class="col-12 text-center">
+								<h2>{% trans 'Projects' %}</h2>
+							</div>
+						</div>
+						
+						<div class="row mt-3 justify-content-center">
+							{% for tenant in tenants %}
+								<div class="col-12 col-md-6 col-lg-3">
+									<div class="card">
+										<div class="card-header">
+											{{ tenant|title }}
+										</div>
+										<div class="card-body">
+											<h5 class="card-title">Apps:</h5>
+											<h6 class="card-subtitle mb-2 text-muted">{% trans 'select the app you want to work on' %}</h6>
+											{% for meta_app in tenant.get_meta_apps %}
+												<p>
+													<a href="{{ request.scheme }}://{{ meta_app.full_url }}" class="card-link">{{ meta_app }}</a>
+												</p>
+											{% endfor %}
+										</div>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+						
+					</div>
+				{% endblock %}
+
+			</div>	
+			
+
+			<div id="footer" class="d-flex flex-column mt-auto">
+			
+				{% block footer_first %}
+				{% endblock %}
+
+				<div class="container-fluid">
+					<div class="container">
+						<div class="row">
+							<div class="col-12 mt-2">
+								<ul class="nav justify-content-center">
+									<li class="nav-item">
+										<small><a class="nav-link text-secondary xhr" href="{% url 'legal_notice' %}" ajax-target="LargeModalContent">{% trans 'Legal notice' %}</a></small>
+									</li>
+									<li class="nav-item">
+										<small><a class="nav-link text-secondary xhr" href="{% url 'privacy_statement' %}" ajax-target="LargeModalContent">{% trans 'Privacy' %}</a></small>
+									</li>
+								</ul>
+							</div>
+							<div class="col-12 text-muted text-center">
+								{% get_build_parameters as build_params %}
+								<small>Build: {{ build_params.CI_BUILD }} | Build date: {{ build_params.CI_BUILD_DATE }} | Git Revision: {{ build_params.GIT_REVISION }}</small>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+
+
+		</div>
+		<script src="{% static 'localcosmos_server/js/django-ajax-csrf.js' %}"></script>
+
+
+		<!-- horizontal slider -->
+		<script type="text/javascript" src="{% static 'app_kit/js/hammer.js' %}"></script>
+		<script type="text/javascript" src="{% static 'app_kit/horizontal-slide/horizontal-slide.js' %}"></script>
+
+		<!-- pagination -->
+		<script type="text/javascript" src="{% static 'el-pagination/js/el-pagination.js' %}"></script>
+
+		<script type="text/javascript" src="{% static 'localcosmos_server/js/django-ajax.js' %}"></script>
+		<script>
+			ajaxify("mainContent");
+			ajaxify("appbar-items");
+			ajaxify("footer");
+
+			$('form').submit(function() {
+				$(this).find('button[type="submit"]').attr('disabled', true);
+			});
+
+		</script>
+		{% block extra_script %}{% endblock %}
+
+	</body>
+</html>

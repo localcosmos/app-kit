@@ -1,0 +1,264 @@
+{% load i18n static app_tags octicons %}
+
+<div id="matrix-filters" class="text-left">
+	{% if meta_node_has_matrix_filters %}
+		<div class="row mb-4">
+			<div class="col-12">
+				<button id="btn-reset-filters" type="button" class="btn btn-sm btn-secondary">{% octicon "sync" %} {% trans 'reset selection' %}</button>
+				
+			</div>
+		</div>
+		<hr />
+	{% endif %}
+
+	<form id="matrix-filters-form">
+
+		{% if meta_node_has_matrix_filters %}
+			<div class="matrixfiltermanagement" data-store-positions-url="{% url 'store_app_kit_object_order' matrix_filter_ctype.id %}">
+
+				{% for field in form %}
+					<div id="matrix_filter_{{ field.field.matrix_filter.id }}" {% if field.field.matrix_filter.is_restricted %}class="restricted-matrix-filter"{% endif %} data-object-id="{{ field.field.matrix_filter.id }}">
+						<div class="mb-2">
+							<strong>{{ field.label }}</strong>
+							
+							{% if field.field.matrix_filter.definition.unit %}
+								({{ field.field.matrix_filter.definition.unit }})
+							{% endif %}
+							{% if field.field.matrix_filter.definition.identification_means %}
+								{% for means in field.field.matrix_filter.definition.identification_means %}
+									<img src="{% static 'app_kit/images/' %}{{ means  }}.svg" title="{{ means }}" class="identification-means" />
+								{% endfor %}
+							{% endif %}
+							{% if field.field.matrix_filter.definition.allow_multiple_values %}
+								({% trans 'multiple choices' %})
+							{% endif %}
+							
+							{% if field.field.matrix_filter.is_restricted %}
+								<span id="{{ field.field.matrix_filter.uuid }}_restriction_indicator" class="badge badge-danger">{% trans 'visibility' %}</span>
+								<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
+							{% endif %}
+
+							{% if not field.field.matrix_filter.is_active %}
+								&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>
+							{% endif %}
+							
+							<div class="btn-group dropup">
+								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'modify' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu">
+									<a data-url="{% url 'manage_matrix_filter' meta_app.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.label %}Edit {{ name }}{% endblocktrans %}</a>
+									<a data-url="{% url 'manage_matrix_filter_restrictions' meta_app.id meta_node.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Manage visibility{% endblocktrans %}</a>
+									<a data-url="{% url 'delete_matrix_filter' meta_app.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.label %}Remove {{ name }}{% endblocktrans %}</a>
+		
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center moveforwardbutton" data-targetid="matrix_filter_{{ field.field.matrix_filter.id }}">&#9650; {% trans 'Move up' %}</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item text-center movebackbutton" data-targetid="matrix_filter_{{ field.field.matrix_filter.id }}">&#9660; {% trans 'Move down' %}</a>
+								</div>
+								{% if field.field.matrix_filter.matrix_filter_type.is_multispace %}
+									&nbsp;<a href="#" data-url="{% url 'create_matrix_filter_space' meta_app.id field.field.matrix_filter.id %}" class="btn btn-outline-primary btn-xs xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.field.matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}</a>
+								{% endif %}
+							</div>
+						</div>
+						{{ field }}
+						<hr>
+					</div>
+				{% endfor %}
+			</div>
+			{% else %}
+				<div class="alert alert-info">
+					{% trans 'You have not defined traits for this part of your nature guide yet. You can add traits below.' %}
+				</div>
+			{% endif %}
+	</form>
+
+</div>
+
+<script>
+	(function(){
+		$(".matrixfiltermanagement .moveforwardbutton").on("click", positionmanager.onMoveForward);
+		$(".matrixfiltermanagement .movebackbutton").on("click", positionmanager.onMoveBack);
+	})();
+
+	// load the matrix functionality
+	function get_items(callback){
+		$.get("{% url 'get_identification_matrix' meta_node.id %}", function(json){
+			callback(json);
+		});
+	}
+	
+	var update_mode_urls = {
+		"fluid" : "{% url 'store_identification_mode' meta_node.id 'fluid' %}",
+		"strict" : "{% url 'store_identification_mode' meta_node.id 'strict' %}"
+	};
+
+	var identification_options = {
+		"mode" : "{% if meta_node.settings.identification_mode == 'strict' %}strict{% else %}fluid{% endif %}"
+	};
+	
+	var identification = new IdentificationMatrix('matrix-filters-form', get_items, identification_options);
+	
+	
+	// add event listeners
+	var identificationForm = document.getElementById("matrix-filters-form");
+	var inputs = identificationForm.querySelectorAll('input[type=radio], input[type=checkbox]');
+
+	var sorted_out_container = document.getElementById("sorted-out-keynodes");
+	var sorted_in_container = document.getElementById("keynodes");
+
+	for (let i=0; i<inputs.length; i++){
+		let input = inputs[i];
+		input.addEventListener("turnedOn", function(event){
+		
+			let element = event.currentTarget;
+			// slide to the beginning
+			let space_wrap_id = element.getAttribute("data-container-id");
+
+			let space_wrap = document.getElementById(space_wrap_id);
+			let space_container = space_wrap.firstElementChild;
+			
+			space_container.classList.add("is-active");
+		
+		});
+		
+		input.addEventListener("turnedOff", function(event){
+		
+			let element = event.currentTarget;
+			// slide to the beginning
+			let space_wrap_id = element.getAttribute("data-container-id");
+
+			let space_wrap = document.getElementById(space_wrap_id);
+			let space_container = space_wrap.firstElementChild;
+			
+			space_container.classList.remove("is-active");
+		
+		});
+		
+		input.addEventListener("possible", function(event){
+			let input = event.currentTarget;
+			
+			//if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+			//}
+			//else {
+				input.parentElement.classList.remove("matrix-filter-inactive");
+			//}
+		});
+		
+		input.addEventListener("impossible", function(event){
+			let input = event.currentTarget;
+		
+			//if (event.detail.matrix_filter.matrix_filter_type == "RangeFilter"){
+			//}
+			//else {
+				input.parentElement.classList.add("matrix-filter-inactive");
+			//}
+		});
+	}
+	
+	var range_inputs = identificationForm.querySelectorAll('input[type=range]');
+	
+	for (let r=0; r<range_inputs.length; r++){
+		let range_input = range_inputs[r];
+		
+		range_input.addEventListener("turnedOff", function(event){
+		
+			event.currentTarget.clear(); // custom fn added in widgets/range.html
+		
+		});
+	}
+
+	$('#btn-reset-filters').on('click', function(event){
+		identification.reset();
+	});
+	
+	
+	identificationForm.addEventListener("activate-matrix-filter", function(event){
+		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
+				
+		restriction_indicator.classList.remove("badge-danger");
+		restriction_indicator.classList.add("badge-success");
+	});
+	
+	identificationForm.addEventListener("deactivate-matrix-filter", function(event){
+		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
+				
+		restriction_indicator.classList.add("badge-danger");
+		restriction_indicator.classList.remove("badge-success");
+	});
+
+	
+	// FLUID MODE
+	identificationForm.addEventListener("update-matrix-item", function(event){
+
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+
+		matrix_item_element.style.order = matrix_item.points * (-1);
+		
+		// update point percentage
+		let points_span = document.getElementById(matrix_item.uuid + "-points");
+		if (matrix_item.points > 0){
+			points_span.textContent = parseInt(matrix_item.points_percentage * 100) + "% (" + matrix_item.points + "/" + matrix_item.max_points + ")";
+		}
+		else {
+			points_span.textContent = "";
+		}
+		
+	});
+	
+	
+	// STRICT MODE
+	identificationForm.addEventListener("activate-matrix-item", function(event){
+		
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+
+		sorted_in_container.appendChild(matrix_item_element);
+		
+		//matrix_item_element.style.display = "";
+		
+	});
+	
+	identificationForm.addEventListener("deactivate-matrix-item", function(event){
+		
+		let matrix_item = event.detail.matrix_item;
+		
+		let matrix_item_element = document.getElementById(matrix_item.uuid);
+		
+		sorted_out_container.appendChild(matrix_item_element);
+		
+		//matrix_item_element.style.display = "none";
+		
+	});
+	
+	// bootstrap 4 prevents "change" - Event on radio buttons. This is an ugly workaround
+	function switch_mode(event){
+	
+		let label = event.currentTarget;
+	
+		let input = document.getElementById(label.getAttribute("data-input-id"));
+
+		let mode = event.currentTarget.getAttribute("data-value");
+		if (mode && input.checked == false){
+			identification.set_mode(mode);
+			
+			// update mode in database
+			let update_mode_url = update_mode_urls[mode];
+			$.get(update_mode_url, function(json){
+				console.log(json);
+			});
+		}
+		
+	}
+	
+	var mode_switch_buttons = document.querySelectorAll(".identification-mode-label");
+
+	for (let m=0; m<mode_switch_buttons.length; m++){
+		let mode_button = mode_switch_buttons[m];
+		
+		mode_button.addEventListener("click", switch_mode);
+	}
+</script>

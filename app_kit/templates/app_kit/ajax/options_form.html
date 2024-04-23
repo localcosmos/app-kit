@@ -1,0 +1,21 @@
+{% load i18n localcosmos_tags %}
+{% if options_form %}
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Options' %}</h4>
+			<div>
+				<form id="options-form-{{ generic_content.uuid }}" action="{% url generic_content.manage_url meta_app.id generic_content|ctype_id generic_content.id %}" method="POST">{% csrf_token %}
+					{% render_bootstrap_form options_form %}
+					{% if saved_options %}
+						<div class="alert alert-success">{% trans 'Successfully saved options.' %}</div>
+					{% endif %}
+					<br>
+					<div>
+						<button type="submit" class="btn btn-outline-primary">{% trans 'Save options' %}</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+	<hr>
+{% endif %}

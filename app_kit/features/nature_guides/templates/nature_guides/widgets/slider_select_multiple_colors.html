@@ -1,0 +1,15 @@
+{% extends 'nature_guides/widgets/horizontal_choices.html' %}
+
+{% block size %}large{% endblock %}
+
+{% block input %}
+	<input id="choice_{{ widget.name }}_{{ option.index }}" type="{% if allow_multiple_values %}checkbox{% else %}radio{% endif %}" name="{{ widget.name }}" value="{{ option.value }}" data-value="{{ option.value }}" {% if option.value in widget.value %}checked{% endif %} />
+{% endblock %}
+{% block label %}
+	<label for="choice_{{ widget.name }}_{{ option.index }}" class="matrix-filter-color">
+		<div class="square responsiveback" {% if option.gradient %}style="background-image: {{ option.label }};"{% else %}style="background-color: {{ option.label }};"{% endif %}></div>
+		{% if option.description %}
+			<div>{{ option.description }}</div>
+		{% endif %}
+	</label>
+{% endblock %}

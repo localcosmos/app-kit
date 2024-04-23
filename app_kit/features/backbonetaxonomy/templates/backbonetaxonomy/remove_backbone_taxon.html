@@ -1,0 +1,31 @@
+{% load i18n localcosmos_tags %}
+{% if deleted %}
+	<script>
+		var url = "{% url 'manage_backbonetaxonomy' meta_app_id backbone|ctype_id backbone.id %}?contenttypeid={{ backbone|ctype_id }}&objectid={{ backbone.id }}";
+		$.get(url, function(html){
+			$("#taxa").html(html);
+			ajaxify("taxa");
+		});
+		$("#Modal").modal("hide");
+	</script>
+{% else %}
+	<form method="POST" action="{% url 'remove_backbone_taxon' meta_app_id backbone.id name_uuid source %}" class="xhr">{% csrf_token %}
+		<div class="modal-header">
+			<h5 class="modal-title">{% blocktrans with name=taxon.taxon_latname %}Remove {{ name }}{% endblocktrans %}</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<p>
+				{% blocktrans with name=taxon.taxon_latname %}Do you really want to remove {{ name }} from this backbone taxonomy? This will not affect identification keys, matrices or other content.{% endblocktrans %}
+			</p>
+		</div>
+		<div class="modal-footer">
+			{% include 'localcosmos_server/modals/footers/delete.html' %}
+		</div>
+	</form>
+	<script>
+		$("#Modal").modal("show");
+	</script>
+{% endif %}

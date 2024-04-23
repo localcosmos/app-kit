@@ -1,0 +1,14 @@
+<div id="{{popup_id}}">
+	{{#each datasets}}
+		<div>
+			<b>{{vernacular fields.nameUuid }} (<i>{{ fields.taxonLatname }}</i>)<b>
+			<br>
+			{{verbose_datetime fields.timestamp}}
+			<div id="mapmarker-popup-images-{{pk}}"></div>
+			<div class="mt-1">
+				<button type="button" link="{{url 'observation_detail' pk }}" class="tap btn btn-sm btn-outline-primary">{{tp 'view details'}}</button>
+			</div>
+		</div>
+		<hr>
+	{{/each}}
+</div>

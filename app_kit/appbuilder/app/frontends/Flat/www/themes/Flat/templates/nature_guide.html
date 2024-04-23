@@ -1,0 +1,226 @@
+<div id="nature-guide" class="page nature-guide">
+	
+	<div id="nature-guide-container" data-is-open="0">
+		<div id="identification-matrix-new">
+			{{#if node.matrixFilters}}
+				<div id="identification-matrix" class="pb-5">
+
+					<div class="pt-5 pb-3">
+						<div class="col-12 text-center ">
+							<h3>{{t node.name}}</h3>
+							{{# if node.overviewImage}}
+							<div id="overview-images" class="row mt-3 justify-content-center">
+
+									<div class="tap" data-hd-url="{{node.overviewImage.8x}}" data-image-url="{{node.overviewImage.4x}}" action="ImageViewer.toggle" data-imageviewer-mode="watch" data-thumb-container-id="overview-images">
+										<img id="overview-img" class="overview-img"  src="/img/overview-round.svg" />
+									</div>
+
+							</div>
+								
+							{{/if}}
+						</div>
+						{{#if node.factSheets}}
+							<div class="col-12 text-center">
+								<a class="tap" link="{{url 'fact_sheet_modal' node.factSheets.0.id}}">{{tp node.factSheets.0.title }}</a>
+							</div>
+						{{/if}}
+						<div class="col-12 text-center">
+							{{#if automatics}}
+							<hr>
+							{{/if}}
+						</div>
+						
+					</div>
+
+					<div>
+						<form id="matrix-filters-form">
+							<div class="d-none d-md-block my-3">
+								<button type="button" class="btn btn-secondary tap" action="reset_matrix_filters"><i class="restart-button">&nbsp;</i> {{t 'restart'}}</button>
+							</div>
+
+							{{#each node.matrixFilters}}
+								<div id="{{uuid}}" class="matrix-filter px-3 mt-2 {{#if isRestricted}}is-restricted restriction-active{{/if}}" current-selection="">
+									<div class="matrix-filter-name py-3">
+										<strong>{{t name }}</strong>
+										{{#if allowMultipleValues }}<small>({{t 'multiple choice'}})</small>{{/if}}
+										{{#if definition.unit}}<span>({{definition.unit}})</span>{{/if}}
+									</div>
+									{{#ifequal type 'DescriptiveTextAndImagesFilter'}}
+										<div class="row">
+
+											{{#each space}}
+												<div class="col-6 col-md-3 col-lg-3 col-xl-2 mb-3">
+													<div class="trait-property dtai">
+														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
+														<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
+															<div id="{{../uuid}}-{{encodedSpace}}-primary-image" class="square responsiveback" style="background-image:url('{{#if imageUrl}}{{imageUrl.2x}}{{else}}img/noimage.svg{{/if}}')"></div>
+															
+														</label>
+														{{#if secondaryImageUrl}}
+															<div class="secondary-image">
+																<img class="secondary-dtai-image tap" action="switchImage" src="{{secondaryImageUrl.2x}}" data-primary-image-id="{{../uuid}}-{{encodedSpace}}-primary-image" data-primary-image-url="{{ imageUrl.2x }}" data-secondary-image-url="{{ secondaryImageUrl.2x }}" />
+															</div>
+														{{/if}}
+														<div class="trait-property-text dtai text-center p-1">{{t encodedSpace}}</div>
+													</div>
+												</div>
+											{{/each}}
+
+										</div>
+									{{/ifequal}}
+									{{#ifequal type 'TextOnlyFilter'}}
+
+										<div class="row align-items-stretch">
+											{{#each space}}
+												<div class="col-6 col-lg-4 col-xl-2 mb-3">
+
+													<div class="trait-property text-only">
+														<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
+														<div>
+															<div class="trait-property-text">{{t encodedSpace}}</div>
+															<div>
+																<label for="{{../uuid}}-{{encodedSpace}}" class="text-center trait-property-indicator">
+																	&nbsp;
+																</label>
+															</div>
+														</div>
+													</div>
+												</div>
+											{{/each}}
+										</div>
+
+									{{/ifequal}}
+									{{#ifequal type 'ColorFilter'}}
+										<div class="container-fluid">
+											<div class="row">
+
+												{{#each space}}
+													<div class="col-4 col-md-3 col-lg-2 col-xl-2 col-xxl-1 mb-3">
+														<div class="trait-property">
+															<input id="{{../uuid}}-{{@index}}" type="checkbox" name="{{../uuid}}" value="{{stringify encodedSpace }}" data-value="{{stringify encodedSpace }}" data-spaceIdentifier="{{spaceIdentifier}}" />
+															<label for="{{../uuid}}-{{@index}}" class="text-center">
+																<div class="square responsiveback" {{#if gradient}}style="background-image:{{html}};"{{else}}style="background-color:{{html}};"{{/if}}></div>
+																{{#if description}}
+																	<div>
+																		{{ description }}
+																	</div>
+																{{/if}}
+															</label>
+														</div>
+													</div>
+												{{/each}}
+
+											</div>
+										</div>
+									{{/ifequal}}
+									{{#ifequal type 'RangeFilter'}}
+										<div class="range-container mb-4">
+
+											<div class="range-output mb-2">
+												<div class="row justify-content-center">
+													<div class="col-8 col-md-10">
+														<span id="output-{{uuid}}">off</span> <span id="{{uuid}}_unit" style="display:none;">{{#if definition.unit}}{{definition.unit}}{{/if}}</span>
+														<span id="{{uuid}}-onactive" style="display:none;">
+															{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
+															<button id="{{uuid}}-clearbtn" data-uuid="{{uuid}}" type="button" class="btn btn-outline-secondary btn-sm clearrangebtn">{{t 'clear'}}</button>
+														</span>
+													</div>
+												</div>
+											</div>
+
+											<div class="clearable-range-slider">
+												<div class="row">
+													<div>
+														{{space.[0].encodedSpace.[0]}}
+														{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
+													</div>
+													<div class="col-6 col-md-8 col-lg-10">
+														<input id="{{uuid}}_range" data-uuid="{{uuid}}" type="range" name="{{uuid}}" min="{{space.[0].encodedSpace.[0]}}" max="{{space.[0].encodedSpace.[1]}}" {{#if definition.step}}step="{{definition.step}}"{{/if}} />
+													</div>
+													<div class="col-3 col-md-2 col-lg-1">
+														{{space.[0].encodedSpace.[1]}}
+														{{#if definition.unit}}<span>{{definition.unit}}</span>{{/if}}
+													</div>
+												</div>
+												
+											</div>
+
+										</div>
+									{{/ifequal}}
+									{{#ifequal type 'NumberFilter'}}
+										<div class="container-fluid">
+											<div class="row">
+
+												{{#each space}}
+													<div class="col-3 col-lg-2 col-xl-1 mb-3">
+														<div class="trait-property">
+															<input id="{{../uuid}}-{{encodedSpace}}" type="checkbox" name="{{../uuid}}" value="{{ encodedSpace }}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
+															<label for="{{../uuid}}-{{encodedSpace}}" class="text-center">
+																<div class="square responsiveback numbercontainer">
+																	<span>{{encodedSpace}}</span>
+																</div>
+															</label>
+														</div>
+													</div>
+												{{/each}}
+
+											</div>
+										</div>
+									{{/ifequal}}
+									{{#ifequal type 'TaxonFilter'}}
+										<div class="container-fluid">
+											<div class="row">
+												
+												{{#each space}}
+													<div class="col-4 col-md-3 col-lg-2 col-xl-1 mb-3">
+														<div class="trait-property">
+															<input id="{{../uuid}}-{{latname}}" type="checkbox" name="{{../uuid}}" value="{{encodedSpace}}" data-value="{{encodedSpace}}" data-spaceIdentifier="{{spaceIdentifier}}" />
+															<label for="{{../uuid}}-{{latname}}" class="text-center">
+																<div class="square responsiveback contain taxonfilter" {{#if isCustom}}style="background-image:url('img/taxonfilters/Customfilter.svg');"{{else}}style="background-image:url('img/taxonfilters/{{latname}}.svg');"{{/if}}>
+																	<div>{{#if isCustom}}{{shortName}}{{/if}}</div>
+																</div>
+																<div><small><i>{{latname}}</i></small></div>
+															</label>
+														</div>
+													</div>
+												{{/each}}
+												
+											</div>
+										</div>
+									{{/ifequal}}
+								</div>
+							{{/each}}
+						</form>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+		<div id="keynodes-page-new">
+			
+			<div id="keynodes-title" class="py-3 text-center">
+				<strong>{{t 'Evaluation'}}</strong><br>
+				<small><span>{{t 'Sorted by match'}}</span></small>
+				<div class="text-left mt-3 d-md-none">
+					{{t 'Continue with...'}}
+				</div>
+			</div>
+	
+			<div id="keynodes" class="row flex-column no-gutters justify-content-center">
+	
+				<div class="text-loader">...{{tp 'Loading'}}...</div>
+			</div>
+			<div class="keynodes-divider mb-3"></div>
+			<div id="sorted-out-keynodes" class="row flex-column no-gutters justify-content-center"></div>
+			
+		</div>
+	</div>
+	
+	
+
+	
+</div>
+{{#if node.matrixFilters}}
+	<div id="toggleMatrixItemsButton" class="tap" action="ToggleMatrixItems.open">
+		<img src="themes/Flat/img/funnel.svg" />
+	</div>
+{{/if}}

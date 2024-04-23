@@ -1,0 +1,9 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n %}
+
+{% block success_js %}
+	<script>
+		$("#Modal").modal("hide");
+	</script>
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+{% endblock %}

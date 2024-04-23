@@ -1,0 +1,52 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% url 'manage_matrix_filter_restrictions' meta_app.id meta_node.id matrix_filter.id %}{% endblock %}
+
+{% block title %}
+	{% blocktrans with name=matrix_filter.name %}Manage visibility of {{ name }}{% endblocktrans %}
+{% endblock %}
+
+{% block body %}
+	<p class="alert alert-info">
+		{% blocktrans with name=matrix_filter.name %}Select the trait values which trigger the display of {{ name }}. If nothing is selected, {{ name }} will always be visible.{% endblocktrans %}
+	</p>
+	
+	<p class="nodelinkform">
+		{% block form %}
+			
+			{% for field in form %}
+				{% include 'localcosmos_server/bootstrap_field.html' %}
+				
+			{% endfor %}
+
+			{% if success is True %}
+				<script>
+					if (typeof identification != 'undefined' && identification != null){
+						identification.reload();
+					}
+				</script>
+			{% endif %}
+
+		{% endblock %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% trans 'Successfully saved matrix filter restrictions.' %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+		<script>
+			$("#LargeModal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}
+

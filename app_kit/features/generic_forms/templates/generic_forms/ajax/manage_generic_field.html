@@ -1,0 +1,123 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n genericforms app_tags localcosmos_tags %}
+
+{% block action %}{% if generic_field %}{% url 'edit_generic_field' meta_app.id generic_form.id generic_field.id %}{% else %}{% url 'create_generic_field' meta_app.id generic_form.id %}{% endif %}{% endblock %}
+
+
+{% block title %}{{ form|fieldform_title }}{% endblock %}
+
+{% block body %}
+	<p>
+		{% for field in form %}
+			
+			{% if field.name == "is_required" %}
+				<div class="row">
+					<div class="col-6">
+						{% if generic_field_class != "MultipleChoiceField" %}
+							{% render_bootstrap_field field %}
+						{% endif %}
+					</div>
+				</div>
+					
+				{% if generic_field_class == "ChoiceField" or generic_field_class == "MultipleChoiceField" %}
+					<div class="row">
+						<div class="col-12">
+							{% if generic_field %}
+								<div id="fieldchoices-{{ generic_field.id }}">
+									{% include 'generic_forms/ajax/manage_generic_field_choices.html' %}
+								</div>
+							{% else %}
+								<div class="alert alert-info">
+									{% trans 'HINT: Choices can be added after you have saved the label.' %}
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				{% endif %}
+			{% else %}
+				{# option fields #}
+				{% if field.is_hidden %}
+					{{ field }}
+				{% else %}
+					<div class="row">
+						<div class="{% if field.field.is_option_field %}col-6{% else %}col-12{% endif %}">
+							{% render_bootstrap_field field %}
+						</div>
+					</div>
+				{% endif %}
+
+				{% if field.name == "widget" %}
+					<hr>
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+		
+	</p>
+
+	{% if form.non_field_errors %}
+		<div class="alert alert-danger">{{ form.non_field_errors.as_text }}</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block below %}
+	</form>
+	{% if generic_field.role == "regular" or generic_field.field_class == "TaxonField" or generic_field.field_class == "SelectTaxonField" %}
+		<div class="modal-body">
+			<a class="btn btn-outline-primary" role="button" data-toggle="collapse" href="#fieldtaxonomicrestriction" aria-expanded="false" aria-controls="collapseExample">
+				{% trans 'Taxonomic restriction' %}
+			</a>
+			<div class="collapse mt-2" id="fieldtaxonomicrestriction">
+				<div>
+					{% if generic_field.role == "regular" %}
+						{% render_taxonomic_restriction meta_app.app generic_field 'typed' %}
+					{% else %}
+						{% render_taxonomic_restriction meta_app.app generic_field %}
+					{% endif %}
+				</div>
+			</div>
+
+		</div>	
+	{% endif %}
+{% endblock %}
+
+{% block open_modal %}
+	<script>
+		{% if success is True %}
+
+			$.get("{% url 'get_generic_field' meta_app.id generic_form.id generic_field.id %}", function(html){
+				{% if created %}
+					{% if generic_field.role == "regular" %}
+						$("#generic-form-{{ generic_field.role }}-fields").append(html);
+						ajaxify("li-{{ generic_field_link.id }}");
+						// attach move buttons
+						$("#li-{{ generic_field_link.id }} .moveforwardbutton").on("click", positionmanager.onMoveForward);
+						$("#li-{{ generic_field_link.id }} .movebackbutton").on("click", positionmanager.onMoveBack);
+					{% else %}
+						$("#generic-form-{{ generic_field.role }}-fields").html(html);
+						ajaxify("generic-form-{{ generic_field.role }}-fields");
+					{% endif %}
+				{% else %}
+					$("#li-{{ generic_field_link.id }}").replaceWith(html);
+					ajaxify("li-{{ generic_field_link.id }}");
+				{% endif %}
+			});
+
+			{% if generic_field.field_class == 'MultipleChoiceField' or generic_field.field_class == 'ChoiceField' %}
+				{% if created %}
+				{% else %}
+					$("#Modal").modal("hide");
+				{% endif %}
+			{% else %}
+				$("#Modal").modal("hide");
+			{% endif %}
+		{% else %}
+			$("#Modal").modal("show");
+		{% endif %}
+	</script>
+{% endblock %}
+

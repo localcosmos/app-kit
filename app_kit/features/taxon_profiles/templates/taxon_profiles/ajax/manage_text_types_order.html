@@ -1,0 +1,81 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+{% block above %}
+	{% if success is True %}
+		<script>
+
+			// reload taxon texts form
+			$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}", function(html){
+				$('#taxontexts').html(html);
+				ajaxify('taxontexts');
+
+			});
+			
+			$("#Modal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}
+
+{% block title %}{% trans 'Manage text order' %}{% endblock %}
+
+{% block body %}
+	<div class="alert alert-info my-3">
+		{% trans 'Drag and drop for ordering.' %}
+	</div>
+	<hr>
+	<div id="text-types-for-ordering" class="row p-3" data-store-positions-url="{% url 'store_app_kit_object_order' text_types_content_type.id %}">
+		{% for text_type in text_types %}
+			<div id="text-type-order-{{ text_type.id }}" data-object-id="{{ text_type.id }}" class="col-12 text-type-order-entry my-1 p-3">
+				{{ text_type.text_type }}
+			</div>
+		{% endfor %}
+	</div>
+{% endblock %}
+
+
+{% block footer %}
+		{% include 'localcosmos_server/modals/footers/close.html' %}
+{% endblock %}
+
+{% block script %}
+	<script>
+
+		(function(){
+			var container = document.getElementById('text-types-for-ordering');
+
+			// enable drag and drop
+			var sortable = Sortable.create(container, {
+				onEnd: function (evt) {
+					var itemEl = $(evt.item);  // dragged HTMLElement
+					positionmanager.store_positions(itemEl);
+
+					var $parent = itemEl.parent(); 
+
+					var order = [];
+
+					$parent.children().each(function(){
+						order.push(parseInt($(this).attr("data-object-id")));
+					});
+
+					// also sort text fields
+					const formFieldsContainer = document.getElementById("text-types-form-fields");
+
+					const formFields = formFieldsContainer.children;
+
+					console.log(formFields)
+
+					for (let c=0; c<formFields.length; c++){
+						let field = formFields[c];
+
+						if (field.hasAttribute("data-text-type-id")){
+							let text_type_id = parseInt(field.getAttribute("data-text-type-id"));
+							field.style.order = order.indexOf(text_type_id);
+						}
+					}
+				}
+			});
+		})()
+
+	</script>
+{% endblock %}

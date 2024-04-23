@@ -1,0 +1,211 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags %}
+{% block content %}
+<form id="translate-app-form" method="POST" action="{% url 'translate_app' meta_app.id %}?page={{ form.page }}" enctype="multipart/form-data">{% csrf_token %}
+
+	<div class="container">
+
+		<div class="row">
+			<div class="col-12">
+
+				<br>
+				<h3>{% trans 'Translations' %}</h3>
+			</div>
+		</div>
+
+		<hr>
+
+		<div class="row">
+			<div class="col-12">
+				{% include 'app_kit/ajax/translate_app_pagination.html' %}
+			</div>
+		</div>
+
+		<hr>
+
+		<div class="row">
+			<div class="col-12">
+
+				{% if saved %}
+					<div class="alert alert-success">
+						{% trans 'Your translations have been saved.' %}
+					</div>
+				{% endif %}
+					
+				{% for field in form %}						
+					{% if field.field.is_first %}
+						<div class="card">
+  							<div class="card-body">
+								<div class="form-row">
+									<div class="col-2 col-md-1 text-right">
+										{{ meta_app.primary_language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ meta_app.primary_language }}.gif" />
+									</div>
+									<div id="{{ field.field.language_independant_identifier }}" class="col-10 col-md-11 text-left">
+										{% if field.field.is_image %}
+											<img class="img-fluid translation-image" src="{{ field.field.primary_language_image_url }}" />
+										{% else %}
+											{{ field.label|safe }}
+										{% endif %}
+									</div>
+								</div>
+								<br>
+					{% endif %}
+					<div class="form-row">
+						<div class="col-2 col-md-1 col-form-label text-right">
+							{{ field.field.language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" />
+						</div>
+						<div class="col-10 col-md-11 text-left">
+							{{ field }}
+						</div>
+					</div>
+
+					{% if field.field.is_image %}
+					{% else %}
+						<div class="form-row">
+							<div class="col-12 pl-5 mt-1 mb-3">
+								<div class="ml-5">
+									<button type="button" class="btn btn-sm btn-secondary get-translation-button mr-2" data-primary-language-text="{{ field.field.language_independant_identifier  }}" data-target-language="{{ field.field.language }}" data-field-id="{{ field.id_for_label }}">{% trans 'automatic translation' %}</button>
+									<img src="{% static 'app_kit/images/spinner.gif' %}" class="translation-spinner d-none" />
+									<span class="text-muted"></span>
+								</div>	
+							</div>
+						</div>
+					{% endif %}
+					<br>
+					{% if field.field.is_last %}
+							</div>
+						</div>
+						<br>
+					{% endif %}
+
+				{% endfor %}
+
+			</div>
+		</div>
+
+		<hr>
+		<div class="row">
+			<div class="col-12">
+				{% include 'app_kit/ajax/translate_app_pagination.html' %}
+			</div>
+		</div>
+
+	</div>
+
+	<div class="fixed-bottom">
+		<div class="container">
+
+			<div class="card bg-light">
+				<div class="card-body text-center">
+					<button type="submit" class="btn btn-outline-primary">{% trans 'Save translations' %}</button>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</form>
+{% endblock %}
+
+{% block extra_script %}
+	<script src="{% static 'template_content/ckeditor5-build-classic/ckeditor.js' %}"></script>
+	<script>
+
+		var editors = {};
+		let editor;
+		{% for field in form %}
+			{% if field.field.layoutability == 'layoutable-full' %}
+				ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'template_content/ckeditor/layout-complex.js' %}).then( editor => {
+					editors['id_{{ field.name }}'] = editor;
+				});
+				
+			{% else %}
+				{% if field.field.layoutability == 'layoutable-simple' %}
+					ClassicEditor.create( document.getElementById('id_{{ field.name }}'), {% include 'template_content/ckeditor/layout-simple.js' %});
+				{% endif %}
+			{% endif %}
+		{% endfor %}
+	</script>
+
+	<script>
+		(function(){
+			var translation_form = document.getElementById("translate-app-form");
+			var deepL_buttons = translation_form.getElementsByClassName("get-translation-button");
+
+			function fetchTranslation(event){
+				event.preventDefault();
+
+				var button = event.currentTarget;
+				var spinner = event.currentTarget.nextElementSibling;
+				var textMessageSpan = spinner.nextElementSibling;
+
+				var primary_language_text_id = button.getAttribute("data-primary-language-text");
+				var primary_language_text = document.getElementById(primary_language_text_id);
+
+				var target_field_id = button.getAttribute("data-field-id");
+				var target_field = document.getElementById(target_field_id);
+
+				var text_content = primary_language_text.textContent.trim();
+				var target_language = button.getAttribute("data-target-language");
+
+				spinner.classList.remove("d-none");
+
+				textMessageSpan.textContent = "{% trans 'fetching translation from DeepL' %}";
+
+				function onError(){
+					$.get("{% url 'get_translation' meta_app.id %}", function(html){
+						$("#ModalContent").html(html);
+						$("#Modal").modal("show");
+					});
+				}
+
+				$.ajax({
+					type: "POST",
+					url: "{% url 'get_translation' meta_app.id %}",
+					data: {
+						"text" : text_content,
+						"target-language" : target_language
+					},
+					success: function(response){
+						/*
+						* {"translation":{"translations":[{"detected_source_language":"DE","text":"This is a text"}]},"success":true}
+						*/
+						let translated_text = null;
+
+						if (response["success"] === true){
+							try {
+								translated_text = response["translation"];
+							}
+							catch(e){
+								console.log("[AppKit] error in getting translation from DeepL:");
+								console.log(e);
+							}
+						}
+
+						if (translated_text == null){
+							onError();
+						}
+						else {
+							if (editors.hasOwnProperty(target_field.id)){
+								let editor = editors[target_field.id];
+								editor.setData(translated_text);
+							}
+							target_field.value = translated_text;
+						}
+					},
+					error : onError,
+					complete : function(){
+						spinner.classList.add("d-none");
+						textMessageSpan.textContent = "";
+					},
+					dataType: "json"
+				});
+
+			}
+
+			for (let b=0; b<deepL_buttons.length; b++){
+				let button = deepL_buttons[b];
+				button.addEventListener("click", fetchTranslation);
+			}
+		})();
+	</script>
+{% endblock %}

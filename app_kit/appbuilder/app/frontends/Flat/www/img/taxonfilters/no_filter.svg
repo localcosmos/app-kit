@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="100%"
+   height="100%"
+   viewBox="0 0 100 100"
+   id="svg7610"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="no_filter.svg">
+  <defs
+     id="defs7612" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.4"
+     inkscape:cx="-75.02123"
+     inkscape:cy="38.448523"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1016"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7615">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-327.14285,-448.07648)">
+    <circle
+       style="opacity:1;fill:#55b5dd;fill-opacity:1;stroke:none;stroke-width:10;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="path4136-0-3"
+       cx="377.14285"
+       cy="498.07648"
+       r="50" />
+    <path
+       style="display:inline;fill:#ffffff;fill-opacity:1;stroke:none"
+       d="m 356.04687,530.76134 c 0.25061,-4.09403 0.51892,-7.63771 2.1907,-13.15294 -0.0216,-0.009 2.27153,-3.43926 2.47244,-3.98776 0.30597,-0.83538 -0.84944,-7.39495 -2.35106,-13.14184 -0.0434,-0.16606 2.35207,-1.8129 3.50814,-8.95947 -1.59693,5.31231 -4.0088,6.93709 -4.06017,6.7484 -0.7078,-2.59977 -1.52125,-4.68267 -2.11231,-5.83832 -2.0647,-4.03687 -5.86057,-9.00402 -9.6863,-12.03474 1.58978,1.2919 5.0116,6.07636 7.72945,12.78506 -0.8417,-0.75367 -2.24122,-1.31211 -5.48798,-1.83917 3.23814,1.03095 4.85689,2.62291 5.96237,3.5976 1.09761,2.88925 2.05373,6.01756 2.69062,9.21063 -0.42171,-0.26927 -6.51954,-2.4061 -8.19114,-1.88564 2.46045,0.67123 8.72108,3.74202 8.87168,3.83087 1.92522,6.26343 2.80314,11.32444 1.20099,11.82854 -0.21956,0.0691 -0.94868,-0.49076 -0.95892,-0.49544 -13.21533,-6.04001 -13.56401,-28.43483 -15.92957,-39.73227 5.50771,-2.24652 12.45692,4.70812 16.13101,7.41777 7.90339,5.82882 10.35695,18.72556 2.05416,32.79559 -1.37018,3.9471 -0.75907,8.55463 -0.72691,12.96917 0.18192,1.05882 -3.86293,4.67701 -3.3072,-0.11604 z"
+       id="path4622"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccsscsscccccccsscsccc"
+       inkscape:export-filename="/home/tom/anymals_workspace/inkscape/TAXONFILTER/plants.png"
+       inkscape:export-xdpi="32.556522"
+       inkscape:export-ydpi="32.556522" />
+    <path
+       style="display:inline;fill:#ffffff;fill-opacity:1;stroke:none"
+       d="m 354.30444,462.66171 c 3.2638,4.77219 7.97892,5.8673 11.54598,6.4918 4.01405,0.70276 6.7354,1.26036 15.49334,9.25183 -2.34646,1.94824 -3.04424,4.01253 -4.60496,5.03583 -0.3191,3.16029 5.26023,2.69423 6.30512,1.48478 0.4313,-1.93087 1.91785,-5.15416 3.52309,-4.26466 0.21354,0.11832 0.44941,0.24619 0.70563,0.38166 1.99897,0.9619 2.8888,0.82985 4.08579,1.28529 0.92666,0.3526 2.24728,-4.27799 -0.53039,-3.04942 -1.69504,0.74971 -4.90048,-0.0746 -5.45461,-0.31511 1.09436,-0.0707 4.38667,-1.70451 4.90542,-1.91216 1.07124,-0.42876 1.21685,-1.42076 3.16812,-2.14991 -1.04453,1.15928 -1.56447,2.2251 -3.33742,3.19651 -0.37437,0.20512 -4.25532,1.49364 -5.33011,0.94814 -3.15997,-1.60373 2.97177,2.41391 3.29286,2.4096 3.51185,1.77296 9.65804,4.3586 15.05413,4.40353 5.81306,5.50329 14.74616,13.68156 18.18793,10.29391 0.57172,-0.47382 -1.52772,-1.65197 -3.53734,-4.10002 -3.59094,-4.37436 -8.07535,-12.80873 -11.47097,-14.81731 -2.89933,-1.71499 -9.22141,-1.64882 -12.3576,-2.73837 1.17934,-0.72533 1.71888,-1.10339 2.20112,-2.2712 0.4303,-1.04198 3.13131,-1.67868 4.48553,-2.41721 -1.96804,-0.39007 -4.02109,-0.86733 -5.39866,0.13272 -2.32749,-2.12109 -4.13674,1.10975 -5.70785,1.01683 -8.32147,-0.492 -7.46755,-6.2301 -10.17733,-7.68966 -11.80123,-2.60109 -17.06494,-0.11903 -25.04677,-0.60748 z"
+       id="path3862-27"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cscccscsscscsscccsscsccsccc"
+       inkscape:export-filename="/home/tom/anymals_workspace/inkscape/TAXONFILTER/animals.png"
+       inkscape:export-xdpi="32.556522"
+       inkscape:export-ydpi="32.556522" />
+    <g
+       id="g5032-6"
+       transform="matrix(0.57544711,0,0,0.57544711,255.88729,202.15597)">
+      <path
+         inkscape:export-ydpi="42.228168"
+         inkscape:export-xdpi="42.228168"
+         inkscape:export-filename="/home/tom/anymals_workspace/inkscape/TAXONFILTER/pin_fungi_50.png"
+         sodipodi:nodetypes="ccccccc"
+         inkscape:connector-curvature="0"
+         id="path4007-2-2-1"
+         d="m 226.32926,547.38552 c -0.91617,0.0923 -1.71252,2.34123 -2.77792,-0.25254 1.32577,3.93619 -2.44676,3.55168 0.18941,5.87152 3.40868,11.33893 14.61912,5.79261 19.95051,-0.12627 0.0796,-1.80984 -1.47569,-3.72433 -0.61462,-5.27718 -0.93992,1.10431 -1.81983,0.029 -2.79465,0.28955 0.52393,-6.3181 -10.57879,-7.1672 -13.95273,-0.50508 z"
+         style="display:inline;fill:none;stroke:#ffffff;stroke-width:1.41732287;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         inkscape:export-ydpi="42.228168"
+         inkscape:export-xdpi="42.228168"
+         inkscape:export-filename="/home/tom/anymals_workspace/inkscape/TAXONFILTER/pin_fungi_50.png"
+         sodipodi:nodetypes="ccsccccccccscccsscccc"
+         inkscape:connector-curvature="0"
+         id="path3159-2-0-8"
+         d="m 240.21304,548.13025 c 5.35464,-17.6314 19.65365,-2.892 23.38655,-6.69632 6.16781,-19.62996 -15.17673,-28.21855 -30.99617,-28.24143 -13.95834,-0.0201 -31.82154,3.31379 -25.4839,26.15558 6.24889,1.69722 25.07721,-8.55971 18.95068,8.38951 1.39878,-0.0375 2.09533,-0.87252 3.3527,-1.87474 -2.28995,3.54123 -0.038,1.53805 0.94753,1.56622 4.68247,-0.35388 2.8214,0.10903 5.20555,0.7327 1.3095,-0.41436 2.78511,-1.89851 3.37451,-1.86757 -2.814,2.84564 -0.0152,1.73228 1.26255,1.83605 z m -16.41417,4.72845 c -7.62616,17.68454 -7.23323,23.38355 9.01919,22.59694 16.16344,-0.78231 18.34859,-6.975 10.08658,-22.53631 -2.93301,0.88034 -3.87501,2.73487 -5.42256,-1.20017 -2.4745,4.65423 -3.89099,-5.17927 -8.62909,1.1726 -0.73387,-0.4111 -1.041,-2.0482 -1.70411,-1.78566 -0.55623,0.22022 -1.7346,3.20484 -1.65412,2.62809 0.2753,-1.97299 -1.17599,-1.34284 -1.69589,-0.87549 z m 39.79916,-14.77133 c -12.01829,-0.84111 -49.44424,-10.17916 -56.43497,0.96468 7.08488,-14.22999 25.29582,-6.07325 56.43497,-0.96468 z"
+         style="display:inline;fill:#ffffff;fill-opacity:1;stroke:none" />
+    </g>
+  </g>
+</svg>
