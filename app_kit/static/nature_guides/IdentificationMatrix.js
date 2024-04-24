@@ -267,7 +267,7 @@ var MATRIX_ITEMS = {};
 const MODE_STRICT = "strict"; // sort items out immediately
 const MODE_FLUID = "fluid"; // do not sort out, sort by points in descending order
 
-var IDENTIFICATION_MODE = MODE_FLUID;
+var IDENTIFICATION_MODE = MODE_STRICT;
 
 const STATUS_ACTIVE = "active";
 const STATUS_INACTIVE = "inactive";
@@ -1614,7 +1614,7 @@ class IdentificationMatrix {
     var options = options || {};
 
     if (options.hasOwnProperty("mode")) {
-      IDENTIFICATION_MODE = options["mode"];
+      IDENTIFICATION_MODE = MODE_STRICT//options["mode"];
     }
 
     this.get_matrix_filters_and_items = get_matrix_filters_and_items;
@@ -1772,7 +1772,7 @@ class IdentificationMatrix {
 
   set_mode (mode){
     console.log("[IdentificationMatrix] changing mode to " + mode);
-    IDENTIFICATION_MODE = mode;
+    IDENTIFICATION_MODE = MODE_STRICT//mode;
     this.reset();
   }
 

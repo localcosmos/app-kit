@@ -34,9 +34,14 @@
 
 				{% if success is True %}
 					<script>
-						if (typeof identification != 'undefined' && identification != null){
+						// reload does not work at this time. It adds multiple listeners to MatrixfilterSpaces' input_element
+						/*if (typeof identification != 'undefined' && identification != null){
 							identification.reload();
-						}
+						}*/
+						$.get("{% url 'load_matrix_filters' meta_app.id parent_node.meta_node.id %}", function(html){
+							$("#matrix-filters-collapsible").html(html);
+							ajaxify('matrix-filters-collapsible');
+						});
 					</script>
 				{% endif %}
 
