@@ -1,4 +1,5 @@
 recursive-include app_kit/tests *
+recursive-include app_kit/appbuilder *
 recursive-include app_kit/static *
 recursive-include app_kit/templates *
 recursive-include app_kit/locale *

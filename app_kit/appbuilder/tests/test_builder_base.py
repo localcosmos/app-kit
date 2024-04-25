@@ -47,7 +47,6 @@ class TestAppBuilderBase(WithMetaApp, TenantTestCase):
 
         self.assertEqual(appbuilder.meta_app, self.meta_app)
         self.assertTrue(hasattr(appbuilder, '_builder_root_path'))
-        self.assertTrue(hasattr(appbuilder, '_certificates_path'))
 
     @test_settings
     def test_validate(self):

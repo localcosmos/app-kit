@@ -115,13 +115,8 @@ class AppBuilderBase:
 	]
 
     def __init__(self, meta_app):
-
         self.meta_app = meta_app
-
         self._builder_root_path = self._get_builder_root_path()#os.path.dirname(os.path.abspath(__file__))
-
-        self._certificates_path = os.path.join(self._builder_root_path, 'certificates')
-
         self.logger = None
 
 

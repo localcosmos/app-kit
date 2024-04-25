@@ -2506,16 +2506,12 @@ class AppReleaseBuilder(AppBuilderBase):
     ###############################################################################################################
 
     # ANDROID SIGNING
-    def get_keystore_path(self):
-        keystore_path = os.path.join(self._certificates_path, self.android_keystore_name)
-        return keystore_path
-
     # 1. symlink common www. 2. symlink android specific files
     def _build_android(self):
 
         self.logger.info('Building Android')
 
-        keystore_path = self.get_keystore_path()
+        keystore_path = settings.APP_KIT_ANDROID_KEYSTORE_PATH
         
         cordova_builder = self.get_cordova_builder()
         
