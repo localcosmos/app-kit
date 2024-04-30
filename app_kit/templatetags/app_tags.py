@@ -10,18 +10,6 @@ from django.contrib.staticfiles import finders
 from app_kit.models import MetaApp
 
 
-@register.simple_tag
-def get_build_parameters():
-
-    build_parameters = {
-        "CI_BUILD" : settings.CI_BUILD,
-        "CI_BUILD_DATE" : settings.CI_BUILD_DATE,
-        "GIT_REVISION" : settings.GIT_REVISION,
-    }
-    
-    return build_parameters
-
-
 from django.contrib.contenttypes.models import ContentType
 from taxonomy.lazy import LazyTaxon
 
