@@ -40,7 +40,7 @@ from taxonomy.models import TaxonomyModelRouter
 from content_licencing.licences import ContentLicence
 
 
-import hashlib, base64, os, json
+import hashlib, base64, os, json, time
         
 
 class TestTenantPasswordResetView(WithLoggedInUser, WithUser, WithTenantClient, TenantTestCase):
@@ -938,6 +938,12 @@ class TestStartNewAppVersion(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser,
 
     url_name = 'start_new_app_version'
     view_class = StartNewAppVersion
+
+    def tearDown(self):
+        super().tearDown()
+        # wait for thread to complete
+        time.sleep(10)
+
 
     def get_url_kwargs(self):
         url_kwargs = {

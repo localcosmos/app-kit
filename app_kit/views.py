@@ -8,6 +8,9 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
 
+# do not use connection.close in threads
+from django.db import close_old_connections
+
 from django.core import mail
 
 from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
@@ -200,20 +203,29 @@ class CreateApp(CreateGenericContent):
 
         # MetaApp and all required features have been created
 
-        # create the version specific folder on disk
-        # fails if the version already exists
-        app_builder = AppBuilder(meta_app)
-        app_builder.create_app_version()
+        def run_in_thread():
+            # threading resets the connection -> set to tenant
+            connection.set_tenant(self.request.tenant)
 
-        # create preview
-        app_preview_builder = AppPreviewBuilder(meta_app)
-        app_preview_builder.build()        
+            # create the version specific folder on disk
+            # fails if the version already exists
+            app_builder = AppBuilder(meta_app)
+            app_builder.create_app_version()
+
+            # create preview
+            app_preview_builder = AppPreviewBuilder(meta_app)
+            app_preview_builder.build()
+
+            close_old_connections()
+
+        thread = threading.Thread(target=run_in_thread)
+        thread.start()
         
         context = self.get_context_data(**self.kwargs)
         context['meta_app'] = self.created_content
         context['created_content'] = self.created_content
         return context
-
+    
 
 class GetAppCard(MetaAppMixin, TemplateView):
 
@@ -822,13 +834,15 @@ class BuildApp(FormView):
 
             def run_in_thread():
 
-                # threading resets the conntion -> set to tenant
+                # threading resets the connection -> set to tenant
                 connection.set_tenant(self.request.tenant)
                 
                 if action == 'validate':
                     validation_result = app_release_builder.validate()
                 elif action == 'build':
                     build_result = app_release_builder.build()
+
+                close_old_connections()
 
             thread = threading.Thread(target=run_in_thread)
             thread.start()
@@ -870,17 +884,27 @@ class StartNewAppVersion(TemplateView):
 
             self.meta_app.save()
 
-            app_builder = self.meta_app.get_app_builder()
-            app_builder.create_app_version()
+            def run_in_thread():
+                # threading resets the connection -> set to tenant
+                connection.set_tenant(self.request.tenant)
+
+                app_builder = self.meta_app.get_app_builder()
+                app_builder.create_app_version()
 
 
-            app_preview_builder = self.meta_app.get_preview_builder()
-            app_preview_builder.build()
+                app_preview_builder = self.meta_app.get_preview_builder()
+                app_preview_builder.build()
 
-            delete_version = new_version - 2
-            while delete_version > 0:
-                app_builder.delete_app_version(delete_version)
-                delete_version = delete_version - 1
+                delete_version = new_version - 2
+                while delete_version > 0:
+                    app_builder.delete_app_version(delete_version)
+                    delete_version = delete_version - 1
+
+                close_old_connections()
+                
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+
         
         content_type = ContentType.objects.get_for_model(self.meta_app)
         url_kwargs = {
@@ -1393,7 +1417,7 @@ class ImportFromZip(MetaAppMixin, FormView):
 
         def run_in_thread():
 
-            # threading resets the conntion -> set to tenant
+            # threading resets the connection -> set to tenant
             connection.set_tenant(self.request.tenant)
 
             self.generic_content.lock('zip_import')
@@ -1416,6 +1440,8 @@ class ImportFromZip(MetaAppMixin, FormView):
                 # remove zipfile and unzipped
                 shutil.rmtree(unzip_path)
                 shutil.rmtree(zip_destination_dir)
+
+                close_old_connections()
                 
             
             except Exception as e:
