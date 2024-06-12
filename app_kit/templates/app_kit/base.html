@@ -265,6 +265,14 @@
 										<strong>{% trans 'Web app URL' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.app.get_url }}" target="_blank">{{ request.scheme }}://{{ meta_app.app.get_url }}</a><br>
 
 										<strong>{% trans 'Android .aab' %}:</strong>
+											{% if meta_app.app.aab_url %}
+												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.aab_url }}" target="_blank">{% trans 'Download' %}</a>
+											{% else %}
+												<span class="text-danger">{% trans 'not available' %}</span>
+											{% endif %}
+											<br>
+
+										<strong>{% trans 'Android .apk' %}:</strong>
 											{% if meta_app.app.apk_url %}
 												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a>
 											{% else %}

@@ -711,8 +711,10 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
             published_version_path = appbuilder._published_browser_served_www_path
             self.app.published_version_path = published_version_path
 
-            # set apk_url
-            self.app.apk_url = appbuilder.aab_published_url()
+            # set aab_url
+            self.app.aab_url = appbuilder.aab_published_url()
+            # set apk url
+            self.app.apk_url = appbuilder.apk_published_url()
             # set ipa_url
             self.app.ipa_url = appbuilder.ipa_published_url()
             # set pwa_zip_url

@@ -158,6 +158,11 @@ class AppReleaseBuilder(AppBuilderBase):
     def aab_published_url(self):
         url = '/packages/published/android/{0}'.format(self._aab_filename)
         return url
+    
+    # does not return scheme and host
+    def apk_published_url(self):
+        url = '/packages/published/android/{0}'.format(self._apk_filename)
+        return url
 
     # apk review url
     def apk_review_url(self, request):
@@ -2346,6 +2351,10 @@ class AppReleaseBuilder(AppBuilderBase):
     @property
     def _published_android_served_aab_filepath(self):
         return os.path.join(self._published_android_served_path, self._aab_filename)
+    
+    @property
+    def _published_android_served_apk_filepath(self):
+        return os.path.join(self._published_android_served_path, self._apk_filename)
 
     # debug apk
     @property
@@ -2648,6 +2657,10 @@ class AppReleaseBuilder(AppBuilderBase):
         aab_dest = self._published_android_served_aab_filepath
 
         os.symlink(aab_source, aab_dest)
+        
+        # also release apk
+        apk_source = cordova_builder._apk_filepath
+        apk_dest = self._published_android_served_apk_filepath
 
         self.logger.info('Successfully released Android')
 
