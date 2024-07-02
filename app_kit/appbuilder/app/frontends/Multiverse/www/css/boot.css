@@ -1,0 +1,32 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+.bootloader {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh; /* old browsers */  
+    height: 100dvh; /* new browsers */
+    background: #FFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items:center;
+}
+
+.bootloader-logo {
+    padding: 12px 0px;
+    opacity: 0;
+    transition: all ease-in .5s;
+}
+
+.bootloader-logo.shown {
+    opacity: 1;
+}
+
+.bootloader-logo-image {
+    width: 300px;
+    height: auto;
+}

@@ -1,0 +1,77 @@
+{
+  "frontend": "Multiverse",
+  "version": "0.1",
+  "userContent": {
+    "images": {
+      "appLauncherIcon": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Has to be an .SVG vector graphic AND the ratio must be 1:1. Will be displayed on your phones home screen to launch your app",
+        "required": true
+      },
+      "appSplashscreen": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Will be displayed during app startup",
+        "required": true
+      },
+      "logo": {
+        "restrictions": {
+          "fileType": [
+            "svg"
+          ]
+        },
+        "helpText": "Will be displayed on the apps main page",
+        "required": true
+      },
+      "favicon": {
+        "restrictions": {
+          "fileType": [
+            "png",
+            "webp"
+          ],
+          "ratio": "1:1"
+        },
+        "helpText": "Will be displayed in the browser tab",
+        "required": true
+      }
+    },
+    "texts": {
+      "termsOfUse": {
+        "required": false,
+        "helpText": "Nutzungsbedingungen"
+      }
+    }
+  },
+  "templateContent": {
+    "urlPattern": "/pages/{templateName}/{slug}/",
+    "navigations": {},
+    "requiredOfflineContents": {}
+  },
+  "configuration": {
+  },
+  "cordova" : {
+    "platforms" : {
+      "android" : "android@12.0.1",
+      "ios" : "ios@7.1.0",
+      "browser" : "browser@7.0.0"
+    },
+    "plugins" : [
+      "cordova-plugin-camera@6.0.0",
+      "cordova-plugin-device@2.1.0",
+      "cordova-plugin-geolocation@4.1.0",
+      "cordova-plugin-network-information@3.0.0",
+      "cordova-plugin-statusbar@3.0.0",
+      "cordova-plugin-wkwebview-file-xhr@3.1.0",
+      "cordova-plugin-inappbrowser@6.0.0"
+    ]
+  }
+}

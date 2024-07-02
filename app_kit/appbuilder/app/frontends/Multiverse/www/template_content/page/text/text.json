@@ -1,0 +1,13 @@
+{
+  "templateName" : "text",
+  "type": "page",
+  "templatePath" : "/template_content/page/text/text.html",
+  "version" : 1,
+  "contents": {
+    "text": {
+      "type": "text",
+      "format": "layoutable-full",
+      "allowMultiple": false
+    }
+  }
+}
