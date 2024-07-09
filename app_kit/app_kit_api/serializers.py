@@ -1,10 +1,19 @@
 from rest_framework import serializers
+from django.conf import settings
 
 from django.utils import timezone
 
 from .models import AppKitJobs
 from rest_framework import exceptions
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+from app_kit.multi_tenancy.models import Domain
+
+RESERVED_SUBDOMAINS = getattr(settings, 'RESERVED_SUBDOMAINS', [])
 
 import json
 
@@ -13,7 +22,7 @@ class ApiTokenSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = attrs[self.username_field]
 
-        if username != 'APPKITAPIUSER':
+        if username != settings.APP_KIT_APIUSER_USERNAME:
 
             error_message = 'No valid account given'
 
@@ -107,3 +116,38 @@ class AppKitJobCompletedSerializer(serializers.ModelSerializer):
                 'required' : True,
             }
         }
+
+
+class CreateAppKitSerializer(serializers.Serializer):
+    
+    number_of_apps = serializers.IntegerField()
+    subdomain = serializers.CharField()
+    tenant_admin_user_id = serializers.IntegerField()
+    
+    def validate_subdomain(self, value):
+        value = value.strip().lower()
+        
+        try:
+            value.encode('ascii')
+        except:
+            raise serializers.ValidationError(_('Use only [a-z] and [0-9] for the subdomain.') )
+
+        if value in RESERVED_SUBDOMAINS:
+            raise serializers.ValidationError(_('This subdomain is forbidden.'))
+
+        if not value[0].isalpha():
+            raise serializers.ValidationError(_('The subdomain has to start with a letter.'))
+
+        if not value.isalnum():
+            raise serializers.ValidationError(_('The subdomain has to be alphanumeric.'))
+
+        if Domain.objects.filter(domain__startswith=value).exists():
+            raise serializers.ValidationError(_('This subdomain already exists.'))
+        return value
+    
+    def validate_tenant_admin_user_id(self, value):
+        
+        if User.objects.filter(pk=value).exists():
+            return value
+        
+        raise serializers.ValidationError(_('The user does not exist.'))

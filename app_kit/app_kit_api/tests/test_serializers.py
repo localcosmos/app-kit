@@ -1,4 +1,5 @@
 from app_kit.tests.common import test_settings
+
 from django_tenants.test.cases import TenantTestCase
 
 from rest_framework.serializers import ValidationError
@@ -6,7 +7,8 @@ from rest_framework.serializers import ValidationError
 from app_kit.tests.common import TEST_IPA_FILEPATH
 
 from app_kit.app_kit_api.serializers import (ApiTokenSerializer, AppKitJobSerializer,
-                        AppKitJobAssignSerializer, AppKitJobStatusSerializer, AppKitJobCompletedSerializer)
+                        AppKitJobAssignSerializer, AppKitJobStatusSerializer, RESERVED_SUBDOMAINS,
+                        AppKitJobCompletedSerializer, CreateAppKitSerializer)
 
 from app_kit.tests.mixins import (WithMetaApp,)
 from app_kit.app_kit_api.tests.mixins import WithAppKitJob
@@ -14,6 +16,8 @@ from app_kit.app_kit_api.tests.mixins import WithAppKitJob
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from localcosmos_cordova_builder.MetaAppDefinition import MetaAppDefinition
+
+from app_kit.multi_tenancy.models import Domain
 
 
 class TestAppKitJobSerializer(WithAppKitJob, WithMetaApp, TenantTestCase):
@@ -247,3 +251,108 @@ class TestAppKitJobCompletedSerializer(WithAppKitJob, WithMetaApp, TenantTestCas
         self.assertEqual(job.job_status, 'success')
         self.assertTrue(job.finished_at != None)
         self.assertEqual(job.job_result, post_data['job_result'])
+        
+
+class TestCreateAppKitSerializer(WithMetaApp, TenantTestCase):
+    
+    @test_settings
+    def test_wrong_encoding(self):
+        
+        subdomain = 'Á É Í Ó Ú Ý Ć Ǵ Ḱ Ĺ Ḿ Ń Ṕ Ŕ Ś Ẃ Ź'
+        
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+
+        with self.assertRaises(UnicodeEncodeError):
+            subdomain.encode('ascii')
+            
+        serializer = CreateAppKitSerializer(data=post_data)
+
+        with self.assertRaises(ValidationError):
+            subdomain = serializer.validate_subdomain(subdomain)
+        
+    @test_settings
+    def test_in_reserved(self):
+
+        subdomain = RESERVED_SUBDOMAINS[0]
+        
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+        
+        serializer = CreateAppKitSerializer(data=post_data)
+
+        with self.assertRaises(ValidationError):
+            subdomain = serializer.validate_subdomain(subdomain)
+
+    @test_settings
+    def test_0_unalpha(self):
+        subdomain = '1test'
+
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+        
+        serializer = CreateAppKitSerializer(data=post_data)
+
+        with self.assertRaises(ValidationError):
+            subdomain = serializer.validate_subdomain(subdomain)
+
+    @test_settings
+    def test_is_not_alphanumeric(self):
+
+        subdomain = 'test!'
+
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+        
+        serializer = CreateAppKitSerializer(data=post_data)
+
+        with self.assertRaises(ValidationError):
+            subdomain = serializer.validate_subdomain(subdomain)
+            
+    @test_settings
+    def test_already_exists(self):
+
+        domain = Domain(
+            domain='test.lc.org',
+            tenant=self.tenant,
+            app=self.meta_app.app,
+        )
+
+        domain.save()
+
+        subdomain = 'test'
+
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+        
+        serializer = CreateAppKitSerializer(data=post_data)
+
+        with self.assertRaises(ValidationError):
+            subdomain = serializer.validate_subdomain(subdomain)
+
+    @test_settings
+    def test_valid(self):
+
+        subdomain = 'test2'
+        post_data = {
+            'subdomain': subdomain,
+            'number_of_apps': 1,
+        }
+        
+        serializer = CreateAppKitSerializer(data=post_data)
+        
+        subdomain_valid = serializer.validate_subdomain(subdomain)
+        self.assertEqual(subdomain, subdomain_valid)
+        
+        is_valid = serializer.is_valid()
+        self.assertEqual(serializer.errors, {})

@@ -5,15 +5,19 @@ from django_tenants.test.cases import TenantTestCase
 from django_tenants.utils import tenant_context
 
 from rest_framework import status
+from rest_framework.test import APIClient
 from django.urls import reverse
 
 from app_kit.tests.mixins import WithTenantClient, WithUser
 
 from app_kit.app_kit_api.tests.mixins import WithAppKitApiUser
 
+from app_kit.multi_tenancy.models import Tenant, Domain
+
+
 from localcosmos_server.tests.mixins import WithApp, WithObservationForm
 
-import json, subprocess
+import json, subprocess, time
 
 
 class TestObtainLCAuthToken(WithAppKitApiUser, WithUser, WithTenantClient, TenantTestCase):
@@ -42,6 +46,64 @@ class TestObtainLCAuthToken(WithAppKitApiUser, WithUser, WithTenantClient, Tenan
         response = self.client.post(url, post_data, follow=True, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class TestCreateAppKit(WithAppKitApiUser, WithUser, WithTenantClient, TenantTestCase):
+    client_class = APIClient
+    
+    def setUp(self):
+        super().setUp()
+        self.superuser = self.create_superuser()
+        
+    @test_settings
+    def test_post(self):
+        
+        subdomain = 'testkit'
+        
+        post_data = {
+            'tenant_admin_user_id': self.superuser.id,
+            'number_of_apps': 1,
+            'subdomain': subdomain,
+        }
+        
+        url = '/api/building/create-appkit/' #reverse('api_create_appkit')
+
+        response = self.client.post(url, post_data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # log in
+        self.client.force_authenticate(user=self.app_kit_api_user)
+        
+        self.assertFalse(Tenant.objects.filter(schema_name=subdomain).exists())
+        
+        response = self.client.post(url, post_data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        time.sleep(120)
+        
+        self.assertTrue(Tenant.objects.filter(schema_name=subdomain).exists())
+        
+    
+    @test_settings
+    def test_post_invalid(self):
+        
+        subdomain = 'testkit'
+        
+        post_data = {
+            'tenant_admin_user_id': self.superuser.id,
+            'number_of_apps': 1,
+        }
+        
+        url = '/api/building/create-appkit/' #reverse('api_create_appkit')
+
+        self.client.force_authenticate(user=self.app_kit_api_user)
+        
+        response = self.client.post(url, post_data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 '''
 APP KIT JOBS API
@@ -129,7 +191,7 @@ class TestAnyclusterViews(WithDatasetPostData, WithObservationForm, WithUser, Wi
             'geometry_type': GEOMETRY_TYPE_VIEWPORT,
         }
 
-        response = self.tenant_client.post(url, post_data)
+        response = self.tenant_client.post(url, post_data, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

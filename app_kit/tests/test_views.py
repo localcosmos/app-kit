@@ -209,7 +209,7 @@ class TestCreateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser
             'input_language' : 'en',
             'primary_language' : 'en',
             'subdomain' : 'testapp',
-            'frontend' : 'Flat',
+            'frontend' : 'Multiverse',
         }
 
         form = CreateAppForm(post_data)
@@ -255,7 +255,7 @@ class TestCreateApp(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser
             'input_language' : 'en',
             'primary_language' : 'en',
             'subdomain' : 'testapp',
-            'frontend' : 'Flat',
+            'frontend' : 'Multiverse',
         }
 
         form = CreateAppForm(post_data)

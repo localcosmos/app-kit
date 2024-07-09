@@ -1,4 +1,3 @@
-
 ###################################################################################################################
 #
 # LOCAL COSMOS APPKIT API
@@ -8,6 +7,7 @@
 #
 ###################################################################################################################
 from django.db import connection
+from django.contrib.contenttypes.models import ContentType
 
 from rest_framework.views import APIView
 from rest_framework.exceptions import ParseError, NotFound, APIException
@@ -18,7 +18,7 @@ from rest_framework import status, mixins
 from rest_framework.parsers import MultiPartParser, JSONParser
 
 from .serializers import (AppKitJobSerializer, AppKitJobAssignSerializer, AppKitJobCompletedSerializer,
-                          AppKitJobStatusSerializer, ApiTokenSerializer)
+                          AppKitJobStatusSerializer, ApiTokenSerializer, CreateAppKitSerializer)
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -30,11 +30,15 @@ from app_kit.appbuilder import  AppReleaseBuilder
 from localcosmos_server.models import App
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from app_kit.multi_tenancy.models import Domain
+from app_kit.multi_tenancy.models import Domain, Tenant
 
 from .permissions import IsApiUser
 
-import os
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+import os, threading
 
 
 class AppKitApiMixin:
@@ -234,3 +238,50 @@ class CompletedAppKitJob(AppKitApiMixin, mixins.UpdateModelMixin, GenericAPIView
     # only allow patching if the job has not been completed yet
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+
+class CreateAppKit(AppKitApiMixin, APIView):
+    
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsApiUser,)
+    
+    def post(self, request, *args, **kwargs):
+        
+        serializer = CreateAppKitSerializer(data=self.request.data)
+        
+        if serializer.is_valid():
+            tenant_admin_user = User.objects.get(pk=serializer.data['tenant_admin_user_id'])
+            number_of_apps = serializer.data['number_of_apps']
+            tenant_schema_name = serializer.data['subdomain']
+            
+            def run_in_thread():
+                
+                extra_fields = {
+                    'number_of_apps' : number_of_apps,
+                }
+                
+                tenant = Tenant.objects.create(tenant_admin_user, tenant_schema_name, **extra_fields)
+
+                public_domain = Domain.objects.get(tenant__schema_name='public', is_primary=True)
+                tenant_domain_name = '{0}.{1}'.format(tenant_schema_name, public_domain.domain)
+
+                tenant_domain = Domain(
+                    tenant=tenant,
+                    domain=tenant_domain_name,
+                    is_primary=True,
+                )
+
+                tenant_domain.save()
+
+                connection.close()
+
+            # create tenant schema async
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            
+            return Response(status=status.HTTP_200_OK)
+        
+        print(serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    

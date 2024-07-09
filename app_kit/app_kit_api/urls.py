@@ -14,6 +14,7 @@ urlpatterns = [
     path('jobs/<int:pk>/assign/', views.AssignAppKitJob.as_view(), name='assign_job'),
     path('jobs/<int:pk>/status/', views.UpdateAppKitJobStatus.as_view(), name='update_job_status'),
     path('jobs/<int:pk>/completed/', views.CompletedAppKitJob.as_view(), name='completed_job'),
+    path('create-appkit/', views.CreateAppKit.as_view(), name='api_create_appkit'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json',])
