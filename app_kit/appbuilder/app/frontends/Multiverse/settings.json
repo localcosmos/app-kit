@@ -2,6 +2,8 @@
   "frontend": "Multiverse",
   "version": "0.1",
   "userContent": {
+    "configuration": {
+    },
     "images": {
       "appLauncherIcon": {
         "restrictions": {
@@ -55,8 +57,6 @@
     "urlPattern": "/pages/{templateName}/{slug}/",
     "navigations": {},
     "requiredOfflineContents": {}
-  },
-  "configuration": {
   },
   "cordova" : {
     "platforms" : {
