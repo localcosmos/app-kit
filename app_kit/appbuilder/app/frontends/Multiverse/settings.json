@@ -1,6 +1,6 @@
 {
   "frontend": "Multiverse",
-  "version": "0.1",
+  "version": "0.2",
   "userContent": {
     "configuration": {
     },
@@ -60,7 +60,7 @@
   },
   "cordova" : {
     "platforms" : {
-      "android" : "android@12.0.1",
+      "android" : "android@13.0.0",
       "ios" : "ios@7.1.0",
       "browser" : "browser@7.0.0"
     },
