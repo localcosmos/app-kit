@@ -15,6 +15,7 @@ from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 
 from app_kit.features.nature_guides.models import (MetaNode, NatureGuidesTaxonTree, NodeFilterSpace, NatureGuide)
+from app_kit.features.backbonetaxonomy.models import BackboneTaxa, BackboneTaxonomy
 
 from localcosmos_server.decorators import ajax_required
 
@@ -101,10 +102,17 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
         non_nature_guide_taxon_profiles = TaxonProfile.objects.exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
+        
+        backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
+        backbonetaxonomy = backbonetaxonomy_link.generic_content
+        backbone_taxa_name_uuids = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
+        backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
+        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(name_uuid__in=backbone_taxa_profiles_name_uuids)
 
         context['nature_guide_results'] = nature_guide_results
         context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
         context['taxa'] = self.generic_content.collected_taxa()
+        context['backbone_taxa_noprofile'] = backbone_taxa_noprofile
 
         form_kwargs = {
             'taxon_search_url': reverse('search_backbonetaxonomy', kwargs={'meta_app_id':self.meta_app.id}),

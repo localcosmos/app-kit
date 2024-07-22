@@ -1,0 +1,16 @@
+{% load i18n el_pagination_tags taxon_profile_tags %}
+{% paginate 5 backbone_taxa_noprofile using 'backbone_taxa_page' %}
+<ul>
+    {% for backbone_taxon in backbone_taxa_noprofile %}
+        <li>
+            <a href="{% url 'create_taxon_profile' meta_app.id generic_content.id backbone_taxon.taxon_source backbone_taxon.name_uuid %}" class="xhr" ajax-target="ModalContent">
+                {{ backbone_taxon.name }} <i>{{ backbone_taxon.taxon_latname }} {{ backbone_taxon.taxon_author }}</i>
+            </a>
+            <span class="badge badge-warning">{% trans 'no profile' %}</span>
+        </li>
+    {% endfor %}
+</ul>
+
+<p>
+    {% show_pages %}
+</p>

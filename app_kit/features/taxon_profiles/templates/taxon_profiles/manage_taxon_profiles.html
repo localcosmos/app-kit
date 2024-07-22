@@ -97,6 +97,19 @@
 			</div>
 		</div>
 	</div>
+
+	<div class="mt-5">
+		<h3>
+			{% trans 'Backbone taxa without profile' %}
+		</h3>
+	</div>
+	<div class="card mt-3">
+		<div class="card-body">
+			<div id="backbone_taxa_page" class="endless_page_template">
+				{% include 'taxon_profiles/ajax/backbone_taxa_taxonlist.html' %}
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 {% block extra_script %}
