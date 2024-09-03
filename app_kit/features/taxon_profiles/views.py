@@ -912,7 +912,8 @@ class GetTaxonProfilesNavigation(MetaAppMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
     
     def set_instances(self, **kwargs):
-        self.taxon_profiles_navigation = TaxonProfilesNavigation.objects.get(taxon_profiles_id=kwargs['taxon_profiles_id'])
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.taxon_profiles_navigation, created = TaxonProfilesNavigation.objects.get_or_create(taxon_profiles=self.taxon_profiles)
         
     def get_context_data(self, **kwargs):
         
@@ -927,7 +928,7 @@ class GetTaxonProfilesNavigation(MetaAppMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         
         context['taxon_profiles_navigation'] = self.taxon_profiles_navigation
-        context['taxon_profiles'] = self.taxon_profiles_navigation.taxon_profiles
+        context['taxon_profiles'] = self.taxon_profiles
         context['navigation_entry_content_type'] = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
     
         return context

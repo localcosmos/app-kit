@@ -145,3 +145,4 @@ class BackboneTaxa(ModelWithRequiredTaxon):
         verbose_name = _('Backbone taxonomy')
         verbose_name_plural = _('Backbone taxonomies')
         unique_together=('backbonetaxonomy', 'taxon_latname', 'taxon_author')
+        ordering = ('taxon_latname', 'taxon_author')
