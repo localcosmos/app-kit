@@ -1,0 +1,22 @@
+{% extends 'app_kit/ajax/content_image_form.html' %}
+
+{% block base_url %}{% if content_image %}{% url 'manage_taxon_profiles_navigation_image' meta_app.id content_type.id content_image.id %}{% else %}{% url 'manage_taxon_profiles_navigation_image' meta_app.id content_type.id content_instance.id image_type %}{% endif %}{% endblock %}
+
+{% block delete_url %}{% url 'delete_taxon_profiles_navigation_image' meta_app.id content_image.pk %}{% endblock %}
+
+{% block script %}
+
+	<script>
+		{% if request.method == 'POST' and form.is_valid %}
+            $.get("{% url 'get_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (html) => {
+                $("#taxon-profiles-navigation").html(html);
+                ajaxify('taxon-profiles-navigation');
+            });
+
+			$("#LargeModal").modal("hide");
+			$("#LargeModalContent").empty();
+		
+		{% endif %}
+	</script>
+	
+{% endblock %}

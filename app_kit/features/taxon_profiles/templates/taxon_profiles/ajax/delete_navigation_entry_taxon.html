@@ -1,0 +1,12 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block success_js %}
+	<script>
+		$("#Modal").modal("hide");
+		$.get("{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id navigation_entry.id %}", (html) => {
+			$("#LargeModalContent").html(html);
+			ajaxify('LargeModalContent');
+		});
+	</script>
+	{% include 'taxon_profiles/js/reload_navigation.html' %}
+{% endblock %}

@@ -3,6 +3,8 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
 
+from taxonomy.lazy import LazyTaxon
+
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
 
 from localcosmos_server.taxonomy.fields import TaxonField
@@ -15,6 +17,8 @@ CUSTOM_TAXONOMY_SOURCE = 'taxonomy.sources.custom'
 # this should be a simpletaxonautocompletewidget searching all backbone taxa
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 class SearchTaxonomicBackboneForm(AddSingleTaxonForm):
+    
+    lazy_taxon_class = LazyTaxon
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

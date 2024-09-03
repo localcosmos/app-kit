@@ -65,7 +65,6 @@ def render_content_images(meta_app, content_object):
     
     return context
 
-
 @register.filter
 def clean_taxa(lazy_taxon_list):
     cleaned = []

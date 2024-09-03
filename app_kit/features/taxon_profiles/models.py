@@ -1,6 +1,6 @@
 from django.db import models
 
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, gettext as __
 
 from app_kit.models import ContentImageMixin
 from app_kit.generic import GenericContent
@@ -17,6 +17,8 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.models import MetaAppGenericContent
 
 from taggit.managers import TaggableManager
+
+from django.utils import timezone
 
 class TaxonProfiles(GenericContent):
 
@@ -209,3 +211,148 @@ class TaxonText(models.Model):
     class Meta:
         unique_together = ('taxon_profile', 'taxon_text_type',)
 
+
+
+'''
+    A taxonomic navigation using a simplified, manually created taxonomic tree
+'''
+class TaxonProfilesNavigation(models.Model):
+    taxon_profiles = models.OneToOneField(TaxonProfiles, on_delete=models.CASCADE)
+    last_modified_at = models.DateTimeField(null=True)
+    
+    prerendered = models.JSONField(null=True)
+    last_prerendered_at = models.DateTimeField(null=True)
+    
+    
+    def prerender(self):
+        prerendered = {
+            'tree': [],
+        }
+        
+        root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=self, parent=None)
+        
+        for root_element in root_elements:
+            root_dict = root_element.as_dict()
+            prerendered['tree'].append(root_dict)
+            
+        self.prerendered = prerendered
+        self.last_prerendered_at = timezone.now()
+        self.save(prerendered=True)
+        
+        
+    def save(self, *args, **kwargs):
+        
+        prerendered = kwargs.pop('prerendered', False)
+        
+        if prerendered == False:
+            self.last_modified_at = timezone.now()
+            
+        super().save(*args, **kwargs)
+            
+
+
+'''
+    The entries should cover more than one taxonomic source
+    - the taxon is identified by latname, author (optional) and rank
+    - ModelWihTaxon is not used to not restrict it to one taxonomic source
+    - during build, the taxon is looked up in all taxonomic sources for each endpoint and the matching taxon profiles are added
+'''
+class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
+    navigation = models.ForeignKey(TaxonProfilesNavigation, on_delete=models.CASCADE)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
+    name = models.CharField(max_length=355, null=True)
+    description = models.TextField(null=True)
+    
+    position = models.IntegerField(default=0)
+    
+    @property
+    def key(self):
+        return 'tpne-{0}'.format(self.id)
+    
+    def as_dict(self):
+        
+        children = [child.as_dict() for child in self.children]
+        
+        navigation_entry_content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+        
+        images = []
+        
+        for image in self.images():
+            
+            image = {
+                'id': image.id,
+                'url': image.image_url(),
+            }
+            
+            images.append(image)
+            
+        
+        taxa = []
+        
+        for taxon_link in self.taxa:
+            taxa.append(taxon_link.taxon.as_typeahead_choice())
+        
+        dic = {
+            'id': self.id,
+            'content_type_id': navigation_entry_content_type.id,
+            'key': self.key,
+            'parent_id': None,
+            'parent_key': None,
+            'taxa': taxa,
+            'verbose_name': '{0}'.format(self.__str__()),
+            'name' : self.name,
+            'description': self.description,
+            'children': children,
+            'images': images,
+        }
+        
+        if self.parent:
+            dic.update({
+                'parent_id': self.parent.id,
+                'parent_key': self.parent.key,
+            })
+        
+        return dic
+    
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.navigation.save()
+    
+    @property
+    def children(self):
+        return TaxonProfilesNavigationEntry.objects.filter(parent=self)
+    
+    def __str__(self):
+        
+        if self.name:
+            return '{0}'.format(self.name)
+        
+        taxa = self.taxa
+        if taxa:
+            taxon_latnames = [t.taxon_latname for t in taxa]
+            return ', '.join(taxon_latnames)
+        
+        return __('Unconfigured navigation entry')
+    
+    @property
+    def taxa(self):
+        return TaxonProfilesNavigationEntryTaxa.objects.filter(navigation_entry=self)
+    
+    class Meta:
+        ordering = ('position', 'name')
+        
+
+class TaxonProfilesNavigationEntryTaxa(ModelWithRequiredTaxon):
+    navigation_entry = models.ForeignKey(TaxonProfilesNavigationEntry, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return '{0} {1}'.format(self.taxon_latname, self.taxon_author)
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.navigation_entry.navigation.save()
+    
+    class Meta:
+        unique_together=('navigation_entry', 'name_uuid')
+    

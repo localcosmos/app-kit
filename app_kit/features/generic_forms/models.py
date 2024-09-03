@@ -45,7 +45,7 @@ DJANGO_FIELD_CLASSES = (
     ('TaxonField', _('Taxon field')),
     ('SelectTaxonField', _('Select taxon field')),
     ('PointJSONField', _('Point field')),
-    ('GeoJSONField', _('Geometry field')),
+    #('GeoJSONField', _('Geometry field')),
     ('PictureField', _('Image field')),
 )
 
@@ -64,7 +64,7 @@ DEFAULT_WIDGETS = {
     'TaxonField' : 'BackboneTaxonAutocompleteWidget',
     'SelectTaxonField': 'SelectTaxonWidget',
     'PictureField' : 'CameraAndAlbumWidget',
-    'GeoJSONField' : 'PointOrAreaInput',
+    #'GeoJSONField' : 'PointOrAreaInput',
 }
 
 ALLOWED_WIDGETS = {
@@ -77,7 +77,7 @@ ALLOWED_WIDGETS = {
     'MultipleChoiceField' : ['CheckboxSelectMultiple'],
     'DateTimeJSONField' : ['SelectDateTimeWidget'], # JSONField + JSONWidget
     'PointJSONField' : ['MobilePositionInput'], # JSONField + JSONWidget
-    'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
+    #'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
     'TaxonField' : ['BackboneTaxonAutocompleteWidget', 'FixedTaxonWidget'],
     'SelectTaxonField' : ['SelectTaxonWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
@@ -94,7 +94,7 @@ FIELDCLASS_DATATYPE = {
     'DateTimeJSONField' : 'json',
     'TaxonField' : 'json',
     'PointJSONField' : 'json',
-    'GeoJSONField' : 'json',
+    #'GeoJSONField' : 'json',
     'PictureField' : 'json',
 }
 

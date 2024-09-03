@@ -1,0 +1,53 @@
+{% load i18n %}
+<div id="tpn-nav" data-store-positions-url="{% url 'store_app_kit_object_order' navigation_entry_content_type.id %}">
+    {% for node in nodes %}
+        <div id="taxonprofiles-navigation-entry-{{ node.id }}" class="my-2" data-object-id="{{ node.id }}">
+            <div class="d-flex flex-wrap">
+                <div class="align-self-end">
+                    <div class="btn-group dropup">
+                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ node.verbose_name }}
+                            <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                            <a href="{% url 'create_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Create subentry' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a data-url="{% url 'manage_taxon_profiles_navigation_image' meta_app.id node.content_type_id node.id %}?new=1" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add image' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a data-url="{% url 'delete_taxonprofiles_navigation_entry' meta_app.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-left moveforwardbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25B2; {% trans 'Move up' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-left movebackbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                        </div>
+                    </div>
+                </div>
+                {% if node.images %}
+                    <div class="d-flex flex-wrap ml-2">
+                        {% for image in node.images %}
+                            <div id="navigation_image_{{ image.id }}">
+                                <div class="btn-group dropup">
+                                    <button type="button" class="btn image-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <img src="{{ image.url }}" class="taxon-profiles-navigation-image" />
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a data-url="{% url 'manage_taxon_profiles_navigation_image' meta_app.id image.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            {% if node.children %}
+                <div class="ml-3">
+                    {% with nodes=node.children %}
+                        {% include 'taxon_profiles/ajax/taxon_profiles_navigation_level.html' %}
+                    {% endwith %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>

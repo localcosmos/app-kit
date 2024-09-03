@@ -3,12 +3,16 @@ from django import forms
 
 from django.utils.translation import gettext_lazy as _
 
-from .models import TaxonTextType, TaxonText
+from .models import (TaxonTextType, TaxonText, TaxonProfilesNavigationEntryTaxa, TaxonProfilesNavigationEntry)
 
 from app_kit.validators import json_compatible
 
 from app_kit.forms import GenericContentOptionsForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
+from localcosmos_server.taxonomy.fields import TaxonField
+from taxonomy.lazy import LazyTaxon
+
+from app_kit.utils import get_appkit_taxon_search_url
 
 
 '''
@@ -24,7 +28,8 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
     enable_gbif_occurrence_map_button = forms.BooleanField(required=False, label=_('Enable GBIF occurrence map button'))
     enable_observation_button = forms.ChoiceField(required=False, label=_('Enable observation button'))
     include_only_taxon_profiles_from_nature_guides = forms.BooleanField(required=False, label=_('Include only taxon profiles from Nature Guides'))
-
+    
+    enable_taxonomic_navigation = forms.BooleanField(required=False, label=_('Enable Taxonomic Navigation'))
 
 
 class ManageTaxonTextTypeForm(LocalizeableModelForm):
@@ -120,6 +125,98 @@ class ManageTaxonTextsForm(LocalizeableForm):
         return long_text_field_name
 
 
+
+class ManageTaxonProfilesNavigationEntryForm(LocalizeableForm):
+
+    localizeable_fields = ['name', 'description']
+    layoutable_simple_fields = ['description']
+
+    
+    name = forms.CharField(required=False)
+    description = forms.CharField(widget=forms.Textarea, required=False)
+    
+
+from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
+class AddTaxonProfilesNavigationEntryTaxonForm(AddSingleTaxonForm):
+    
+    lazy_taxon_class = LazyTaxon
+
+    def __init__(self, *args, **kwargs):
+        self.navigation_entry = kwargs.pop('navigation_entry', None)
+        self.parent = kwargs.pop('parent', None)
+        super().__init__(*args, **kwargs)
+        
+        self.fields['taxon'].label = _('Add taxon')
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        taxon = cleaned_data.get('taxon', None)
+        
+        if taxon:
+            
+            already_exists_message = _('This taxon already exists in your navigation')
+            
+            tree_instance = taxon.tree_instance()
+            
+            if tree_instance and tree_instance.rank in ['species', 'infraspecies']:
+                self.add_error('taxon', _('Adding of taxa below genus is not supported'))
+                
+            # at this point, custom taxa are not validated
+            if not taxon.taxon_source == 'taxonomy.sources.custom':
+            
+                parent_taxa = []
+                if self.parent:
+                    parent_taxa = self.parent.taxa
+                    
+                    is_valid_descendant = False
+                    
+                    for parent_taxon in parent_taxa:
+                        
+                        if parent_taxon.taxon_latname == taxon.taxon_latname:
+                            self.add_error('taxon', already_exists_message)
+                            break
+                        
+                        if taxon.taxon_source == parent_taxon.taxon_source and taxon.taxon_nuid.startswith(parent_taxon.taxon_nuid):
+                            is_valid_descendant = True
+                            break
+                        
+                    if parent_taxa and not is_valid_descendant:
+                        self.add_error('taxon', _('This taxon is not a valid descendant of the parent navigation entry'))
+                        
+                else:
+                    
+                    if self.navigation_entry:
+                        children_taxa = TaxonProfilesNavigationEntryTaxa.objects.filter(navigation_entry__parent=self.navigation_entry)
+                        
+                        is_valid_parent = False
+                        
+                        if not children_taxa:
+                            is_valid_parent = True
+                            
+                        for child_taxon in children_taxa:
+                            if taxon.taxon_source == child_taxon.taxon_source and child_taxon.taxon_nuid.startswith(taxon.taxon_nuid):
+                                is_valid_parent = True
+                                break
+                            
+                        if not is_valid_parent:
+                            self.add_error('taxon', _('This taxon is not a valid parent at this point in the navigation'))
+
+
+            
+            sibling_entries_query = TaxonProfilesNavigationEntry.objects.filter(parent=self.parent)
+            taxa_query = TaxonProfilesNavigationEntryTaxa.objects.filter(
+                taxon_latname=taxon.taxon_latname, navigation_entry_id__in=sibling_entries_query)
+            
+            if taxon.taxon_author:
+                taxa_query = taxa_query.filter(taxon_author=taxon.taxon_author)
+                
+            if taxa_query.exists():
+                self.add_error('taxon', already_exists_message)
+                
+
+        return cleaned_data
+    
+    
 ''' currently unused
 class SaveTaxonLocaleMixin:
 

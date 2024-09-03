@@ -1,0 +1,11 @@
+<div>
+    {% with nodes=taxon_profiles_navigation.prerendered.tree %}
+        {% include 'taxon_profiles/ajax/taxon_profiles_navigation_level.html' %}
+    {% endwith %}
+</div>
+<script>
+    (function() {
+        $("#tpn-nav .moveforwardbutton").on("click", positionmanager.onMoveForward);
+	    $("#tpn-nav .movebackbutton").on("click", positionmanager.onMoveBack);
+    })();
+</script>

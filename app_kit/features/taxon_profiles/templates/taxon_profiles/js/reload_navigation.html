@@ -1,0 +1,8 @@
+<script>
+    (function(){
+        $.get("{% url 'get_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (html) => {
+            $("#taxon-profiles-navigation").html(html);
+            ajaxify('taxon-profiles-navigation');
+        });
+    })();
+</script>

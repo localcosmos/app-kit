@@ -1,0 +1,39 @@
+{% load i18n localcosmos_tags %}
+<div class="mb-3">
+    <strong>{% trans 'Taxa' %}:</strong>
+    <div>
+        {% if navigation_entry.taxa %}
+            {% for taxon_link in navigation_entry.taxa %}
+                <div id="taxonprofiles-navigaton-entry-taxon-{{ taxon_link.id }}">
+                    {{ taxon_link.taxon_latname }} {{ taxon_link.taxon_author }}
+                    <button type="button" class="btn btn-xs btn-danger xhr" ajax-target="ModalContent" data-url="{% url 'delete_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_link.id %}">{% trans 'remove' %}</button>
+                </div>
+            {% endfor %}
+        {% else %}
+            <span class="error">
+                {% trans 'No taxon yet.' %}
+            </span>
+        {% endif %}
+    </div>
+    <div class="my-3">
+        <form class="xhr" method="POST" action="{% if navigation_entry %}{% url 'add_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id navigation_entry.id %}{% else %}{% if parent_navigation_entry %}{% url 'create_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id parent_navigation_entry.id %}{% else %}{% url 'create_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id %}{% endif %}{% endif %}" ajax-target="taxon-profiles-navigation-entry-taxa">
+            <div class="row align-items-end">
+                <div class="col-auto">
+                    {{ form }}
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-primary">{% trans 'add taxon' %}</button>
+                </div>
+            </div>            
+        </form>
+    </div>
+    {% if taxon_success %}
+        {% include 'taxon_profiles/js/reload_navigation.html' %}
+        <script>
+            $.get("{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id navigation_entry.id %}", (html) => {
+                $("#LargeModalContent").html(html);
+                ajaxify('LargeModalContent');
+            });
+        </script>
+    {% endif %}
+</div>

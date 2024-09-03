@@ -7,10 +7,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.http import JsonResponse
 
-from .forms import TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm
-from .models import TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile
+from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
+                    ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm)
+from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
+                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
 
-from app_kit.views import ManageGenericContent
+from app_kit.views import ManageGenericContent, ManageContentImage, ManageContentImageWithText, DeleteContentImage
 from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 
@@ -25,6 +27,7 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.generic_views import AjaxDeleteView
+
 
 def get_taxon(taxon_source, name_uuid):
     models = TaxonomyModelRouter(taxon_source)
@@ -108,11 +111,16 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         backbone_taxa_name_uuids = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.exclude(name_uuid__in=backbone_taxa_profiles_name_uuids)
+        
+        uses_taxon_profiles_navigation = self.generic_content.get_option(self.meta_app, 'enable_taxonomic_navigation')
+        taxon_profiles_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content).first()
 
         context['nature_guide_results'] = nature_guide_results
         context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
         context['taxa'] = self.generic_content.collected_taxa()
         context['backbone_taxa_noprofile'] = backbone_taxa_noprofile
+        context['uses_taxon_profiles_navigation'] = uses_taxon_profiles_navigation
+        context['taxon_profiles_navigation'] = taxon_profiles_navigation
 
         form_kwargs = {
             'taxon_search_url': reverse('search_backbonetaxonomy', kwargs={'meta_app_id':self.meta_app.id}),
@@ -747,10 +755,237 @@ class CollectTaxonTraits(TemplateView):
         return context
 
 
-from app_kit.views import ManageContentImageWithText, DeleteContentImage
 class ManageTaxonProfileImage(ManageContentImageWithText):
     template_name = 'taxon_profiles/ajax/manage_taxon_profile_image.html'
 
 
 class DeleteTaxonProfileImage(DeleteContentImage):
     template_name = 'taxon_profiles/ajax/delete_taxon_profile_image.html'
+
+
+class ManageTaxonProfilesNavigationEntryCommon:
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.taxon_profiles_navigation, created = TaxonProfilesNavigation.objects.get_or_create(taxon_profiles=self.taxon_profiles)
+        self.navigation_entry = None
+        self.parent_navigation_entry = None
+        
+        navigation_entry_id = kwargs.get('navigation_entry_id', None)
+        parent_navigation_entry_id = kwargs.get('parent_navigation_entry_id', None)
+        
+        if navigation_entry_id:
+            self.navigation_entry = TaxonProfilesNavigationEntry.objects.get(pk=navigation_entry_id)
+            
+        if parent_navigation_entry_id:
+            self.parent_navigation_entry = TaxonProfilesNavigationEntry.objects.get(pk=parent_navigation_entry_id)
+    
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['navigation_entry'] = self.navigation_entry
+        context['parent_navigation_entry'] = self.parent_navigation_entry
+        context['success'] = False
+        context['taxon_success'] = False
+        return context
+    
+    def set_navigation_entry(self):
+        
+        if not self.navigation_entry:
+            self.navigation_entry = TaxonProfilesNavigationEntry(
+                navigation = self.taxon_profiles_navigation,
+            )
+            
+            if self.parent_navigation_entry:
+                self.navigation_entry.parent = self.parent_navigation_entry
+            
+            self.navigation_entry.save()
+
+
+class ManageTaxonProfilesNavigationEntry(ManageTaxonProfilesNavigationEntryCommon, MetaAppFormLanguageMixin, MetaAppMixin, FormView):
+    
+    form_class = ManageTaxonProfilesNavigationEntryForm
+    template_name = 'taxon_profiles/ajax/manage_navigation_entry.html'
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        
+        if self.navigation_entry:
+            initial['name'] = self.navigation_entry.name
+            initial['description'] = self.navigation_entry.description
+        return initial
+    
+    def form_valid(self, form):
+        
+        self.set_navigation_entry()
+        
+        description = form.cleaned_data.get('description', None)
+        name = form.cleaned_data.get('name', None)
+        
+        self.navigation_entry.description = description
+        self.navigation_entry.name = name
+        
+        if self.parent_navigation_entry:
+            self.navigation_entry.parent = self.parent_navigation_entry
+            
+        self.navigation_entry.save()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+        
+        return self.render_to_response(context)
+
+
+class AddTaxonProfilesNavigationEntryTaxon(ManageTaxonProfilesNavigationEntryCommon, MetaAppMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/navigation_entry_taxa.html'
+    form_class = AddTaxonProfilesNavigationEntryTaxonForm
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['parent'] = self.parent_navigation_entry
+        kwargs['navigation_entry'] = self.navigation_entry
+        kwargs['taxon_search_url'] = reverse('search_taxon')
+        
+        return kwargs
+    
+    
+    def form_valid(self, form):
+        
+        self.set_navigation_entry()
+        
+        taxon = form.cleaned_data['taxon']
+        
+        taxon_link = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=self.navigation_entry
+        )
+        
+        taxon_link.set_taxon(taxon)
+        taxon_link.save()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['taxon_success'] = True
+        
+        return self.render_to_response(context)
+
+
+class DeleteTaxonProfilesNavigationEntry(MetaAppMixin, AjaxDeleteView):
+    
+    model = TaxonProfilesNavigationEntry
+
+    template_name = 'taxon_profiles/ajax/delete_navigation_entry.html'
+
+    def form_valid(self, form):
+        
+        navigation_entry_id = self.object.id
+        
+        navigation = self.object.navigation
+
+        self.object.delete()
+        
+        navigation.save()
+
+        context = {
+            'navigation_entry_id' : navigation_entry_id,
+            'taxon_profiles': navigation.taxon_profiles,
+            'deleted':True,
+        }
+        return self.render_to_response(context)
+
+        
+
+class GetTaxonProfilesNavigation(MetaAppMixin, TemplateView):
+    
+    template_name = 'taxon_profiles/ajax/taxon_profiles_navigation.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profiles_navigation = TaxonProfilesNavigation.objects.get(taxon_profiles_id=kwargs['taxon_profiles_id'])
+        
+    def get_context_data(self, **kwargs):
+        
+        delta = None
+        
+        if self.taxon_profiles_navigation.last_prerendered_at:
+            delta = self.taxon_profiles_navigation.last_prerendered_at - self.taxon_profiles_navigation.last_modified_at
+        
+        if not delta or delta.total_seconds() < 0:
+            self.taxon_profiles_navigation.prerender()
+        
+        context = super().get_context_data(**kwargs)
+        
+        context['taxon_profiles_navigation'] = self.taxon_profiles_navigation
+        context['taxon_profiles'] = self.taxon_profiles_navigation.taxon_profiles
+        context['navigation_entry_content_type'] = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+    
+        return context
+    
+    
+class ManageNavigationImage(ManageContentImage):
+    
+    template_name = 'taxon_profiles/ajax/manage_navigation_image.html'
+    
+    def save_image(self, form):
+        super().save_image(form)
+        
+        self.content_instance.navigation.save()
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.content_instance.navigation.taxon_profiles
+        return context
+
+
+class DeleteNavigationImage(DeleteContentImage):
+    
+    template_name = 'taxon_profiles/ajax/delete_navigation_image.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        navigation_entry = self.object.content
+        context['taxon_profiles'] = navigation_entry.navigation.taxon_profiles
+        
+        if self.request.method == 'POST':
+            navigation_entry.navigation.save()
+        return context
+    
+    
+class DeleteTaxonProfilesNavigationEntryTaxon(MetaAppMixin, AjaxDeleteView):
+    
+    model = TaxonProfilesNavigationEntryTaxa
+    
+    template_name = 'taxon_profiles/ajax/delete_navigation_entry_taxon.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['navigation_entry'] = self.object.navigation_entry
+        context['taxon_profiles'] = self.object.navigation_entry.navigation.taxon_profiles
+        return context
+    
+    
+    def form_valid(self, form):
+        
+        navigation_entry_taxon_id = self.object.id
+        
+        navigation = self.object.navigation_entry.navigation
+
+        self.object.delete()
+        
+        navigation.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['navigation_entry_taxon_id'] = navigation_entry_taxon_id
+        context['deleted'] = True
+        return self.render_to_response(context)

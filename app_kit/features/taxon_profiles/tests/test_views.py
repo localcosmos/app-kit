@@ -1,22 +1,30 @@
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
+from django.urls import reverse
 
 from app_kit.tests.common import test_settings
 
-from app_kit.models import MetaAppGenericContent
+from app_kit.models import MetaAppGenericContent, ContentImage
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
-                                  WithAdminOnly, ViewTestMixin, WithImageStore, WithMedia)
+                                  WithAdminOnly, ViewTestMixin, WithImageStore, WithMedia, WithFormTest)
 
+from app_kit.tests.test_views import ContentImagePostData
 
 from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTaxonProfile, ManageTaxonTextType,
                 DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits, ManageTaxonProfileImage,
                 DeleteTaxonProfileImage, GetManageOrCreateTaxonProfileURL, ManageTaxonTextTypesOrder,
                 ChangeTaxonProfilePublicationStatus, BatchChangeNatureGuideTaxonProfilesPublicationStatus,
-                CreateTaxonProfile)
+                CreateTaxonProfile, ManageTaxonProfilesNavigationEntry, AddTaxonProfilesNavigationEntryTaxon,
+                DeleteTaxonProfilesNavigationEntry, GetTaxonProfilesNavigation, ManageNavigationImage,
+                DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon)
 
 
-from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
+from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
+                TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry,
+                TaxonProfilesNavigationEntryTaxa)
+
 from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm
 
 
@@ -373,7 +381,9 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
         taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
         self.assertEqual(taxon_text.text, text_content)
-        self.assertEqual(taxon_text.long_text, long_text_content)
+        
+        if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+            self.assertEqual(taxon_text.long_text, long_text_content)
 
         # test update
         text_content_2 = 'Update text content'
@@ -395,7 +405,9 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
         taxon_text = TaxonText.objects.get(taxon_text_type=text_type)
         self.assertEqual(taxon_text.text, text_content_2)
-        self.assertEqual(taxon_text.long_text, long_text_content_2)
+        
+        if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+            self.assertEqual(taxon_text.long_text, long_text_content_2)
 
 
 class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
@@ -1201,3 +1213,686 @@ class TestBatchChangeNatureGuideTaxonProfilesPublicationStatus(WithNatureGuideNo
         self.assertEqual(self.taxon_profile.publication_status, 'draft')
         self.assertEqual(non_taxon_profile.publication_status, 'draft')
 
+
+
+class TestCreateTaxonProfilesNavigationEntry(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly, 
+        WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'create_taxonprofiles_navigation_entry'
+    view_class = ManageTaxonProfilesNavigationEntry
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        
+        nav_query = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content)
+        
+        self.assertTrue(nav_query.exists())
+        
+        self.assertEqual(view.navigation_entry, None)
+        self.assertEqual(view.parent_navigation_entry, None)
+        
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['navigation_entry'], None)
+        self.assertEqual(context['parent_navigation_entry'], None)
+        self.assertEqual(context['success'], False)
+        self.assertEqual(context['taxon_success'], False)
+    
+    
+    @test_settings
+    def test_set_navigation_entry(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.navigation_entry, None)
+        view.set_navigation_entry()
+        
+        self.assertTrue(view.navigation_entry != None)
+    
+    
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        empty_initial = view.get_initial()
+        
+        self.assertEqual(empty_initial, {})
+        
+        view.set_navigation_entry()
+        
+        entry = view.navigation_entry
+        entry.name = 'Name'
+        entry.description = 'Description'
+        
+        entry.save()
+        
+        initial = view.get_initial()
+        
+        self.assertEqual(initial['name'], 'Name')
+        self.assertEqual(initial['description'], 'Description')
+    
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        navigation = view.taxon_profiles_navigation
+        
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'name': 'Name',
+            'description': 'Description',
+        }
+
+        form = view.form_class(data=post_data)
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertTrue(response.context_data['success'])
+        
+        nav_entry = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation).order_by('pk').last()
+        
+        self.assertEqual(nav_entry.name, post_data['name'])
+        self.assertEqual(nav_entry.description, post_data['description'])
+
+
+
+class WithTaxonProfilesNavigationEntry:
+    
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, *kwargs)
+        
+        self.navigation = TaxonProfilesNavigation(
+            taxon_profiles=self.generic_content,
+        )
+        
+        self.navigation.save()
+        
+        self.navigation_entry = TaxonProfilesNavigationEntry(
+            navigation=self.navigation,
+        )
+        
+        self.navigation_entry.save()
+
+
+class TestCreateTaxonProfilesNavigationEntryChild(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'create_taxonprofiles_navigation_entry'
+    view_class = ManageTaxonProfilesNavigationEntry
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'parent_navigation_entry_id': self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        
+        nav_query = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content)
+        
+        self.assertTrue(nav_query.exists())
+        
+        self.assertEqual(view.navigation_entry, None)
+        self.assertEqual(view.parent_navigation_entry, self.navigation_entry)
+        
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['navigation_entry'], None)
+        self.assertEqual(context['parent_navigation_entry'], self.navigation_entry)
+        self.assertEqual(context['success'], False)
+        self.assertEqual(context['taxon_success'], False)
+        
+        
+    @test_settings
+    def test_set_navigation_entry(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.navigation_entry, None)
+        view.set_navigation_entry()
+        
+        self.assertEqual(view.navigation_entry.parent, self.navigation_entry)
+        
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'name': 'Name',
+            'description': 'Description',
+        }
+
+        form = view.form_class(data=post_data)
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertTrue(response.context_data['success'])
+        
+        nav_entry = response.context_data['navigation_entry']
+        
+        self.assertEqual(nav_entry.parent, self.navigation_entry)
+        self.assertEqual(nav_entry.name, post_data['name'])
+        self.assertEqual(nav_entry.description, post_data['description'])
+        
+
+class TestManageTaxonProfilesNavigationEntry(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'manage_taxonprofiles_navigation_entry'
+    view_class = ManageTaxonProfilesNavigationEntry
+
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'navigation_entry_id': self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        
+        nav_query = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content)
+        
+        self.assertTrue(nav_query.exists())
+        
+        self.assertEqual(view.navigation_entry, self.navigation_entry)
+        self.assertEqual(view.parent_navigation_entry, None)
+        
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['navigation_entry'], self.navigation_entry)
+        self.assertEqual(context['parent_navigation_entry'], None)
+        self.assertEqual(context['success'], False)
+        self.assertEqual(context['taxon_success'], False)
+        
+        
+    @test_settings
+    def test_set_navigation_entry(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        view.set_navigation_entry()
+        self.assertEqual(view.navigation_entry, self.navigation_entry)
+    
+    
+
+class TestAddTaxonProfilesNavigationEntryTaxon(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'create_taxonprofiles_navigation_entry_taxon'
+    view_class = AddTaxonProfilesNavigationEntryTaxon
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_form_kwargs(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form_kwargs = view.get_form_kwargs()
+        
+        self.assertEqual(form_kwargs['parent'], None)
+        self.assertEqual(form_kwargs['navigation_entry'], None)
+        self.assertEqual(form_kwargs['taxon_search_url'], reverse('search_taxon'))
+        
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        taxon = LazyTaxon(instance=chordata_db)
+        
+        post_data = {
+            'taxon_0' : taxon.taxon_source,
+            'taxon_1' : taxon.taxon_latname,
+            'taxon_2' : taxon.taxon_author,
+            'taxon_3' : str(taxon.name_uuid),
+            'taxon_4' : taxon.taxon_nuid,
+        }
+
+        form = view.form_class(data=post_data, **view.get_form_kwargs())
+        is_valid = form.is_valid()
+
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.context_data['taxon_success'], True)
+        
+        taxon_link = TaxonProfilesNavigationEntryTaxa.objects.filter().order_by('pk').last()
+        
+        self.assertEqual(taxon_link.navigation_entry, response.context_data['navigation_entry'])
+        
+        self.assertEqual(taxon_link.name_uuid, taxon.name_uuid)
+
+
+class TestAddTaxonProfilesNavigationEntryTaxonExistingEntry(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'add_taxonprofiles_navigation_entry_taxon'
+    view_class = AddTaxonProfilesNavigationEntryTaxon
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'navigation_entry_id': self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_form_kwargs(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form_kwargs = view.get_form_kwargs()
+        
+        self.assertEqual(form_kwargs['parent'], None)
+        self.assertEqual(form_kwargs['navigation_entry'], self.navigation_entry)
+        self.assertEqual(form_kwargs['taxon_search_url'], reverse('search_taxon'))
+
+
+class TestAddTaxonProfilesNavigationEntryTaxonParent(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'create_taxonprofiles_navigation_entry_taxon'
+    view_class = AddTaxonProfilesNavigationEntryTaxon
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+            'parent_navigation_entry_id': self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_form_kwargs(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form_kwargs = view.get_form_kwargs()
+        
+        self.assertEqual(form_kwargs['parent'], self.navigation_entry)
+        self.assertEqual(form_kwargs['navigation_entry'], None)
+        self.assertEqual(form_kwargs['taxon_search_url'], reverse('search_taxon'))
+        
+
+class TestDeleteTaxonProfilesNavigationEntry(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'delete_taxonprofiles_navigation_entry'
+    view_class = DeleteTaxonProfilesNavigationEntry
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_form_valid(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = view.get_object()
+        
+        response = view.form_valid(None)
+        
+        self.assertEqual(response.context_data['navigation_entry_id'], self.navigation_entry.id)
+        self.assertEqual(response.context_data['taxon_profiles'], self.generic_content)
+        self.assertEqual(response.context_data['deleted'], True)
+        
+        exists_qry = TaxonProfilesNavigationEntry.objects.filter(pk=self.navigation_entry.id)
+        self.assertFalse(exists_qry.exists())
+        
+
+class TestGetTaxonProfilesNavigation(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'get_taxonprofiles_navigation'
+    view_class = GetTaxonProfilesNavigation
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        self.assertEqual(view.taxon_profiles_navigation, self.navigation)
+    
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(self.navigation.prerendered, None)
+        self.assertEqual(self.navigation.last_prerendered_at, None)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        ctype = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+        
+        self.assertEqual(context['taxon_profiles_navigation'], self.navigation)
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['navigation_entry_content_type'], ctype)
+        
+        self.navigation.refresh_from_db()
+        self.assertTrue(self.navigation.prerendered != None)
+        
+        
+
+class TestManageNavigationImage(ContentImagePostData, WithImageStore, WithMedia, WithTaxonProfilesNavigationEntry,
+        WithTaxonProfiles, WithFormTest, ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp,
+        WithTenantClient, TenantTestCase):
+    
+    url_name = 'manage_taxon_profiles_navigation_image'
+    view_class = ManageNavigationImage
+    
+    def get_url_kwargs(self):
+
+        navigation_entry_content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_type_id' : navigation_entry_content_type.id,
+            'object_id': self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_save_image(self):
+        
+        navigation_entry_content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.content_image = None
+        view.taxon = None
+        view.object_content_type = navigation_entry_content_type
+        view.content_instance = self.navigation_entry
+        post_data, post_files = self.get_post_form_data()
+        
+        form = view.form_class(data=post_data, files=post_files)
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        previously_modified_at = self.navigation.last_modified_at
+        
+        view.save_image(form)
+        
+        self.navigation.refresh_from_db()
+        
+        delta = previously_modified_at - self.navigation.last_modified_at
+        
+        self.assertTrue(delta.total_seconds() < 0)
+        
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        navigation_entry_content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.content_image = None
+        view.taxon = None
+        view.object_content_type = navigation_entry_content_type
+        view.content_instance = self.navigation_entry
+        view.image_type = 'image'
+        view.new = True
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+
+
+class TestDeleteNavigationImage(WithImageStore, WithMedia, WithTaxonProfilesNavigationEntry,
+        WithTaxonProfiles, WithFormTest, ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp,
+        WithTenantClient, TenantTestCase):
+    
+    url_name = 'delete_taxon_profiles_navigation_image'
+    view_class = DeleteNavigationImage
+    
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        
+        image_store = self.create_image_store()
+        self.content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+        
+        self.content_image = ContentImage(
+            image_store=image_store,
+            content_type=self.content_type,
+            object_id=self.navigation_entry.id,
+            image_type='image',
+        )
+
+        self.content_image.save()
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : self.content_image.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.content_image
+        
+        previously_modified_at = self.navigation.last_modified_at
+
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        
+        self.navigation.refresh_from_db()
+        
+        self.assertEqual(previously_modified_at, self.navigation.last_modified_at)
+        
+    @test_settings
+    def test_get_context_data_post(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.content_image
+        view.request.method = 'POST'
+        
+        previously_modified_at = self.navigation.last_modified_at
+
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        
+        self.navigation.refresh_from_db()
+        
+        delta = previously_modified_at - self.navigation.last_modified_at
+        
+        self.assertTrue(delta.total_seconds() < 0)
+        
+        
+
+class TestDeleteTaxonProfilesNavigationEntryTaxon(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    url_name = 'delete_taxonprofiles_navigation_entry_taxon'
+    view_class = DeleteTaxonProfilesNavigationEntryTaxon
+    
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        taxon = LazyTaxon(instance=chordata_db)
+        
+        self.navigation_entry_taxon = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=self.navigation_entry,
+        )
+        
+        self.navigation_entry_taxon.set_taxon(taxon)
+        
+        self.navigation_entry_taxon.save()
+        
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : self.navigation_entry_taxon.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.navigation_entry_taxon
+        
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['navigation_entry'], self.navigation_entry)
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.navigation_entry_taxon
+        
+        previously_modified_at = self.navigation.last_modified_at
+        
+        deleted_pk = self.navigation_entry_taxon.id
+        
+        response = view.form_valid(None)
+        
+        self.assertTrue(response.context_data['deleted'])
+        self.assertEqual(response.context_data['navigation_entry_taxon_id'], deleted_pk)
+        
+        self.navigation.refresh_from_db()
+        
+        delta = previously_modified_at - self.navigation.last_modified_at
+        
+        self.assertTrue(delta.total_seconds() < 0)

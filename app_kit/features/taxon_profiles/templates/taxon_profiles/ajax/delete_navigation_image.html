@@ -1,0 +1,12 @@
+{% extends 'localcosmos_server/ajax/delete_server_content_image.html' %}
+
+{% block success_js %}
+	<script>
+		var image_element = $("#navigation_image_{{ deleted_object_id }}");
+
+        image_element.remove();
+		$("#Modal").modal("hide");
+	</script>
+
+	{% block extra_success_js %}{% endblock %}
+{% endblock %}

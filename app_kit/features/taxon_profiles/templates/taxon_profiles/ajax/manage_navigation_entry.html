@@ -1,0 +1,69 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block title %}
+    {% if navigation_entry %}
+    	{% trans 'Manage navigatoin entry' %}
+    {% else %}
+        {% trans 'Create navigation entry' %}
+    {% endif %}
+{% endblock %}
+
+
+{% block action %}
+    {% if navigation_entry %}
+        {% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id navigation_entry.id %}
+    {% else %}
+        {% if parent_navigation_entry %}
+            {% url 'create_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id parent_navigation_entry.id %}
+        {% else %}
+            {% url 'create_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id %}
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <div id="taxon-profiles-navigation-entry-taxa"></div>
+    {% if success %}
+        <div class="alert alert-success">
+            {% trans 'Navigation entry saved.' %}
+        </div>
+    {% else %}
+    	{% render_bootstrap_form form %}
+    {% endif %}
+{% endblock %}
+
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+<script>
+    (function() {
+        {% if success %}
+            $.get("{% url 'get_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (html) => {
+                $("#taxon-profiles-navigation").html(html);
+                ajaxify('taxon-profiles-navigation');
+            });
+            $("#LargeModal").modal("hide");
+        {% endif %}
+
+        let add_navigation_entry_taxon_url;
+
+        {% if navigation_entry %}
+            add_navigation_entry_taxon_url = "{% url 'add_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id navigation_entry.id %}";
+        {% else %}
+            {% if parent_navigation_entry %}
+                add_navigation_entry_taxon_url = "{% url 'create_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id parent_navigation_entry.id %}";
+            {% else %}
+                add_navigation_entry_taxon_url = "{% url 'create_taxonprofiles_navigation_entry_taxon' meta_app.id taxon_profiles.id %}";
+            {% endif %}
+        {% endif %}
+        $.get(add_navigation_entry_taxon_url, (html) => {
+            $("#taxon-profiles-navigation-entry-taxa").html(html);
+            ajaxify('taxon-profiles-navigation-entry-taxa')
+        });
+    })();
+</script>
+{% endblock %}

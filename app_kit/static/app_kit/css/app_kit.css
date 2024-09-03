@@ -264,7 +264,7 @@ footer {
   filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
 }
 
-.error, .has-error {
+.error, .has-error, .errorlist {
 	color: #A94442;
 }
 
@@ -899,6 +899,15 @@ input[type="color"] {
 	border-radius: .5em;
 	cursor: pointer;
 	
+}
+
+.taxon-profiles-navigation-image {
+	width: 40px;
+	aspect-ratio: 1/1;
+}
+
+.btn.image-btn {
+	padding: 0px 10px 0px 0px;
 }
 
 /*

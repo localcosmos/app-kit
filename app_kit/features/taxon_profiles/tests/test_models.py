@@ -3,7 +3,9 @@ from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
 
 from app_kit.tests.common import test_settings
-from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile, TaxonTextType, TaxonText
+from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
+        TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
+        
 from app_kit.models import MetaAppGenericContent
 
 from app_kit.features.taxon_profiles.zip_import import TaxonProfilesZipImporter
@@ -14,6 +16,8 @@ from app_kit.tests.mixins import WithMetaApp
 
 from taxonomy.lazy import LazyTaxonList, LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
+
+from .common import WithTaxonProfilesNavigation
 
 
 class WithTaxonProfiles:
@@ -289,3 +293,210 @@ class TestTaxonText(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         taxon_text_full.save()
 
         
+class TestTaxonProfilesNavigation(WithTaxonProfilesNavigation, WithMetaApp, TenantTestCase):
+    
+    @test_settings
+    def test_save(self):
+        
+        last_modified = self.navigation.last_modified_at
+        
+        self.navigation.save(prerendered=True)
+        self.navigation.refresh_from_db()
+        self.assertEqual(last_modified, self.navigation.last_modified_at)
+        
+        self.navigation.save()
+        self.navigation.refresh_from_db()
+        self.assertTrue(last_modified != self.navigation.last_modified_at)
+        
+    
+    
+    @test_settings
+    def test_prerender(self):
+        
+        navigation = TaxonProfilesNavigation(
+            taxon_profiles = self.taxon_profiles,
+        )
+        
+        navigation.save()
+        
+        self.assertEqual(navigation.prerendered, None)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        chordata = LazyTaxon(instance=chordata_db)
+        
+        n1 = self.create_navigation_entry(navigation, taxon=chordata)
+        
+        n2 = self.create_navigation_entry(navigation, parent=n1)
+        
+        navigation.refresh_from_db()
+        
+        last_modified = navigation.last_modified_at
+        navigation.prerender()
+
+        self.assertEqual(last_modified, navigation.last_modified_at)
+        
+        self.assertIn('tree', navigation.prerendered)
+        self.assertEqual(len(navigation.prerendered['tree']), 1)
+        self.assertEqual(len(navigation.prerendered['tree'][0]['children']), 1)
+        
+        
+class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithMetaApp, TenantTestCase):
+    
+    @test_settings
+    def test_key(self):
+        
+        entry = self.create_navigation_entry()
+        
+        self.assertEqual(entry.key, 'tpne-{0}'.format(entry.id))
+    
+    @test_settings
+    def test_as_dict(self):
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        chordata = LazyTaxon(instance=chordata_db)
+        
+        entry = self.create_navigation_entry()
+        
+        navigation_entry_content_type = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+        
+        dic = entry.as_dict()
+        
+        expected_dic = {
+            'id': entry.id,
+            'content_type_id': navigation_entry_content_type.id,
+            'key': 'tpne-{0}'.format(entry.id),
+            'parent_id': None,
+            'parent_key': None,
+            'taxa': [],
+            'verbose_name': 'Unconfigured navigation entry',
+            'name' : None,
+            'description': None,
+            'children': [],
+            'images': [],
+        }
+        
+        self.assertEqual(dic, expected_dic)
+        
+        entry_2_kwargs = {
+            'name': 'Name',
+            'description': 'Description',
+        }
+        entry_2 = self.create_navigation_entry(parent=entry, taxon=chordata, **entry_2_kwargs)
+        
+        entry_3 = self.create_navigation_entry(parent=entry_2)
+        
+        expected_dic = {
+            'id': entry_2.id,
+            'content_type_id': navigation_entry_content_type.id,
+            'key': 'tpne-{0}'.format(entry_2.id),
+            'parent_id': entry.id,
+            'parent_key': 'tpne-{0}'.format(entry.id),
+            'taxa': [
+                {
+                    'label': 'Chordata ',
+                    'taxon_latname': 'Chordata',
+                    'taxon_author': None,
+                    'taxon_nuid': '001008',
+                    'taxon_source': 'taxonomy.sources.col',
+                    'name_uuid': '8f269294-09c9-4856-9347-0daf8a2fd80b'
+                }
+            ],
+            'verbose_name': 'Name',
+            'name': 'Name',
+            'description':'Description',
+            'children': [
+                {
+                    'id': entry_3.id,
+                    'content_type_id': navigation_entry_content_type.id,
+                    'key': 'tpne-{0}'.format(entry_3.id),
+                    'parent_id': entry_2.id,
+                    'parent_key': 'tpne-{0}'.format(entry_2.id),
+                    'taxa': [],
+                    'verbose_name': 'Unconfigured navigation entry',
+                    'name': None,
+                    'description': None,
+                    'children': [],
+                    'images': []
+                }
+            ], 
+            'images': []
+        }
+    
+    
+    @test_settings
+    def test_save(self):
+        entry = self.create_navigation_entry()
+        
+        self.navigation.refresh_from_db()
+        
+        last_modified = self.navigation.last_modified_at
+        
+        entry.save()
+        
+        self.navigation.refresh_from_db()
+        
+        self.assertTrue(last_modified != self.navigation.last_modified_at)
+    
+    
+    @test_settings
+    def test_children(self):
+        entry = self.create_navigation_entry()
+        
+        c1 = self.create_navigation_entry(parent=entry)
+        c2 = self.create_navigation_entry(parent=entry)
+        
+        children = entry.children
+        
+        self.assertTrue(c1 in children)
+        self.assertTrue(c2 in children)
+        
+        self.assertEqual(len(children), 2)
+    
+    
+    @test_settings
+    def test_str(self):
+        entry = self.create_navigation_entry()
+        
+        self.assertEqual(str(entry), 'Unconfigured navigation entry')
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        chordata = LazyTaxon(instance=chordata_db)
+        
+        taxon_link = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=entry,
+        )
+        
+        taxon_link.set_taxon(chordata)
+        taxon_link.save()
+        
+        self.assertEqual(str(entry), 'Chordata')
+        
+        name = 'Test entry'
+        
+        entry.name = name
+        entry.save()
+        
+        self.assertEqual(str(entry), name)
+    
+    
+    @test_settings
+    def test_taxa(self):
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        chordata = LazyTaxon(instance=chordata_db)
+        
+        entry = self.create_navigation_entry(taxon=chordata)
+        
+        taxa = entry.taxa
+        
+        names = [str(t) for t in taxa.values_list('name_uuid', flat=True)]
+        
+        self.assertIn(chordata.name_uuid, names)
+        self.assertEqual(len(taxa), 1)

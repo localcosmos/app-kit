@@ -44,4 +44,33 @@ urlpatterns = [
     # delete taxon profile image
     path('delete-taxon-profile-image/<int:meta_app_id>/<int:pk>/',
         views.DeleteTaxonProfileImage.as_view(), name='delete_taxon_profile_image'),
+    # navigation
+    path('manage-taxon-profiles-navigation/create-entry/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.ManageTaxonProfilesNavigationEntry.as_view(), name='create_taxonprofiles_navigation_entry'),
+    path('manage-taxon-profiles-navigation/create-entry/<int:meta_app_id>/<int:taxon_profiles_id>/<int:parent_navigation_entry_id>/',
+         views.ManageTaxonProfilesNavigationEntry.as_view(), name='create_taxonprofiles_navigation_entry'),
+    path('manage-taxon-profiles-navigation/manage-entry/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
+         views.ManageTaxonProfilesNavigationEntry.as_view(), name='manage_taxonprofiles_navigation_entry'),
+    path('manage-taxon-profiles-navigation/delete-entry/<int:meta_app_id>/<int:pk>/',
+         views.DeleteTaxonProfilesNavigationEntry.as_view(), name='delete_taxonprofiles_navigation_entry'),
+    path('get-taxon-profiles-navigation/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.GetTaxonProfilesNavigation.as_view(), name='get_taxonprofiles_navigation'),
+    # navigation taxa
+    path('create-taxon-profiles-navigation-entry/taxon/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.AddTaxonProfilesNavigationEntryTaxon.as_view(), name='create_taxonprofiles_navigation_entry_taxon'),
+    path('add-taxon-profiles-navigation-taxon/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
+         views.AddTaxonProfilesNavigationEntryTaxon.as_view(), name='add_taxonprofiles_navigation_entry_taxon'),
+    path('create-taxon-profiles-navigation-entry/taxon/<int:meta_app_id>/<int:taxon_profiles_id>/<int:parent_navigation_entry_id>/',
+         views.AddTaxonProfilesNavigationEntryTaxon.as_view(), name='create_taxonprofiles_navigation_entry_taxon'),
+    path('manage-taxon-profiles-navigation/delete-navigation-entry-taxon/<int:meta_app_id>/<int:pk>/',
+         views.DeleteTaxonProfilesNavigationEntryTaxon.as_view(), name='delete_taxonprofiles_navigation_entry_taxon'),
+    # navigation images
+    path('manage-taxon-profiles-navigation/manage-navigation-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
+        views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),
+    path('manage-taxon-profiles-navigation/manage-navigation-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<str:image_type>/',
+        views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),
+    path('manage-taxon-profiles-navigation/manage-navigation-image/<int:meta_app_id>/<int:content_image_id>/',
+        views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),
+    path('manage-taxon-profiles-navigation/delete-navigation-image/<int:meta_app_id>/<int:pk>/',
+        views.DeleteNavigationImage.as_view(), name='delete_taxon_profiles_navigation_image'),
 ]
