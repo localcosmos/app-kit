@@ -110,7 +110,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         backbonetaxonomy = backbonetaxonomy_link.generic_content
         backbone_taxa_name_uuids = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
-        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(name_uuid__in=backbone_taxa_profiles_name_uuids)
+        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
         
         uses_taxon_profiles_navigation = self.generic_content.get_option(self.meta_app, 'enable_taxonomic_navigation')
         taxon_profiles_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content).first()
@@ -124,7 +124,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
         form_kwargs = {
             'taxon_search_url': reverse('search_backbonetaxonomy', kwargs={'meta_app_id':self.meta_app.id}),
-            'fixed_taxon_source' : '__all__'
+            'fixed_taxon_source' : '__all__',
         }
         
         context['searchbackboneform'] = AddSingleTaxonForm(**form_kwargs)

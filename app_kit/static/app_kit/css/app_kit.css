@@ -4,6 +4,10 @@ html, body {
 	background-color: #ededed;
 }
 
+.cursor-pointer {
+	cursor: pointer;
+}
+
 footer {
 	background-color: #e0e0e0;
 }

@@ -117,7 +117,17 @@ class TaxonProfiles(GenericContent):
                 content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
                 locale.update(content_images_primary_localization)
         
+        navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self).first()
         
+        if navigation:
+            navigation_entries = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation)
+            
+            for navigation_entry in navigation_entries:
+                if navigation_entry.name and navigation_entry.name not in locale:
+                    locale[navigation_entry.name] = navigation_entry.name
+                    
+                if navigation_entry.description and navigation_entry.description not in locale:
+                    locale[navigation_entry.description] = navigation_entry.description
         return locale
 
 

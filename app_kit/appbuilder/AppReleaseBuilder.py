@@ -2606,7 +2606,8 @@ class AppReleaseBuilder(AppBuilderBase):
             self.deletecreate_folder(browser_zip_release_folder)
 
             browser_zip_source = self._build_browser_zip_filepath
-            browser_zip_dest = self._published_browser_zip_served_path
+            browser_zip_dest = self._published_browser_zip_served_filepath
+            
             os.symlink(browser_zip_source, browser_zip_dest)
 
         else:

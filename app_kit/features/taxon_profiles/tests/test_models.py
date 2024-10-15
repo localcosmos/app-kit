@@ -149,6 +149,28 @@ class TestTaxonProfiles(WithTaxonProfiles, WithMetaApp, WithNatureGuide, TenantT
         long_text_key = taxon_profiles.get_long_text_key(taxon_text)
         self.assertEqual(locale[long_text_key], self.long_text_content)
         
+        # add a nav
+        nav = TaxonProfilesNavigation(
+            taxon_profiles=taxon_profiles,
+        )
+        
+        nav.save()
+        
+        naventry_name = 'naventry name'
+        naventry_description = 'naventry description'
+        nav_entry_1 = TaxonProfilesNavigationEntry(
+            navigation=nav,
+            name=naventry_name,
+            description = naventry_description,
+        )
+        
+        nav_entry_1.save()
+        
+        locale = taxon_profiles.get_primary_localization()
+        
+        self.assertEqual(locale[naventry_name], naventry_name)
+        self.assertEqual(locale[naventry_description], naventry_description)
+        
 
     @test_settings
     def test_get_text_keys(self):
@@ -312,6 +334,8 @@ class TestTaxonProfilesNavigation(WithTaxonProfilesNavigation, WithMetaApp, Tena
     
     @test_settings
     def test_prerender(self):
+        
+        self.navigation.delete()
         
         navigation = TaxonProfilesNavigation(
             taxon_profiles = self.taxon_profiles,

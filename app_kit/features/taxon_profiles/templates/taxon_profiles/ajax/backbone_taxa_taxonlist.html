@@ -1,5 +1,5 @@
 {% load i18n el_pagination_tags taxon_profile_tags %}
-{% paginate 5 backbone_taxa_noprofile using 'backbone_taxa_page' %}
+{% paginate 10 backbone_taxa_noprofile using 'backbone_taxa_page' %}
 <ul>
     {% for backbone_taxon in backbone_taxa_noprofile %}
         <li>
