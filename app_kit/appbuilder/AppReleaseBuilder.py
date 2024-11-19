@@ -449,12 +449,20 @@ class AppReleaseBuilder(AppBuilderBase):
         # check if there is one natureguide or one generic_form
         generic_form_ctype = ContentType.objects.get_for_model(GenericForm)
         nature_guide_ctype = ContentType.objects.get_for_model(NatureGuide)
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
 
         exists = MetaAppGenericContent.objects.filter(meta_app=self.meta_app, content_type__in=[generic_form_ctype,
                                                                              nature_guide_ctype]).exists()
 
-        if not exists:
-            error_message = _('Your app needs at least one nature nuide OR one observation form.')
+        taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
+                                                                content_type=taxon_profiles_ctype)
+        
+        taxon_profiles = taxon_profiles_link.generic_content
+        taxon_profile_exists = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles).exists()
+
+        if not exists and not taxon_profile_exists:
+            
+            error_message = _('Your app needs at least one nature guide OR one observation form OR one taxon profile.')
             error = ValidationError(self.meta_app, self.meta_app, [error_message])
             result['errors'].append(error)
         
@@ -1924,6 +1932,25 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.build_features[generic_content_type]['registry'] = '/{0}'.format(relative_registry_path)
         self.build_features[generic_content_type]['search'] = '/{0}'.format(relative_search_index_path)
+
+        # navigations
+        navigation_json = jsonbuilder.build_navigation()
+        
+        navigation_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'navigation.json')
+        with open(navigation_absolute_filepath, 'w', encoding='utf-8') as f:
+            json.dump(navigation_json, f, indent=4, ensure_ascii=False)
+        
+        relative_navigation_path = os.path.join(app_relative_taxonprofiles_folder, 'navigation.json')
+        self.build_features[generic_content_type]['navigation'] = '/{0}'.format(relative_navigation_path)
+        
+        # featured taxon profiles
+        featured_taxon_profiles = jsonbuilder.build_featured_taxon_profiles_list(languages=self.meta_app.languages())
+        featured_taxon_profiles_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'featured_profiles.json')
+        with open(featured_taxon_profiles_absolute_filepath, 'w', encoding='utf-8') as f:
+            json.dump(featured_taxon_profiles, f, indent=4, ensure_ascii=False)
+        
+        relative_featured_taxon_profiles_path = os.path.join(app_relative_taxonprofiles_folder, 'featured_profiles.json')
+        self.build_features[generic_content_type]['featured_profiles'] = '/{0}'.format(relative_featured_taxon_profiles_path)
 
         self.logger.info('finished building TaxonProfiles')
 

@@ -7,7 +7,7 @@ from .models import (TaxonTextType, TaxonText, TaxonProfilesNavigationEntryTaxa,
 
 from app_kit.validators import json_compatible
 
-from app_kit.forms import GenericContentOptionsForm
+from app_kit.forms import GenericContentOptionsForm, GenericContentStatusForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
 from localcosmos_server.taxonomy.fields import TaxonField
 from taxonomy.lazy import LazyTaxon
@@ -216,7 +216,11 @@ class AddTaxonProfilesNavigationEntryTaxonForm(AddSingleTaxonForm):
 
         return cleaned_data
     
+
+class TaxonProfileStatusForm(GenericContentStatusForm):
     
+    is_featured = forms.BooleanField(required=False)
+
 ''' currently unused
 class SaveTaxonLocaleMixin:
 

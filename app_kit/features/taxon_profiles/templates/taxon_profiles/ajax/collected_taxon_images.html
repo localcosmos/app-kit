@@ -1,6 +1,9 @@
 {% load i18n localcosmos_tags %}
 {% if taxon_images %}
 	<div class="row mb-3">
+		<div class="col-12">
+			<h5>{% trans 'Images from taxonomic collection' %}</h5>
+		</div>
 		{% for image in taxon_images %}
 			<div class="col-6 col-md-4 col-lg-2">
 				<img src="{{ image.image_url }}" class="img-fluid" />
@@ -11,6 +14,9 @@
 {% endif %}
 {% if node_images %}
 	<div class="row mb-3">
+		<div class="col-12">
+			<h5>{% trans 'Images from nature guides' %}</h5>
+		</div>
 		{% for image in node_images %}
 			<div class="col-6 col-md-4 col-lg-2">
 				<img src="{{ image.image_url }}" class="img-fluid" />
@@ -21,6 +27,11 @@
 {% endif %}
 
 <div id="taxon-profile-images" class="row" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
+	{% if taxon_profile_images %}
+		<div class="col-12">
+			<h5>{% trans 'Images manually added to this profile' %}</h5>
+		</div>
+	{% endif %}
 	{% for image in taxon_profile_images %}
 	
 		<div id="content_image_container_{{ image.id }}" data-object-id="{{ image.id }}" class="col-6 col-md-4 col-lg-2">
@@ -33,6 +44,11 @@
 				</div>
 			{% endif %}
 			<div>
+				{% if image.is_primary %}
+					<div>
+						<span class="badge badge-info">{% trans 'primary image' %}</span>
+					</div>
+				{% endif %}
 				<div class="btn-group dropup">
 					<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenu-{{ image.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 						{% trans 'Modify' %}

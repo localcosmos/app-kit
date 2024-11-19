@@ -53,11 +53,19 @@
       }
     }
   },
-  "templateContent": {
-    "urlPattern": "/pages/{templateName}/{slug}/",
-    "navigations": {},
-    "requiredOfflineContents": {}
-  },
+  "templateContent" : {
+        "urlPattern": "/pages/{templateName}/{slug}/",
+        "navigations": {
+            "main": {
+                "name": "Main navigation",
+                "maxLevels": 1
+            },
+            "burger": {
+                "name": "Burger menu",
+                "maxLevels": 1
+            }
+        }
+    },
   "cordova" : {
     "platforms" : {
       "android" : "android@13.0.0",

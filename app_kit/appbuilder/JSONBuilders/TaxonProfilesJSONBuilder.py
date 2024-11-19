@@ -5,7 +5,8 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import MatrixFilterSerializer, NodeFilterSpaceListSerializer
 
-from app_kit.features.taxon_profiles.models import TaxonProfile
+from app_kit.features.taxon_profiles.models import (TaxonProfile, TaxonProfilesNavigation,
+    TaxonProfilesNavigationEntry)
 from app_kit.features.nature_guides.models import (NatureGuidesTaxonTree, MatrixFilter, NodeFilterSpace, MetaNode,
                                                    NatureGuide)
 
@@ -14,6 +15,9 @@ from app_kit.features.generic_forms.models import GenericForm
 from app_kit.models import ContentImage, MetaAppGenericContent
 
 from localcosmos_server.template_content.models import TemplateContent
+
+from taxonomy.lazy import LazyTaxon
+from taxonomy.models import TaxonomyModelRouter
 
 from collections import OrderedDict
 
@@ -139,11 +143,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'nodeImages' : [],
                 'taxonImages' : [],
             },
+            'primary_image': None,
             'synonyms' : [],
             'gbifNubKey' : None,
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
             'tags' : [],
+            'is_featured': db_profile.is_featured,
         }
 
         synonyms = profile_taxon.synonyms()
@@ -181,6 +187,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             taxon_profile_images = db_profile.images().order_by('position')
 
             for content_image in taxon_profile_images:
+                
+                image_entry = None
 
                 if content_image.id not in collected_content_image_ids and content_image.image_store.id not in collected_image_store_ids:
                     image_entry = self.get_image_entry(content_image)
@@ -189,7 +197,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     collected_content_image_ids.add(content_image.id)
                     collected_image_store_ids.add(content_image.image_store.id)
-
+                    
+                if content_image.is_primary == True:
+                    
+                    if image_entry == None:
+                        image_entry = self.get_image_entry(content_image)
+                    
+                    taxon_profile_json['primary_image'] = image_entry
+                        
         
         # get information (traits, node_names) from nature guides if possible
         # collect node images
@@ -720,3 +735,180 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             generic_form_json['isDefault'] = True
 
         return generic_form_json
+    
+    
+    def _build_navigation_child(self, navigation_entry):
+        
+        taxa = []
+        
+        images = []
+        
+        for content_image in navigation_entry.images():
+            image_entry = self.get_image_entry(content_image)
+            images.append(image_entry)
+        
+        for taxon_link in navigation_entry.taxa:
+            lazy_taxon = LazyTaxon(instance=taxon_link)
+            taxon = self.build_taxon(lazy_taxon)
+            taxa.append(taxon)
+        
+        navigation_entry_json = {
+            'key': navigation_entry.key,
+            'parent_key': None,
+            'name': navigation_entry.name,
+            'description': navigation_entry.description,
+            'verbose_name': str(navigation_entry),
+            'taxa': taxa,
+            'images': images,
+        }
+        
+        if navigation_entry.parent:
+            navigation_entry_json.update({
+                'parent_key': navigation_entry.parent.key,
+            })
+        
+        return navigation_entry_json
+    
+    
+    def build_navigation(self):
+        
+        custom_taxonomy_name = 'taxonomy.sources.custom'
+        custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
+        
+        navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content).first()
+        built_navigation = {
+            'start' : {
+                'name': None,
+                'verbose_name': None,
+                'is_terminal_node': False,
+                'children' : [],
+            }
+        }
+        
+        if navigation:
+            root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
+                                                                        parent=None)
+            for root_element in root_elements:
+                
+                root_element_json = self._build_navigation_child(root_element)
+                built_navigation['start']['children'].append(root_element_json)
+                
+            non_root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
+                                                                            parent__isnull=False)
+            
+            for navigation_entry in non_root_elements:
+                
+                navigation_entry_json = {
+                    'name': navigation_entry.name,
+                    'verbose_name': str(navigation_entry),
+                    'is_terminal_node': False,
+                }
+                
+                children = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
+                                                                            parent=navigation_entry)
+                
+                if children:
+                    children_json = []
+                    
+                    for child in children:
+                        child_json = self._build_navigation_child(child)
+                        children_json.append(child_json)
+                        
+                    navigation_entry_json['children'] = children_json
+                
+                else:
+                    navigation_entry_json['is_terminal_node'] = True
+                    
+                    # fetch all taxon profiles matching this node
+                    taxon_profiles = []
+                    taxon_profiles_json = []
+
+                    for taxon_link in navigation_entry.taxa:
+                        
+                        matching_profiles = TaxonProfile.objects.filter(
+                            taxon_source=taxon_link.taxon_source,
+                            taxon_nuid__startswith=taxon_link.taxon_nuid)
+                        
+                        for matching_profile in matching_profiles:
+                            if matching_profile not in taxon_profiles:
+                                taxon_profiles.append(matching_profile)
+                        
+                        if taxon_link.taxon_source != 'taxonomy.sources.custom':
+                            
+                            search_kwargs = {
+                                'taxon_latname' : taxon_link.taxon_latname
+                            }
+
+                            if taxon_link.taxon_author:
+                                search_kwargs['taxon_author'] = taxon_link.taxon_author
+
+                            custom_parent_taxa = custom_taxonomy_models.TaxonTreeModel.objects.filter(
+                                **search_kwargs)
+                            
+                            for custom_parent_taxon in custom_parent_taxa:
+                                matching_custom_profiles = TaxonProfile.objects.filter(
+                                    taxon_source=custom_taxonomy_name,
+                                    taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
+                                
+                                for matching_custom_profile in matching_custom_profiles:
+                                    if matching_custom_profile not in taxon_profiles:
+                                        taxon_profiles.append(matching_custom_profile)
+                    
+                    # jsonify all taxon profiles
+                    for taxon_profile in taxon_profiles:
+                        
+                        lazy_taxon = LazyTaxon(instance=taxon_profile)
+                        taxon_json = self.build_taxon(lazy_taxon)
+                        taxon_profiles_json.append(taxon_json)
+                    
+                    navigation_entry_json['taxon_profiles'] = taxon_profiles_json
+                    
+                built_navigation[navigation_entry.key] = navigation_entry_json
+                
+        
+        return built_navigation
+    
+    
+    def build_featured_taxon_profiles_list(self, languages):
+        
+        featured_profiles_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, is_featured=True)
+
+        featured_taxon_profiles = []
+        
+        taxon_profile_content_type = ContentType.objects.get_for_model(TaxonProfile)
+        
+        for taxon_profile in featured_profiles_qry:
+            
+            lazy_taxon = LazyTaxon(instance=taxon_profile)
+            taxon_profile_json = self.build_taxon(lazy_taxon)
+            
+            taxon_profile_json.update({
+                'primary_image': None,
+                'image': None,
+                'vernacular': {},
+            })
+            
+            primary_image = ContentImage.objects.filter(content_type=taxon_profile_content_type, object_id=taxon_profile.id, image_type='image', is_primary=True).first()
+            image = ContentImage.objects.filter(content_type=taxon_profile_content_type, object_id=taxon_profile.id, image_type='image').first()
+            
+            if primary_image:
+                primary_image_entry = self.get_image_entry(primary_image)
+                taxon_profile_json['primary_image'] = primary_image_entry
+            
+            if image:
+                image_entry = self.get_image_entry(image)
+                taxon_profile_json['image'] = image_entry
+
+            
+            for language_code in languages:
+
+                preferred_vernacular_name = self.get_vernacular_name_from_nature_guides(lazy_taxon)
+
+                if not preferred_vernacular_name:
+                    preferred_vernacular_name = taxon_profile.vernacular(language=language_code)
+
+                taxon_profile_json['vernacular'][language_code] = preferred_vernacular_name
+                
+            featured_taxon_profiles.append(taxon_profile_json)
+        
+        return featured_taxon_profiles

@@ -1346,6 +1346,26 @@ class TestContentImage(WithMedia, WithImageStore, WithMetaApp, WithUser, TenantT
         image = Image.open(thumbpath)
         self.assertEqual(image.width, 350)
         self.assertEqual(image.height, 350)
+        
+    
+    @test_settings
+    def test_set_primary_image(self):
+        
+        content_image_1 = self.create_content_image()
+        
+        content_image_2 = self.create_content_image()
+        
+        content_image_1.is_primary = True
+        content_image_1.save()
+        
+        content_image_2.is_primary = True
+        content_image_2.save()
+        
+        content_image_1.refresh_from_db()
+        content_image_2.refresh_from_db()
+        
+        self.assertTrue(content_image_2.is_primary)
+        self.assertFalse(content_image_1.is_primary)
 
 
 class TestUpdateContentImageTaxonMixin(WithImageStore, WithMedia, WithUser, TenantTestCase):

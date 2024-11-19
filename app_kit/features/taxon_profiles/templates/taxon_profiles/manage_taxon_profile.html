@@ -36,6 +36,9 @@
 				</small>
 			</div>
 			<div class="col">
+				{% if taxon_profile.is_featured %}
+					<span class="badge badge-primary">{% trans 'featured' %}</span>
+				{% endif %}
 				{% if taxon_profile.publication_status == 'draft' %}
 					<span class="badge badge-warning">{% trans 'draft' %}</span>
 				{% endif %}

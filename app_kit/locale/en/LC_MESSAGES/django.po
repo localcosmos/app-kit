@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-02 08:43+0200\n"
+"POT-Creation-Date: 2024-11-18 11:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,148 +46,174 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:457
-msgid "Your app needs at least one nature nuide OR one observation form."
+#: app_kit_api/serializers.py:133 forms.py:36
+msgid "Use only [a-z] and [0-9] for the subdomain."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:486
+#: app_kit_api/serializers.py:136 forms.py:39
+msgid "This subdomain is forbidden."
+msgstr ""
+
+#: app_kit_api/serializers.py:139 forms.py:42
+msgid "The subdomain has to start with a letter."
+msgstr ""
+
+#: app_kit_api/serializers.py:142 forms.py:45
+msgid "The subdomain has to be alphanumeric."
+msgstr ""
+
+#: app_kit_api/serializers.py:145 forms.py:48
+msgid "This subdomain already exists."
+msgstr ""
+
+#: app_kit_api/serializers.py:153
+msgid "The user does not exist."
+msgstr ""
+
+#: appbuilder/AppReleaseBuilder.py:465
+msgid ""
+"Your app needs at least one nature guide OR one observation form OR one "
+"taxon profile."
+msgstr ""
+
+#: appbuilder/AppReleaseBuilder.py:494
 #, python-brace-format
 msgid "Local Cosmos Private API HTTP Error: {0}."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:489
+#: appbuilder/AppReleaseBuilder.py:497
 #, python-brace-format
 msgid "Local Cosmos Private API URL Error: {0}."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:492
+#: appbuilder/AppReleaseBuilder.py:500
 msgid "Error validating your Local Cosmos Private API."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:501
+#: appbuilder/AppReleaseBuilder.py:509
 msgid "You have to provide an API URL if you run Local Cosmos Private."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:522
+#: appbuilder/AppReleaseBuilder.py:530
 msgid "Your app requires a legal notice."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:527
+#: appbuilder/AppReleaseBuilder.py:535
 msgid "Your app requires a privacy policy."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:532
+#: appbuilder/AppReleaseBuilder.py:540
 msgid "Your app requires a support email."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:552
+#: appbuilder/AppReleaseBuilder.py:560
 #, python-brace-format
 msgid "Your frontend is missing the image \"{0}\""
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:569
+#: appbuilder/AppReleaseBuilder.py:577
 #, python-brace-format
 msgid "Your frontend is missing the text \"{0}\""
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:586
+#: appbuilder/AppReleaseBuilder.py:594
 #, python-brace-format
 msgid "Your frontend is missing the configuration for \"{0}\""
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:614
+#: appbuilder/AppReleaseBuilder.py:622
 #, python-brace-format
 msgid "The translation for the language {0} is incomplete"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:706
+#: appbuilder/AppReleaseBuilder.py:714
 #, python-format
 msgid "The object referenced in the option %(option_name)s does not exist."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:718
+#: appbuilder/AppReleaseBuilder.py:726
 #, python-format
 msgid ""
 "The object %(object_name)s is referenced in the option %(option_name)s but "
 "is not linked to this meta_app."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:741
+#: appbuilder/AppReleaseBuilder.py:749
 msgid "This app has no taxa."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:770
+#: appbuilder/AppReleaseBuilder.py:778
 #, python-format
 msgid ""
 "The nature guide %(name)s has no setting for what happens if the "
 "identification has finished."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:780
+#: appbuilder/AppReleaseBuilder.py:788
 #, python-format
 msgid ""
 "The nature guide %(name)s has the Observation Form %(observation_form_name)s "
 "set as the result action, but this observation form is a draft."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:811 appbuilder/AppReleaseBuilder.py:865
+#: appbuilder/AppReleaseBuilder.py:819 appbuilder/AppReleaseBuilder.py:873
 msgid "Image is missing."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:821
+#: appbuilder/AppReleaseBuilder.py:829
 msgid "The nature guide is empty."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:824
+#: appbuilder/AppReleaseBuilder.py:832
 #, python-format
 msgid "The group %(name)s is empty."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:845
+#: appbuilder/AppReleaseBuilder.py:853
 #, python-format
 msgid "[%(name)s] This filter is empty."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:891
+#: appbuilder/AppReleaseBuilder.py:899
 #, python-format
 msgid ""
 "Profile of %(count)s taxa missing. A generic profile will be used instead."
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:937
+#: appbuilder/AppReleaseBuilder.py:945
 #, python-format
 msgid "%(field_class)s needs at least 2 choices"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:945
+#: appbuilder/AppReleaseBuilder.py:953
 #, python-format
 msgid "%(render_as)s requires exactly one taxonomic restriction"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:953
+#: appbuilder/AppReleaseBuilder.py:961
 #, python-format
 msgid "%(field_class)s requires at least one taxonomic restriction"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:972
+#: appbuilder/AppReleaseBuilder.py:980
 #, python-format
 msgid "%(role)s field is missing"
 msgstr ""
 
-#: appbuilder/AppReleaseBuilder.py:1002
+#: appbuilder/AppReleaseBuilder.py:1010
 #, python-format
 msgid "%(taxonomic_filter_name)s has no taxa"
 msgstr ""
 
-#: features/backbonetaxonomy/forms.py:21
+#: features/backbonetaxonomy/forms.py:25
 msgid "Search app taxa"
 msgstr ""
 
-#: features/backbonetaxonomy/forms.py:27
+#: features/backbonetaxonomy/forms.py:31
 msgid "Enter your taxa below. Only scientific names, separated by commas:"
 msgstr ""
 
-#: features/backbonetaxonomy/forms.py:37
+#: features/backbonetaxonomy/forms.py:41
 msgid "Select taxonomic systems"
 msgstr ""
 
@@ -344,7 +370,7 @@ msgstr ""
 #: features/nature_guides/templates/nature_guides/ajax/natureguide_node_small.html:26
 #: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:26
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:24
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:38
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:54
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:18
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:29
 #: templates/app_kit/ajax/manage_app_languages.html:16
@@ -358,6 +384,8 @@ msgstr ""
 #: features/maps/templates/maps/ajax/taxonomic_filters.html:15
 #: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:29
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:27
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:13
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:35
 #: templates/app_kit/ajax/app_card.html:20
 #: templates/app_kit/ajax/component_card.html:37
 #: templates/app_kit/manage_app.html:25
@@ -368,6 +396,7 @@ msgstr ""
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxonlist.html:62
 #: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:30
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:28
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:18
 msgid "Remove"
 msgstr ""
 
@@ -496,7 +525,7 @@ msgstr ""
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:25
 #: features/maps/templates/maps/ajax/taxonomic_filters.html:16
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:21
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:44
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:60
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:24
 #: templates/app_kit/ajax/component_card.html:11
 #: templates/app_kit/ajax/localized_content_image_form.html:10
@@ -866,11 +895,6 @@ msgstr ""
 msgid "Point field"
 msgstr ""
 
-#: features/generic_forms/models.py:48
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:67
-msgid "Geometry field"
-msgstr ""
-
 #: features/generic_forms/models.py:49
 msgid "Image field"
 msgstr ""
@@ -938,6 +962,7 @@ msgstr ""
 #: features/maps/templates/maps/ajax/taxonomic_filters.html:18
 #: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:55
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:11
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:20
 msgid "Move up"
 msgstr ""
 
@@ -946,6 +971,7 @@ msgstr ""
 #: features/maps/templates/maps/ajax/taxonomic_filters.html:20
 #: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:57
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:13
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:22
 msgid "Move down"
 msgstr ""
 
@@ -1018,23 +1044,27 @@ msgstr ""
 msgid "Add geographic reference field"
 msgstr ""
 
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:84
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:68
+msgid "Geometry field"
+msgstr ""
+
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:86
 msgid "Your form has no temporal reference field yet."
 msgstr ""
 
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:88
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:90
 msgid "Add timestamp field"
 msgstr ""
 
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:91
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:93
 msgid "datetime field"
 msgstr ""
 
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:101
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:103
 msgid "Additional fields"
 msgstr ""
 
-#: features/generic_forms/templates/generic_forms/manage_generic_form.html:113
+#: features/generic_forms/templates/generic_forms/manage_generic_form.html:115
 msgid "Add field"
 msgstr ""
 
@@ -1082,7 +1112,7 @@ msgstr ""
 
 #: features/glossary/templates/glossary/ajax/glossary_entry.html:24
 #: features/nature_guides/templates/nature_guides/ajax/node_management_menu.html:3
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:42
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:58
 #: templates/app_kit/ajax/component_card.html:13
 msgid "Edit image"
 msgstr ""
@@ -1123,7 +1153,7 @@ msgstr ""
 msgid "Invalid geometry"
 msgstr ""
 
-#: features/maps/forms.py:52
+#: features/maps/forms.py:52 features/taxon_profiles/forms.py:149
 msgid "Add taxon"
 msgstr ""
 
@@ -1819,7 +1849,7 @@ msgid "inactive"
 msgstr ""
 
 #: features/nature_guides/templates/nature_guides/ajax/matrix_filters.html:47
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:28
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:57
 msgid "modify"
 msgstr ""
 
@@ -1968,13 +1998,13 @@ msgstr ""
 
 #: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:33
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:30
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:46
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:62
 msgid "Move left"
 msgstr ""
 
 #: features/nature_guides/templates/nature_guides/widgets/grid_choices.html:35
 #: features/nature_guides/templates/nature_guides/widgets/horizontal_choices.html:32
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:48
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:64
 msgid "Move right"
 msgstr ""
 
@@ -2101,32 +2131,59 @@ msgstr ""
 msgid "[%(filepath)s] Invalid image file format: %(file_format)s"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:23
+#: features/taxon_profiles/forms.py:27
 msgid "Enable Wikipedia button"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:24
+#: features/taxon_profiles/forms.py:28
 msgid "Enable GBIF occurrence map button"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:25
+#: features/taxon_profiles/forms.py:29
 msgid "Enable observation button"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:26
+#: features/taxon_profiles/forms.py:30
 msgid "Include only taxon profiles from Nature Guides"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:39
+#: features/taxon_profiles/forms.py:32
+msgid "Enable Taxonomic Navigation"
+msgstr ""
+
+#: features/taxon_profiles/forms.py:44
 msgid "Name of the text content, acts as heading"
 msgstr ""
 
-#: features/taxon_profiles/forms.py:43
+#: features/taxon_profiles/forms.py:48
 msgid "E.g. habitat. IMPORTANT: changing this affects all texts of this type."
 msgstr ""
 
-#: features/taxon_profiles/models.py:133 features/taxon_profiles/models.py:134
+#: features/taxon_profiles/forms.py:157
+msgid "This taxon already exists in your navigation"
+msgstr ""
+
+#: features/taxon_profiles/forms.py:162
+msgid "Adding of taxa below genus is not supported"
+msgstr ""
+
+#: features/taxon_profiles/forms.py:184
+msgid "This taxon is not a valid descendant of the parent navigation entry"
+msgstr ""
+
+#: features/taxon_profiles/forms.py:202
+msgid "This taxon is not a valid parent at this point in the navigation"
+msgstr ""
+
+#: features/taxon_profiles/models.py:145 features/taxon_profiles/models.py:146
 msgid "Taxon profiles"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/backbone_taxa_taxonlist.html:9
+#: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:20
+#: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:36
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxonlist.html:15
+msgid "no profile"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/batch_change_taxon_profiles_publication_status.html:9
@@ -2139,7 +2196,23 @@ msgstr ""
 msgid "Change publication status of %(taxon_profile)s"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:57
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:5
+msgid "Images from taxonomic collection"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:18
+msgid "Images from nature guides"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:32
+msgid "Images manually added to this profile"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:49
+msgid "primary image"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/collected_taxon_images.html:73
 #: templates/app_kit/ajax/get_content_image_suggestions.html:27
 msgid "No images found."
 msgstr ""
@@ -2178,6 +2251,18 @@ msgid ""
 "Do you really want to delete %(name)s and all content associated with it?"
 msgstr ""
 
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_navigation_entry.html:6
+msgid "Manage navigatoin entry"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_navigation_entry.html:8
+msgid "Create navigation entry"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/manage_navigation_entry.html:29
+msgid "Navigation entry saved."
+msgstr ""
+
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_taxon_profile_form.html:14
 msgid "short version"
 msgstr ""
@@ -2200,12 +2285,12 @@ msgid "Save texts"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_type.html:17
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:138
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:141
 msgid "Add new text type"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/manage_text_types_order.html:20
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:139
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:142
 msgid "Manage text order"
 msgstr ""
 
@@ -2216,21 +2301,39 @@ msgstr ""
 #: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:14
 #: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:30
 #: features/taxon_profiles/templates/taxon_profiles/ajax/non_nature_guide_taxonlist.html:10
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:40
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:43
 #: generic.py:189 templates/app_kit/ajax/app_card.html:71
 #: templates/app_kit/ajax/component_card.html:29
 #: templates/app_kit/build_app.html:36
 msgid "draft"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:20
-#: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:36
-#: features/taxon_profiles/templates/taxon_profiles/ajax/taxonlist.html:15
-msgid "no profile"
-msgstr ""
-
 #: features/taxon_profiles/templates/taxon_profiles/ajax/nature_guide_taxonlist.html:38
 msgid "no taxon set"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/navigation_entry_taxa.html:3
+msgid "Taxa"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/navigation_entry_taxa.html:9
+msgid "remove"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/navigation_entry_taxa.html:14
+msgid "No taxon yet."
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/navigation_entry_taxa.html:25
+msgid "add taxon"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:14
+msgid "Create subentry"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/taxon_profiles_navigation_level.html:16
+msgid "Add image"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:32
@@ -2238,88 +2341,104 @@ msgstr ""
 msgid "Change publication status"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:50
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:40
+msgid "featured"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:53
 msgid "does not occur in any nature guide"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:55
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:58
 msgid "not linked to any taxonomic source"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:70
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:73
 msgid "This profile has possible duplicates"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:87
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:90
 msgid "manage tags"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:96
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:99
 msgid "In your app this button opens a wikipedia page."
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:101
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:104
 msgid "In your app this button opens an observation form for this taxon."
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:106
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:109
 msgid "In your app this button opens a GBIF occurrence map for this taxon."
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:115
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:118
 msgid "Traits"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:122
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:125
 #: templates/app_kit/content_images.html:3
 msgid "Images"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:126
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profile.html:129
 msgid "Add image with text"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:7
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:11
+msgid "Taxonomic Navigation"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:23
+msgid "add toplevel navigation entry"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:36
 msgid "Create your taxon profiles"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:8
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:37
 msgid ""
 "Type the name of the taxon you want to manage the profile for or select a "
 "taxon from your nature guides."
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:19
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:48
 msgid "Taxa from nature guides"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:32
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:61
 #, python-format
 msgid "Change publication of all taxon profiles of %(name)s"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:42
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:71
 msgid "Identification results with taxonomic reference"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:54
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:83
 msgid "no taxa found"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:63
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:92
 msgid "Identification results without taxonomic reference"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:67
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:96
 msgid "It is recommended to link a taxonomic reference first."
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:86
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:115
 msgid "Taxon Profiles with no occurrence in any nature guide"
 msgstr ""
 
-#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:90
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:119
 msgid "not included in app"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:132
+msgid "Backbone taxa without profile"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_texts.html:21
@@ -2343,26 +2462,6 @@ msgstr ""
 
 #: features/taxon_profiles/zip_import.py:70
 msgid "Cell content has to be a taxonomic source, found empty cell instead"
-msgstr ""
-
-#: forms.py:36
-msgid "Use only [a-z] and [0-9] for the subdomain."
-msgstr ""
-
-#: forms.py:39
-msgid "This subdomain is forbidden."
-msgstr ""
-
-#: forms.py:42
-msgid "The subdomain has to start with a letter."
-msgstr ""
-
-#: forms.py:45
-msgid "The subdomain has to be alphanumeric."
-msgstr ""
-
-#: forms.py:48
-msgid "This subdomain already exists."
 msgstr ""
 
 #: forms.py:63
@@ -3241,40 +3340,40 @@ msgstr ""
 msgid "fetching translation from DeepL"
 msgstr ""
 
-#: templatetags/app_tags.py:219
+#: templatetags/app_tags.py:218
 msgid ""
 "Manage the taxa of this app. The taxa defined in the backbone taxonomy are "
 "available in observation forms and taxon profiles. Taxa of nature guides are "
 "automatically added to the backbone."
 msgstr ""
 
-#: templatetags/app_tags.py:220
+#: templatetags/app_tags.py:219
 msgid ""
 "Where a glossary entry appears, the user can click on it to read the "
 "explanation."
 msgstr ""
 
-#: templatetags/app_tags.py:221
+#: templatetags/app_tags.py:220
 msgid "A Nature Guide is an identification key or a simple species list."
 msgstr ""
 
-#: templatetags/app_tags.py:222
+#: templatetags/app_tags.py:221
 msgid "The map feature plots your observations on a map."
 msgstr ""
 
-#: templatetags/app_tags.py:223
+#: templatetags/app_tags.py:222
 msgid "Describe the species of your app using taxon profiles."
 msgstr ""
 
-#: templatetags/app_tags.py:224
+#: templatetags/app_tags.py:223
 msgid "An observation form is used to collect data."
 msgstr ""
 
-#: templatetags/app_tags.py:225
+#: templatetags/app_tags.py:224
 msgid "Defines the visual appearance of your app"
 msgstr ""
 
-#: templatetags/app_tags.py:237
+#: templatetags/app_tags.py:236
 msgid "No help text available."
 msgstr ""
 

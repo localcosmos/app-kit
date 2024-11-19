@@ -160,6 +160,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
 
     publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
+    
+    is_featured = models.BooleanField(default=False)
 
     tags = TaggableManager()
 

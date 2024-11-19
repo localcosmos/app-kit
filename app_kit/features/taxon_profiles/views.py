@@ -8,13 +8,15 @@ from django.urls import reverse
 from django.http import JsonResponse
 
 from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
-                    ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm)
+                    ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
+                    TaxonProfileStatusForm)
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                      TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
 
 from app_kit.views import ManageGenericContent, ManageContentImage, ManageContentImageWithText, DeleteContentImage
 from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
+from app_kit.forms import GenericContentStatusForm
 
 from app_kit.features.nature_guides.models import (MetaNode, NatureGuidesTaxonTree, NodeFilterSpace, NatureGuide)
 from app_kit.features.backbonetaxonomy.models import BackboneTaxa, BackboneTaxonomy
@@ -345,10 +347,9 @@ class DeleteTaxonProfile(AjaxDeleteView):
         return context
 
 
-from app_kit.forms import GenericContentStatusForm
 class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
 
-    form_class = GenericContentStatusForm
+    form_class = TaxonProfileStatusForm
     template_name = 'taxon_profiles/ajax/change_taxon_profile_publication_status.html'
 
     @method_decorator(ajax_required)
@@ -371,12 +372,15 @@ class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
             initial['publication_status'] = 'publish'
         else:
             initial['publication_status'] = self.taxon_profile.publication_status
+            
+        initial['is_featured'] = self.taxon_profile.is_featured
 
         return initial
 
     def form_valid(self, form):
 
         self.taxon_profile.publication_status = form.cleaned_data['publication_status']
+        self.taxon_profile.is_featured = form.cleaned_data.get('is_featured', False)
         self.taxon_profile.save()
 
         context = self.get_context_data(**self.kwargs)
