@@ -23,6 +23,19 @@
                         </div>
                     </div>
                 </div>
+                {% if node.name %}
+                    {% if node.taxa %}
+                        <div class="pl-2">
+                            {% for taxon in node.taxa %}
+                                {% if taxon.taxon_source == 'taxonomy.sources.custom' %}
+                                    <small><span class="font-weight-light font-italic text-primary">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                                {% else %}
+                                    <small><span class="font-weight-light font-italic text-success">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endif %}
                 {% if node.images %}
                     <div class="d-flex flex-wrap ml-2">
                         {% for image in node.images %}

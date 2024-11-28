@@ -1,7 +1,5 @@
-from django.test import TestCase, RequestFactory
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
 
 from app_kit.tests.common import test_settings
 
