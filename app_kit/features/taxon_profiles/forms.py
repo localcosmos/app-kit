@@ -9,10 +9,7 @@ from app_kit.validators import json_compatible
 
 from app_kit.forms import GenericContentOptionsForm, GenericContentStatusForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
-from localcosmos_server.taxonomy.fields import TaxonField
 from taxonomy.lazy import LazyTaxon
-
-from app_kit.utils import get_appkit_taxon_search_url
 
 
 '''

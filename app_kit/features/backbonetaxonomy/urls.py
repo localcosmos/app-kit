@@ -14,4 +14,6 @@ urlpatterns = [
         views.BackboneFulltreeUpdate.as_view(), name='manage_backbone_fulltree'),
     path('search-backbonetaxonomy/<int:meta_app_id>/',
         views.SearchBackboneTaxonomy.as_view(), name='search_backbonetaxonomy'),
+    path('search-backbonetaxonomy-and-custom-taxa/<int:meta_app_id>/',
+        views.SearchBackboneTaxonomyAndCustomTaxa.as_view(), name='search_backbonetaxonomy_and_custom_taxa'),
 ]

@@ -125,7 +125,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         context['taxon_profiles_navigation'] = taxon_profiles_navigation
 
         form_kwargs = {
-            'taxon_search_url': reverse('search_backbonetaxonomy', kwargs={'meta_app_id':self.meta_app.id}),
+            'taxon_search_url': reverse('search_backbonetaxonomy_and_custom_taxa', kwargs={'meta_app_id':self.meta_app.id}),
             'fixed_taxon_source' : '__all__',
         }
         

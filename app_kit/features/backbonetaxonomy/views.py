@@ -304,15 +304,51 @@ class RemoveBackboneTaxon(TemplateView):
 
 
 class SearchBackboneTaxonomy(TemplateView):
-
-    def get(self, request, *args, **kwargs):
-
-        meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
-
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_choices(self, request):
+        
         limit = request.GET.get('limit',10)
         searchtext = request.GET.get('searchtext', None)
         language = request.GET.get('language', 'en').lower()
         
-        choices = meta_app.search_taxon(searchtext, language, limit)
+        choices = self.meta_app.search_taxon(searchtext, language, limit)
+        
+        return choices
+        
+
+    def get(self, request, *args, **kwargs):
+
+        choices = self.get_choices(request)
 
         return HttpResponse(json.dumps(choices), content_type='application/json')
+
+
+class SearchBackboneTaxonomyAndCustomTaxa(SearchBackboneTaxonomy):
+    
+    def get_choices(self, request):
+        
+        choices = super().get_choices(request)
+        
+        limit = request.GET.get('limit', 10)
+        searchtext = request.GET.get('searchtext', None)
+        language = request.GET.get('language', 'en').lower()
+        
+        rest_limit = limit - len(choices)
+        
+        if rest_limit > 0:
+        
+            models = TaxonomyModelRouter('taxonomy.sources.custom')
+            custom_taxonomy_results = models.TaxonTreeModel.objects.filter(taxon_latname__istartswith=searchtext)[:rest_limit]
+            
+            for custom_taxon in custom_taxonomy_results:
+
+                lazy_taxon = LazyTaxon(instance=custom_taxon)
+                choice = lazy_taxon.as_typeahead_choice()
+                choices.append(choice)
+                
+        return choices
