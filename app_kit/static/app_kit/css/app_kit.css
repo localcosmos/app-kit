@@ -981,6 +981,18 @@ input[type="color"] {
 	border-color: 1px solid #EFEFEF;
 }
 
+.appkit-locale-switcher {
+	width: 30px;
+	height: auto;
+	cursor: pointer;
+}
+
+.radio-invisible {
+	opacity: 0;
+	height: 0;
+	width: 0;
+}
+
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
 	.app-review.phone {

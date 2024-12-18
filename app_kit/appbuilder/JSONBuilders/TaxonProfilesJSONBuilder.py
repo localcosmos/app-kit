@@ -123,8 +123,13 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
                     taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
         
-        if db_profile and db_profile.publication_status == 'draft':
-            return None
+        is_featured = False
+        if db_profile:
+            if db_profile.publication_status == 'draft':
+                return None
+            
+            if db_profile.is_featured:
+                is_featured = True
 
         taxon_profile_json = {
             'taxonSource' : profile_taxon.taxon_source,
@@ -149,7 +154,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
             'tags' : [],
-            'is_featured': db_profile.is_featured,
+            'is_featured': is_featured,
         }
 
         synonyms = profile_taxon.synonyms()

@@ -5,6 +5,8 @@ from . import views
 from localcosmos_server import generic_views
 
 urlpatterns = [
+    # locale switcher
+    path('i18n/', include('django.conf.urls.i18n')),
     # features
     #path('', include('app_kit.features.buttonmatrix.urls')),
     path('', include('app_kit.features.backbonetaxonomy.urls')),

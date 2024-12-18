@@ -361,6 +361,25 @@
 								</ul>
 							</div>
 						</div>
+						<div class="row">
+							<div class="col-12 text-center">
+								<form id="switch-language-form" action="{% url 'set_language' %}" method="post">{% csrf_token %}
+									<input name="next" type="hidden" value="{{ redirect_to }}">
+										{% get_current_language as LANGUAGE_CODE %}
+										
+										<input type="radio" id="language-switch-de" name="language" value="de" class="radio-invisible" {% if LANGUAGE_CODE == 'de' %} selected{% endif %}>
+										<label for="language-switch-de">
+											<img src="{% static 'localcosmos_server/images/countries_big/' %}de.png" class="appkit-locale-switcher" />
+										</label>
+										
+										<input type="radio" id="language-switch-en" name="language" value="en" class="radio-invisible" {% if LANGUAGE_CODE == 'en' %} selected{% endif %}>
+										<label for="language-switch-en">
+											<img src="{% static 'localcosmos_server/images/countries_big/' %}en.png" class="appkit-locale-switcher" />
+										</label>
+										
+								</form>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -390,6 +409,18 @@
 				$(this).find('button[type="submit"]').attr('disabled', true);
 			});
 
+		</script>
+		<script>
+			const lsForm = document.getElementById('switch-language-form');
+			if (lsForm) {
+				radios = lsForm.querySelectorAll('input[type=radio]');
+				radios.forEach(radio => {
+					radio.addEventListener('change', (event) => {
+						lsForm.submit();
+					});
+				});
+					
+			}
 		</script>
 		{% block extra_script %}{% endblock %}
 
