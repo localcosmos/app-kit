@@ -614,7 +614,13 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
         return IDENTIFICATION_MODE_STRICT
 
     def __str__(self):
-        return '{0}'.format(self.name)
+        if self.name:
+            return '{0}'.format(self.name)
+        
+        if self.taxon_latname:
+            return '{0}'.format(self.taxon_latname)
+        
+        return 'Entry {0}'.format(self.pk)
 
     # the requirement of copying tree branches makes unique meta node names impossible
     #class Meta:

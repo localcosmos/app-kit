@@ -94,6 +94,13 @@
 		</div>
 		<div class="row">
 			<div class="col-12">
+				<h4>{% trans 'Vernacular names' %}</h4>
+				<div id="collected-vernacular-names"></div>
+			</div>
+		</div>
+		<hr>
+		<div class="row">
+			<div class="col-12">
 				{% get_generic_content_options generic_content as options %}
 				{% if options.enable_wikipedia_button %}
 					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a wikipedia page.' %}" class="xhr" ajax-target="ModalContent">
@@ -156,8 +163,11 @@
 		$.get("{% url 'collect_taxon_traits' taxon.taxon_source taxon.name_uuid %}", function(html){
 			$("#taxon-traits").html(html);
 		});
-		
+
+		{% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}
 		
 	</script>
+
+	
 	
 {% endblock %}

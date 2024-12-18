@@ -42,26 +42,42 @@
 						{% endif %}
 						{% if taxon.taxon_include_descendants %}<span class="badge badge-info">{% trans 'with descendants' %}</span>{% endif %}
 
-							{% if taxon.source == "CustomTaxonTree" %}
-								<div class="btn-group">
-									<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-										{% trans 'Modify' %} <span class="caret"></span>
-									</button>
-									<div class="dropdown-menu pull-right">
-										<a href="{% url 'manage_custom_taxon' meta_app.id taxon.name_uuid|safe %}" class="dropdown-item">{% trans 'Edit' %}</a>
-										{% if taxon.origin == "BackboneTaxa" %}
-											<div class="dropdown-divider"></div>
-											<a data-url="{% url 'remove_backbone_taxon' meta_app.id generic_content.id taxon.name_uuid taxon.taxon_source %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
-										{% endif %}
-									</div>
-								</div>
-							{% else %}
-
+						<div class="btn-group dropup">
+							<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								{% trans 'Modify' %} <span class="caret"></span>
+							</button>
+							<div class="dropdown-menu pull-right">
+								<a href="{% url 'manage_backbone_taxon' meta_app.id taxon.taxon_source taxon.name_uuid|safe %}" class="dropdown-item">{% trans 'Inspect' %}</a>
 								{% if taxon.origin == "BackboneTaxa" %}
-
-									<small><a href data-url="{% url 'remove_backbone_taxon' meta_app.id generic_content.id taxon.name_uuid taxon.taxon_source %}" class="btn btn-xs btn-danger xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a></small>
+									<div class="dropdown-divider"></div>
+									<a data-url="{% url 'remove_backbone_taxon' meta_app.id generic_content.id taxon.name_uuid taxon.taxon_source %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
 								{% endif %}
+							</div>
+						</div>
+
+						<!--
+
+						{% if taxon.source == "CustomTaxonTree" %}
+							<div class="btn-group">
+								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+									{% trans 'Modify' %} <span class="caret"></span>
+								</button>
+								<div class="dropdown-menu pull-right">
+									<a href="{% url 'manage_custom_taxon' meta_app.id taxon.name_uuid|safe %}" class="dropdown-item">{% trans 'Edit' %}</a>
+									{% if taxon.origin == "BackboneTaxa" %}
+										<div class="dropdown-divider"></div>
+										<a data-url="{% url 'remove_backbone_taxon' meta_app.id generic_content.id taxon.name_uuid taxon.taxon_source %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
+									{% endif %}
+								</div>
+							</div>
+						{% else %}
+
+							{% if taxon.origin == "BackboneTaxa" %}
+
+								<small><a href data-url="{% url 'remove_backbone_taxon' meta_app.id generic_content.id taxon.name_uuid taxon.taxon_source %}" class="btn btn-xs btn-danger xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a></small>
 							{% endif %}
+						{% endif %}
+						-->
 					</li>
 				{% endfor %}
 			</ul>

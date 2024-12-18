@@ -8,7 +8,10 @@ from django.urls import reverse
 from app_kit.views import ManageGenericContent
 from app_kit.models import MetaApp, MetaAppGenericContent
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree
 from app_kit.utils import get_appkit_taxon_search_url
+from app_kit.view_mixins import MetaAppMixin
 
 from localcosmos_server.decorators import ajax_required
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
@@ -352,3 +355,66 @@ class SearchBackboneTaxonomyAndCustomTaxa(SearchBackboneTaxonomy):
                 choices.append(choice)
                 
         return choices
+    
+
+class CollectedVernacularNames(MetaAppMixin, TemplateView):
+    
+    template_name = 'backbonetaxonomy/ajax/collected_vernacular_names.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_taxon(self, **kwargs):
+        models = TaxonomyModelRouter(kwargs['taxon_source'])
+        taxon = models.TaxonTreeModel.objects.filter(name_uuid=kwargs['name_uuid']).first()
+        self.lazy_taxon = LazyTaxon(instance=taxon)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        languages = self.meta_app.languages()
+        all_names = self.lazy_taxon.all_vernacular_names(self.meta_app, distinct=False, languages=languages)
+        context['taxon'] = self.lazy_taxon
+        context['collected_vernacular_names'] = all_names
+        return context
+    
+
+class ManageBackboneTaxon(MetaAppMixin, TemplateView):
+    
+    template_name = 'backbonetaxonomy/manage_taxon.html'
+    
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_taxon(self, **kwargs):
+        models = TaxonomyModelRouter(kwargs['taxon_source'])
+        taxon = models.TaxonTreeModel.objects.filter(name_uuid=kwargs['name_uuid']).first()
+        self.lazy_taxon = LazyTaxon(instance=taxon)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        nature_guides = []
+        taxon_profile = []
+        
+        nature_guides_content_type = ContentType.objects.get_for_model(NatureGuide)
+        
+        ng_meta_nodes = self.lazy_taxon.get_vernacular_meta_nodes(self.meta_app)
+        for meta_node in ng_meta_nodes:
+            ng_tree_occurrences = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node)
+            
+            for ng_tree_occurrence in ng_tree_occurrences:
+                nature_guides.append(ng_tree_occurrence)
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles, taxon_source=self.lazy_taxon.taxon_source, name_uuid=self.lazy_taxon.name_uuid).first()
+        
+        context['taxon'] = self.lazy_taxon
+        context['nature_guides'] = nature_guides
+        context['taxon_profiles'] = taxon_profiles
+        context['taxon_profile'] = taxon_profile
+        context['nature_guides_content_type'] = nature_guides_content_type
+        return context

@@ -1,0 +1,46 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags %}
+{% block content %}
+<form id="translate-app-form" method="POST" action="{% url 'translate_vernacular_names' meta_app.id %}?page={{ form.page }}">{% csrf_token %}
+
+	<div class="container">
+        <div class="row">
+			<div class="col-12">
+
+				<br>
+				<h3>{% trans 'Translations of Vernacular Names' %}</h3>
+			</div>
+		</div>
+
+        <div class="row">
+			<div class="col-12">
+				{% with url_name='translate_vernacular_names' %}
+					{% include 'app_kit/ajax/translate_app_pagination.html' %}
+				{% endwith %}
+			</div>
+		</div>
+
+        <div>
+            {% include 'app_kit/ajax/translate_app_or_vernacular_names_form.html' %}
+        </div>
+
+        <div class="row">
+			<div class="col-12">
+				{% with url_name='translate_vernacular_names' %}
+					{% include 'app_kit/ajax/translate_app_pagination.html' %}
+				{% endwith %}
+			</div>
+		</div>
+
+		<hr>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_script %}
+
+<script>
+    var editors = {};
+</script>
+	{% include 'app_kit/scripts/deepl_translation_script.html' %}
+{% endblock %}

@@ -5,19 +5,23 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 from django.contrib.contenttypes.models import ContentType
 
-from app_kit.tests.common import test_settings, powersetdic
+from app_kit.tests.common import test_settings
 from app_kit.tests.mixins import (WithMetaApp, WithFormTest, WithZipFile, WithImageStore, WithMedia, WithUser,
-                                  WithPublicDomain)
+                                  WithPublicDomain, WithMetaVernacularNames)
 
 from app_kit.forms import (CleanAppSubdomainMixin, CreateAppForm, CreateGenericContentForm, AddLanguageForm,
                     ManageContentImageForm, ManageContentImageWithTextForm, OptionalContentImageForm,
                     GenericContentOptionsForm, EditGenericContentNameForm, MetaAppOptionsForm,
-                    TranslateAppForm, BuildAppForm, ZipImportForm, RESERVED_SUBDOMAINS, AddExistingGenericContentForm)
+                    TranslateAppForm, BuildAppForm, ZipImportForm, RESERVED_SUBDOMAINS, AddExistingGenericContentForm,
+                    TranslateVernacularNamesForm)
 
 from app_kit.multi_tenancy.models import Domain
 from app_kit.models import (MetaAppGenericContent, ContentImage, LocalizedContentImage)
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
+
+from taxonomy.lazy import TaxonomyModelRouter, LazyTaxon
+from taxonomy.models import MetaVernacularNames
 
 from django.conf import settings
 
@@ -123,7 +127,7 @@ class TestCreateAppForm(WithFormTest, WithMetaApp, TenantTestCase):
             'name' : 'My Great App',
             'primary_language' : 'en',
             'subdomain' : 'subdomain',
-            'frontend' : 'Flat',
+            'frontend' : 'Multiverse',
         }
 
         
@@ -728,3 +732,104 @@ class TestZipImportForm(WithFormTest, WithMetaApp, WithZipFile, TenantTestCase):
 
 
         self.perform_form_test(ZipImportForm, {}, file_data=post_data)
+
+
+class TestTranslateVernacularNamesForm(WithFormTest, WithMetaVernacularNames, WithMetaApp, TenantTestCase):
+    
+    def setUp(self):
+        super().setUp()
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        self.taxon = lacerta_agilis
+        
+        self.create_secondary_languages(['de',])
+    
+    @test_settings
+    def test_init(self):
+        
+        form = TranslateVernacularNamesForm(self.meta_app)
+        
+        self.assertEqual(form.page, 1)
+        
+        form = TranslateVernacularNamesForm(self.meta_app, page=2)
+        
+        self.assertEqual(form.page, 2)
+        
+        self.assertEqual(form.fields, {})
+        
+        # form with fields
+        mvn = self.create_mvn(self.taxon, 'Localized name', self.meta_app.primary_language)
+        
+        all_vernacular_names = MetaVernacularNames.objects.filter(language=self.meta_app.primary_language).order_by('name')
+        self.assertEqual(all_vernacular_names.count(), 1)
+
+        form = TranslateVernacularNamesForm(self.meta_app)
+
+        key = 'mvn-{0}-de'.format(mvn.pk)
+        self.assertIn(key, form.fields)
+        
+        form_field = form.fields[key]
+        self.assertEqual(form_field.taxon, self.taxon)
+        self.assertEqual(form_field.language, 'de')
+        self.assertEqual(form_field.is_first, True)
+        self.assertEqual(form_field.is_last, True)
+        
+    
+    @test_settings
+    def test_clean(self):
+        
+        post_data = {}        
+        # form with fields
+        mvn = self.create_mvn(self.taxon, 'Localized name', self.meta_app.primary_language)
+        
+        form = TranslateVernacularNamesForm(self.meta_app, data=post_data)
+        
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        expected_translations = {
+            'de': [
+                {
+                    'taxon': self.taxon,
+                    'name': None
+                }
+            ]
+        }
+        
+        self.assertEqual(expected_translations, form.translations)
+        
+        key = 'mvn-{0}-de'.format(mvn.pk)
+        post_data[key] = 'Test name'
+        
+        form = TranslateVernacularNamesForm(self.meta_app, data=post_data)
+        
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        expected_translations = {
+            'de': [
+                {
+                    'taxon': self.taxon,
+                    'name': 'Test name'
+                }
+            ]
+        }
+        
+        self.assertEqual(expected_translations, form.translations)
+        
+    @test_settings
+    def test_initial(self):
+       
+        # form with fields
+        mvn = self.create_mvn(self.taxon, 'Localized name', self.meta_app.primary_language)
+
+        mvn_2 = self.create_mvn(self.taxon, 'Test name', 'de')
+        
+        form = TranslateVernacularNamesForm(self.meta_app)
+        
+        key = 'mvn-{0}-de'.format(mvn.pk)
+        
+        self.assertEqual(form.fields[key].initial, 'Test name')

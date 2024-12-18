@@ -19,7 +19,8 @@ from .generic import AppContentTaxonomicRestriction
 from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm, GenericContentStatusForm,
                     CreateGenericContentForm, AddExistingGenericContentForm, TranslateAppForm,
                     EditGenericContentNameForm, ManageContentImageWithTextForm,
-                    ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm)
+                    ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm,
+                    TranslateVernacularNamesForm)
 
 from django_tenants.utils import get_tenant_domain_model
 Domain = get_tenant_domain_model()
@@ -36,7 +37,7 @@ from django.utils.decorators import method_decorator
 
 
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
-from taxonomy.models import TaxonomyModelRouter
+from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 
 from content_licencing.view_mixins import LicencingFormViewMixin
 
@@ -199,7 +200,6 @@ class CreateApp(CreateGenericContent):
                                     form.cleaned_data['subdomain'], **meta_app_kwargs)
 
         self.created_content = meta_app
-
 
         # MetaApp and all required features have been created
 
@@ -739,6 +739,58 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
 
         # return result as json
         return JsonResponse(result)
+
+
+class TranslateVernacularNames(MetaAppMixin, FormView):
+    
+    template_name = 'app_kit/translate_vernacular_names.html'
+    form_class = TranslateVernacularNamesForm
+    
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.meta_app, **self.get_form_kwargs())
+    
+    
+    def form_valid(self, form):
+        
+        for language_code, translation_list in form.translations.items():
+
+            for translation in translation_list:
+                
+                taxon = translation['taxon']
+                name = translation['name']
+                
+                meta_vernacular_name = MetaVernacularNames.objects.filter(
+                    language=language_code, taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid).first()
+
+                if meta_vernacular_name:
+                    if name:
+                        meta_vernacular_name.name = name
+                        meta_vernacular_name.save()
+                        
+                    else:
+                        meta_vernacular_name.delete()
+                
+                else:
+                    
+                    if name:
+                        meta_vernacular_name = MetaVernacularNames(
+                            language=language_code,
+                            taxon_source=taxon.taxon_source,
+                            taxon_latname=taxon.taxon_latname,
+                            taxon_author=taxon.taxon_author,
+                            taxon_nuid=taxon.taxon_nuid,
+                            name_uuid=taxon.name_uuid,
+                            name=name,
+                        )
+                        
+                        meta_vernacular_name.save()
+            
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['saved'] = True
+        return self.render_to_response(context)
 
 
 '''

@@ -66,7 +66,7 @@ class MapJSONBuilder(JSONBuilder):
             }
 
             for taxon in taxonomic_filter.taxa:
-                taxon_entry = self.build_taxon(taxon)
+                taxon_entry = self.app_release_builder.taxa_builder.serialize_taxon(taxon)
                 filter_entry['taxa'].append(taxon_entry)
 
             map_json['taxonomicFilters'].append(filter_entry)

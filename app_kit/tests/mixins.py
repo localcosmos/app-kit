@@ -11,6 +11,7 @@ from django.db import connection
 
 from app_kit.tests.common import (test_settings, TESTS_ROOT, powersetdic, TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 from app_kit.models import (MetaApp, MetaAppGenericContent, ImageStore, ContentImage)
+from app_kit.features.backbonetaxonomy.models import BackboneTaxa
 
 from app_kit.multi_tenancy.models import TenantUserRole
 
@@ -20,7 +21,7 @@ from app_kit.utils import import_module
 
 from app_kit.appbuilder import AppPreviewBuilder
 
-from taxonomy.models import TaxonomyModelRouter
+from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.models import App, SecondaryAppLanguages
@@ -616,3 +617,36 @@ class MultipleURLSViewTestMixin(WithPublicDomain):
             views.append(view)
 
         return views
+
+
+
+class WithMetaVernacularNames:
+    
+    def create_mvn(self, taxon, name, language):
+        
+        backbonetaxonomy = self.meta_app.backbone()
+        
+        mvn = MetaVernacularNames(
+            taxon_source = taxon.taxon_source,
+            taxon_latname = taxon.taxon_latname,
+            taxon_author = taxon.taxon_author,
+            taxon_nuid = taxon.taxon_nuid,
+            name_uuid = taxon.name_uuid,
+            language = language,
+            name = name,
+        )
+        
+        mvn.save()
+        
+        backbone_taxon = BackboneTaxa.objects.filter(name_uuid=taxon.name_uuid).first()
+        
+        if not backbone_taxon:
+            backbone_taxon = BackboneTaxa(
+                backbonetaxonomy = backbonetaxonomy,
+            )
+            
+            backbone_taxon.set_taxon(self.taxon)
+            
+            backbone_taxon.save()
+        
+        return mvn

@@ -1,0 +1,5 @@
+
+$.get("{% url 'collected_vernacular_names' meta_app.id taxon.taxon_source taxon.name_uuid %}", function(html){
+    $("#collected-vernacular-names").html(html);
+    ajaxify("collected-vernacular-names");
+});

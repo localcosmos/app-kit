@@ -13,6 +13,9 @@ from localcosmos_server.models import App
 
 from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
 
+from taxonomy.models import MetaVernacularNames
+from taxonomy.lazy import LazyTaxon
+
 import base64, math, uuid
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
@@ -425,3 +428,136 @@ from app_kit.generic import PUBLICATION_STATUS
 class GenericContentStatusForm(forms.Form):
     publication_status = forms.ChoiceField(choices=PUBLICATION_STATUS)
 
+
+class TranslateVernacularNamesForm(forms.Form):
+    
+    page_size = 30
+    
+    def __init__(self, meta_app, *args, **kwargs):
+        self.meta_app = meta_app
+        
+        app_taxon_name_uuids = []
+        
+        for taxon in meta_app.taxa():
+            app_taxon_name_uuids.append(str(taxon.name_uuid))
+        
+        self.page = kwargs.pop('page', 1)
+        
+        super().__init__(*args, **kwargs)
+        
+        all_vernacular_names = MetaVernacularNames.objects.filter(
+            language=self.meta_app.primary_language).order_by('name')
+        
+        app_vernacular_names = []
+        
+        for vernacular_name in all_vernacular_names:
+            if str(vernacular_name.name_uuid) in app_taxon_name_uuids:
+                app_vernacular_names.append(vernacular_name)
+                
+        app_vernacular_names_count = len(app_vernacular_names)
+                
+        self.total_pages = math.ceil(app_vernacular_names_count / self.page_size)
+        self.pages = range(1, self.total_pages+1)
+        
+        start = ((self.page-1) * self.page_size)
+        end = self.page * self.page_size
+        if end > app_vernacular_names_count:
+            end = app_vernacular_names_count
+
+        page_items = app_vernacular_names[start:end]
+        
+        languages = meta_app.secondary_languages()
+        
+        for vernacular_name in page_items:
+
+            language_independant_identifier = uuid.uuid4()
+            
+            lazy_taxon = LazyTaxon(instance=vernacular_name)
+
+            translation_complete = True
+
+            fieldset = []
+            
+            field_label = vernacular_name.name
+
+            for counter, language_code in enumerate(languages, 1):
+
+                to_locale = MetaVernacularNames.objects.filter(taxon_source=vernacular_name.taxon_source,
+                    name_uuid=vernacular_name.name_uuid, language=language_code).first()
+                
+                initial = None
+                
+                if to_locale:
+                    initial = to_locale.name
+                else:
+                    translation_complete = False
+                
+                field_name = 'mvn-{0}-{1}'.format(vernacular_name.pk, language_code)
+                
+                widget = forms.TextInput          
+            
+                field = forms.CharField(widget=widget, label=field_label, initial=initial,
+                                        required=False)
+
+                field.language_independant_identifier = language_independant_identifier
+                
+                field.language = language_code
+                field.taxon = lazy_taxon
+                field.is_first = False
+                field.is_last = False
+
+                if counter == 1:
+                    field.is_first = True
+
+                if counter == len(languages):
+                    field.is_last = True
+
+                fieldset_entry = {
+                    'field_name' : field_name,
+                    'field' : field,
+                }
+                fieldset.append(fieldset_entry)
+                
+                
+            if translation_complete == True or str(vernacular_name.name_uuid):
+                for field_entry in fieldset:
+                    self.fields[field_entry['field_name']] = field_entry['field']
+
+            else:
+                fieldset.reverse()
+
+                field_order = []
+                
+                for field_entry in fieldset:
+                    self.fields[field_entry['field_name']] = field_entry['field']
+                    field_order.insert(0, field_entry['field_name'])
+
+                self.order_fields(field_order)
+                
+    def clean(self):
+        # make decoded translations available
+        self.translations = {}
+        
+        for field_name, field in self.fields.items():
+            
+            translation = {
+                'taxon': self.fields[field_name].taxon,
+                'name': None,
+            }
+            
+            language = field.language
+            if language not in self.translations:
+                self.translations[language] = []
+            
+            if field_name in self.cleaned_data:
+                
+                value = self.cleaned_data.get(field_name, None)
+
+                if value is not None and len(value) > 0:  
+                    translation['name'] = value
+
+            self.translations[language].append(translation)
+            
+        return self.cleaned_data
+        
+        

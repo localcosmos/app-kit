@@ -1,0 +1,33 @@
+{% load i18n app_tags %}
+<div>
+    {% for name in collected_vernacular_names %}
+        <div>
+            {{ name.name }}
+            <span class="badge badge-secondary">{{ name.language }}</span>
+            <span class="badge badge-secondary">
+                {% if name.instance.nature_guide %}
+                    {{ name.instance.nature_guide }}
+                {% else %}
+                    {{ name.verbose_origin }}
+                {% endif %}
+            </span>
+            {% if name.is_preferred_name %}
+                <span class="badge badge-primary">{% trans 'preferred name' %}</span>
+            {% endif %}
+            {% if name.origin == 'MetaVernacularNames' %}
+                <div class="btn-group dropup">
+                    <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% trans 'modify' %} <span class="caret"></span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a data-url="{% url 'manage_meta_vernacular_name' meta_app.id name.instance.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+                        <a data-url="{% url 'delete_meta_vernacular_name' meta_app.id name.instance.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+<div class="mt-3">
+    <button data-url="{% url 'create_meta_vernacular_name' meta_app.id taxon.taxon_source taxon.name_uuid %}" type="button" class="btn btn-sm btn-outline-primary xhr" ajax-target="ModalContent">{% trans 'add vernacular name' %}</button>
+</div>

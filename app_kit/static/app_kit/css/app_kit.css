@@ -4,6 +4,15 @@ html, body {
 	background-color: #ededed;
 }
 
+.min-h-full {
+	min-height: 100vh;
+}
+
+.min-h-80 {
+	min-height: 80vh;
+}
+
+
 .cursor-pointer {
 	cursor: pointer;
 }

@@ -1,6 +1,8 @@
 from django_tenants.test.cases import TenantTestCase
 from django.contrib.contenttypes.models import ContentType
 
+from app_kit.models import MetaAppGenericContent
+
 from app_kit.tests.common import test_settings
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
@@ -8,12 +10,17 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 
 from app_kit.features.backbonetaxonomy.views import (ManageBackboneTaxonomy, BackboneFulltreeUpdate,
-            AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy) 
+            AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy,
+            ManageBackboneTaxon) 
 
 from app_kit.features.backbonetaxonomy.forms import (AddSingleTaxonForm, AddMultipleTaxaForm,
                                                      ManageFulltreeForm, SearchTaxonomicBackboneForm)
 
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
+
+from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree
+from app_kit.features.nature_guides.tests.common import WithNatureGuide
 
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
@@ -347,6 +354,7 @@ class TestSearchBackboneTaxonomy(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInU
         link.save()
         
         view = self.get_view()
+        view.meta_app = self.meta_app
 
         response = view.get(view.request, **view.kwargs)
         self.assertEqual(response.status_code, 200)
@@ -361,3 +369,88 @@ class TestSearchBackboneTaxonomy(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInU
 
         content = json.loads(response_2.content)
         self.assertEqual(len(content), 1)
+
+
+
+class TestManageTaxon(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithNatureGuide,
+                      WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'manage_backbone_taxon'
+    view_class = ManageBackboneTaxon
+    
+    def setUp(self):
+        super().setUp()
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        self.taxon = lacerta_agilis
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_source' : self.taxon.taxon_source,
+            'name_uuid' : self.taxon.name_uuid,
+        }
+        return url_kwargs
+    
+    
+    @test_settings
+    def test_set_taxon(self):
+        
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+        view.meta_app = self.meta_app
+        self.assertEqual(view.lazy_taxon, self.taxon)
+        
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.set_taxon(**view.kwargs)
+        view.meta_app = self.meta_app
+        
+        context_data = view.get_context_data(**view.kwargs)
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        ng_ctype = ContentType.objects.get_for_model(NatureGuide)
+        
+        self.assertEqual(context_data['taxon'], self.taxon)
+        self.assertEqual(context_data['nature_guides'], [])
+        self.assertEqual(context_data['taxon_profiles'], taxon_profiles)
+        self.assertEqual(context_data['taxon_profile'], None)
+        self.assertEqual(context_data['nature_guides_content_type'], ng_ctype)
+        
+        nature_guide = self.create_nature_guide()
+        ng_link = MetaAppGenericContent(
+            meta_app=self.meta_app,
+            content_type=ng_ctype,
+            object_id=nature_guide.id,
+        )
+        ng_link.save()
+        
+        node = self.create_node(nature_guide.root_node, 'First')
+        node.meta_node.set_taxon(self.taxon)
+        node.meta_node.save()
+                
+        taxon_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=self.taxon,
+        )
+        
+        taxon_profile.save()
+    
+    
+        context_data = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context_data['taxon'], self.taxon)
+        self.assertEqual(context_data['nature_guides'], [node])
+        self.assertEqual(context_data['taxon_profiles'], taxon_profiles)
+        self.assertEqual(context_data['taxon_profile'], taxon_profile)
+        self.assertEqual(context_data['nature_guides_content_type'], ng_ctype)

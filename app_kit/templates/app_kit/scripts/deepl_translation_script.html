@@ -1,0 +1,83 @@
+{% load i18n %}
+<script>
+    (function(){
+        var translation_form = document.getElementById("translate-app-form");
+        var deepL_buttons = translation_form.getElementsByClassName("get-translation-button");
+
+        function fetchTranslation(event){
+            event.preventDefault();
+
+            var button = event.currentTarget;
+            var spinner = event.currentTarget.nextElementSibling;
+            var textMessageSpan = spinner.nextElementSibling;
+
+            var primary_language_text_id = button.getAttribute("data-primary-language-text");
+            var primary_language_text = document.getElementById(primary_language_text_id);
+
+            var target_field_id = button.getAttribute("data-field-id");
+            var target_field = document.getElementById(target_field_id);
+
+            var text_content = primary_language_text.textContent.trim();
+            var target_language = button.getAttribute("data-target-language");
+
+            spinner.classList.remove("d-none");
+
+            textMessageSpan.textContent = "{% trans 'fetching translation from DeepL' %}";
+
+            function onError(){
+                $.get("{% url 'get_translation' meta_app.id %}", function(html){
+                    $("#ModalContent").html(html);
+                    $("#Modal").modal("show");
+                });
+            }
+
+            $.ajax({
+                type: "POST",
+                url: "{% url 'get_translation' meta_app.id %}",
+                data: {
+                    "text" : text_content,
+                    "target-language" : target_language
+                },
+                success: function(response){
+                    /*
+                    * {"translation":{"translations":[{"detected_source_language":"DE","text":"This is a text"}]},"success":true}
+                    */
+                    let translated_text = null;
+
+                    if (response["success"] === true){
+                        try {
+                            translated_text = response["translation"];
+                        }
+                        catch(e){
+                            console.log("[AppKit] error in getting translation from DeepL:");
+                            console.log(e);
+                        }
+                    }
+
+                    if (translated_text == null){
+                        onError();
+                    }
+                    else {
+                        if (editors.hasOwnProperty(target_field.id)){
+                            let editor = editors[target_field.id];
+                            editor.setData(translated_text);
+                        }
+                        target_field.value = translated_text;
+                    }
+                },
+                error : onError,
+                complete : function(){
+                    spinner.classList.add("d-none");
+                    textMessageSpan.textContent = "";
+                },
+                dataType: "json"
+            });
+
+        }
+
+        for (let b=0; b<deepL_buttons.length; b++){
+            let button = deepL_buttons[b];
+            button.addEventListener("click", fetchTranslation);
+        }
+    })();
+</script>

@@ -94,8 +94,11 @@ def clean_taxa(lazy_taxon_list):
 def taxon_origin(lazy_taxon):
 
     origin = lazy_taxon.__class__.__name__
+    
+    if hasattr(lazy_taxon, 'instance') and lazy_taxon.instance:
+        origin = lazy_taxon.instance.__class__.__name__
 
-    if origin == 'Node' or origin == 'NatureGuidesTaxonTree':
+    if origin == 'MetaNode' or origin == 'NatureGuidesTaxonTree':
         return lazy_taxon.nature_guide
 
     return origin

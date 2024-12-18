@@ -1,0 +1,62 @@
+{% load i18n static %}
+{% if saved %}
+    <div class="alert alert-success">
+        {% trans 'Your translations have been saved.' %}
+    </div>
+{% endif %}
+    
+{% for field in form %}						
+    {% if field.field.is_first %}
+        <div class="card">
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="col-2 col-md-1 text-right">
+                        {{ meta_app.primary_language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ meta_app.primary_language }}.gif" />
+                    </div>
+                    <div class="col-10 col-md-11 text-left d-flex flex-row">
+                        <div id="{{ field.field.language_independant_identifier }}">
+                            {% if field.field.is_image %}
+                                <img class="img-fluid translation-image" src="{{ field.field.primary_language_image_url }}" />
+                            {% else %}
+                                {{ field.label|safe }}
+                            {% endif %}
+                        </div>
+                        {% if field.field.taxon %}
+                            <div>
+                                &nbsp;<i>{{ field.field.taxon }}</i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                </div>
+                <br>
+    {% endif %}
+    <div class="form-row">
+        <div class="col-2 col-md-1 col-form-label text-right">
+            {{ field.field.language }} <img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" />
+        </div>
+        <div class="col-10 col-md-11 text-left">
+            {{ field }}
+        </div>
+    </div>
+
+    {% if field.field.is_image %}
+    {% else %}
+        <div class="form-row">
+            <div class="col-12 pl-5 mt-1 mb-3">
+                <div class="ml-5">
+                    <button type="button" class="btn btn-sm btn-secondary get-translation-button mr-2" data-primary-language-text="{{ field.field.language_independant_identifier  }}" data-target-language="{{ field.field.language }}" data-field-id="{{ field.id_for_label }}">{% trans 'automatic translation' %}</button>
+                    <img src="{% static 'app_kit/images/spinner.gif' %}" class="translation-spinner d-none" />
+                    <span class="text-muted"></span>
+                </div>	
+            </div>
+        </div>
+    {% endif %}
+    <br>
+    {% if field.field.is_last %}
+            </div>
+        </div>
+        <br>
+    {% endif %}
+
+{% endfor %}

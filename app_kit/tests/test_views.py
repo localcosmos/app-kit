@@ -8,7 +8,7 @@ from app_kit.tests.common import test_settings
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, WithImageStore, WithFormTest, ViewTestMixin,
-                                  WithMedia, WithPublicDomain)
+                                  WithMedia, WithPublicDomain, WithMetaVernacularNames)
 
 from app_kit.views import (TenantPasswordResetView, CreateGenericContent, CreateApp, GetAppCard,
             AppLimitReached, DeleteApp, CreateGenericAppContent, GetGenericContentCard, ManageGenericContent,
@@ -16,7 +16,7 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             AddExistingGenericContent, ListManageApps, RemoveAppGenericContent, ManageAppLanguages,
             DeleteAppLanguage, AddTaxonomicRestriction, RemoveTaxonomicRestriction, ManageContentImageMixin,
             ManageContentImage, ManageContentImageWithText, DeleteContentImage, ReloadTags,
-            MockButton, DeleteLocalizedContentImage, TagAnyElement,
+            MockButton, DeleteLocalizedContentImage, TagAnyElement, TranslateVernacularNames,
             ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
             ManageLocalizedContentImage, ChangeGenericContentPublicationStatus)
 
@@ -2626,3 +2626,60 @@ class TestChangeGenericContentPublicationStatus(ViewTestMixin, WithAjaxAdminOnly
 
         self.generic_content_link.refresh_from_db()
         self.assertEqual(self.generic_content_link.publication_status, 'publish')
+        
+
+
+class TestTranslateVernacularNames(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                            WithTenantClient, WithMetaVernacularNames, WithMetaApp, TenantTestCase):
+    
+    url_name = 'translate_vernacular_names'
+    view_class = TranslateVernacularNames
+
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+        }
+        return url_kwargs
+    
+    
+    def setUp(self):
+        super().setUp()
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        self.taxon = lacerta_agilis
+        
+        self.create_secondary_languages(['de',])
+
+    
+    @test_settings
+    def test_get_form(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        
+        form = view.get_form()
+        
+        self.assertEqual(form.__class__.__name__, 'TranslateVernacularNamesForm')
+    
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        mvn = self.create_mvn(self.taxon, 'Localized name', self.meta_app.primary_language)
+        
+        
+        # create
+        post_data = {}
+        
+        
+        
+        # update
+        
+        
+        # delete
+        
+        

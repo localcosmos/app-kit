@@ -1,0 +1,45 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n localcosmos_tags static app_tags %}
+
+
+{% block content %}
+<div class="container min-h-80">
+    <div class="row align-items-center my-4">
+        <div class="col-auto">
+            <h1>{{ taxon }}</h1>
+            <div class="mt-3">
+                <h3>{% trans 'Vernacular names' %}</h3>
+                <div id="collected-vernacular-names"></div>
+            </div>
+            <div class="mt-5">
+                <h3>{% trans 'Occurrences in Nature Guides' %}</h3>
+                {% if nature_guides %}
+                    {% for ng_taxon_tree in nature_guides %}
+                        <div>
+                            <a href="{% url 'manage_natureguide' meta_app.id nature_guides_content_type.id ng_taxon_tree.meta_node.nature_guide.id ng_taxon_tree.parent.id  %}">
+                                <strong>{{ ng_taxon_tree.meta_node.nature_guide }}:</strong> {{ ng_taxon_tree.parent.meta_node }} - {{ ng_taxon_tree.meta_node }}
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    {% trans 'This taxon does not occur in any nature guide' %}
+                {% endif %}
+                
+            </div>
+            <div class="mt-5">
+                <h3>{% trans 'Taxon Profile' %}</h3>
+                {% if taxon_profile %}
+                    <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{{ taxon }}</a>
+                {% else %}
+                    {% trans 'This taxon does not have a taxon profile' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_script %}
+    <script>
+        {% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}  
+    </script>
+{% endblock %}

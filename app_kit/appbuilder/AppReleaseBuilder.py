@@ -35,6 +35,7 @@ from app_kit.features.frontend.models import Frontend
 from app_kit.features.maps.models import Map, MapTaxonomicFilter
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
 from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
+from app_kit.appbuilder.TaxonBuilder import TaxaBuilder
 
 from localcosmos_server.template_content.models import TemplateContent, Navigation
 
@@ -42,8 +43,7 @@ from localcosmos_server.template_content.models import TemplateContent, Navigati
 # TAXONOMY
 from taxonomy.lazy import LazyTaxon
 
-# GBIFLib
-from app_kit.appbuilder.GBIFlib import GBIFlib
+
 
 from app_kit.models import (MetaAppGenericContent, LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, ContentImage,
                             LocalizedContentImage)
@@ -64,6 +64,7 @@ from app_kit.app_kit_api.models import AppKitJobs
 import csv, uuid
 
 NO_IMAGE_URL = None #'img/noimage.svg'
+
 
 class AppBuildFailed(Exception):
     pass
@@ -1088,8 +1089,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
                 raise AppBuildFailed(msg)
             
-            # prepare
-            self.gbiflib = GBIFlib()
+            # builders with cache that are required across building components
+            self.taxa_builder = TaxaBuilder(self)
 
             # imageFilename : { "creator":"", "licence":"", "licence_link":""}
             # will be filled by build_* methods
@@ -1104,6 +1105,8 @@ class AppReleaseBuilder(AppBuilderBase):
             self.build_features = {}
             self.aggregated_node_filter_space_cache = {}
             self.inactivated_nuids = set([])
+            
+            # 
             
             # create build folder
             # {settings.APP_KIT_ROOT}/{meta_app.uuid}/{meta_app.current_version}/release/common/www/
@@ -1380,43 +1383,6 @@ class AppReleaseBuilder(AppBuilderBase):
             locale_file.write(json.dumps(locale))
 
 
-    def _get_image_urls_for_lazy_taxon(self, lazy_taxon):
-
-        image_urls = None
-
-        taxon_profile = TaxonProfile.objects.filter(taxon_source=lazy_taxon.taxon_source,
-            taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author).first()
-
-        if taxon_profile and taxon_profile.image():
-
-            content_image = taxon_profile.image(image_type='image')
-            image_urls = self.build_content_image(content_image)
-
-        return image_urls
-
-
-    def _create_taxon_json_from_lazy_taxon(self, lazy_taxon, use_gbif):
-
-        taxon_json = {
-            'taxonSource' : lazy_taxon.taxon_source,
-            'taxonLatname' : lazy_taxon.taxon_latname,
-            'taxonAuthor' : lazy_taxon.taxon_author,
-            
-            'nameUuid' : str(lazy_taxon.name_uuid),
-            'taxonNuid' : lazy_taxon.taxon_nuid,
-            'imageUrl' : self._get_image_urls_for_lazy_taxon(lazy_taxon),
-            'gbifNubKey' : None,
-        }
-
-        if use_gbif == True:
-            gbif_nubKey = self.gbiflib.get_nubKey(lazy_taxon)
-            
-            if gbif_nubKey :
-                taxon_json['gbifNubKey'] = gbif_nubKey
-
-        return taxon_json
-        
-
     # add a localization of nature guide taxa directly to the locale
     # there might be more vernacular names stored inside the taxon dic of backbone taxonomy
     # this one is for quick access in the template
@@ -1444,7 +1410,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
                     key = str(taxon.name_uuid)
 
-                    taxon_json = self._create_taxon_json_from_lazy_taxon(taxon, self.use_gbif)
+                    taxon_json = self.taxa_builder.serialize_taxon_extended(taxon)
 
                     vernacular = None
                     
@@ -1656,102 +1622,77 @@ class AppReleaseBuilder(AppBuilderBase):
         backbone_taxonomy = app_generic_content.generic_content
 
         jsonbuilder = self.get_json_builder(app_generic_content)
-        #backbone_taxonomy_json = jsonbuilder.build()
-
-        # relative paths are used in the features.js file
+        
         relative_generic_content_path = self._app_relative_generic_content_path(backbone_taxonomy)
-        alphabet_relative_path = os.path.join(relative_generic_content_path, 'alphabet')
-        vernacular_relative_path = os.path.join(relative_generic_content_path, 'vernacular')
+        absolute_generic_content_path = self._app_absolute_generic_content_path(backbone_taxonomy)
+        
+        relative_search_folder_path = os.path.join(relative_generic_content_path, 'search')
+        relative_lookup_folder_path = os.path.join(relative_generic_content_path, 'lookup', 'vernacular')
+        
+        relative_latname_search_folder_path = os.path.join(relative_search_folder_path, 'taxon_latname')
+        relative_vernacular_search_folder_path = os.path.join(relative_search_folder_path, 'vernacular')
 
         feature_entry = self._get_features_json_entry(app_generic_content)
 
         feature_entry.update({
-            'alphabet' : '/{0}'.format(alphabet_relative_path), # a folder
-            'vernacular' : {}, # one file per language
-            'vernacularLookup': {}, # one file per language
+            'search': {
+                'taxonLatname' : '/{0}'.format(relative_latname_search_folder_path),
+                'vernacular' : {}, # one folder per language
+            },
+            'lookup': {
+                'vernacular' : {} # one folder per language
+            }
         })
-
-
-        # ALPHABET
-        absolute_feature_path = self._app_absolute_generic_content_path(backbone_taxonomy)
-
-        alphabet_absolute_path = os.path.join(absolute_feature_path, 'alphabet')
-        # create folder
-        if not os.path.isdir(alphabet_absolute_path):
-            os.makedirs(alphabet_absolute_path)
-
-        for start_letters, letters_taxa in jsonbuilder.build_latname_alphabet(self.use_gbif):
-            
-            letter_file = os.path.join(alphabet_absolute_path, '{0}.json'.format(start_letters))
-
-            # check existing letters taxa
-            existing_letters_taxa = []
-            if os.path.isfile(letter_file):
-                with open(letter_file, 'r', encoding='utf-8') as f:
-                    existing_letters_taxa = json.load(f)
-
-            letters_taxa_merged = existing_letters_taxa + letters_taxa
-
-            # remove duplicates
-            letters_taxa_distinct = []
-            contained_name_uuids = []
-
-            for taxon_json in letters_taxa_merged:
-                
-                if taxon_json['nameUuid'] not in contained_name_uuids:
-                    letters_taxa_distinct.append(taxon_json)
-                    contained_name_uuids.append(taxon_json['nameUuid'])
-            
-            with open(letter_file, 'w', encoding='utf-8') as f:
-                json.dump(letters_taxa_distinct, f, indent=4, ensure_ascii=False)
-            
-
-        # VERNACULAR NAMES
         
-        # absolute path for dumping
-        feature_path = self._app_absolute_generic_content_path(backbone_taxonomy)
-        vernacular_absolute_path = os.path.join(feature_path, 'vernacular')
+        absolute_search_folder_path = os.path.join(absolute_generic_content_path, 'search')
+        absolute_latname_search_folder_path = os.path.join(absolute_search_folder_path, 'taxon_latname')
+        absolute_vernacular_search_folder_path = os.path.join(absolute_search_folder_path, 'vernacular')
+        absolute_lookup_folder_path = os.path.join(absolute_generic_content_path, 'lookup', 'vernacular')
+        
+        if not os.path.isdir(absolute_latname_search_folder_path):
+            os.makedirs(absolute_latname_search_folder_path)
+        
+        if not os.path.isdir(absolute_vernacular_search_folder_path):
+            os.makedirs(absolute_vernacular_search_folder_path)
+            
+        if not os.path.isdir(absolute_lookup_folder_path):
+            os.makedirs(absolute_lookup_folder_path)
+        
+        taxon_latname_search_index = jsonbuilder.build_taxon_latname_search_index()
+        
+        for start_letter, letter_taxa in taxon_latname_search_index.items():
+            letter_file = os.path.join(absolute_latname_search_folder_path, '{0}.json'.format(
+                start_letter))
 
-        if not os.path.isdir(vernacular_absolute_path):
-            os.makedirs(vernacular_absolute_path)
-
-        for language_code, vernacular_names in jsonbuilder.build_vernacular_names(self.use_gbif):
-
-            vernacular_names_list = vernacular_names.vernacular_names
-            vernacular_names_lookup = vernacular_names.lookup
-
-            # remove duplicates
-            vernacular_names_distinct = []
-            contained_name_uuids = []
-            #vernacular_names_distinct = [dict(t) for t in {tuple(d.items()) for d in vernacular_names_list}]
-            for taxon_json in vernacular_names_list:
+            with open(letter_file, 'w', encoding='utf-8') as f:
+                json.dump(letter_taxa, f, indent=4, ensure_ascii=False)
                 
-                if taxon_json['nameUuid'] not in contained_name_uuids:
-                    vernacular_names_distinct.append(taxon_json)
-                    contained_name_uuids.append(taxon_json['nameUuid'])
+        
+        for language_code in self.meta_app.languages():
+            
+            absolute_vernacular_language_folder_path = os.path.join(absolute_vernacular_search_folder_path, language_code)
+            
+            if not os.path.isdir(absolute_vernacular_language_folder_path):
+                os.makedirs(absolute_vernacular_language_folder_path)
+            
+            relative_vernacular_search_language_folder_path = os.path.join(relative_vernacular_search_folder_path, language_code)
+            relative_vernacular_lookup_language_filepath = os.path.join(relative_lookup_folder_path, '{0}.json'.format(language_code))
+            
+            vernacular_search_index, vernacular_lookup = jsonbuilder.build_vernacular_search_index(language_code)
+            
+            for start_letter, vernacular_letter_taxa in vernacular_search_index.items():
+                vernacular_letter_file = os.path.join(absolute_vernacular_language_folder_path, '{0}.json'.format(
+                    start_letter))
 
-            # sort vernacular names alphabetially
-            sorted_vernacular_names_distinct = sorted(vernacular_names_distinct, key=lambda i: i['name'])
-
-            # dump the language specific file
-            # one file per language for vernacular names for search
-            locale_filename = '{0}.json'.format(language_code)
-            language_file = os.path.join(vernacular_absolute_path, locale_filename)
-            with open(language_file, 'w', encoding='utf-8') as f:
-                json.dump(sorted_vernacular_names_distinct, f, indent=4, ensure_ascii=False)
-
-            vernacular_language_specific_path = os.path.join(vernacular_relative_path, locale_filename)
-            feature_entry['vernacular'][language_code] = '/{0}'.format(vernacular_language_specific_path)
-
-
-            lookup_locale_filename = '{0}_lookup.json'.format(language_code)
-            lookup_language_file = os.path.join(vernacular_absolute_path, lookup_locale_filename)
-            with open(lookup_language_file, 'w', encoding='utf-8') as lookup_f:
-                json.dump(vernacular_names_lookup, lookup_f, indent=4, ensure_ascii=False)
-
-            lookup_vernacular_language_specific_path = os.path.join(vernacular_relative_path, lookup_locale_filename)
-            feature_entry['vernacularLookup'][language_code] = '/{0}'.format(lookup_vernacular_language_specific_path)
-
+                with open(vernacular_letter_file, 'w', encoding='utf-8') as f:
+                    json.dump(vernacular_letter_taxa, f, indent=4, ensure_ascii=False)
+                    
+            absolute_lookup_file_path = os.path.join(absolute_lookup_folder_path, '{0}.json'.format(language_code))
+            with open(absolute_lookup_file_path, 'w', encoding='utf-8') as f:
+                    json.dump(vernacular_lookup, f, indent=4, ensure_ascii=False)
+                    
+            feature_entry['search']['vernacular'][language_code] = relative_vernacular_search_language_folder_path
+            feature_entry['lookup']['vernacular'][language_code] = relative_vernacular_lookup_language_filepath
 
         # add to settings, there is only one BackboneTaxonomy per app
         self.build_features[backbone_taxonomy.__class__.__name__] =  feature_entry
@@ -1811,6 +1752,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         collected_taxa = taxon_profiles.collected_taxa(published_only=True)
 
+        # these are the taxa that should occur in the TaxonProfile section
         active_collected_taxa = []
         
         nature_guide_only = taxon_profiles.get_option(self.meta_app,
@@ -1827,16 +1769,20 @@ class AppReleaseBuilder(AppBuilderBase):
         
             if db_profile and db_profile.publication_status == 'draft':
                 continue
+            
+            add = True
+            
+            # check nature guide only
+            if nature_guide_only == True:
+                
+                is_inactive = self.check_taxon_is_inactive(profile_taxon)
 
-            is_inactive = self.check_taxon_is_inactive(profile_taxon)
-
-            if is_inactive == False:
-                add = False
-
-                # check nature guide only
-                if nature_guide_only == True:
-
+                if is_inactive == False:
+                    add = False
+                    
+                else:
                     exists_in_nature_guide = False
+                    
                     if profile_taxon.taxon_source == 'app_kit.features.nature_guides':
                         # the profile might exist, but the taxon in the nature guide might
                         # already have been deleted
@@ -1847,24 +1793,21 @@ class AppReleaseBuilder(AppBuilderBase):
                             exists_in_nature_guide = MetaNode.objects.filter(
                                 nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid).exists()
                             
-                    if exists_in_nature_guide:
-                        add = True
-                        
-                else:
-                    add = True
+                    if not exists_in_nature_guide:
+                        add = False
 
-                if add == True:
-                    active_collected_taxa.append(profile_taxon)
+
+            if add == True:
+                active_collected_taxa.append(profile_taxon)
 
 
         self.logger.info('Building taxon profiles for {0} collected taxa'.format(len(active_collected_taxa)))
         
         for profile_taxon in active_collected_taxa:
 
-            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, self.gbiflib,
-                                                        languages=self.meta_app.languages())
+            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, 
+                                                           languages=self.meta_app.languages())
 
-            
             if profile_json is not None:
 
                 # dump the profile
@@ -1880,8 +1823,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
         # build search index and registry
         languages = self.meta_app.languages()
-        taxon_profiles_registry, localized_registries = jsonbuilder.build_alphabetical_registry(active_collected_taxa,
-            languages)
+        taxon_profiles_registry, localized_registries = jsonbuilder.build_alphabetical_registry(
+            active_collected_taxa, languages)
 
         # store the general registry
         registry_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'registry.json')
@@ -1915,23 +1858,9 @@ class AppReleaseBuilder(AppBuilderBase):
             
             self.build_features[generic_content_type]['localizedRegistries'][language_code] = '/{0}'.format(relative_localized_registry_filepath)
             
-
-        # store search indices
-        relative_search_index_path = os.path.join(app_relative_taxonprofiles_folder, 'search.json')
-
-
-        taxon_profiles_search_indices = jsonbuilder.build_search_indices(active_collected_taxa, languages)
-        search_indices_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'search.json')
-
-        with open(search_indices_absolute_filepath, 'w', encoding='utf-8') as f:
-            json.dump(taxon_profiles_search_indices, f, indent=4, ensure_ascii=False)
-
-        # add paths to features.json
+        # add registry paths to features.json
         relative_registry_path = os.path.join(app_relative_taxonprofiles_folder, 'registry.json')
-        relative_search_index_path = os.path.join(app_relative_taxonprofiles_folder, 'search.json')
-
         self.build_features[generic_content_type]['registry'] = '/{0}'.format(relative_registry_path)
-        self.build_features[generic_content_type]['search'] = '/{0}'.format(relative_search_index_path)
 
         # navigations
         navigation_json = jsonbuilder.build_navigation()

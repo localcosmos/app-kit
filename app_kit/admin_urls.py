@@ -29,6 +29,8 @@ urlpatterns = [
         name='manage_metaapp'),
     # TRANSLATE APP
     path('translate-app/<int:meta_app_id>/', views.TranslateApp.as_view(), name='translate_app'),
+    path('translate-vernacular-names/<int:meta_app_id>/', views.TranslateVernacularNames.as_view(),
+         name='translate_vernacular_names'),
     # BUILD APP
     path('build-app/<int:meta_app_id>/', views.BuildApp.as_view(), name='build_app'),
     path('build-app/<int:meta_app_id>/<str:action>/', views.BuildApp.as_view(), name='build_app'),

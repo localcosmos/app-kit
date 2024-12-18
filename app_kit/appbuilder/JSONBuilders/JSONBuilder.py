@@ -1,18 +1,16 @@
-import os
-
-from app_kit.models import ContentImage
 
 from app_kit.generic import AppContentTaxonomicRestriction
 from django.contrib.contenttypes.models import ContentType
 
 from localcosmos_server.template_content.models import TemplateContent
+from app_kit.appbuilder.JSONBuilders.ContentImagesJSONBuilder import ContentImagesJSONBuilder
 
-from django.utils.text import slugify
 
-
-class JSONBuilder:
+class JSONBuilder(ContentImagesJSONBuilder):
 
     def __init__(self, app_release_builder, app_generic_content):
+        
+        super().__init__(app_release_builder)
 
         self.app_release_builder = app_release_builder
         self.app_generic_content = app_generic_content
@@ -56,7 +54,6 @@ class JSONBuilder:
         return features_json_entry
 
 
-
     # language independant
     def _build_common_json(self):
 
@@ -74,38 +71,6 @@ class JSONBuilder:
         }
 
         return generic_content_json
-
-    def _get_content_image(self, content_image_mixedin, image_type='image'):
-
-        if type(content_image_mixedin) == ContentImage:
-            content_image = content_image_mixedin
-        else:
-            content_image = content_image_mixedin.image(image_type=image_type)
-
-        return content_image
-
-    # images_sizes = [] means that the image_sizes will be set by app_release_builder.build_content_image
-    def _get_image_urls(self, content_image_mixedin, image_type='image', image_sizes=[]):
-
-        content_image = self._get_content_image(content_image_mixedin, image_type=image_type)
-
-        if content_image:
-            image_urls = self.app_release_builder.build_content_image(content_image, image_sizes=image_sizes)
-
-        else:
-            image_urls = self.app_release_builder.no_image_url
-            
-        return image_urls 
-
-
-    def _get_image_licence(self, content_image_mixedin, image_type='image'):
-        if type(content_image_mixedin) == ContentImage:
-            content_image = content_image_mixedin
-        else:
-            content_image = content_image_mixedin.image(image_type=image_type)
-
-        licence = self.app_release_builder.content_image_builder.build_licence(content_image)
-        return licence
 
 
     def get_taxonomic_restriction(self, instance, restriction_model=AppContentTaxonomicRestriction):
@@ -190,16 +155,3 @@ class JSONBuilder:
                 global_options[camel_case_key] = value
         
         return global_options
-
-    
-    def build_taxon(self, lazy_taxon):
-
-        taxon = {
-            'taxonSource': lazy_taxon.taxon_source,
-            'taxonLatname': lazy_taxon.taxon_latname,
-            'taxonAuthor': lazy_taxon.taxon_author,
-            'nameUuid' : str(lazy_taxon.name_uuid),
-            'taxonNuid' : lazy_taxon.taxon_nuid,
-        }
-
-        return taxon

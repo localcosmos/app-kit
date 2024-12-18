@@ -16,4 +16,8 @@ urlpatterns = [
         views.SearchBackboneTaxonomy.as_view(), name='search_backbonetaxonomy'),
     path('search-backbonetaxonomy-and-custom-taxa/<int:meta_app_id>/',
         views.SearchBackboneTaxonomyAndCustomTaxa.as_view(), name='search_backbonetaxonomy_and_custom_taxa'),
+    path('collected-vernacular-names/<int:meta_app_id>/<str:taxon_source>/<uuid:name_uuid>/',
+        views.CollectedVernacularNames.as_view(), name='collected_vernacular_names'),
+    path('manage-backbone-taxon/<int:meta_app_id>/<str:taxon_source>/<uuid:name_uuid>/',
+        views.ManageBackboneTaxon.as_view(), name='manage_backbone_taxon'),
 ]
