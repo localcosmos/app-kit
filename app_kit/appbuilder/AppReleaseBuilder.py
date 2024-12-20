@@ -42,8 +42,7 @@ from localcosmos_server.template_content.models import TemplateContent, Navigati
 
 # TAXONOMY
 from taxonomy.lazy import LazyTaxon
-
-
+from taxonomy.models import MetaVernacularNames
 
 from app_kit.models import (MetaAppGenericContent, LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, ContentImage,
                             LocalizedContentImage)
@@ -750,6 +749,22 @@ class AppReleaseBuilder(AppBuilderBase):
             message = _('This app has no taxa.')
             error = ValidationError(self.meta_app, backbonetaxonomy, [message])
             result['errors'].append(error)
+            
+        # check meta vernacular names
+        vernacular_names = self.meta_app.get_meta_vernacular_names(languages=[self.meta_app.primary_language])
+        
+        for vernacular_name in vernacular_names:
+            
+            for language_code in self.meta_app.secondary_languages():
+            
+                locale = MetaVernacularNames.objects.filter(taxon_source=vernacular_name.taxon_source,
+                                    name_uuid=vernacular_name.name_uuid, language=language_code).first()
+                
+                if not locale:
+                    lazy_taxon = LazyTaxon(instance=vernacular_name)
+                    error_message = _('%(taxon_latname)s: Vernacular Name missing for the language %(language)s.') % {'taxon_latname': str(lazy_taxon), 'language':language_code}                      
+                    mvn_error = ValidationError(self.meta_app, vernacular_name, [error_message])
+                    result['warnings'].append(mvn_error)
         
         return result
 

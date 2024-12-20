@@ -25,7 +25,7 @@ from django.template.defaultfilters import slugify  # package_name
 from .generic import GenericContentMethodsMixin
 
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
-from taxonomy.models import TaxonomyModelRouter
+from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 
 from .utils import import_module
@@ -683,6 +683,29 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
                     results.append(result)
 
         return results
+    
+    def get_meta_vernacular_names(self, languages=[]):
+        
+        app_taxon_name_uuids = []
+        
+        for taxon in self.taxa():
+            app_taxon_name_uuids.append(str(taxon.name_uuid))
+        
+        all_vernacular_names = MetaVernacularNames.objects.all()
+        
+        if languages:
+            all_vernacular_names = all_vernacular_names.filter(language__in=languages)
+        
+        
+        all_vernacular_names = all_vernacular_names.order_by('name')
+        
+        app_vernacular_names = []
+        
+        for vernacular_name in all_vernacular_names:
+            if str(vernacular_name.name_uuid) in app_taxon_name_uuids:
+                app_vernacular_names.append(vernacular_name)
+                
+        return app_vernacular_names
 
     def save(self, publish=False, *args, **kwargs):
 

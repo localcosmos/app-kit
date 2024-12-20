@@ -436,23 +436,12 @@ class TranslateVernacularNamesForm(forms.Form):
     def __init__(self, meta_app, *args, **kwargs):
         self.meta_app = meta_app
         
-        app_taxon_name_uuids = []
-        
-        for taxon in meta_app.taxa():
-            app_taxon_name_uuids.append(str(taxon.name_uuid))
-        
         self.page = kwargs.pop('page', 1)
+        print(self.page)
         
         super().__init__(*args, **kwargs)
         
-        all_vernacular_names = MetaVernacularNames.objects.filter(
-            language=self.meta_app.primary_language).order_by('name')
-        
-        app_vernacular_names = []
-        
-        for vernacular_name in all_vernacular_names:
-            if str(vernacular_name.name_uuid) in app_taxon_name_uuids:
-                app_vernacular_names.append(vernacular_name)
+        app_vernacular_names = meta_app.get_meta_vernacular_names(languages=[meta_app.primary_language])
                 
         app_vernacular_names_count = len(app_vernacular_names)
                 
@@ -469,6 +458,8 @@ class TranslateVernacularNamesForm(forms.Form):
         languages = meta_app.secondary_languages()
         
         for vernacular_name in page_items:
+            
+            print(vernacular_name)
 
             language_independant_identifier = uuid.uuid4()
             

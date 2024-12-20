@@ -35,7 +35,7 @@ from app_kit.features.frontend.models import Frontend
 from app_kit.features.taxon_profiles.models import TaxonProfile, TaxonProfiles
 
 from taxonomy.lazy import LazyTaxon
-from taxonomy.models import TaxonomyModelRouter
+from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 
 from content_licencing.licences import ContentLicence
 
@@ -2671,15 +2671,64 @@ class TestTranslateVernacularNames(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         
         mvn = self.create_mvn(self.taxon, 'Localized name', self.meta_app.primary_language)
         
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        
+        key = 'mvn-{0}-de'.format(mvn.pk)
         
         # create
         post_data = {}
         
+        test_name = 'Test Locale de'
         
+        post_data[key] = test_name
+        
+        form = view.form_class(self.meta_app, data=post_data)
+        
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['saved'], True)
+        
+        mvn_de = MetaVernacularNames.objects.filter(name_uuid=self.taxon.name_uuid, language='de').first()
+        self.assertEqual(mvn_de.name, test_name)
         
         # update
+        post_data = {}
+        test_name_updated = 'Test Locale de updated'
+        post_data[key] = test_name_updated
         
+        form = view.form_class(self.meta_app, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['saved'], True)
+        
+        mvn_de.refresh_from_db()
+        
+        self.assertEqual(mvn_de.name, test_name_updated)
         
         # delete
+        post_data = {}
+        
+        form = view.form_class(self.meta_app, data=post_data)
+        
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['saved'], True)
+        
+        mvn_de = MetaVernacularNames.objects.filter(name_uuid=self.taxon.name_uuid, language='de')
+        self.assertFalse(mvn_de.exists())
+
+
         
         

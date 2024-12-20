@@ -582,7 +582,21 @@ class EditGenericContentName(FormView):
 '''
     TRANSLATING AN APP
 '''
-class TranslateApp(MetaAppMixin, FormView):
+class PagedTranslationFormMixin:
+    
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        page = self.request.GET.get('page', 1)
+        form_kwargs['page'] = int(page)
+        return form_kwargs
+    
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.meta_app, **self.get_form_kwargs())
+
+
+class TranslateApp(PagedTranslationFormMixin, MetaAppMixin, FormView):
 
     form_class = TranslateAppForm
     template_name = 'app_kit/translate_app.html'
@@ -597,17 +611,6 @@ class TranslateApp(MetaAppMixin, FormView):
         # fill meta_app.localizations.json
         app_builder = self.meta_app.get_app_builder()
         app_builder.fill_primary_localization()
-
-    def get_form_kwargs(self):
-        form_kwargs = super().get_form_kwargs()
-        page = self.request.GET.get('page', 1)
-        form_kwargs['page'] = int(page)
-        return form_kwargs
-
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = self.get_form_class()
-        return form_class(self.meta_app, **self.get_form_kwargs())
 
     '''
     update the translation files
@@ -741,15 +744,10 @@ class GetDeepLTranslation(MetaAppMixin, TemplateView):
         return JsonResponse(result)
 
 
-class TranslateVernacularNames(MetaAppMixin, FormView):
+class TranslateVernacularNames(PagedTranslationFormMixin, MetaAppMixin, FormView):
     
     template_name = 'app_kit/translate_vernacular_names.html'
     form_class = TranslateVernacularNamesForm
-    
-    def get_form(self, form_class=None):
-        if form_class is None:
-            form_class = self.get_form_class()
-        return form_class(self.meta_app, **self.get_form_kwargs())
     
     
     def form_valid(self, form):
