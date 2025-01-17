@@ -765,13 +765,17 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         
         return True
 
-    # in the future, a nature guide might appear in more than one app
-    def get_taxon_profile(self, meta_app):
-
+    def get_taxon_profiles(self, meta_app):
         taxon_profiles_content_type = ContentType.objects.get_for_model(TaxonProfiles)
         taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=meta_app,
                                                 content_type=taxon_profiles_content_type)
-        taxon_profiles = taxon_profiles_link.generic_content
+        
+        return taxon_profiles_link.generic_content
+        
+    # in the future, a nature guide might appear in more than one app
+    def get_taxon_profile(self, meta_app):
+
+        taxon_profiles = self.get_taxon_profiles(meta_app)
         
         taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
                 taxon_source='app_kit.features.nature_guides', taxon_latname=self.taxon_latname).first()
@@ -866,7 +870,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         
         super().save(*args, **kwargs)
 
-        linked_profile = TaxonProfile.objects.filter(taxon_source='app_kit.features.nature_guides', name_uuid=self.name_uuid).first()
+        linked_profile = TaxonProfile.objects.filter(
+            taxon_source='app_kit.features.nature_guides', name_uuid=self.name_uuid).first()
         if linked_profile and linked_profile.taxon_latname != self.taxon_latname:
             linked_profile.taxon_latname = self.taxon_latname
             linked_profile.save()

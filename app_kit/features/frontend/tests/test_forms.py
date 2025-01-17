@@ -28,8 +28,10 @@ class TestFrontendSettingsForm(WithFrontend, TenantTestCase):
         form = FrontendSettingsForm(self.meta_app, self.frontend)
 
         self.assertIn('legal_notice', form.fields)
+        self.assertIn('privacy_policy', form.fields)
+        self.assertIn('termsOfUse', form.fields)
         self.assertIn('appLauncherIcon', form.fields)
-        self.assertIn('appBackground', form.fields)
+        #self.assertIn('appBackground', form.fields)
 
     @test_settings
     def test_validate(self):

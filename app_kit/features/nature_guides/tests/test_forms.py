@@ -100,7 +100,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
 
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 13)
+        self.assertEqual(len(form.fields), 14)
         self.assertEqual(form.from_url, from_url)
         self.assertEqual(form.node, None)
 
@@ -124,7 +124,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         node = self.create_node(parent_node, 'First')
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, node=node)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 13)
+        self.assertEqual(len(form.fields), 14)
         self.assertEqual(form.node, node)
         self.assertEqual(form.from_url, from_url)
 

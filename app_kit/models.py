@@ -449,20 +449,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
         # first, count all non-higher-taxa
         taxonlist = self.taxa()
-        taxonlist.filter(taxon_include_descendants=False)
-
         count = taxonlist.count()
-
-        source_nuid_map = self._get_source_nuid_map(self.higher_taxa().taxa())
-
-        for source, nuid_list in source_nuid_map.items():
-
-            models = TaxonomyModelRouter(source)
-
-            for nuid in nuid_list:
-
-                count += models.TaxonTreeModel.objects.filter(
-                    taxon_nuid__startswith=nuid).count()
 
         return count
 

@@ -192,12 +192,13 @@ class WithGenericField:
         }
 
         option_values = {
+            'initial' : '1',
             'min_value' : '0',
             'max_value' : '4',
             'decimal_places' : '2',
             'step' : '1',
             'unit' : 'm',
-            'datetime_mode' : 'datetime',
+            'datetime_mode' : 'datetime-local',
         }
 
         if field_class in FIELD_OPTIONS:
@@ -245,7 +246,11 @@ class WithGenericField:
 
         field_link = GenericFieldToGenericForm.objects.filter(generic_form=self.generic_content).order_by(
             'pk').last()
-        self.assertEqual(field_link.is_required, False)
+        
+        if field_link.generic_field.role in ['temporal_reference', 'geographic_reference']:
+            self.assertEqual(field_link.is_required, True)
+        else:
+            self.assertEqual(field_link.is_required, False)
         self.assertEqual(field_link.is_sticky, False)
 
         generic_field = field_link.generic_field

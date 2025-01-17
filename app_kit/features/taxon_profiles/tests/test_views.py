@@ -842,6 +842,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
     def get_url_kwargs(self):
         url_kwargs = {
+            'meta_app_id': self.meta_app.id,
             'taxon_source' : self.lazy_taxon.taxon_source,
             'name_uuid' : str(self.lazy_taxon.name_uuid),
         }
@@ -852,6 +853,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
     def test_set_taxon(self):
 
         view = self.get_view()
+        view.set_meta_app(**view.kwargs)
         view.set_taxon(**view.kwargs)
 
         self.assertEqual(view.taxon, self.lazy_taxon)
@@ -861,6 +863,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
     def test_get_taxon_traits(self):
 
         view = self.get_view()
+        view.set_meta_app(**view.kwargs)
         view.set_taxon(**view.kwargs)
         
         traits = view.get_taxon_traits()
@@ -880,6 +883,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
     def test_get_context_data(self):
 
         view = self.get_view()
+        view.set_meta_app(**view.kwargs)
         view.set_taxon(**view.kwargs)
 
         context = view.get_context_data(**view.kwargs)

@@ -105,17 +105,22 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
             nature_guide_results.append(entry)
 
-        non_nature_guide_taxon_profiles = TaxonProfile.objects.exclude(
+        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
         backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
         backbonetaxonomy = backbonetaxonomy_link.generic_content
-        backbone_taxa_name_uuids = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
-        backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
-        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
+        backbone_taxa_name_uuids = BackboneTaxa.objects.filter(
+            backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
+        backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
+            taxon_profiles=self.generic_content,
+            name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
+        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(
+            name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
         
         uses_taxon_profiles_navigation = self.generic_content.get_option(self.meta_app, 'enable_taxonomic_navigation')
-        taxon_profiles_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content).first()
+        taxon_profiles_navigation = TaxonProfilesNavigation.objects.filter(
+            taxon_profiles=self.generic_content).first()
 
         context['nature_guide_results'] = nature_guide_results
         context['non_nature_guide_taxon_profiles'] = non_nature_guide_taxon_profiles
@@ -299,7 +304,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context['show_text_length_badges'] = settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True
 
         # show possible duplicates
-        possible_duplicates = TaxonProfile.objects.filter(taxon_latname=self.taxon_profile.taxon_latname).exclude(pk=self.taxon_profile.pk)
+        possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+            taxon_latname=self.taxon_profile.taxon_latname).exclude(pk=self.taxon_profile.pk)
         context['possible_duplicates'] = possible_duplicates
         return context
 
@@ -454,8 +460,8 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
             else:
                 fallback_taxa = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node, nature_guide=self.nature_guide)
                 for fallback_taxon in fallback_taxa:
-                    fallback_taxon_profile = TaxonProfile.objects.filter(taxon_source='app_kit.features.nature_guides',
-                                                                         name_uuid=fallback_taxon.name_uuid).first()
+                    fallback_taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                        taxon_source='app_kit.features.nature_guides', name_uuid=fallback_taxon.name_uuid).first()
                     if fallback_taxon_profile:
                         self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
 
@@ -493,7 +499,8 @@ class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
 
-        taxon_profile_exists = TaxonProfile.objects.filter(taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid).exists()
+        taxon_profile_exists = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+            taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid).exists()
 
         url = None
 
@@ -701,21 +708,27 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
         return context
 
 
-class CollectTaxonTraits(TemplateView):
+class CollectTaxonTraits(MetaAppMixin, TemplateView):
 
     template_name = 'taxon_profiles/ajax/collected_taxon_traits.html'
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.set_meta_app(**kwargs)
         self.set_taxon(**kwargs)
         return super().dispatch(request, *args, **kwargs)
 
 
     def set_taxon(self, **kwargs):
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        
         taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
 
-        taxon_profile = TaxonProfile.objects.get(taxon_source=taxon_source, name_uuid=name_uuid)
+        taxon_profile = TaxonProfile.objects.get(taxon_profiles=taxon_profiles,
+                                                 taxon_source=taxon_source, name_uuid=name_uuid)
 
         #taxon = get_taxon(taxon_source, name_uuid)
 

@@ -96,6 +96,7 @@ FIELDCLASS_DATATYPE = {
     'PointJSONField' : 'json',
     #'GeoJSONField' : 'json',
     'PictureField' : 'json',
+    'SelectTaxonField' : 'json',
 }
 
 class GenericFormVersionBumpMixin:

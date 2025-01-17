@@ -85,7 +85,7 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
 
         frontend_settings = view.get_frontend_settings()
 
-        self.assertEqual(frontend_settings['frontend'], 'Flat')
+        self.assertEqual(frontend_settings['frontend'], 'Multiverse')
 
 
     @test_settings
@@ -118,7 +118,7 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
         self.assertIn('legal_notice', text_types)
 
         for text_type in text_types:
-            if text_type != 'legal_notice':
+            if text_type != 'legal_notice' and text_type != 'privacy_policy':
                 self.assertIn(text_type, frontend_settings['userContent']['texts'])
 
 
@@ -360,7 +360,7 @@ class TestChangeFrontend(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, WithUse
         view.set_meta_app(**view.kwargs)
 
         post_data = {
-            'frontend_name' : 'Flat',
+            'frontend_name' : 'Multiverse',
         }
 
         form = ChangeFrontendForm(self.meta_app, data=post_data)
@@ -384,7 +384,7 @@ class TestChangeFrontend(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, WithUse
         view.set_frontend(**view.kwargs)
         view.set_meta_app(**view.kwargs)
 
-        view.update_frontend('Flat')
+        view.update_frontend('Multiverse')
 
         sleep(30)
 
@@ -527,7 +527,7 @@ class TestInstallPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, With
         is_valid = form.is_valid()
         self.assertEqual(form.errors, {})
 
-        self.assertEqual(self.frontend.frontend_name, 'Flat')
+        self.assertEqual(self.frontend.frontend_name, 'Multiverse')
 
         response = view.form_valid(form)
         self.assertEqual(response.status_code, 200)

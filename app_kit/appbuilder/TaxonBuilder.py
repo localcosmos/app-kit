@@ -1,7 +1,7 @@
 from django.conf import settings
 from app_kit.appbuilder.GBIFlib import GBIFlib
 from app_kit.features.nature_guides.models import MetaNode, NatureGuidesTaxonTree, NatureGuide
-from app_kit.features.taxon_profiles.models import TaxonProfile
+from app_kit.features.taxon_profiles.models import TaxonProfile, TaxonProfiles
 from app_kit.models import ContentImage
 
 from app_kit.appbuilder.JSONBuilders.ContentImagesJSONBuilder import ContentImagesJSONBuilder
@@ -15,6 +15,8 @@ class TaxaBuilder(ContentImagesJSONBuilder):
         super().__init__(app_release_builder)
         
         self.meta_app = app_release_builder.meta_app
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        self.taxon_profiles = taxon_profiles_link.generic_content
         
         self.gbiflib = GBIFlib()
         
@@ -43,6 +45,10 @@ class TaxaBuilder(ContentImagesJSONBuilder):
     def serialize_taxon_extended(self, lazy_taxon):
         taxon_serializer = TaxonSerializer(lazy_taxon, self)
         return taxon_serializer.serialize_extended()
+    
+    def serialize_taxon_with_profile_images(self, lazy_taxon):
+        taxon_serializer = TaxonSerializer(lazy_taxon, self)
+        return taxon_serializer.serialize_with_profile_images()
     
     
     def serialize_as_search_taxon(self, lazy_taxon, name_type, name, is_preferred_name,
@@ -120,6 +126,39 @@ class TaxonSerializer:
         taxon_json_copy = copy.deepcopy(taxon_json)
         
         return taxon_json_copy
+    
+    
+    def serialize_with_slugs(self):
+        
+        taxon_json = self.serialize()
+        
+        taxon_json.update({
+            'slug': self.taxa_builder.app_release_builder.taxon_slugs['taxon_latname'].get(
+                taxon_json['nameUuid'], None),
+            'localizedSlug': {},
+        })
+        
+        for language_code, vernacular_slugs in self.taxa_builder.app_release_builder.taxon_slugs['vernacular'].items():
+            
+            taxon_json['localizedSlug'][language_code] = vernacular_slugs.get(
+                taxon_json['nameUuid'], None)
+            
+        return taxon_json
+    
+    
+    def serialize_with_profile_images(self):
+        
+        taxon_json = self.serialize_with_slugs()
+        all_images = self.serialize_images()
+        images = []
+        if all_images['taxonProfileImages']:
+            images = all_images['taxonProfileImages']
+        elif all_images['primary']:
+            images = [all_images['primary']]
+            
+        taxon_json['images'] = images
+        
+        return taxon_json
         
 
     def serialize_extended(self):
@@ -140,14 +179,16 @@ class TaxonSerializer:
                 'image': images['primary'],
             })
             
-            self.taxa_builder.cache['simple'][self.lazy_taxon.name_uuid] = taxon_json
+            self.taxa_builder.cache['extended'][self.lazy_taxon.name_uuid] = taxon_json
 
         taxon_json_copy = copy.deepcopy(taxon_json)
         
         return taxon_json_copy
     
     def get_taxon_profile(self):
-        return TaxonProfile.objects.filter(name_uuid=self.lazy_taxon.name_uuid, publication_status='publish').first()
+        return TaxonProfile.objects.filter(
+            taxon_profiles=self.taxa_builder.taxon_profiles,
+            name_uuid=self.lazy_taxon.name_uuid, publication_status='publish').first()
         
     
     def serialize_images(self):

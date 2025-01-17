@@ -13,6 +13,8 @@ from app_kit.features.generic_forms.models import GenericForm
 
 from app_kit.models import ContentImage, MetaAppGenericContent
 
+from django.template.defaultfilters import slugify
+
 from localcosmos_server.template_content.models import TemplateContent
 
 from taxonomy.lazy import LazyTaxon
@@ -109,8 +111,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         #self.app_release_builder.logger.info('building profile for {0}'.format(profile_taxon.taxon_latname))
 
         # get the profile
-        db_profile = TaxonProfile.objects.filter(taxon_source=profile_taxon.taxon_source,
-                    taxon_latname=profile_taxon.taxon_latname, taxon_author=profile_taxon.taxon_author).first()
+        db_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+            taxon_source=profile_taxon.taxon_source, taxon_latname=profile_taxon.taxon_latname,
+            taxon_author=profile_taxon.taxon_author).first()
         
         
         taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
@@ -323,6 +326,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         return postprocessed_traits
         
+        
     # Taxon Profiles Registry
     # registry.json: only one occurrence per taxon (name_uuid) - usable for alphabetical display by taxon latname
     # vernacular/de.json: 
@@ -330,6 +334,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         registry = {}
         localized_registries = {}
+
+        start_letters = {
+            'taxonLatname' : [],
+            'vernacular': {},
+        }
 
         included_taxa = []
 
@@ -344,8 +353,15 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             
             registry[str(lazy_taxon.name_uuid)] = registry_taxon_json
             
+            scientific_start_letter = full_scientific_name[0].upper()
+            if scientific_start_letter not in start_letters['taxonLatname']:
+                start_letters['taxonLatname'].append(scientific_start_letter)
+            
 
             for language_code in languages:
+                
+                if language_code not in start_letters['vernacular']:
+                    start_letters['vernacular'][language_code] = []
 
                 preferred_vernacular_name = lazy_taxon.get_preferred_vernacular_name(language_code,
                                                                                      self.meta_app)
@@ -359,8 +375,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         lazy_taxon, 'vernacular', preferred_vernacular_name, True)
 
                     localized_registries[language_code].append(vernacular_search_taxon_json)
+                    
+                    vernacular_start_letter = vernacular_search_taxon_json['name'][0].upper()
+                    if vernacular_start_letter not in start_letters['vernacular'][language_code]:
+                        start_letters['vernacular'][language_code].append(vernacular_start_letter)
 
-            
             included_taxa.append(lazy_taxon.name_uuid)
 
         # sort the localited registries
@@ -368,8 +387,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
             sorted_localized_registry = sorted(localized_registry, key=lambda x: x['name'])
             localized_registries[language_code] = sorted_localized_registry
+            
+        start_letters['taxonLatname'].sort()
+        for language_code, letters_list in start_letters['vernacular'].items():
+            start_letters['vernacular'][language_code].sort()
 
-        return registry, localized_registries
+        return registry, localized_registries, start_letters
 
 
     def collect_usable_generic_forms(self, profile_taxon):
@@ -438,11 +461,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         taxa = []
         
-        images = []
-        
-        for content_image in navigation_entry.images():
-            image_entry = self.get_image_json(content_image)
-            images.append(image_entry)
+        images = self.get_navigation_entry_images(navigation_entry)
         
         for taxon_link in navigation_entry.taxa:
             lazy_taxon = LazyTaxon(instance=taxon_link)
@@ -451,20 +470,60 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         navigation_entry_json = {
             'key': navigation_entry.key,
-            'parent_key': None,
-            'name': navigation_entry.name,
-            'description': navigation_entry.description,
-            'verbose_name': str(navigation_entry),
+            'parentKey': None,
+            'name': navigation_entry.name or None,
+            'verboseName': str(navigation_entry),
             'taxa': taxa,
             'images': images,
         }
         
         if navigation_entry.parent:
             navigation_entry_json.update({
-                'parent_key': navigation_entry.parent.key,
+                'parentKey': navigation_entry.parent.key,
             })
         
         return navigation_entry_json
+    
+    
+    def get_navigation_entry_slug(self, navigation_slugs, navigation_entry):
+        name = slugify(navigation_entry['verboseName'])
+        
+        slug = name
+        
+        counter = 2
+        
+        while slug in navigation_slugs:
+            slug = '{0}-{1}'.format(name, counter)
+            counter = counter +1
+            
+        return slug
+    
+    
+    def get_empty_navigation_node(self, is_start_node=False):
+        
+        navigation_node = {
+            'name': None,
+            'description': None,
+            'verboseName': None,
+            'isTerminalNode': False,
+            'isStartNode' : is_start_node,
+            'images': [],
+            'children' : [],
+            'taxonProfiles': [],
+        }
+        
+        return navigation_node
+    
+    
+    def get_navigation_entry_images(self, navigation_entry):
+        
+        images = []
+        
+        for content_image in navigation_entry.images():
+            image_entry = self.get_image_json(content_image)
+            images.append(image_entry)
+            
+        return images
     
     
     def build_navigation(self):
@@ -472,14 +531,14 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         custom_taxonomy_name = 'taxonomy.sources.custom'
         custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
         
+        # navigation slugs are group names or taxon latnames
+        navigation_slugs = {
+            'start': 'start',
+        }
+        
         navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.generic_content).first()
         built_navigation = {
-            'start' : {
-                'name': None,
-                'verbose_name': None,
-                'is_terminal_node': False,
-                'children' : [],
-            }
+            'start' : self.get_empty_navigation_node(is_start_node=True),
         }
         
         if navigation:
@@ -488,18 +547,23 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             for root_element in root_elements:
                 
                 root_element_json = self._build_navigation_child(root_element)
+                slug = self.get_navigation_entry_slug(navigation_slugs, root_element_json)
+                root_element_json['slug'] = slug
+                navigation_slugs[slug] = root_element_json['key']
                 built_navigation['start']['children'].append(root_element_json)
                 
-            non_root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                                                                            parent__isnull=False)
+            all_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation)
             
-            for navigation_entry in non_root_elements:
+            for navigation_entry in all_elements:
                 
-                navigation_entry_json = {
-                    'name': navigation_entry.name,
-                    'verbose_name': str(navigation_entry),
-                    'is_terminal_node': False,
-                }
+                navigation_entry_json = self.get_empty_navigation_node()
+                
+                navigation_entry_json.update({
+                    'name': navigation_entry.name or None,
+                    'description': navigation_entry.description or None,
+                    'verboseName': str(navigation_entry),
+                    'images': self.get_navigation_entry_images(navigation_entry),
+                })
                 
                 children = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
                                                                             parent=navigation_entry)
@@ -509,12 +573,15 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     
                     for child in children:
                         child_json = self._build_navigation_child(child)
+                        slug = self.get_navigation_entry_slug(navigation_slugs, child_json)
+                        child_json['slug'] = slug
+                        navigation_slugs[slug] = child_json['key']
                         children_json.append(child_json)
                         
                     navigation_entry_json['children'] = children_json
                 
                 else:
-                    navigation_entry_json['is_terminal_node'] = True
+                    navigation_entry_json['isTerminalNode'] = True
                     
                     # fetch all taxon profiles matching this node
                     taxon_profiles = []
@@ -523,6 +590,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     for taxon_link in navigation_entry.taxa:
                         
                         matching_profiles = TaxonProfile.objects.filter(
+                            taxon_profiles=self.generic_content,
                             taxon_source=taxon_link.taxon_source,
                             taxon_nuid__startswith=taxon_link.taxon_nuid)
                         
@@ -544,6 +612,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                             
                             for custom_parent_taxon in custom_parent_taxa:
                                 matching_custom_profiles = TaxonProfile.objects.filter(
+                                    taxon_profiles=self.generic_content,
                                     taxon_source=custom_taxonomy_name,
                                     taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
                                 
@@ -555,20 +624,21 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     for taxon_profile in taxon_profiles:
                         
                         lazy_taxon = LazyTaxon(instance=taxon_profile)
-                        taxon_json = self.app_release_builder.taxa_builder.serialize_taxon(lazy_taxon)
+                        taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_with_profile_images(lazy_taxon)
                         taxon_profiles_json.append(taxon_json)
                     
-                    navigation_entry_json['taxon_profiles'] = taxon_profiles_json
+                    navigation_entry_json['taxonProfiles'] = taxon_profiles_json
                     
                 built_navigation[navigation_entry.key] = navigation_entry_json
                 
         
-        return built_navigation
+        return built_navigation, navigation_slugs
     
     
     def build_featured_taxon_profiles_list(self, languages):
         
-        featured_profiles_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, is_featured=True)
+        featured_profiles_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+                                                            is_featured=True)
 
         featured_taxon_profiles = []
         

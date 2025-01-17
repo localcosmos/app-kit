@@ -41,7 +41,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         frontend_texts = FrontendText.objects.filter(frontend=self, frontend_name=self.frontend_name)
 
         for text in frontend_texts:
-            locale_key = 'frontend-text-{0}'.format(text.identifier) 
+            locale_key = 'frontend-text-{0}'.format(text.identifier)
             locale[locale_key] = text.text
 
             locale['_meta'][locale_key] = {

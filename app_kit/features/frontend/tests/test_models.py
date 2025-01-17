@@ -39,8 +39,9 @@ class TestFrontend(WithFrontend, TenantTestCase):
             frontend_text.save()
 
         localization = self.frontend.get_primary_localization()
-        for text in test_texts:
-            self.assertIn(text, localization)
+        for frontend_text in FrontendText.objects.all():
+            text_key = 'frontend-text-{0}'.format(frontend_text.identifier) 
+            self.assertIn(text_key, localization)
 
     @test_settings
     def test_taxa_and_higher_taxa(self):
@@ -50,7 +51,7 @@ class TestFrontend(WithFrontend, TenantTestCase):
     @test_settings
     def test_get_content_image_restrictions(self):
         
-        restrictions = self.frontend.get_content_image_restrictions('appBackground')
+        restrictions = self.frontend.get_content_image_restrictions('appLauncherIcon')
 
         self.assertIn('file_type', restrictions)
 

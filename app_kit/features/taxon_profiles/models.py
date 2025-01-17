@@ -33,9 +33,9 @@ class TaxonProfiles(GenericContent):
     # enable_wikipedia = models.BooleanField(default=True)
     # default_observation_form = models.IntegerField(null=True)
 
-    # the taxa included in taxonprofiles do exist elsewhere in the app
     def taxa(self):
-        return LazyTaxonList()
+        queryset = TaxonProfile.objects.filter(taxon_profiles=self)
+        return LazyTaxonList(queryset)
 
     def higher_taxa(self):
         return LazyTaxonList()
@@ -89,7 +89,7 @@ class TaxonProfiles(GenericContent):
                 'taxon_author' : lazy_taxon.taxon_author,
             }
 
-            taxon_profile = TaxonProfile.objects.filter(**taxon_query).first()
+            taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self, **taxon_query).first()
 
             if taxon_profile:
 

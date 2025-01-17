@@ -1852,6 +1852,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                     'taxon': None,
                     'uuid': str(node.name_uuid),
                     'max_points' : 0,
+                    'morphotype' : None,
                 }
             ],
             'matrix_filters': {}
@@ -1888,6 +1889,7 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             'decision_rule' : node.decision_rule,
             'taxon' : None,
             'max_points' : 0,
+            'morphotype' : None,
         }
 
         self.assertEqual(expected_json, child_json)

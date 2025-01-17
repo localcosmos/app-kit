@@ -41,9 +41,7 @@ from taxonomy.models import TaxonomyModelRouter
 
 from app_kit.multi_tenancy.models import TenantUserRole
 
-
 from app_kit.tests.test_views import ContentImagePostData
-
 
 import json
 
@@ -2154,6 +2152,7 @@ class ManageMatrixFilterSpaceCommon:
         elif matrix_filter.filter_type == 'ColorFilter':
             post_data.update({
                 'color' : '#ff00ff',
+                'color_type' : 'single',
             })
 
         return post_data
@@ -2701,7 +2700,7 @@ class TestMoveNatureGuideNode(WithNatureGuideLink, WithAjaxAdminOnly, ViewTestMi
         form_kwargs = view.get_form_kwargs()
         form_kwargs['data'] = post_data
         form_class = view.get_form_class()
-        form = form_class(self.right_1, **form_kwargs)
+        form = form_class(self.right_1, self.right_1.parent, **form_kwargs)
 
         form.is_valid()
         self.assertEqual(form.errors, {})
@@ -2787,7 +2786,7 @@ class TestMoveNatureGuideNodeCrosslink(WithNatureGuideLink, WithAjaxAdminOnly, V
         form_kwargs = view.get_form_kwargs()
         form_kwargs['data'] = post_data
         form_class = view.get_form_class()
-        form = form_class(self.right_1, **form_kwargs)
+        form = form_class(self.right_1, self.right_1.parent, **form_kwargs)
 
         form.is_valid()
         self.assertEqual(form.errors, {})

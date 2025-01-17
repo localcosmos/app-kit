@@ -8,6 +8,9 @@ from app_kit.generic import AppContentTaxonomicRestriction
 
 from app_kit.features.taxon_profiles.models import TaxonProfile
 
+from django.template.defaultfilters import slugify 
+
+
 
 '''
     App Backbone Taxonomy builder
@@ -140,3 +143,51 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                 vernacular_index[start_letter].append(search_taxon)
         
         return vernacular_index, vernacular_lookup
+    
+    
+    def build_slugs(self, languages=[]):
+        
+        taxa = self.meta_app.taxa(include_draft_contents=False)
+        
+        # taxon latname slugs
+        slugs = {}
+        
+        # vernacular slugs
+        localized_slugs = {}
+        
+        for taxon in taxa:
+            lazy_taxon = LazyTaxon(instance=taxon)
+            
+            name = slugify(taxon.taxon_latname)
+        
+            slug = name
+            
+            counter = 2
+            
+            while slug in slugs:
+                slug = '{0}-{1}'.format(name, counter)
+                counter = counter +1
+                
+            slugs[slug] = str(taxon.name_uuid)
+            
+            for language_code in languages:
+                
+                if language_code not in localized_slugs:
+                    localized_slugs[language_code] = {}
+                
+                vernacular_name = lazy_taxon.vernacular(language=language_code,
+                                                                meta_app=self.meta_app)
+                
+                if vernacular_name:
+                    
+                    slug_base = slugify(vernacular_name)
+                    vernacular_slug = slug_base
+                    
+                    while vernacular_slug in localized_slugs[language_code]:
+                        vernacular_slug = '{0}-{1}'.format(slug_base, counter)
+                        counter = counter +1
+                        
+                    localized_slugs[language_code][vernacular_slug] = str(taxon.name_uuid)
+   
+        
+        return slugs, localized_slugs

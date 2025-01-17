@@ -145,19 +145,19 @@ class TestBackboneTaxonomy(TenantTestCase):
         models = TaxonomyModelRouter('taxonomy.sources.custom')
 
         root_taxon = models.TaxonTreeModel.objects.create(
-            '001',
             'Test root taxon',
             '',
-            '001',
-            is_root_taxon=True
+            **{
+                'is_root_taxon':True
+            }
         )
         
         taxon = models.TaxonTreeModel.objects.create(
-            '001001',
             'Test taxon',
             '',
-            '001001',
-            parent=root_taxon
+            **{
+                'parent':root_taxon,
+            }
         )
 
         taxon.save()

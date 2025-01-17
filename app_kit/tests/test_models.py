@@ -649,12 +649,6 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
         for taxon in taxa:
             count += 1
 
-        for taxon in higher_taxa:
-            models = TaxonomyModelRouter(taxon.taxon_source)
-            descendant_count = models.TaxonTreeModel.objects.filter(
-                taxon_nuid__startswith=taxon.taxon_nuid).count()
-            count += descendant_count
-
         taxon_count = self.meta_app.taxon_count()
 
         self.assertEqual(taxon_count, count)

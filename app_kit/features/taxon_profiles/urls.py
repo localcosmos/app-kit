@@ -32,7 +32,7 @@ urlpatterns = [
     # load images in taxon profiles
     path('collect-taxon-images/<int:meta_app_id>/<int:pk>/<str:taxon_source>/<uuid:name_uuid>/',
         views.CollectTaxonImages.as_view(), name='collect_taxon_images'),
-    path('collect-taxon-traits/<str:taxon_source>/<uuid:name_uuid>/',
+    path('collect-taxon-traits/<int:meta_app_id>/<str:taxon_source>/<uuid:name_uuid>/',
         views.CollectTaxonTraits.as_view(), name='collect_taxon_traits'),
     # taxon profile images with text
     path('manage-taxon-profile-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',

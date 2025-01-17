@@ -134,7 +134,7 @@ class DynamicField:
             taxon_map = get_taxon_map_from_taxonomic_restrictions(taxonomic_restrictions)
 
             if generic_field_link.is_required == False:
-                choices.prepend(('','-------'))
+                choices.insert(0, ('','-------'))
 
             # initial?
             
@@ -155,7 +155,6 @@ class DynamicField:
             if datetime_mode == 'date':
                 widget_attrs['type'] = 'date'
                 initial = datetime.now().strftime('%Y-%m-%d')
-                print(initial)
             else:
                 widget_attrs['type'] = 'datetime-local'
                 initial = timezone.now()
@@ -288,8 +287,6 @@ class GenericFieldForm(LocalizeableForm):
 
     def clean_min_value(self):
         min_value = self.cleaned_data.get('min_value', None)
-
-        print(min_value)
 
         if min_value is not None:
             generic_field_class = self.cleaned_data['generic_field_class']
