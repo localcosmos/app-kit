@@ -368,7 +368,7 @@ class CollectedVernacularNames(MetaAppMixin, TemplateView):
     
     def set_taxon(self, **kwargs):
         models = TaxonomyModelRouter(kwargs['taxon_source'])
-        taxon = models.TaxonTreeModel.objects.filter(name_uuid=kwargs['name_uuid']).first()
+        taxon = models.TaxonNamesModel.objects.filter(name_uuid=kwargs['name_uuid']).first()
         self.lazy_taxon = LazyTaxon(instance=taxon)
     
     def get_context_data(self, **kwargs):

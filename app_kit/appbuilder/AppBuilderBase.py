@@ -392,6 +392,16 @@ class AppBuilderBase:
     def _app_glossarized_locale_filepath(self, language_code):
         filename = 'glossarized.json'
         return os.path.join(self._app_locale_path(language_code), filename)
+    
+    # "complete" locale filepaths container taxon profile texts
+    # these are only present because of already existing apps
+    def _app_complete_locale_filepath(self, language_code):
+        filename = 'plain_complete.json'
+        return os.path.join(self._app_locale_path(language_code), filename)
+
+    def _app_complete_glossarized_locale_filepath(self, language_code):
+        filename = 'glossarized_complete.json'
+        return os.path.join(self._app_locale_path(language_code), filename)
 
 
     ###################################################################################################################

@@ -204,8 +204,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if node.meta_node.name not in taxon_profile_json['nodeNames']:
                     taxon_profile_json['nodeNames'].append(node.meta_node.name)
 
-                if node.decision_rule and node.decision_rule not in taxon_profile_json['nodeDecisionRules']:
-                    taxon_profile_json['nodeDecisionRules'].append(node.decision_rule)
+                #if node.decision_rule and node.decision_rule not in taxon_profile_json['nodeDecisionRules']:
+                #    taxon_profile_json['nodeDecisionRules'].append(node.decision_rule)
 
                 #node_traits = self.collect_node_traits(node)
                 #taxon_profile_json['traits'] += node_traits

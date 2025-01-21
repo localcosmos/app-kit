@@ -1321,6 +1321,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self._collect_primary_vernacular_names()
         
         app_primary_locale_filepath = self._app_locale_filepath(self.meta_app.primary_language)
+        app_complete_primary_locale_filepath = self._app_complete_locale_filepath(self.meta_app.primary_language)
         primary_locale_folder = self._app_locale_path(self.meta_app.primary_language)
 
         if not os.path.isdir(primary_locale_folder):
@@ -1333,12 +1334,21 @@ class AppReleaseBuilder(AppBuilderBase):
         for key, localization in frontend_primary_locale.items():
             primary_locale[key] = localization
 
-        with open(app_primary_locale_filepath, 'w') as app_primary_locale_file:
-            app_primary_locale_file.write(json.dumps(primary_locale))
+        with open(app_complete_primary_locale_filepath, 'w') as app_complete_primary_locale_file:
+            app_complete_primary_locale_file.write(json.dumps(primary_locale))
+            
+        # remove all taxon_text_* entries
+        reduced_primary_locale = primary_locale.copy()
+        for key, value in primary_locale.items():
+            if key.startswith('taxon_text_'):
+                del reduced_primary_locale[key]
+                
 
+        with open(app_primary_locale_filepath, 'w') as app_primary_locale_file:
+            app_primary_locale_file.write(json.dumps(reduced_primary_locale))
+            
 
         localized_content_images = self.meta_app.get_localized_content_images()
-
 
         for language_code in self.meta_app.secondary_languages():
             
@@ -1376,9 +1386,18 @@ class AppReleaseBuilder(AppBuilderBase):
                 locale[locale_key] = image_definition
 
             locale_filepath = self._app_locale_filepath(language_code)
+            complete_locale_filepath = self._app_complete_locale_filepath(language_code)
 
+            with open(complete_locale_filepath, 'w') as complete_locale_file:
+                complete_locale_file.write(json.dumps(locale))
+                
+            reduced_locale = locale.copy()
+            for key, value in locale.items():
+                if key.startswith('taxon_text_'):
+                    del reduced_locale[key]
+                    
             with open(locale_filepath, 'w') as locale_file:
-                locale_file.write(json.dumps(locale))
+                locale_file.write(json.dumps(reduced_locale))
 
 
     def _get_frontend_locale(self, language_code):
@@ -1785,7 +1804,6 @@ class AppReleaseBuilder(AppBuilderBase):
 
         app_relative_taxonprofiles_folder =  self._app_relative_generic_content_path(taxon_profiles)
         self.build_features[generic_content_type]['files'] = '/{0}'.format(app_relative_taxonprofiles_folder)
-        
 
         # paths for storing taxon profiles
         app_absolute_taxonprofiles_path = self._app_absolute_generic_content_path(taxon_profiles)
@@ -1848,6 +1866,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         self.logger.info('Building taxon profiles for {0} collected taxa'.format(len(active_collected_taxa)))
         
+        self.build_features[generic_content_type]['localizedFiles'] = {}
         for profile_taxon in active_collected_taxa:
 
             profile_json = jsonbuilder.build_taxon_profile(profile_taxon, 
@@ -1864,6 +1883,55 @@ class AppReleaseBuilder(AppBuilderBase):
 
                 with open(profile_filepath, 'w', encoding='utf-8') as f:
                     json.dump(profile_json, f, indent=4, ensure_ascii=False)
+                
+                
+                # localized taxon profiles for faster language load
+                for language_code in self.meta_app.languages():
+                    
+                    relative_localized_taxonprofiles_folder = os.path.join(
+                        app_relative_taxonprofiles_folder, language_code)
+                    
+                    if language_code not in self.build_features[generic_content_type]['localizedFiles']:
+                        self.build_features[generic_content_type]['localizedFiles'][language_code] = '/{0}'.format(relative_localized_taxonprofiles_folder)
+        
+                    app_locale = self.meta_app.localizations[language_code]
+                    
+                    localized_profile_json = profile_json.copy()
+                    
+                    for index, text_dict in enumerate(profile_json['texts'], 0):
+                        
+                        if text_dict['shortText'] and text_dict['shortTextKey'] in app_locale:
+                            localized_short_text = app_locale[text_dict['shortTextKey']]
+                        else:
+                            localized_short_text = None
+                        
+                        localized_profile_json['texts'][index]['shortText'] = localized_short_text
+                        
+                        if text_dict['longText'] and text_dict['longTextKey'] in app_locale:
+                            localized_long_text = app_locale[text_dict['longTextKey']]
+                        else:
+                            localized_long_text = None
+                        
+                        localized_profile_json['texts'][index]['longText'] = localized_long_text
+                    
+                    absolute_localized_taxonprofiles_folder = os.path.join(
+                        app_absolute_taxonprofiles_path, language_code)
+                    
+                    if not os.path.isdir(absolute_localized_taxonprofiles_folder):
+                        os.makedirs(absolute_localized_taxonprofiles_folder)
+                        
+                    localized_source_folder = os.path.join(absolute_localized_taxonprofiles_folder,
+                                                           profile_taxon.taxon_source)
+                    
+                    if not os.path.isdir(localized_source_folder):
+                        os.makedirs(localized_source_folder)
+                        
+                    localized_profile_filepath = os.path.join(localized_source_folder,
+                                                              '{0}.json'.format(profile_taxon.name_uuid))
+
+                    with open(localized_profile_filepath, 'w', encoding='utf-8') as f:
+                        json.dump(localized_profile_json, f, indent=4, ensure_ascii=False)
+                
 
 
         # build search index and registry
@@ -1927,7 +1995,7 @@ class AppReleaseBuilder(AppBuilderBase):
             json.dump(featured_taxon_profiles, f, indent=4, ensure_ascii=False)
         
         relative_featured_taxon_profiles_path = os.path.join(app_relative_taxonprofiles_folder, 'featured_profiles.json')
-        self.build_features[generic_content_type]['featured_profiles'] = '/{0}'.format(relative_featured_taxon_profiles_path)
+        self.build_features[generic_content_type]['featuredProfiles'] = '/{0}'.format(relative_featured_taxon_profiles_path)
 
 
         # build and add generic content json
