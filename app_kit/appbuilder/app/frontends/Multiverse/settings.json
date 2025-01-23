@@ -1,6 +1,6 @@
 {
   "frontend": "Multiverse",
-  "version": "0.2",
+  "version": "0.3",
   "userContent": {
     "configuration": {
     },
@@ -49,23 +49,24 @@
     "texts": {
       "termsOfUse": {
         "required": false,
-        "helpText": "Nutzungsbedingungen"
+        "helpText": "Terms of Use"
       }
     }
   },
-  "templateContent" : {
-        "urlPattern": "/pages/{templateName}/{slug}/",
-        "navigations": {
-            "main": {
-                "name": "Main navigation",
-                "maxLevels": 1
-            },
-            "burger": {
-                "name": "Burger menu",
-                "maxLevels": 1
-            }
-        }
+  "templateContent": {
+    "urlPattern": "/pages/{templateName}/{slug}/",
+    "navigations": {
+      "main": {
+        "name": "Main navigation",
+        "maxLevels": 1
+      },
+      "burger": {
+        "name": "Burger menu",
+        "maxLevels": 1
+      }
     },
+    "requiredOfflineContents": {}
+  },
   "cordova" : {
     "platforms" : {
       "android" : "android@13.0.0",

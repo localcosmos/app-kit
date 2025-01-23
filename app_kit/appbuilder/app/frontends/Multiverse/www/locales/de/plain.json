@@ -1,0 +1,42 @@
+{
+    "burgerMenu": {
+        "previewMessage": "App im preview modus. Navigationen werden deshalb nicht vollständig angezeigt.",
+        "termsOfUse": "Nutzungsbedingungen",
+        "legalNotice": "Impressum",
+        "privacyPolicy": "Datenschutzerklärung"
+    },
+    "navigation": {
+        "Home": "Start",
+        "NatureGuide": "Bestimmen",
+        "TaxonProfiles": "Arten",
+        "Map": "Karte",
+        "Glossary": "Glossar",
+        "TemplateContent": "Info",
+        "Observations": "Beobachtungen",
+        "More": "Mehr"
+    },
+    "pageTitles" : {
+        "Home" : "Home",
+        "TaxonProfiles": "Arten",
+        "ObservationsList": "Beobachtungen",
+        "Glossary": "Glossar",
+        "NatureGuidesList": "Bestimmungsschlüssel",
+        "NatureGuide": "Bestimmung"
+    },
+    "taxonProfiles" : {
+        "Groups": "Gruppen",
+        "Alphabet": "A-Z",
+        "Search": "Suche",
+        "noSpeciesFound": "Keine Arten gefunden",
+        "navigationNodeNotFound": "Gruppe nicht gefunden",
+        "Images": "Bilder",
+        "Description": "Beschreibung",
+        "Traits": "Merkmale",
+        "Similar": "Ähnliche",
+        "SimilarSpecies": "Ähnliche Arten",
+        "Observations": "Beobachtungen",
+        "noDescription": "Keine Beschreibung vorhanden"
+    },
+    "NoContent": "Kein Inhalt vorhanden.",
+    "Observations": "Beobachtungen"
+}

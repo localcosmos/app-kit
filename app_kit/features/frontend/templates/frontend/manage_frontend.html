@@ -32,7 +32,17 @@
 
 {% block generic_content_specific %}
 	<div class="my-4">
-		{% blocktrans %}You are currently using the following frontend:{% endblocktrans %} <b>{{ generic_content.frontend_name }}, version {{ frontend_settings.version }} </b>
+		<div>
+			{% blocktrans %}You are currently using the following frontend:{% endblocktrans %} <b>{{ generic_content.frontend_name }}, version {{ preview_build_settings.version }} </b>
+		</div>
+		{% if new_frontend_version_available %}
+			<div class="my-2 alert alert-info">
+				{% blocktrans with frontend_name=generic_content.frontend_name new_frontend_version=frontend_settings.version %}There is a new version available for the Frontend {{ frontend_name }}: <b>{{ new_frontend_version }}</b>{% endblocktrans %}
+			</div>
+			<div>
+				<a href="{% url 'update_used_frontend' meta_app.id frontend.id %}" class="xhr btn btn-outline-primary" ajax-target="ModalContent">{% trans 'Update Frontend' %}</a>
+			</div>
+		{% endif %}
 	</div>
 	<div>
 		{% with form=frontend_settings_form %}

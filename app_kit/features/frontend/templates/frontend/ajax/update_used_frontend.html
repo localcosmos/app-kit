@@ -1,0 +1,36 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n app_tags localcosmos_tags %}
+
+{% block above %}
+	<form method="POST" action="{% url 'update_used_frontend' meta_app.id frontend.id %}" class="xhr" enctype="multipart/form-data">{% csrf_token %}
+{% endblock %}
+
+
+{% block title %}{% trans 'Update Frontend' %}{% endblock %}
+
+{% block body %}
+	
+	<div>
+		{% blocktrans with frontend_name=frontend_settings.frontend version=frontend_settings.version %}This will update the Frontend {{ frontend_name }} to version {{ version }}.{% endblocktrans %}
+	</div>
+	<div>
+		<strong>{% trans 'Do you want to update your frontend now?' %}</strong>
+	</div>
+{% endblock %}
+
+{% block footer %}
+	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+	<button type="submit" class="btn btn-outline-primary">{% trans 'Update' %}</button>
+{% endblock %}
+
+{% block script %}
+	<script>
+		{% if updating == True %}
+			$("#Modal").modal("hide");
+			setTimeout(() => {
+				window.location.reload();
+			}, 500);
+		{% endif %}
+	</script>
+{% endblock %}

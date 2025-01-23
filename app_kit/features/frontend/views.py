@@ -9,7 +9,7 @@ from localcosmos_server.decorators import ajax_required
 from app_kit.views import ManageGenericContent
 from app_kit.view_mixins import MetaAppMixin
 
-from app_kit.appbuilder import AppBuilder
+from app_kit.appbuilder import AppBuilder, AppPreviewBuilder
 
 from .forms import FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFrontendForm, InstallPrivateFrontendForm
 
@@ -31,19 +31,56 @@ class FrontendSettingsMixin:
         return form_args
 
 
-    def get_frontend_settings(self):
+    def get_preview_build_frontend_settings(self):
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        app_settings = preview_builder.get_app_settings()
+        return app_settings
+    
 
+    def get_frontend_settings(self):
         app_builder = AppBuilder(self.meta_app)
         frontend_settings = app_builder._get_frontend_settings()
         return frontend_settings
+    
+    
+    def compare_versions(self, version1, version2):
+    # Split the version strings into lists of integers
+        v1_parts = list(map(int, version1.split('.')))
+        v2_parts = list(map(int, version2.split('.')))
+
+        # Determine the maximum length to compare all parts
+        max_length = max(len(v1_parts), len(v2_parts))
+
+        # Compare each part
+        for i in range(max_length):
+            # If one version string is shorter, treat missing parts as zero
+            v1_part = v1_parts[i] if i < len(v1_parts) else 0
+            v2_part = v2_parts[i] if i < len(v2_parts) else 0
+
+            if v1_part < v2_part:
+                return -1
+            elif v1_part > v2_part:
+                return 1
+
+        # If we've made it here, the versions are equal
+        return 0
 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        context['new_frontend_version_available'] = False
         context['frontend'] = self.generic_content
         frontend_settings = self.get_frontend_settings()
         context['frontend_settings'] = frontend_settings
+        preview_build_settings = self.get_preview_build_frontend_settings()
+        context['preview_build_settings'] = preview_build_settings
+
+        frontend_version = frontend_settings['version']
+        preview_build_version = preview_build_settings['version']
+        new_frontend_version_available = self.compare_versions(frontend_version, preview_build_version)
+
+        if new_frontend_version_available == 1:
+            context['new_frontend_version_available'] = True
 
         context['success'] = False
 
@@ -179,6 +216,7 @@ class FrontendMixin:
 
     def set_frontend(self, **kwargs):
         self.frontend = Frontend.objects.get(pk=kwargs['frontend_id'])
+        self.generic_content = self.frontend
 
     # runs async in thread
     def update_frontend(self, frontend_name):
@@ -294,3 +332,27 @@ class InstallPrivateFrontend(FrontendMixin, MetaAppMixin, FormView):
 
 
         return self.render_to_response(context)
+
+
+class UpdateUsedFrontend(FrontendSettingsMixin, FrontendMixin, MetaAppMixin, TemplateView):
+    
+    template_name = 'frontend/ajax/update_used_frontend.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['updating'] = False
+        return context
+    
+    def post(self, request, *args, **kwargs):
+
+        context = self.get_context_data(**self.kwargs)
+        
+        frontend_name = context['frontend_settings']['frontend']
+        
+        self.update_frontend(frontend_name)
+
+        context['updating'] = True
+            
+        return self.render_to_response(context)
+    
+    

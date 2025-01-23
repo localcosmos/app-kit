@@ -147,3 +147,16 @@ class AppPreviewBuilder(AppBuilderBase):
 
             with open(app_glossarized_primary_locale_filepath, 'w') as app_glossarzied_primary_locale_file:
                 app_glossarzied_primary_locale_file.write(json.dumps(primary_locale_fallback))
+                
+    
+    #############################################################################################
+    # METHODS FOR USAGE APP KIT VIEWS
+    # - 
+    #############################################################################################
+    
+    def get_app_settings(self):
+
+        with open(self._app_settings_json_filepath, 'r') as app_settings_file:
+            app_settings = json.loads(app_settings_file.read())
+
+        return app_settings

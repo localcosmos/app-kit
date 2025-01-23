@@ -644,6 +644,7 @@ class AppBuilderBase:
 
         settings["OPTIONS"] = {
             "allowAnonymousObservations" : False,
+            "doNotBuildLargeImages" : False,
         }
 
         if self.meta_app.global_options:
