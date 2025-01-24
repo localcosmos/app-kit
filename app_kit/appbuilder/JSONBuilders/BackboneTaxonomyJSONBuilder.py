@@ -162,6 +162,9 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         
             slug = name
             
+            if slug in slugs and slugs[slug] == str(taxon.name_uuid):
+                continue
+            
             counter = 2
             
             while slug in slugs:
@@ -182,6 +185,9 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
                     
                     slug_base = slugify(vernacular_name)
                     vernacular_slug = slug_base
+                    
+                    if vernacular_slug in localized_slugs[language_code] and localized_slugs[language_code][vernacular_slug] == str(taxon.name_uuid):
+                        continue
                     
                     while vernacular_slug in localized_slugs[language_code]:
                         vernacular_slug = '{0}-{1}'.format(slug_base, counter)
