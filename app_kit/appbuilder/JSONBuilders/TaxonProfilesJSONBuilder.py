@@ -18,7 +18,7 @@ from django.template.defaultfilters import slugify
 from localcosmos_server.template_content.models import TemplateContent
 
 from taxonomy.lazy import LazyTaxon
-from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
+from taxonomy.models import TaxonomyModelRouter
 
 from collections import OrderedDict
 
@@ -543,7 +543,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         if navigation:
             root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                                                                        parent=None)
+                                                                        parent=None).order_by('position')
             for root_element in root_elements:
                 
                 root_element_json = self._build_navigation_child(root_element)
@@ -552,7 +552,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 navigation_slugs[slug] = root_element_json['key']
                 built_navigation['start']['children'].append(root_element_json)
                 
-            all_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation)
+            all_elements = TaxonProfilesNavigationEntry.objects.filter(
+                navigation=navigation).order_by('position')
             
             for navigation_entry in all_elements:
                 
@@ -566,7 +567,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 })
                 
                 children = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                                                                            parent=navigation_entry)
+                                                        parent=navigation_entry).order_by('position')
                 
                 if children:
                     children_json = []
@@ -586,7 +587,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     # fetch all taxon profiles matching this node
                     taxon_profiles = []
                     taxon_profiles_json = []
+                    
+                    for taxon_profile in navigation_entry.attached_taxon_profiles:
+                        if taxon_profile not in taxon_profiles:
+                            taxon_profiles.append(taxon_profile)
 
+                    '''
                     for taxon_link in navigation_entry.taxa:
                         
                         matching_profiles = TaxonProfile.objects.filter(
@@ -619,6 +625,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                                 for matching_custom_profile in matching_custom_profiles:
                                     if matching_custom_profile not in taxon_profiles:
                                         taxon_profiles.append(matching_custom_profile)
+                    '''
                     
                     # jsonify all taxon profiles
                     for taxon_profile in taxon_profiles:
@@ -642,39 +649,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         featured_taxon_profiles = []
         
-        taxon_profile_content_type = ContentType.objects.get_for_model(TaxonProfile)
-        
         for taxon_profile in featured_profiles_qry:
             
             lazy_taxon = LazyTaxon(instance=taxon_profile)
             taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
-            
-            taxon_profile_json.update({
-                'primary_image': None,
-                'image': None,
-                'vernacular': {},
-            })
-            
-            primary_image = ContentImage.objects.filter(content_type=taxon_profile_content_type, object_id=taxon_profile.id, image_type='image', is_primary=True).first()
-            image = ContentImage.objects.filter(content_type=taxon_profile_content_type, object_id=taxon_profile.id, image_type='image').first()
-            
-            if primary_image:
-                primary_image_entry = self.get_image_json(primary_image)
-                taxon_profile_json['primary_image'] = primary_image_entry
-            
-            if image:
-                image_entry = self.get_image_json(image)
-                taxon_profile_json['image'] = image_entry
-
-            
-            for language_code in languages:
-
-                preferred_vernacular_name = self.get_vernacular_name_from_nature_guides(lazy_taxon)
-
-                if not preferred_vernacular_name:
-                    preferred_vernacular_name = taxon_profile.vernacular(language=language_code)
-
-                taxon_profile_json['vernacular'][language_code] = preferred_vernacular_name
                 
             featured_taxon_profiles.append(taxon_profile_json)
         

@@ -366,7 +366,8 @@ class TestTaxonProfilesNavigation(WithTaxonProfilesNavigation, WithMetaApp, Tena
         self.assertEqual(len(navigation.prerendered['tree'][0]['children']), 1)
         
         
-class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithMetaApp, TenantTestCase):
+class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonProfiles, WithMetaApp,
+                                       TenantTestCase):
     
     @test_settings
     def test_key(self):
@@ -524,3 +525,91 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithMetaApp,
         
         self.assertIn(chordata.name_uuid, names)
         self.assertEqual(len(taxa), 1)
+        
+    
+    @test_settings
+    def test_attached_taxon_profiles(self):
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        aves_db = models.TaxonTreeModel.objects.get(taxon_latname='Aves')
+        aves = LazyTaxon(instance=aves_db)
+        
+        # 3 types: col by nuid, custom by nuid and custom by name
+        
+        entry = self.create_navigation_entry()
+        
+        c1 = self.create_navigation_entry(parent=entry)
+        
+        # add aves
+        aves_link = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=c1,
+        )
+            
+        aves_link.set_taxon(aves)
+        aves_link.save()
+        
+        # add lacerta
+        lacerta = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta')
+        lacerta_link = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=c1,
+        )
+            
+        lacerta_link.set_taxon(LazyTaxon(instance=lacerta))
+        lacerta_link.save()
+        
+        
+        # create a custom taxon with lacerta
+        custom_taxa = TaxonomyModelRouter('taxonomy.sources.custom')
+        
+        
+        root_taxon = custom_taxa.TaxonTreeModel.objects.create(
+            'Lacerta',
+            '',
+            **{
+                'is_root_taxon':True
+            }
+        )
+        
+        lacerta_agilis_custom = custom_taxa.TaxonTreeModel.objects.create(
+            'Lacerta agilis custom',
+            '',
+            **{
+                'parent':root_taxon,
+            }
+        )
+
+        lacerta_agilis_custom.save()
+        
+        
+        # create 2 Taxon Profiles: one aves an one lacerta agilis custom
+        taxon_profiles = self.get_taxon_profiles()
+
+        pica_pica = models.TaxonTreeModel.objects.get(taxon_latname='Pica pica')
+        aves_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=pica_pica),
+        )
+
+        aves_profile.save()
+        
+        custom_lacerta_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=lacerta_agilis_custom),
+        )
+
+        custom_lacerta_profile.save()
+        
+        self.assertEqual(list(c1.attached_taxon_profiles), [aves_profile, custom_lacerta_profile])
+        
+    
+    @test_settings
+    def test_branch(self):
+        
+        entry = self.create_navigation_entry(name='root')
+        
+        d1 = self.create_navigation_entry(parent=entry, name='d1')
+        d2 = self.create_navigation_entry(parent=d1, name='d2')
+        d3 = self.create_navigation_entry(parent=d2, name='d3')
+        
+        branch = d3.branch
+        
+        self.assertEqual(branch, [entry, d1, d2, d3])

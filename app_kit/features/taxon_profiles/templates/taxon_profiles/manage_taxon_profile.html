@@ -66,6 +66,7 @@
 			</div>
 		</div>
 		<div class="row">
+			
 			{% if possible_duplicates %}
 				<div class="col-12">
 					<div class="alert alert-warning">
@@ -92,6 +93,38 @@
 				<hr>
 			</div>
 		</div>
+		<div class="row">
+			<div class="col-12">
+				<h4>{% trans 'Classification' %}</h4>
+				<h5>{{ taxon_tree_model }}</h5>
+				{% if taxonomic_branch %}
+					<div>
+						<small>
+							{% for node in taxonomic_branch %}
+								<span>{{ node }}</span> &rarr;
+							{% endfor %}
+							<span>{{ taxon }}</span>
+						</small>
+					</div>
+				{% endif %}
+				{% if navigation_branches %}
+					<div class="mt-4">
+						<h5>{% trans 'Taxonomic Navigation' %}</h5>
+						{% for branch in navigation_branches %}
+							<div>
+								<small>
+									{% for node in branch %}
+										<span>{{ node }}</span> &rarr;
+									{% endfor %}
+									<span>{{ taxon }}</span>
+								</small>
+							</div>
+						{% endfor %}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<hr>
 		<div class="row">
 			<div class="col-12">
 				<h4>{% trans 'Vernacular names' %}</h4>

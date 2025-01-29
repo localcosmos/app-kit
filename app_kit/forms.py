@@ -437,7 +437,6 @@ class TranslateVernacularNamesForm(forms.Form):
         self.meta_app = meta_app
         
         self.page = kwargs.pop('page', 1)
-        print(self.page)
         
         super().__init__(*args, **kwargs)
         
@@ -458,8 +457,6 @@ class TranslateVernacularNamesForm(forms.Form):
         languages = meta_app.secondary_languages()
         
         for vernacular_name in page_items:
-            
-            print(vernacular_name)
 
             language_independant_identifier = uuid.uuid4()
             

@@ -64,6 +64,8 @@ urlpatterns = [
          views.AddTaxonProfilesNavigationEntryTaxon.as_view(), name='create_taxonprofiles_navigation_entry_taxon'),
     path('manage-taxon-profiles-navigation/delete-navigation-entry-taxon/<int:meta_app_id>/<int:pk>/',
          views.DeleteTaxonProfilesNavigationEntryTaxon.as_view(), name='delete_taxonprofiles_navigation_entry_taxon'),
+    path('get-taxon-profiles-navigation-taxon-profiles/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
+         views.GetTaxonProfilesNavigationEntryTaxonProfiles.as_view(), name='get_taxonprofiles_navigation_entry_taxon_profiles'),
     # navigation images
     path('manage-taxon-profiles-navigation/manage-navigation-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
         views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),

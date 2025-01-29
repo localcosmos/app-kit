@@ -8,6 +8,9 @@ from app_kit.generic import GenericContent
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 from taxonomy.lazy import LazyTaxonList, LazyTaxon
 
+from taxonomy.models import TaxonomyModelRouter
+from django.db.models import Q
+
 '''
     The content of the feature
     - there should be an multiiple choice options choosing text types
@@ -251,6 +254,18 @@ class TaxonProfilesNavigation(models.Model):
         self.last_prerendered_at = timezone.now()
         self.save(prerendered=True)
         
+    
+    def get_terminal_nodes(self):
+        terminal_nodes = []
+        
+        all_nodes = TaxonProfilesNavigationEntry.objects.filter(navigation=self)
+        for node in all_nodes :
+            
+            if not node.children:
+                terminal_nodes.append(node)
+                
+        return terminal_nodes
+        
         
     def save(self, *args, **kwargs):
         
@@ -335,6 +350,64 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
     def children(self):
         return TaxonProfilesNavigationEntry.objects.filter(parent=self)
     
+    @property
+    def taxa(self):
+        return TaxonProfilesNavigationEntryTaxa.objects.filter(navigation_entry=self)
+    
+    @property
+    def attached_taxon_profiles(self):
+        
+        if self.children:
+            return []
+        
+        custom_taxonomy_name = 'taxonomy.sources.custom'
+        custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
+        
+        q_objects = Q()
+        
+        for taxon_link in self.taxa:
+            
+            q_objects |= Q(taxon_source=taxon_link.taxon_source,
+                           taxon_nuid__startswith=taxon_link.taxon_nuid)
+            
+            if taxon_link.taxon_source != 'taxonomy.sources.custom':
+                
+                search_kwargs = {
+                    'taxon_latname' : taxon_link.taxon_latname
+                }
+
+                if taxon_link.taxon_author:
+                    search_kwargs['taxon_author'] = taxon_link.taxon_author
+
+                custom_parent_taxa = custom_taxonomy_models.TaxonTreeModel.objects.filter(
+                    **search_kwargs)
+                
+                for custom_parent_taxon in custom_parent_taxa:
+                    
+                    q_objects |= Q(taxon_source=custom_taxonomy_name,
+                                   taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
+                    
+        final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & q_objects
+        taxon_profiles = TaxonProfile.objects.filter(final_q)
+        
+        return taxon_profiles
+
+    
+    @property
+    def branch(self):
+        branch = [self]
+        
+        parent = self.parent
+        
+        while parent:
+            branch.append(parent)
+            parent = parent.parent
+            
+        branch.reverse()
+        
+        return branch
+    
+    
     def __str__(self):
         
         if self.name:
@@ -345,11 +418,7 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
             taxon_latnames = [t.taxon_latname for t in taxa]
             return ', '.join(taxon_latnames)
         
-        return __('Unconfigured navigation entry')
-    
-    @property
-    def taxa(self):
-        return TaxonProfilesNavigationEntryTaxa.objects.filter(navigation_entry=self)
+        return __('Unconfigured navigation entry')    
     
     class Meta:
         ordering = ('position', 'name')

@@ -1,0 +1,29 @@
+{% extends 'localcosmos_server/modals/modal_base.html' %}
+{% load i18n localcosmos_tags %}
+
+
+{% block title %}
+	{% blocktrans with name=navigation_entry.name %}Attached Taxon Profiles of {{ name }}{% endblocktrans %}
+{% endblock %}
+
+
+{% block body %}
+    <div id="attached_taxon_profiles" class="endless_page_template">
+        {% include 'taxon_profiles/ajax/navigation_entry_taxon_profiles_list.html' %}
+    </div>
+{% endblock %}
+
+{% block footer %}
+    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+{% endblock %}
+
+{% block script %}
+<script>
+    $('#attached_taxon_profiles').endlessPaginate({
+        url: '{% url "get_taxonprofiles_navigation_entry_taxon_profiles" meta_app.id taxon_profiles.id navigation_entry.id %}',
+        onCompleted: function() {
+            ajaxify('attached_taxon_profiles');
+        }
+    });
+</script>
+{% endblock %}

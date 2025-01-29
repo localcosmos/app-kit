@@ -350,6 +350,7 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         view.set_taxon(view.request, **url_kwargs)
 
         self.assertEqual(view.taxon, lazy_ng_taxon)
+    
 
     @test_settings
     def test_form_valid(self):

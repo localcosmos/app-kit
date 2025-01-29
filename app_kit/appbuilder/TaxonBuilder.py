@@ -186,9 +186,16 @@ class TaxonSerializer:
         return taxon_json_copy
     
     def get_taxon_profile(self):
-        return TaxonProfile.objects.filter(
+        taxon_profile = None
+        
+        taxon_profile_qry = TaxonProfile.objects.filter(
             taxon_profiles=self.taxa_builder.taxon_profiles,
-            name_uuid=self.lazy_taxon.name_uuid, publication_status='publish').first()
+            name_uuid=self.lazy_taxon.name_uuid).first()
+        
+        if taxon_profile_qry and taxon_profile_qry.publication_status != 'draft':
+            taxon_profile = taxon_profile_qry
+            
+        return taxon_profile
         
     
     def serialize_images(self):
@@ -197,6 +204,7 @@ class TaxonSerializer:
             taxon_images = self.taxa_builder.cache['images'][self.lazy_taxon.name_uuid]
         
         else:
+                
             collected_content_image_ids = set([])
             collected_image_store_ids = set([])
             
@@ -283,8 +291,7 @@ class TaxonSerializer:
 
                     collected_content_image_ids.add(taxon_image.id)
                     collected_image_store_ids.add(taxon_image.image_store.id)
-                    
-            
+    
             self.taxa_builder.cache['images'][self.lazy_taxon.name_uuid] = taxon_images
             
         taxon_images_copy = copy.deepcopy(taxon_images)
@@ -310,7 +317,7 @@ class TaxonSerializer:
             if taxon_profile:
                 has_taxon_profile = True
             
-            search_taxon_json = self.serialize()
+            search_taxon_json = self.serialize_extended()
             
             search_taxon_json.update({
                 'nameType': name_type,

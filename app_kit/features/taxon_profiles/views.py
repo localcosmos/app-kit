@@ -275,6 +275,28 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         return form_class(self.taxon_profiles, self.taxon_profile, **self.get_form_kwargs())
 
 
+    def get_navigation_branches(self):
+        branches = []
+        navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.taxon_profiles).first()
+        
+        if navigation:
+            terminal_nodes = navigation.get_terminal_nodes()
+            
+            for navigation_entry in terminal_nodes:
+                
+                matches = False
+                
+                for navigation_entry_taxon in navigation_entry.taxa:
+                    if navigation_entry_taxon.taxon_source == self.taxon.taxon_source and self.taxon.taxon_nuid.startswith(navigation_entry_taxon.taxon_nuid):
+                        matches = True
+                        break
+                    
+                if matches == True:
+                    branches.append(navigation_entry.branch)
+                
+        return branches
+
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
@@ -302,6 +324,10 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context['generic_content'] = self.taxon_profiles
         context['text_types'] = TaxonTextType.objects.all().exists()
         context['show_text_length_badges'] = settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True
+        
+        context['taxonomic_branch'] = self.taxon.get_taxonomic_branch()
+        
+        context['navigation_branches'] = self.get_navigation_branches()
 
         # show possible duplicates
         possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
@@ -1007,3 +1033,25 @@ class DeleteTaxonProfilesNavigationEntryTaxon(MetaAppMixin, AjaxDeleteView):
         context['navigation_entry_taxon_id'] = navigation_entry_taxon_id
         context['deleted'] = True
         return self.render_to_response(context)
+    
+    
+class GetTaxonProfilesNavigationEntryTaxonProfiles(MetaAppMixin, TemplateView):
+    
+    template_name = 'taxon_profiles/ajax/navigation_entry_taxon_profiles.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        if 'querystring_key' in request.GET:
+            self.template_name = 'taxon_profiles/ajax/navigation_entry_taxon_profiles_list.html'
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.navigation_entry = TaxonProfilesNavigationEntry.objects.get(pk=kwargs['navigation_entry_id'])
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['navigation_entry'] = self.navigation_entry
+        return context

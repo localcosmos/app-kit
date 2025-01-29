@@ -1,0 +1,14 @@
+{% load el_pagination_tags %}
+{% with attached_taxon_profiles=navigation_entry.attached_taxon_profiles %}
+    {% paginate 20 attached_taxon_profiles %}
+    <ul>
+        {% for taxon_profile in attached_taxon_profiles %}
+            <li>
+                <i>{{ taxon_profile.taxon_latname }}</i> {{ taxon_profile.taxon_author }}
+            </li>
+        {% endfor %}
+    </ul>
+    <p>
+        {% show_pages %}
+    </p>
+{% endwith %}

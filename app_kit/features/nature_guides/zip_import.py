@@ -701,7 +701,7 @@ class NatureGuideZipImporter(GenericContentZipImporter):
         # parent_node_db is needed if there are no children, so last_leftmost_child is None
         next_parent_sibling = self.get_next_parent_sibling(last_leftmost_child)
 
-        print(next_parent_sibling)
+        #print(next_parent_sibling)
 
         while next_parent_sibling:
 

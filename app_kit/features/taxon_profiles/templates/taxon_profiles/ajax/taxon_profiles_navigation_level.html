@@ -12,6 +12,10 @@
                         <div class="dropdown-menu">
                             <a href="{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
                             <a href="{% url 'create_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Create subentry' %}</a>
+                            {% if not node.children %}
+                                <div class="dropdown-divider"></div>
+                                <a href="{% url 'get_taxonprofiles_navigation_entry_taxon_profiles' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Show attached Taxon Profiles' %}</a>
+                            {% endif %}
                             <div class="dropdown-divider"></div>
                             <a data-url="{% url 'manage_taxon_profiles_navigation_image' meta_app.id node.content_type_id node.id %}?new=1" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add image' %}</a>
                             <div class="dropdown-divider"></div>

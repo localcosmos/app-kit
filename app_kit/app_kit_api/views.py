@@ -281,7 +281,6 @@ class CreateAppKit(AppKitApiMixin, APIView):
             
             return Response(status=status.HTTP_200_OK)
         
-        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
