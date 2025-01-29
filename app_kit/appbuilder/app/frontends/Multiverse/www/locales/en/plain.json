@@ -37,6 +37,13 @@
         "Observations": "Observations",
         "noDescription": "No description available."
     },
+    "legal" : {
+        "loadingLicences": "loading licences",
+        "imageBy": "Image",
+        "linkToSourceImage": "Source image",
+        "noLicenceFound": "no licence found"
+    },
     "NoContent": "No content available.",
-    "Observations": "Observations"
+    "Observations": "Observations",
+    "Have you heard of it?": "Have you heard of it?"
 }
