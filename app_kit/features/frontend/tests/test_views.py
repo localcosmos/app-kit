@@ -52,6 +52,23 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
         view.meta_app = self.meta_app
         view.frontend = self.frontend
         return view
+    
+    @test_settings
+    def test_dispatch(self):
+        self.build_preview()
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 403)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
 
     @test_settings
     def test_get_form(self):
@@ -90,6 +107,7 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
 
     @test_settings
     def test_get_context_data(self):
+        self.build_preview()
         
         view = self.get_view()
         view.set_frontend(**view.kwargs)
@@ -180,6 +198,24 @@ class TestManageFrontend(WithFrontend, ViewTestMixin, WithAdminOnly, WithUser, W
         view.generic_content_type = self.content_type
         view.generic_content = self.frontend
         return view
+    
+    
+    @test_settings
+    def test_dispatch(self):
+        self.build_preview()
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 403)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
 
     @test_settings
     def test_get_form(self):
@@ -192,6 +228,8 @@ class TestManageFrontend(WithFrontend, ViewTestMixin, WithAdminOnly, WithUser, W
 
     @test_settings
     def test_get_context_data(self):
+        
+        self.build_preview()
         
         view = self.get_view()
 
@@ -222,6 +260,24 @@ class TestManageFrontendSettings(WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
         view.meta_app = self.meta_app
         view.frontend = self.frontend
         return view
+    
+    
+    @test_settings
+    def test_dispatch(self):
+        self.build_preview()
+        url = self.get_url()
+        
+        url_kwargs = {
+            'HTTP_X_REQUESTED_WITH':'XMLHttpRequest'
+        }
+
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 403)
+
+        # test with admin role
+        self.make_user_tenant_admin(self.user, self.tenant)
+        response = self.tenant_client.get(url, **url_kwargs)
+        self.assertEqual(response.status_code, 200)
 
 
     @test_settings
@@ -236,7 +292,8 @@ class TestManageFrontendSettings(WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
 
 
     @test_settings
-    def test_from_valid(self):
+    def test_form_valid(self):
+        self.build_preview()
 
         app_builder = AppBuilder(self.meta_app)
         frontend_settings = app_builder._get_frontend_settings()
@@ -572,3 +629,4 @@ class TestInstallPrivateFrontend(CleanFrontendTestFolders, WithFrontendZip, With
 
         self.assertFalse(os.path.isdir(frontend_importer.unzip_path))
         self.assertFalse(os.path.isdir(frontend_installation_path))
+        

@@ -226,7 +226,7 @@ class FrontendMixin:
 
         def run_in_thread():
 
-            # threading resets the conntion -> set to tenant
+            # threading resets the connection -> set to tenant
             connection.set_tenant(self.request.tenant)
 
             self.frontend.lock('preview_build')

@@ -187,12 +187,13 @@ class TestAnyclusterViews(WithDatasetPostData, WithObservationForm, WithUser, Wi
         url = reverse('schema_kmeans_cluster', kwargs=url_kwargs)
 
         post_data = {
-            'geojson' : json.dumps(GEOJSON_RECTANGLE),
+            'geojson' : GEOJSON_RECTANGLE,
             'geometry_type': GEOMETRY_TYPE_VIEWPORT,
         }
 
-        response = self.tenant_client.post(url, post_data, format='json')
-
+        response = self.tenant_client.post(url, post_data, content_type="application/json", format='json')
+        if response.status_code != status.HTTP_200_OK:
+            print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         self.assertEqual(len(response.data), 1)

@@ -10,7 +10,7 @@ from app_kit.app_kit_api.serializers import (ApiTokenSerializer, AppKitJobSerial
                         AppKitJobAssignSerializer, AppKitJobStatusSerializer, RESERVED_SUBDOMAINS,
                         AppKitJobCompletedSerializer, CreateAppKitSerializer)
 
-from app_kit.tests.mixins import (WithMetaApp,)
+from app_kit.tests.mixins import (WithMetaApp, WithUser)
 from app_kit.app_kit_api.tests.mixins import WithAppKitJob
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -253,7 +253,7 @@ class TestAppKitJobCompletedSerializer(WithAppKitJob, WithMetaApp, TenantTestCas
         self.assertEqual(job.job_result, post_data['job_result'])
         
 
-class TestCreateAppKitSerializer(WithMetaApp, TenantTestCase):
+class TestCreateAppKitSerializer(WithUser, WithMetaApp, TenantTestCase):
     
     @test_settings
     def test_wrong_encoding(self):
@@ -342,11 +342,14 @@ class TestCreateAppKitSerializer(WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_valid(self):
+        
+        user = self.create_user()
 
         subdomain = 'test2'
         post_data = {
             'subdomain': subdomain,
             'number_of_apps': 1,
+            'tenant_admin_user_id': user.id,
         }
         
         serializer = CreateAppKitSerializer(data=post_data)

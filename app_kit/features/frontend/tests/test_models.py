@@ -10,6 +10,8 @@ from app_kit.models import MetaAppGenericContent
 
 from app_kit.features.frontend.models import Frontend, FrontendText
 
+from app_kit.appbuilder import AppPreviewBuilder
+
 
 class WithFrontend(WithMetaApp):
 
@@ -19,6 +21,13 @@ class WithFrontend(WithMetaApp):
         self.frontend_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app, content_type=self.content_type)
 
         self.frontend = self.frontend_link.generic_content
+        self.meta_app = self.frontend_link.meta_app
+        
+    def build_preview(self):
+        
+        preview_builder = AppPreviewBuilder(self.meta_app)
+        preview_builder.build()
+        
         
 
 class TestFrontend(WithFrontend, TenantTestCase):

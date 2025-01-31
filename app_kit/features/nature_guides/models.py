@@ -1257,8 +1257,8 @@ class NatureGuidesTaxonLocale(TaxonLocale):
     taxon = models.ForeignKey(NatureGuidesTaxonTree, on_delete=models.CASCADE, to_field='name_uuid')
 
     class Meta:
-        index_together = [
-            ['taxon', 'language'],
+        indexes = [
+            models.Index(fields=['taxon', 'language']),
         ]
 
 
@@ -1328,7 +1328,8 @@ class MatrixFilter(models.Model):
         self._load_filter_type()
 
     def get_space(self):
-        return MatrixFilterSpace.objects.filter(matrix_filter=self)
+        # bug in django 5: matrix_filter=self throws error in testing
+        return MatrixFilterSpace.objects.filter(matrix_filter_id=self.pk)
 
 
     def _load_filter_type(self):

@@ -13,7 +13,7 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
-import os, string, openpyxl, hashlib, json
+import os, openpyxl, hashlib, json
 
 from PIL import Image
 

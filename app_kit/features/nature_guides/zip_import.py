@@ -65,7 +65,6 @@ class NatureGuideZipImporter(GenericContentZipImporter):
             self.workbook = openpyxl.load_workbook(self.filepath)
             
             # color sheet is optional
-            # xlrd for xls, openpyxl for xlsx
             if self.workbook_filename.endswith('xls'):
                 self.validate_colors_sheet_xls()
                 

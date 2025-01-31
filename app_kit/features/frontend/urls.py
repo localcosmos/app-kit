@@ -10,8 +10,8 @@ urlpatterns = [
         views.ChangeFrontend.as_view(), name='change_frontend'),
     path('upload-private-frontend/<int:meta_app_id>/<int:frontend_id>/',
         views.UploadPrivateFrontend.as_view(), name='upload_private_frontend'),
-    path('install-private-frontend/<int:meta_app_id>/<int:frontend_id>/>',
+    path('install-private-frontend/<int:meta_app_id>/<int:frontend_id>/',
         views.InstallPrivateFrontend.as_view(), name='install_private_frontend'),
-    path('update-used-frontend/<int:meta_app_id>/<int:frontend_id>/>',
+    path('update-used-frontend/<int:meta_app_id>/<int:frontend_id>/',
         views.UpdateUsedFrontend.as_view(), name='update_used_frontend'),
 ]
