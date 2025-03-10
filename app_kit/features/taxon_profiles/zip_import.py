@@ -14,7 +14,8 @@ TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
 '''
     TaxonProfiles as Spreadsheet
-    - only reads the first sheet
+    - import all TaxonProfiles or some Taxon profiles
+    - delete unlisted as a checkbox
 '''
 
 class TaxonProfilesZipImporter(GenericContentZipImporter):
@@ -37,6 +38,11 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
         return is_valid
     
+    
+    def get_taxon_prpfile_images_sheet(self):
+        images_sheet = self.get_sheet_by_index(1)
+        return images_sheet
+    
     # self.workbook is available
     def validate_spreadsheet(self):
 
@@ -58,7 +64,6 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
                     message = _('Cell content has to be "Taxonomic source", not {0}'.format(row[2].value))
                     self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, 'C', 0, message)
-
 
             else:
 
@@ -84,23 +89,21 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                         taxon_profiles_sheet.title, row_index, 0, 2)
 
  
-
     def valdiate_images(self):
-        pass
+        
+        taxon_profiles_sheet = self.get_sheet_by_index(0)
+        
         
 
     def import_generic_content(self):
 
         if len(self.errors) != 0:
-            raise ValueError('Only valid zipfiles can be imported.')
+            raise ValueError('Only valid .zip files can be imported.')
 
         # first, delete removed text_types and add new text_types
         # try to preserve taxon texts
         existing_text_types = list(TaxonTextType.objects.filter(taxon_profiles=self.generic_content).values_list(
-            'text_type', flat=True))
-
-        new_text_types = []
-        
+            'text_type', flat=True))        
 
         # import from spreadsheet
         taxon_profiles_sheet = self.get_sheet_by_index(0)
@@ -145,6 +148,9 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 value = cell.value
 
                 if value and len(value) > 0:
+                    
+                    if value.lower().strip().startswith('image'):
+                        continue
 
                     # the first row defines text types
                     if row_index == 1:

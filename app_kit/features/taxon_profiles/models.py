@@ -357,7 +357,7 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
     @property
     def attached_taxon_profiles(self):
         
-        if self.children:
+        if self.children or not self.taxa:
             return []
         
         custom_taxonomy_name = 'taxonomy.sources.custom'

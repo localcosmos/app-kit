@@ -80,6 +80,23 @@ class TemplateContentJSONBuilder(JSONBuilder):
             
             return image
 
+    # create built urls instead of /media/... urls. this differs from localcosmos_server serializer
+    def add_image_data_to_component(self, component_key, component, component_definition, localized_template_content):
+
+        if component:
+            component_uuid = component['uuid']
+
+            for component_content_key, component_content_definition in component_definition['contents'].items():
+
+                if component_content_definition['type'] == 'image':
+
+                    image_type = get_component_image_type(component_key, component_uuid, component_content_key)
+
+                    image_data = self.get_image_data(component_definition, localized_template_content, image_type)
+
+                    component[component_content_key] = image_data
+        
+        return component
 
     def build_localized_template_content(self, localized_template_content):
 
@@ -116,11 +133,10 @@ class TemplateContentJSONBuilder(JSONBuilder):
                         components = content_json['contents'][content_key]
 
                         for component_index, component in enumerate(components, 0):
-
-                            component_uuid = component['uuid']
-
-                            component_with_image_data = serializer.get_component_with_image_data(content_key, component,
-                                component_definition, component_uuid, localized_template_content, self.get_image_data)
+                            
+                            # do not use add_image_data_to_component which uses djangos /media/... urls instead of built urls
+                            component_with_image_data = self.add_image_data_to_component(content_key, component,
+                                component_definition, localized_template_content)
 
                             content_json['contents'][content_key][component_index] = component_with_image_data
 
@@ -128,10 +144,8 @@ class TemplateContentJSONBuilder(JSONBuilder):
                         
                         component = content_json['contents'][content_key]
 
-                        component_uuid = component['uuid']
-
-                        component_with_image_data = self.get_component_with_image_data(content_key, component,
-                            component_definition, component_uuid, localized_template_content, self.get_image_data)
+                        component_with_image_data = self.add_image_data_to_component(content_key, component,
+                            component_definition, localized_template_content)
 
                         content_json['contents'][content_key] = component_with_image_data
 

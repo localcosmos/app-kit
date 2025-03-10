@@ -7,25 +7,7 @@ from localcosmos_server.template_content.api.serializers import ContentLicenceSe
 
 # widths of the ouput image
 # the height depends on the crop area set by the user
-IMAGE_SIZES = {
-    'regular' : {
-        '1x' : 250,
-        '2x' : 500,
-        #'4x' : 1000,
-    },
-    'large' : {
-        '4x' : 1000,
-    },
-    'xlarge' : {
-        '8x' : 2000,
-    },
-    'all' : {
-        '1x' : 250,
-        '2x' : 500,
-        '4x' : 1000,
-        '8x' : 2000,
-    }
-}
+from localcosmos_server.models import IMAGE_SIZES
 
 class ContentImageBuilder:
 

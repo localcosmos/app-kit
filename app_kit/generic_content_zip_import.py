@@ -34,10 +34,10 @@ TYPE_FORMULA_CACHE_STRING = 'str'
 class GenericContentZipImporter:
 
     required_additional_files = {
-        'Image_Licences' : ['xls', 'xlsx'],
+        'Image_Licences' : ['xlsx',],
     }
     
-    spreadsheet_extensions = ['xls', 'xlsx']
+    spreadsheet_extensions = ['xlsx',]
 
     image_folder_name = 'images'
     image_file_extensions = ['png', 'jpg', 'jpeg']
