@@ -1766,12 +1766,18 @@ class AppReleaseBuilder(AppBuilderBase):
     ###############################################################################################################
     # TAXON PROFILES
     # - one file per taxon profile which includes all languages
+    
+    # problem: taxon occurs in both active and inactive branch
     def check_taxon_is_inactive(self, taxon):
 
         is_inactive = False
+        
+        nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
+        nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
 
         for nuid in self.inactivated_nuids:
             if taxon.taxon_nuid.startswith(nuid):
+                
                 is_inactive = True
                 break
 
@@ -1838,27 +1844,44 @@ class AppReleaseBuilder(AppBuilderBase):
             # check nature guide only
             if nature_guide_only == True:
                 
-                is_inactive = self.check_taxon_is_inactive(profile_taxon)
-
-                if is_inactive == False:
-                    add = False
+                # if the taxon comes directly from the nature guide
+                if profile_taxon.taxon_source == 'app_kit.features.nature_guides':
+                    # the profile might exist, but the taxon in the nature guide might
+                    # already have been deleted
+                    exists_in_nature_guide = NatureGuidesTaxonTree.objects.filter(
+                        name_uuid=profile_taxon.name_uuid).exists()
                     
-                else:
-                    exists_in_nature_guide = False
-                    
-                    if profile_taxon.taxon_source == 'app_kit.features.nature_guides':
-                        # the profile might exist, but the taxon in the nature guide might
-                        # already have been deleted
-                        exists_in_nature_guide = NatureGuidesTaxonTree.objects.filter(
-                            name_uuid=profile_taxon.name_uuid).exists()
-                    else:
-                        if nature_guide_ids.exists():
-                            exists_in_nature_guide = MetaNode.objects.filter(
-                                nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid).exists()
-                            
                     if not exists_in_nature_guide:
                         add = False
+                    
+                    else:
+                        is_inactive = self.check_taxon_is_inactive(profile_taxon)
 
+                        if is_inactive == False:
+                            add = False
+                
+                # taxa from all sources except app_kit.features.nature_guides
+                else:
+                    if nature_guide_ids.exists():
+                        
+                        meta_nodes = MetaNode.objects.filter(
+                                nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid)
+                        
+                        is_active = False
+                        for meta_node in meta_nodes:                            
+                            for inactive_nuid in self.inactivated_nuids:
+                                
+                                meta_node_tree_nuid = meta_node.natureguidestaxontree.taxon_nuid
+                                
+                                if not meta_node_tree_nuid.startswith(inactive_nuid):
+                                    is_active = True
+                                    break
+                                
+                            if is_active == True:
+                                break
+                            
+                        if is_active == False:
+                            add = False
 
             if add == True:
                 active_collected_taxa.append(profile_taxon)
