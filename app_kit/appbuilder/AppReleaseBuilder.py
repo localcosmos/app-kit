@@ -1409,7 +1409,7 @@ class AppReleaseBuilder(AppBuilderBase):
             with open(locale_filepath, 'r') as locale_file:
                 locale = json.load(locale_file)
         else:
-            self.logger.warn('No locale file found for langauge {0}'.format(language_code))
+            self.logger.warning('No locale file found for language {0}'.format(language_code))
 
         return locale
 
@@ -1934,6 +1934,14 @@ class AppReleaseBuilder(AppBuilderBase):
                 # localized taxon profiles for faster language load
                 for language_code in self.meta_app.languages():
                     
+                    glossarized_locale_filepath = self._app_glossarized_locale_filepath(language_code)
+                    
+                    glossarized_locale = {}
+                    
+                    if os.path.isfile(glossarized_locale_filepath):
+                        with open(glossarized_locale_filepath, 'r') as f:
+                            glossarized_locale = json.loads(f.read())
+                    
                     relative_localized_taxonprofiles_folder = os.path.join(
                         app_relative_taxonprofiles_folder, language_code)
                     
@@ -1946,17 +1954,21 @@ class AppReleaseBuilder(AppBuilderBase):
                     
                     for index, text_dict in enumerate(profile_json['texts'], 0):
                         
-                        if text_dict['shortText'] and text_dict['shortTextKey'] in app_locale:
-                            localized_short_text = app_locale[text_dict['shortTextKey']]
-                        else:
-                            localized_short_text = None
+                        localized_short_text = None
+                        localized_long_text = None
                         
+                        if text_dict['shortText'] and text_dict['shortTextKey'] in glossarized_locale:
+                            localized_short_text = glossarized_locale[text_dict['shortTextKey']]
+                        elif text_dict['shortText'] and text_dict['shortTextKey'] in app_locale:
+                            localized_short_text = app_locale[text_dict['shortTextKey']]
+                            
                         localized_profile_json['texts'][index]['shortText'] = localized_short_text
                         
-                        if text_dict['longText'] and text_dict['longTextKey'] in app_locale:
+                        if text_dict['longText'] and text_dict['longTextKey'] in glossarized_locale:
+                            localized_long_text = glossarized_locale[text_dict['longTextKey']]
+                        elif text_dict['longText'] and text_dict['longTextKey'] in app_locale:
                             localized_long_text = app_locale[text_dict['longTextKey']]
-                        else:
-                            localized_long_text = None
+                            
                         
                         localized_profile_json['texts'][index]['longText'] = localized_long_text
                     
