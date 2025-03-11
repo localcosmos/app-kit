@@ -1768,18 +1768,41 @@ class AppReleaseBuilder(AppBuilderBase):
     # - one file per taxon profile which includes all languages
     
     # problem: taxon occurs in both active and inactive branch
+    # this metho only applies to taxon
     def check_taxon_is_inactive(self, taxon):
+        
+        if taxon.taxon_source != 'app_kit.features.nature_guides':
+            return False
 
         is_inactive = False
         
         nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
-        nature_guide_ids = nature_guide_links.values_list('object_id', flat=True)
+        
 
-        for nuid in self.inactivated_nuids:
-            if taxon.taxon_nuid.startswith(nuid):
-                
+        for nuid in self.inactivated_nuids:            
+            if taxon.taxon_nuid.startswith(nuid):                
                 is_inactive = True
                 break
+        
+        # chekc if there is an active node
+        if is_inactive == True:
+            for nature_guide_link in nature_guide_links:
+                nature_guide = nature_guide_link.generic_content
+                nodes = NatureGuidesTaxonTree.objects.filter(pk=nature_guide.id, meta_node__name_uuid=taxon.name_uuid)
+                
+                for node in nodes:
+                    for nuid in self.inactivated_nuids:
+                        
+                        if not node.taxon_nuid.startswith(nuid):
+                            is_inactive = False
+                            break
+                    
+                    if is_inactive == False:
+                        break
+                    
+                if is_inactive == False:
+                    break
+                    
 
         return is_inactive
 
@@ -1857,7 +1880,7 @@ class AppReleaseBuilder(AppBuilderBase):
                     else:
                         is_inactive = self.check_taxon_is_inactive(profile_taxon)
 
-                        if is_inactive == False:
+                        if is_inactive == True:
                             add = False
                 
                 # taxa from all sources except app_kit.features.nature_guides
