@@ -973,6 +973,7 @@ class GetTaxonProfilesNavigation(MetaAppMixin, TemplateView):
         context['taxon_profiles_navigation'] = self.taxon_profiles_navigation
         context['taxon_profiles'] = self.taxon_profiles
         context['navigation_entry_content_type'] = ContentType.objects.get_for_model(TaxonProfilesNavigationEntry)
+        context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
     
         return context
     
@@ -1055,3 +1056,24 @@ class GetTaxonProfilesNavigationEntryTaxonProfiles(MetaAppMixin, TemplateView):
         context['taxon_profiles'] = self.taxon_profiles
         context['navigation_entry'] = self.navigation_entry
         return context
+    
+    
+class PrerenderTaxonProfilesNavigation(MetaAppMixin, TemplateView):
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        return super().dispatch(request, *args, **kwargs)
+    
+    
+    def get(self, request, *args, **kwargs):
+        
+        navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.taxon_profiles).first()
+        
+        if navigation:
+            navigation.prerender()
+        
+        data = {
+            'success': True,
+        }
+        return JsonResponse(data)

@@ -75,4 +75,7 @@ urlpatterns = [
         views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),
     path('manage-taxon-profiles-navigation/delete-navigation-image/<int:meta_app_id>/<int:pk>/',
         views.DeleteNavigationImage.as_view(), name='delete_taxon_profiles_navigation_image'),
+    # prerender navigation
+    path('manage-taxon-profiles-navigation/prerender/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.PrerenderTaxonProfilesNavigation.as_view(), name='prerender_taxonprofiles_navigation'),
 ]

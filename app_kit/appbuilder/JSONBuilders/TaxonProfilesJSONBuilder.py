@@ -475,7 +475,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'verboseName': str(navigation_entry),
             'taxa': taxa,
             'images': images,
+            'primaryImage': None,
         }
+        
+        if images:
+            navigation_entry_json['primaryImage'] = images[0]
         
         if navigation_entry.parent:
             navigation_entry_json.update({
@@ -591,41 +595,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     for taxon_profile in navigation_entry.attached_taxon_profiles:
                         if taxon_profile not in taxon_profiles:
                             taxon_profiles.append(taxon_profile)
-
-                    '''
-                    for taxon_link in navigation_entry.taxa:
-                        
-                        matching_profiles = TaxonProfile.objects.filter(
-                            taxon_profiles=self.generic_content,
-                            taxon_source=taxon_link.taxon_source,
-                            taxon_nuid__startswith=taxon_link.taxon_nuid)
-                        
-                        for matching_profile in matching_profiles:
-                            if matching_profile not in taxon_profiles:
-                                taxon_profiles.append(matching_profile)
-                        
-                        if taxon_link.taxon_source != 'taxonomy.sources.custom':
-                            
-                            search_kwargs = {
-                                'taxon_latname' : taxon_link.taxon_latname
-                            }
-
-                            if taxon_link.taxon_author:
-                                search_kwargs['taxon_author'] = taxon_link.taxon_author
-
-                            custom_parent_taxa = custom_taxonomy_models.TaxonTreeModel.objects.filter(
-                                **search_kwargs)
-                            
-                            for custom_parent_taxon in custom_parent_taxa:
-                                matching_custom_profiles = TaxonProfile.objects.filter(
-                                    taxon_profiles=self.generic_content,
-                                    taxon_source=custom_taxonomy_name,
-                                    taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
-                                
-                                for matching_custom_profile in matching_custom_profiles:
-                                    if matching_custom_profile not in taxon_profiles:
-                                        taxon_profiles.append(matching_custom_profile)
-                    '''
                     
                     # jsonify all taxon profiles
                     for taxon_profile in taxon_profiles:

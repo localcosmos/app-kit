@@ -150,13 +150,18 @@ class TaxonSerializer:
         
         taxon_json = self.serialize_with_slugs()
         all_images = self.serialize_images()
+        
+        primary_image = all_images['primary']
+        
         images = []
+        
         if all_images['taxonProfileImages']:
             images = all_images['taxonProfileImages']
         elif all_images['primary']:
             images = [all_images['primary']]
             
         taxon_json['images'] = images
+        taxon_json['primaryImage'] = primary_image
         
         return taxon_json
         

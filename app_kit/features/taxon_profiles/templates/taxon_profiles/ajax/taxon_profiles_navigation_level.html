@@ -41,15 +41,19 @@
                     {% endif %}
                 {% endif %}
                 {% if node.images %}
-                    <div class="d-flex flex-wrap ml-2">
+                    <div id="node-images-{{ node.id }}" class="d-flex flex-wrap ml-2" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
                         {% for image in node.images %}
-                            <div id="navigation_image_{{ image.id }}">
+                            <div id="navigation_image_{{ image.id }}" data-object-id="{{ image.id }}">
                                 <div class="btn-group dropup">
                                     <button type="button" class="btn image-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <img src="{{ image.url }}" class="taxon-profiles-navigation-image" />
                                     </button>
                                     <div class="dropdown-menu">
                                         <a data-url="{% url 'manage_taxon_profiles_navigation_image' meta_app.id image.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-center moveleftbutton" data-targetid="navigation_image_{{ image.id }}">&#9664; {% trans 'Move left' %}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-center moverightbutton" data-targetid="navigation_image_{{ image.id }}">{% trans 'Move right' %} &#9654;</a>
                                     </div>
                                 </div>
                                 
@@ -68,3 +72,20 @@
         </div>
     {% endfor %}
 </div>
+
+<script>
+    (function(){
+        $("#node-images-{{ node.id }} .moveleftbutton").on("click", function(event){
+            positionmanager.onMoveForward.bind(this)(event);
+            $.get("{% url 'prerender_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (data) => {
+
+            });
+        });
+        $("#node-images-{{ node.id }} .moverightbutton").on("click", function(event){
+            positionmanager.onMoveBack.bind(this)(event);
+            $.get("{% url 'prerender_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (data) => {
+
+            });
+        });
+    })();
+</script>
