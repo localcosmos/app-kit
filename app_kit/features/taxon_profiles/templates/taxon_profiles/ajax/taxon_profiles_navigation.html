@@ -8,4 +8,20 @@
         $("#tpn-nav .moveforwardbutton").on("click", positionmanager.onMoveForward);
 	    $("#tpn-nav .movebackbutton").on("click", positionmanager.onMoveBack);
     })();
+
+
+        (function(){
+            $(".ni-moveleftbutton").on("click", function(event){
+                positionmanager.onMoveForward.bind(this)(event);
+                $.get("{% url 'prerender_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (data) => {
+
+                });
+            });
+            $(".ni-moverightbutton").on("click", function(event){
+                positionmanager.onMoveBack.bind(this)(event);
+                $.get("{% url 'prerender_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (data) => {
+
+                });
+            });
+        })();
 </script>
