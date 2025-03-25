@@ -538,52 +538,65 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
     def get_image_analysis(self, navigation_node_json):
         
         # {'4':3, '1':2}
-        image_counts = {}
+        image_counts = {
+            'nodes' : {},
+            'taxonProfiles' : {},
+        }
         
         for child in navigation_node_json['children']:
+            
+            node_type = 'nodes'
+
             image_count = str(len(child['images']))
             if image_count not in image_counts:
-                image_counts[image_count] = 0
-            image_counts[image_count] = image_counts[image_count] + 1
+                image_counts[node_type][image_count] = 0
+            image_counts[node_type][image_count] = image_counts[node_type][image_count] + 1
             
         
         for taxon_profile in navigation_node_json['taxonProfiles']:
+            
+            node_type = 'taxonProfiles'
+            
             image_count = str(len(taxon_profile['images']))
             if image_count not in image_counts:
-                image_counts[image_count] = 0
-            image_counts[image_count] = image_counts[image_count] + 1
+                image_counts[node_type][image_count] = 0
+            image_counts[node_type][image_count] = image_counts[node_type][image_count] + 1
         
         
-        max_images = 0
-        min_images = None
-        mode_images = 0
-        mode_images_occurrence_count = 0
+        image_analysis = {}
         
-        for image_count, occurrence_count in image_counts.items():
+        for node_type, typed_counts in image_counts.items():
             
-            image_count_number = int(image_count)
+            max_images = 0
+            min_images = None
+            mode_images = 0
+            mode_images_occurrence_count = 0
             
-            if image_count_number > max_images:
-                max_images = image_count_number
+            for image_count, occurrence_count in typed_counts.items():
+                
+                image_count_number = int(image_count)
+                
+                if image_count_number > max_images:
+                    max_images = image_count_number
+                
+                if min_images == None:
+                    min_images = image_count_number
+                    
+                if image_count_number < min_images:
+                    min_images = image_count_number
+                    
+                if occurrence_count > mode_images_occurrence_count:
+                    mode_images = image_count_number
+                    mode_images_occurrence_count = occurrence_count
             
             if min_images == None:
-                min_images = image_count_number
-                
-            if image_count_number < min_images:
-                min_images = image_count_number
-                
-            if occurrence_count > mode_images_occurrence_count:
-                mode_images = image_count_number
-                mode_images_occurrence_count = occurrence_count
-        
-        if min_images == None:
-            min_images = 0
-        
-        image_analysis = {
-            'maxImages' : max_images,
-            'minImages' : min_images,
-            'modeImages': mode_images,
-        }
+                min_images = 0
+            
+            image_analysis[node_type] = {
+                'maxImages' : max_images,
+                'minImages' : min_images,
+                'modeImages': mode_images,
+            }
         
         return image_analysis
     
