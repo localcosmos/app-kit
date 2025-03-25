@@ -512,6 +512,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'isTerminalNode': False,
             'isStartNode' : is_start_node,
             'images': [],
+            'imageAnalysis' : {
+                'maxImages' : 0,
+                'minImages' : 0,
+                'modeImages': 0,
+            },
             'children' : [],
             'taxonProfiles': [],
         }
@@ -530,10 +535,78 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         return images
     
     
-    def build_navigation(self):
+    def get_image_analysis(self, navigation_node_json):
         
-        custom_taxonomy_name = 'taxonomy.sources.custom'
-        custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
+        # {'4':3, '1':2}
+        image_counts = {}
+        
+        for child in navigation_node_json['children']:
+            image_count = str(len(child['images']))
+            if image_count not in image_counts:
+                image_counts[image_count] = 0
+            image_counts[image_count] = image_counts[image_count] + 1
+            
+        
+        for taxon_profile in navigation_node_json['taxonProfiles']:
+            image_count = str(len(taxon_profile['images']))
+            if image_count not in image_counts:
+                image_counts[image_count] = 0
+            image_counts[image_count] = image_counts[image_count] + 1
+        
+        
+        max_images = 0
+        min_images = None
+        mode_images = 0
+        mode_images_occurrence_count = 0
+        
+        for image_count, occurrence_count in image_counts.items():
+            
+            image_count_number = int(image_count)
+            
+            if image_count_number > max_images:
+                max_images = image_count_number
+            
+            if min_images == None:
+                min_images = image_count_number
+                
+            if image_count_number < min_images:
+                min_images = image_count_number
+                
+            if occurrence_count > mode_images_occurrence_count:
+                mode_images = image_count_number
+                mode_images_occurrence_count = occurrence_count
+        
+        if min_images == None:
+            min_images = 0
+        
+        image_analysis = {
+            'maxImages' : max_images,
+            'minImages' : min_images,
+            'modeImages': mode_images,
+        }
+        
+        return image_analysis
+    
+    def get_attached_taxon_profiles_json(self, navigation_entry):
+        # fetch all taxon profiles matching this node
+        attached_taxon_profiles = []
+        attached_taxon_profiles_json = []
+        
+        for taxon_profile in navigation_entry.attached_taxon_profiles:
+            if taxon_profile not in attached_taxon_profiles:
+                attached_taxon_profiles.append(taxon_profile)
+        
+        # jsonify all taxon profiles
+        for taxon_profile in attached_taxon_profiles:
+            
+            lazy_taxon = LazyTaxon(instance=taxon_profile)
+            taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_with_profile_images(lazy_taxon)
+            attached_taxon_profiles_json.append(taxon_json)
+            
+        return attached_taxon_profiles_json
+    
+    
+    def build_navigation(self):
         
         # navigation slugs are group names or taxon latnames
         navigation_slugs = {
@@ -547,7 +620,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         if navigation:
             root_elements = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                                                                        parent=None).order_by('position')
+                                parent=None).exclude(publication_status='draft').order_by('position')
             for root_element in root_elements:
                 
                 root_element_json = self._build_navigation_child(root_element)
@@ -555,9 +628,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 root_element_json['slug'] = slug
                 navigation_slugs[slug] = root_element_json['key']
                 built_navigation['start']['children'].append(root_element_json)
+                toplevel_image_analysis = self.get_image_analysis(built_navigation['start'])
+                built_navigation['start']['imageAnalysis'] = toplevel_image_analysis
                 
             all_elements = TaxonProfilesNavigationEntry.objects.filter(
-                navigation=navigation).order_by('position')
+                navigation=navigation).exclude(publication_status='draft').order_by('position')
             
             for navigation_entry in all_elements:
                 
@@ -567,11 +642,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     'name': navigation_entry.name or None,
                     'description': navigation_entry.description or None,
                     'verboseName': str(navigation_entry),
-                    'images': self.get_navigation_entry_images(navigation_entry),
+                    'images': self.get_navigation_entry_images(navigation_entry),                    
                 })
                 
                 children = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                                                        parent=navigation_entry).order_by('position')
+                        parent=navigation_entry).exclude(publication_status='draft').order_by('position')
                 
                 if children:
                     children_json = []
@@ -588,22 +663,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 else:
                     navigation_entry_json['isTerminalNode'] = True
                     
-                    # fetch all taxon profiles matching this node
-                    taxon_profiles = []
-                    taxon_profiles_json = []
-                    
-                    for taxon_profile in navigation_entry.attached_taxon_profiles:
-                        if taxon_profile not in taxon_profiles:
-                            taxon_profiles.append(taxon_profile)
-                    
-                    # jsonify all taxon profiles
-                    for taxon_profile in taxon_profiles:
-                        
-                        lazy_taxon = LazyTaxon(instance=taxon_profile)
-                        taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_with_profile_images(lazy_taxon)
-                        taxon_profiles_json.append(taxon_json)
-                    
-                    navigation_entry_json['taxonProfiles'] = taxon_profiles_json
+                
+                navigation_entry_json['taxonProfiles'] = self.get_attached_taxon_profiles_json(navigation_entry)
+                
+                # update image counts
+                navigation_entry_json['imageAnalysis'] = self.get_image_analysis(navigation_entry_json)
                     
                 built_navigation[navigation_entry.key] = navigation_entry_json
                 

@@ -7,6 +7,8 @@ from django.utils.translation import gettext_lazy as _
 from .models import (MetaAppGenericContent, LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX, LocalizedContentImage,
                     ContentImage)
 
+from app_kit.generic import PUBLICATION_STATUS
+
 from localcosmos_server.widgets import TwoStepFileInput
 from localcosmos_server.forms import LocalizeableForm
 from localcosmos_server.models import App
@@ -424,7 +426,7 @@ class TagAnyElementForm(forms.Form):
     tags = TagField(required=False)
 
 
-from app_kit.generic import PUBLICATION_STATUS
+
 class GenericContentStatusForm(forms.Form):
     publication_status = forms.ChoiceField(choices=PUBLICATION_STATUS)
 

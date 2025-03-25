@@ -30,7 +30,8 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
                                                        GenericValues, DJANGO_FIELD_CLASSES)
 
 from app_kit.features.glossary.models import Glossary
-from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
+                                                    TaxonProfilesNavigationEntry)
 from app_kit.features.frontend.models import Frontend
 from app_kit.features.maps.models import Map, MapTaxonomicFilter
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
@@ -917,6 +918,25 @@ class AppReleaseBuilder(AppBuilderBase):
                 'count':missing_profile_count}
             warning = ValidationWarning(taxon_profiles, taxon_profiles, [warning_message])
             result['warnings'].append(warning)
+        
+        taxon_profile_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=taxon_profiles).first()
+        
+        if taxon_profile_navigation:
+            uncovered_taxon_profiles = set(list(TaxonProfile.objects.filter(taxon_profiles=taxon_profiles)))
+
+            all_navigation_entries = TaxonProfilesNavigationEntry.objects.filter(navigation=taxon_profile_navigation)
+            
+            for navigation_entry in all_navigation_entries:
+                for attached_taxon_profile in navigation_entry.attached_taxon_profiles:
+                    uncovered_taxon_profiles.discard(attached_taxon_profile)
+                
+                
+            
+            for uncovered_taxon_profile in uncovered_taxon_profiles:
+                warning_message = _('The taxon profile of %(taxon_latname)s is not covered by the taxonomic navigation.') % {
+                    'taxon_latname':uncovered_taxon_profile.taxon_latname}
+                warning = ValidationWarning(taxon_profiles, taxon_profile_navigation, [warning_message])
+                result['warnings'].append(warning)
             
         return result
 
@@ -1890,18 +1910,23 @@ class AppReleaseBuilder(AppBuilderBase):
                         meta_nodes = MetaNode.objects.filter(
                                 nature_guide_id__in=nature_guide_ids, name_uuid=profile_taxon.name_uuid)
                         
-                        is_active = False
-                        for meta_node in meta_nodes:                            
-                            for inactive_nuid in self.inactivated_nuids:
-                                
-                                meta_node_tree_nuid = meta_node.natureguidestaxontree.taxon_nuid
-                                
-                                if not meta_node_tree_nuid.startswith(inactive_nuid):
-                                    is_active = True
+                        if self.inactivated_nuids:
+                        
+                            is_active = False
+                            for meta_node in meta_nodes:                            
+                                for inactive_nuid in self.inactivated_nuids:
+                                    
+                                    meta_node_tree_nuid = meta_node.natureguidestaxontree.taxon_nuid
+                                    
+                                    if not meta_node_tree_nuid.startswith(inactive_nuid):
+                                        is_active = True
+                                        break
+                                    
+                                if is_active == True:
                                     break
-                                
-                            if is_active == True:
-                                break
+                        else:
+                            if meta_nodes.exists():
+                                is_active = True
                             
                         if is_active == False:
                             add = False

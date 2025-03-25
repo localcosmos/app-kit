@@ -526,6 +526,49 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonPro
         self.assertIn(chordata.name_uuid, names)
         self.assertEqual(len(taxa), 1)
         
+        
+    @test_settings
+    def test_matching_custom_taxa(self):
+        ct_models = TaxonomyModelRouter('taxonomy.sources.custom')
+        animalia_ct = ct_models.TaxonTreeModel.objects.create(
+            'Animalia',
+            '',
+            **{
+                'is_root_taxon':True
+            }
+        )
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        animalia_db = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+        animalia = LazyTaxon(instance=animalia_db)
+        
+        entry = self.create_navigation_entry(taxon=animalia)
+        
+        self.assertEqual(entry.matching_custom_taxa, [animalia_ct])
+    
+    @test_settings
+    def test_combined_taxa(self):
+        ct_models = TaxonomyModelRouter('taxonomy.sources.custom')
+        animalia_ct = ct_models.TaxonTreeModel.objects.create(
+            'Animalia',
+            '',
+            **{
+                'is_root_taxon':True
+            }
+        )
+        
+        lazy_animalia_ct = LazyTaxon(instance=animalia_ct)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        animalia_db = models.TaxonTreeModel.objects.get(taxon_latname='Animalia')
+        animalia = LazyTaxon(instance=animalia_db)
+        
+        entry = self.create_navigation_entry(taxon=animalia)
+        
+        self.assertEqual(entry.combined_taxa, [animalia, lazy_animalia_ct])
+    
     
     @test_settings
     def test_attached_taxon_profiles(self):
@@ -599,7 +642,96 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonPro
         custom_lacerta_profile.save()
         
         self.assertEqual(list(c1.attached_taxon_profiles), [aves_profile, custom_lacerta_profile])
+    
+    # test a mix: a node has both groups and attached taxon profile    
+    @test_settings
+    def test_attached_taxon_profiles_mixed(self):
+        models = TaxonomyModelRouter('taxonomy.sources.col')
         
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        chordata = LazyTaxon(instance=chordata_db)
+        
+        plantae_db = models.TaxonTreeModel.objects.get(taxon_latname='Plantae')
+        plantae = LazyTaxon(instance=plantae_db)
+        
+        aves_db = models.TaxonTreeModel.objects.get(taxon_latname='Aves')
+        aves = LazyTaxon(instance=aves_db)
+        
+        pinus_db = models.TaxonTreeModel.objects.get(taxon_latname='Pinus')
+        pinus = LazyTaxon(instance=pinus_db)
+        
+        # 3 types: col by nuid, custom by nuid and custom by name
+        
+        entry = self.create_navigation_entry(taxon=chordata)
+        
+        plantae_link = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=entry,
+        )
+            
+        plantae_link.set_taxon(plantae)
+        plantae_link.save()
+        
+        c1 = self.create_navigation_entry(parent=entry, taxon=aves)
+        c2 = self.create_navigation_entry(parent=c1, taxon=pinus)        
+        
+        # add three taxon profiles: one aves, one col lactera, one custom lacerta
+        taxon_profiles = self.get_taxon_profiles()
+        pica_pica = models.TaxonTreeModel.objects.get(taxon_latname='Pica pica')
+        aves_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=pica_pica),
+        )
+
+        aves_profile.save()
+        
+        # turdus merula profile
+        pinus_sylvestris = models.TaxonTreeModel.objects.get(taxon_latname='Pinus sylvestris')
+        pinus_sylvestris_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=pinus_sylvestris),
+        )
+
+        pinus_sylvestris_profile.save()
+                
+        # col chordate
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        chordate_col_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=lacerta_agilis),
+        )
+
+        chordate_col_profile.save()
+        
+        # custom chordata
+        custom_taxa = TaxonomyModelRouter('taxonomy.sources.custom')
+        root_taxon = custom_taxa.TaxonTreeModel.objects.create(
+            'Chordata',
+            '',
+            **{
+                'is_root_taxon':True
+            }
+        )
+        
+        lacerta_agilis_custom = custom_taxa.TaxonTreeModel.objects.create(
+            'Lacerta agilis custom',
+            '',
+            **{
+                'parent':root_taxon,
+            }
+        )
+
+        lacerta_agilis_custom.save()
+        
+        custom_lacerta_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=LazyTaxon(instance=lacerta_agilis_custom),
+        )
+
+        custom_lacerta_profile.save()
+        
+        attached_profiles = entry.attached_taxon_profiles
+        
+        self.assertEqual(attached_profiles, [chordate_col_profile, custom_lacerta_profile])
     
     @test_settings
     def test_branch(self):
@@ -613,3 +745,70 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonPro
         branch = d3.branch
         
         self.assertEqual(branch, [entry, d1, d2, d3])
+        
+    @test_settings
+    def test_descendants(self):
+        entry = self.create_navigation_entry(name='root')
+        
+        entry_2 = self.create_navigation_entry(name='root2')
+        d11 = self.create_navigation_entry(parent=entry_2, name='d1')
+        
+        d1 = self.create_navigation_entry(parent=entry, name='d1')
+        d2 = self.create_navigation_entry(parent=d1, name='d2')
+        d3 = self.create_navigation_entry(parent=d2, name='d3')
+        d4 = self.create_navigation_entry(parent=d2, name='d4')
+        d5 = self.create_navigation_entry(parent=d3, name='d5')
+        
+        descendants = entry.get_descendants()
+        
+        self.assertEqual(list(descendants), [d1, d2, d3, d4, d5])
+        
+    
+    @test_settings
+    def test_change_publication_status(self):
+        
+        entry = self.create_navigation_entry(name='root')
+        
+        d1 = self.create_navigation_entry(parent=entry, name='d1')
+        d2 = self.create_navigation_entry(parent=d1, name='d2')
+        d3 = self.create_navigation_entry(parent=d2, name='d3')
+        
+        nodes = [entry, d1, d2, d3]
+        
+        for node in nodes:
+            self.assertEqual(node.publication_status, 'publish')
+        
+        entry.change_publication_status('draft')
+        
+        for node in nodes:
+            node.refresh_from_db()
+            self.assertEqual(node.publication_status, ('draft'))
+            
+            
+    @test_settings
+    def test_unpublish_publish(self):
+        
+        entry = self.create_navigation_entry(name='root')
+        
+        d1 = self.create_navigation_entry(parent=entry, name='d1')
+        d2 = self.create_navigation_entry(parent=d1, name='d2')
+        d3 = self.create_navigation_entry(parent=d2, name='d3')
+        
+        nodes = [entry, d1, d2, d3]
+        
+        for node in nodes:
+            self.assertEqual(node.publication_status, 'publish')
+        
+        entry.unpublish()
+        
+        for node in nodes:
+            node.refresh_from_db()
+            self.assertEqual(node.publication_status, ('draft'))
+            
+            
+        entry.publish()
+        
+        for node in nodes:
+            node.refresh_from_db()
+            self.assertEqual(node.publication_status, ('publish'))
+        

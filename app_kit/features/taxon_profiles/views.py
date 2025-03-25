@@ -1077,3 +1077,48 @@ class PrerenderTaxonProfilesNavigation(MetaAppMixin, TemplateView):
             'success': True,
         }
         return JsonResponse(data)
+    
+
+class ChangeNavigationEntryPublicationStatus(MetaAppMixin, FormView):
+
+    form_class = GenericContentStatusForm
+    template_name = 'taxon_profiles/ajax/change_navigation_entry_publication_status.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_navigation_entry(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_navigation_entry(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.navigation_entry = TaxonProfilesNavigationEntry.objects.get(pk=kwargs['navigation_entry_id'])
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['navigation_entry'] = self.navigation_entry
+        context['success'] = False
+        return context
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['publication_status'] = self.navigation_entry.publication_status
+        return initial
+    
+    def form_valid(self, form):
+        
+        publication_status = form.cleaned_data['publication_status']
+        
+        if publication_status == 'publish':
+            self.navigation_entry.publish()
+        
+        elif publication_status == 'draft':
+            self.navigation_entry.unpublish()
+            
+        self.navigation_entry.navigation.prerender()
+            
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+        
+        return self.render_to_response(context)

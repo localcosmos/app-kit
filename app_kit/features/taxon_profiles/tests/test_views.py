@@ -18,8 +18,8 @@ from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTa
                 ChangeTaxonProfilePublicationStatus, BatchChangeNatureGuideTaxonProfilesPublicationStatus,
                 CreateTaxonProfile, ManageTaxonProfilesNavigationEntry, AddTaxonProfilesNavigationEntryTaxon,
                 DeleteTaxonProfilesNavigationEntry, GetTaxonProfilesNavigation, ManageNavigationImage,
-                DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon)
-
+                DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon,
+                ChangeNavigationEntryPublicationStatus)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
                 TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry,
@@ -1901,3 +1901,100 @@ class TestDeleteTaxonProfilesNavigationEntryTaxon(WithTaxonProfilesNavigationEnt
         delta = previously_modified_at - self.navigation.last_modified_at
         
         self.assertTrue(delta.total_seconds() < 0)
+        
+        
+class TestChangeNavigationEntryPublicationStatus(WithTaxonProfilesNavigationEntry, WithTaxonProfiles,
+        ViewTestMixin, WithAjaxAdminOnly,  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient,
+        TenantTestCase):
+    
+    
+    
+    url_name = 'change_taxonprofiles_navigation_entry_publication_status'
+    view_class = ChangeNavigationEntryPublicationStatus
+    
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        
+        chordata_db = models.TaxonTreeModel.objects.get(taxon_latname='Chordata')
+        taxon = LazyTaxon(instance=chordata_db)
+        
+        self.navigation_entry_taxon = TaxonProfilesNavigationEntryTaxa(
+            navigation_entry=self.navigation_entry,
+        )
+        
+        self.navigation_entry_taxon.set_taxon(taxon)
+        
+        self.navigation_entry_taxon.save()
+        
+    
+    def get_url_kwargs(self):
+
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+            'navigation_entry_id' : self.navigation_entry.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_navigation_entry(self):
+        
+        view = self.get_view()
+        
+        view.set_navigation_entry(**view.kwargs)
+        view.meta_app = self.meta_app
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.navigation_entry, self.navigation_entry)
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.set_navigation_entry(**view.kwargs)
+        view.meta_app = self.meta_app
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['success'], False)
+        self.assertEqual(context['navigation_entry'], self.navigation_entry)
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+    
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.set_navigation_entry(**view.kwargs)
+        view.meta_app = self.meta_app
+        
+        initial = view.get_initial()
+        
+        self.assertEqual(initial['publication_status'], 'publish')
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_navigation_entry(**view.kwargs)
+        view.meta_app = self.meta_app
+        
+        post_data = {
+            'publication_status': 'draft',
+        }
+        
+        form = view.form_class(data=post_data)
+        
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        self.navigation_entry.refresh_from_db()
+        
+        self.assertEqual(self.navigation_entry.publication_status, 'draft')

@@ -3,7 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _, gettext as __
 
 from app_kit.models import ContentImageMixin
-from app_kit.generic import GenericContent
+from app_kit.generic import GenericContent, PUBLICATION_STATUS
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 from taxonomy.lazy import LazyTaxonList, LazyTaxon
@@ -155,7 +155,6 @@ FeatureModel = TaxonProfiles
 '''
     TaxonProfile
 '''
-from app_kit.generic import PUBLICATION_STATUS
 class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
     LazyTaxonClass = LazyTaxon
@@ -254,6 +253,13 @@ class TaxonProfilesNavigation(models.Model):
         self.last_prerendered_at = timezone.now()
         self.save(prerendered=True)
         
+    @property
+    def taxa(self):
+        taxa = []
+        entries = TaxonProfilesNavigationEntry.objects.filter(navigation=self)
+        for entry in entries:
+            taxa = taxa + list(entry.taxa)
+        return taxa
     
     def get_terminal_nodes(self):
         terminal_nodes = []
@@ -275,6 +281,9 @@ class TaxonProfilesNavigation(models.Model):
             self.last_modified_at = timezone.now()
             
         super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return __('Taxonomic Navigation')
             
 
 
@@ -289,6 +298,8 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=355, null=True)
     description = models.TextField(null=True)
+    
+    publication_status = models.CharField(max_length=100, default='publish', choices=PUBLICATION_STATUS)
     
     position = models.IntegerField(default=0)
     
@@ -331,6 +342,7 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
             'description': self.description,
             'children': children,
             'images': images,
+            'publication_status' : self.publication_status,
         }
         
         if self.parent:
@@ -346,6 +358,23 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
         super().save(*args, **kwargs)
         self.navigation.save()
     
+    def change_publication_status(self, new_status):
+        # Get all descendants
+        descendants = self.get_descendants()
+            
+        # Update this node and all descendants in a single query
+        TaxonProfilesNavigationEntry.objects.filter(
+            models.Q(id=self.id) | models.Q(id__in=descendants.values_list('id', flat=True))
+        ).update(publication_status=new_status)
+        
+        self.refresh_from_db()
+    
+    def publish(self):
+        self.change_publication_status('publish')
+    
+    def unpublish(self):
+        self.change_publication_status('draft')
+    
     @property
     def children(self):
         return TaxonProfilesNavigationEntry.objects.filter(parent=self)
@@ -355,11 +384,93 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
         return TaxonProfilesNavigationEntryTaxa.objects.filter(navigation_entry=self)
     
     @property
+    def matching_custom_taxa(self):
+        matching_custom_taxa = []
+        
+        custom_taxonomy_name = 'taxonomy.sources.custom'
+        custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
+        
+        existing_custom_taxa = self.taxa.filter(taxon_source=custom_taxonomy_name)
+        
+        for taxon_link in self.taxa.exclude(taxon_source=custom_taxonomy_name):
+                
+            search_kwargs = {
+                'taxon_latname' : taxon_link.taxon_latname
+            }
+
+            if taxon_link.taxon_author:
+                search_kwargs['taxon_author'] = taxon_link.taxon_author
+
+            custom_taxa = custom_taxonomy_models.TaxonTreeModel.objects.filter(
+                **search_kwargs)
+            
+            
+            for custom_taxon in custom_taxa:
+                if custom_taxon not in existing_custom_taxa:
+                    matching_custom_taxa.append(custom_taxon)
+            
+        return matching_custom_taxa
+    
+    
+    @property
+    def combined_taxa(self):
+        combined_taxa = []
+        
+        for taxon in self.taxa:
+            lazy_taxon = LazyTaxon(instance=taxon)
+            combined_taxa.append(lazy_taxon)
+            
+        for custom_taxon in self.matching_custom_taxa:
+            lazy_custom_taxon = LazyTaxon(instance=custom_taxon)
+            combined_taxa.append(lazy_custom_taxon)
+            
+        return combined_taxa
+        
+    
+    '''
+        attached taxon profiles are
+        - all taxa that are descendants of this node's taxa and that are NOT covered by a subgroup (or a subgroup downards the branch)
+    '''
+    
+    def get_descendants(self):
+        
+        cte_query = """
+            WITH RECURSIVE descendants AS (
+                SELECT id, parent_id
+                FROM {table_name}
+                WHERE id = %(node_id)s
+                UNION ALL
+                SELECT tn.id, tn.parent_id
+                FROM {table_name} tn
+                INNER JOIN descendants d ON tn.parent_id = d.id
+            )
+            SELECT id FROM descendants WHERE id != %(node_id)s
+        """.format(table_name=self._meta.db_table)
+        
+        # Execute with params as a dictionary
+        params = {'node_id': self.id}
+        descendant_ids = [node.id for node in TaxonProfilesNavigationEntry.objects.raw(cte_query, params)]
+        
+        return TaxonProfilesNavigationEntry.objects.filter(id__in=descendant_ids)
+        
+    
+    @property
     def attached_taxon_profiles(self):
         
-        if self.children or not self.taxa:
+        taxon_profiles = []
+        
+        if not self.taxa:
             return []
         
+        descendants = self.get_descendants()
+        
+        subgroups_taxa = []
+        for descendant in descendants:
+            subgroups_taxa = subgroups_taxa + descendant.combined_taxa
+            
+        # if a taxon is a descendant of this node's taxa and NOT a descendat of subgroups_taxa
+        # it is an attached taxon profile
+
         custom_taxonomy_name = 'taxonomy.sources.custom'
         custom_taxonomy_models = TaxonomyModelRouter(custom_taxonomy_name)
         
@@ -388,8 +499,19 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
                                    taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
                     
         final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & q_objects
-        taxon_profiles = TaxonProfile.objects.filter(final_q)
+        taxon_profile_candidates = TaxonProfile.objects.filter(final_q)
         
+        for candidate in taxon_profile_candidates:
+            candidate_exists_in_subgroup = False
+            for subgroup_taxon in subgroups_taxa:
+                if candidate.taxon_source == subgroup_taxon.taxon_source:
+                    if candidate.taxon_nuid.startswith(subgroup_taxon.taxon_nuid):
+                        candidate_exists_in_subgroup = True
+                        break
+            
+            if candidate_exists_in_subgroup == False:
+                taxon_profiles.append(candidate)
+                
         return taxon_profiles
 
     

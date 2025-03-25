@@ -2,20 +2,20 @@
 <div id="tpn-nav" data-store-positions-url="{% url 'store_app_kit_object_order' navigation_entry_content_type.id %}">
     {% for node in nodes %}
         <div id="taxonprofiles-navigation-entry-{{ node.id }}" class="my-2" data-object-id="{{ node.id }}">
-            <div class="d-flex flex-wrap">
+            <div class="d-flex flex-wrap align-items-center">
                 <div class="align-self-end">
                     <div class="btn-group dropup">
                         <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {{ node.verbose_name }}
+                            {{ node.verbose_name }} {% if node.publication_status == 'draft' %}<span class="badge badge-warning">{% trans 'draft' %}</span>{% endif %}
                             <span class="caret"></span>
                         </button>
                         <div class="dropdown-menu">
                             <a href="{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
                             <a href="{% url 'create_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Create subentry' %}</a>
-                            {% if not node.children %}
-                                <div class="dropdown-divider"></div>
-                                <a href="{% url 'get_taxonprofiles_navigation_entry_taxon_profiles' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Show attached Taxon Profiles' %}</a>
-                            {% endif %}
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'change_taxonprofiles_navigation_entry_publication_status' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Change publication status' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'get_taxonprofiles_navigation_entry_taxon_profiles' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Show attached Taxon Profiles' %}</a>
                             <div class="dropdown-divider"></div>
                             <a data-url="{% url 'manage_taxon_profiles_navigation_image' meta_app.id node.content_type_id node.id %}?new=1" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Add image' %}</a>
                             <div class="dropdown-divider"></div>
@@ -27,19 +27,19 @@
                         </div>
                     </div>
                 </div>
-                {% if node.name %}
-                    {% if node.taxa %}
-                        <div class="pl-2">
-                            {% for taxon in node.taxa %}
-                                {% if taxon.taxon_source == 'taxonomy.sources.custom' %}
-                                    <small><span class="font-weight-light font-italic text-primary">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
-                                {% else %}
-                                    <small><span class="font-weight-light font-italic text-success">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+
+                {% if node.taxa %}
+                    <div class="pl-2">
+                        {% for taxon in node.taxa %}
+                            {% if taxon.taxon_source == 'taxonomy.sources.custom' %}
+                                <small><span class="font-weight-light font-italic text-primary">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                            {% else %}
+                                <small><span class="font-weight-light font-italic text-success">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 {% endif %}
+
                 {% if node.images %}
                     <div id="node-images-{{ node.id }}" class="d-flex flex-wrap ml-2" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
                         {% for image in node.images %}

@@ -78,4 +78,7 @@ urlpatterns = [
     # prerender navigation
     path('manage-taxon-profiles-navigation/prerender/<int:meta_app_id>/<int:taxon_profiles_id>/',
          views.PrerenderTaxonProfilesNavigation.as_view(), name='prerender_taxonprofiles_navigation'),
+    # navigatoin entry publication status
+    path('manage-taxon-profiles-navigation-entry/publication-status/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
+         views.ChangeNavigationEntryPublicationStatus.as_view(), name='change_taxonprofiles_navigation_entry_publication_status'),
 ]

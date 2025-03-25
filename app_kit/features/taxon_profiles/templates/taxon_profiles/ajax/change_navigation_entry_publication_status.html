@@ -1,0 +1,30 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% url 'change_taxonprofiles_navigation_entry_publication_status' meta_app.id taxon_profiles.id navigation_entry.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Change publication status of {{ navigation_entry }}{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+
+			$.get("{% url 'get_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (html) => {
+                $("#taxon-profiles-navigation").html(html);
+                ajaxify('taxon-profiles-navigation');
+            });
+
+			$("#Modal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}
