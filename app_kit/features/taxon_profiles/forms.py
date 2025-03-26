@@ -3,7 +3,8 @@ from django import forms
 
 from django.utils.translation import gettext_lazy as _
 
-from .models import (TaxonTextType, TaxonText, TaxonProfilesNavigationEntryTaxa, TaxonProfilesNavigationEntry)
+from .models import (TaxonTextType, TaxonText, TaxonProfilesNavigationEntryTaxa, TaxonProfilesNavigationEntry,
+                     TaxonTextTypeCategory)
 
 from app_kit.validators import json_compatible
 
@@ -35,7 +36,7 @@ class ManageTaxonTextTypeForm(LocalizeableModelForm):
 
     class Meta:
         model = TaxonTextType
-        fields = ('text_type', 'taxon_profiles')
+        fields = ('text_type', 'taxon_profiles', 'category')
 
         labels = {
             'text_type': _('Name of the text content, acts as heading'),
@@ -50,6 +51,23 @@ class ManageTaxonTextTypeForm(LocalizeableModelForm):
         }
 
 
+
+class ManageTaxonTextTypeCategoryForm(LocalizeableModelForm):
+
+    localizeable_fields = ['name']
+
+    class Meta:
+        model = TaxonTextTypeCategory
+        fields = ('name', 'taxon_profiles')
+
+        labels = {
+            'name': _('Name of the category'),
+        }
+
+        widgets = {
+            'taxon_profiles' : forms.HiddenInput,
+        }
+
 '''
     a form for managing all texts of one taxon at onces
 '''
@@ -60,59 +78,96 @@ class ManageTaxonTextsForm(LocalizeableForm):
     short_text_fields = []
     long_text_fields = []
     
+    short_profile = forms.CharField(widget=forms.Textarea, required=False, validators=[json_compatible])
+    
     def __init__(self, taxon_profiles, taxon_profile=None, *args, **kwargs):
-        self.localizeable_fields = []
+        self.localizeable_fields = ['short_profile']
 
         self.layoutable_simple_fields = []
         
-        super().__init__(*args, **kwargs)
-
+        self.has_categories = False
         
-        types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles).order_by('position')
-
-        for text_type in types:
-
-            short_text_field_name = text_type.text_type
+        super().__init__(*args, **kwargs)
+        
+        categories = [None] + list(TaxonTextTypeCategory.objects.filter(taxon_profiles=taxon_profiles))
+        
+        if len(categories) > 1:
+            self.has_categories = True
+        
+        for category_index, category in enumerate(categories, 1):
             
-            self.text_type_map[short_text_field_name] = text_type
-            self.short_text_fields.append(short_text_field_name)
+            types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles, category=category).order_by('category', 'position')
             
-            short_text_field_label = text_type.text_type
-            short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
-                                    required=False, label=short_text_field_label, validators=[json_compatible])
-            short_text_field.taxon_text_type = text_type
-            short_text_field.is_short_version = True
-
-            self.fields[short_text_field_name] = short_text_field
-            self.localizeable_fields.append(short_text_field_name)
-            self.fields[short_text_field_name].language = self.language
-            self.layoutable_simple_fields.append(short_text_field_name)
+            category_label = 'uncategorized'
+            if category:
+                category_label = category.name
+                
+            category_helper_field = forms.CharField(widget=forms.HiddenInput(), label=category_label, required=False)
+            category_helper_field.category = category
+            category_helper_field.is_category_field = True
+            category_helper_field.text_type_count = types.count()
+            category_helper_field.is_first_category = False
+            category_helper_field.is_last = False
             
+            if category_index == 2:
+                category_helper_field.is_first_category = True
+                
+            if not types:
+                category_helper_field.is_last = True
+            
+            self.fields[category_label] = category_helper_field
+            
+            for field_index, text_type in enumerate(types, 1):
 
-            if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
-                long_text_field_name = self.get_long_text_form_field_name(text_type)
-                self.text_type_map[long_text_field_name] = text_type
-                self.long_text_fields.append(long_text_field_name)
+                short_text_field_name = text_type.text_type
+                
+                self.text_type_map[short_text_field_name] = text_type
+                self.short_text_fields.append(short_text_field_name)
+                
+                short_text_field_label = text_type.text_type
+                short_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder': text_type.text_type}),
+                                        required=False, label=short_text_field_label, validators=[json_compatible])
+                short_text_field.taxon_text_type = text_type
+                short_text_field.is_short_version = True
+                short_text_field.is_last = False
 
-                long_text_field_label = text_type.text_type
-                long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
-                                        required=False, label=long_text_field_label, validators=[json_compatible])
-                long_text_field.taxon_text_type = text_type
-                long_text_field.is_short_version = False
+                self.fields[short_text_field_name] = short_text_field
+                self.localizeable_fields.append(short_text_field_name)
+                self.fields[short_text_field_name].language = self.language
+                self.layoutable_simple_fields.append(short_text_field_name)
+                
 
-                self.fields[long_text_field_name] = long_text_field
-                self.localizeable_fields.append(long_text_field_name)
-                self.fields[long_text_field_name].language = self.language
-                self.layoutable_simple_fields.append(long_text_field_name)
+                if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+                    long_text_field_name = self.get_long_text_form_field_name(text_type)
+                    self.text_type_map[long_text_field_name] = text_type
+                    self.long_text_fields.append(long_text_field_name)
 
-            if taxon_profile:
-                content = TaxonText.objects.filter(taxon_text_type=text_type,
-                                taxon_profile=taxon_profile).first()
-                if content:
-                    short_text_field.initial = content.text
+                    long_text_field_label = text_type.text_type
+                    long_text_field = forms.CharField(widget=forms.Textarea(attrs={'placeholder':text_type.text_type}),
+                                            required=False, label=long_text_field_label, validators=[json_compatible])
+                    long_text_field.taxon_text_type = text_type
+                    long_text_field.is_short_version = False
+                    long_text_field.is_last = False
 
+                    self.fields[long_text_field_name] = long_text_field
+                    self.localizeable_fields.append(long_text_field_name)
+                    self.fields[long_text_field_name].language = self.language
+                    self.layoutable_simple_fields.append(long_text_field_name)
+                    
+                if field_index == len(types):
                     if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
-                        long_text_field.initial = content.long_text
+                        long_text_field.is_last = True
+                    else:
+                        short_text_field.is_last = True
+
+                if taxon_profile:
+                    content = TaxonText.objects.filter(taxon_text_type=text_type,
+                                    taxon_profile=taxon_profile).first()
+                    if content:
+                        short_text_field.initial = content.text
+
+                        if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
+                            long_text_field.initial = content.long_text
     
     
     def get_long_text_form_field_name(self, text_type):
@@ -217,73 +272,3 @@ class AddTaxonProfilesNavigationEntryTaxonForm(AddSingleTaxonForm):
 class TaxonProfileStatusForm(GenericContentStatusForm):
     
     is_featured = forms.BooleanField(required=False)
-
-''' currently unused
-class SaveTaxonLocaleMixin:
-
-    def save_taxon_locale(self, language, taxon_source, name_uuid, name):
-        # save the vernacular name
-        models = TaxonomyModelRouter(taxon_source)
-
-        # check if the exact entry exists
-        exists = models.TaxonLocaleModel.objects.filter(taxon_id=name_uuid, language=language,
-            name=name).exists()
-        
-        if not exists:
-
-            if taxon_source == CUSTOM_TAXONOMY_SOURCE:
-
-                # check if the language exists
-                language_exists = models.TaxonLocaleModel.objects.filter(taxon_id=name_uuid,
-                                                                         language=language).exists()
-
-                # this represents the primary entry for this language
-                locale = None
-                
-                # if the language exists, overwrite the primary entry
-                if language_exists:
-                    # check if there is a preferred entry
-                    locale = models.TaxonLocaleModel.objects.filter(taxon_id=name_uuid, language=language,
-                                                                    preferred=True).first()
-
-                if not locale:
-                    locale = models.TaxonLocaleModel(
-                        taxon_id=name_uuid,
-                        language=language, preferred=True
-                    )
-
-                locale.name = name
-                locale.save()
-                
-
-            # non-writeable source, use MetaTaxonomy
-            else:
-
-                locale = MetaVernacularNames.objects.filter(taxon_source=taxon_source, name_uuid=name_uuid,
-                                                                language=language).first()
-                
-                if not locale:
-                    locale = MetaVernacularNames(
-                        taxon_source=lazy_taxon.taxon_source,
-                        name_uuid=lazy_taxon.name_uuid,
-                        taxon_latname=lazy_taxon.taxon_latname,
-                        taxon_author=lazy_taxon.taxon_author,
-                        taxon_nuid=lazy_taxon.taxon_nuid,
-                        language=language,
-                        preferred=True,
-                    )
-                
-
-                if locale.name != name:
-                    locale.name = name
-                    locale.save()
-
-        else:
-            # if a meta entry exists, delete it
-            meta = MetaVernacularNames.objects.filter(taxon_source=taxon_source, name_uuid=name_uuid,
-                                                      language=language, preferred=True).first()
-
-            if meta:
-                meta.delete()
-
-'''

@@ -3,44 +3,89 @@
 <form id="taxon-text-types-form" method="POST" action="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{% csrf_token %}
 	<div id="text-types-form-fields">
 		{% for field in form %}
-			<div {% if field.name in form.text_type_map %}id="ctype-{{ field.field.taxon_text_type|ctype_id }}-{{ field.field.taxon_text_type.id }}" data-text-type-id="{{ field.field.taxon_text_type.id }}" {% endif %} class="row">
-				<div class="col-12">
-					{% if field.is_hidden %}
-						{{ field }}
-					{% else %}
-						<div class="form-group {% if field.errors %}has-error{% endif %}">
-
-							<h4>
-								{{ field.label }} {% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
-								<div class="btn-group dropup">
-									<div class="dropdown">
-										<button id="dropdownMenu-{{ field.field.taxon_text_type.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-											{% trans 'Modify' %}
-										<span class="caret"></span>
-										</button>
-										<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ field.field.taxon_text_type.id }}">
-											<a data-url="{% url 'manage_taxon_text_type' meta_app.id field.field.taxon_text_type.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.field.taxon_text_type %}Edit {{ name }}{% endblocktrans %}</a>
-											<div class="dropdown-divider"></div>
-											<a data-url="{% url 'delete_taxon_text_type' field.field.taxon_text_type.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+			{% if field.field.is_category_field %}
+				{% if field.field.is_first_category %}
+					<div id="order-ctype-{{ field.field.category|ctype_id }}-container" class="object-order-flex mb-3">
+				{% endif %}
+				<div id="order-ctype-{{ text_type_content_type.id }}{% if field.field.category %}-{{ field.field.category.id }}{% endif %}-container" {% if field.field.category %}data-object-id="{{ field.field.category.id }}"{% endif %} class="text-type-category-container">
+			{% endif %}
+					<div {% if field.name in form.text_type_map %}id="ctype-{{ field.field.taxon_text_type|ctype_id }}-{{ field.field.taxon_text_type.id }}" data-object-id="{{ field.field.taxon_text_type.id }}" {% endif %} class="row">
+						<div class="col-12">
+							{% if field.is_hidden %}
+								{% if field.field.category %}
+									<h2>
+										{{ field.field.category }}
+										<div class="btn-group dropup">
+											<div class="dropdown">
+												<button id="dropdownMenu-{{ field.field.category.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+													{% trans 'Modify' %}
+												<span class="caret"></span>
+												</button>
+												<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ field.field.category.id }}">
+													<a data-url="{% url 'manage_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id field.field.category.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.category %}Edit {{ name }}{% endblocktrans %}</a>
+													<div class="dropdown-divider"></div>
+													<a data-url="{% url 'manage_taxon_text_types_order' text_type_content_type.id taxon_profiles.id field.field.category.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Manage text order' %}</a>
+													<div class="dropdown-divider"></div>
+													<a data-url="{% url 'delete_taxon_text_type_category' meta_app.id taxon_profile.id field.field.category.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+												</div>
+											</div>
 										</div>
-									</div>
+									</h2>
+
+									{% if not field.field.text_type_count %}
+										<div class="alert alert-info">{% trans 'No text types in this category yet.' %}</div>
+									{% endif %}
+								{% else %}
+									{% if field.field.is_category_field %}
+										<div class="mb-3">
+											<a href data-url="{% url 'manage_taxon_text_types_order' text_type_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage text order' %}</a>
+										</div>
+									{% endif %}
+								{% endif %}
+								{{ field }}
+							{% else %}
+								<div class="form-group {% if field.errors %}has-error{% endif %}">
+
+									<h4>
+										{{ field.label }}
+										{% if field.field.taxon_text_type %}
+											{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
+											<div class="btn-group dropup">
+												<div class="dropdown">
+													<button id="dropdownMenu-{{ field.field.taxon_text_type.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+														{% trans 'Modify' %}
+													<span class="caret"></span>
+													</button>
+													<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ field.field.taxon_text_type.id }}">
+														<a data-url="{% url 'manage_taxon_text_type' meta_app.id field.field.taxon_text_type.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.field.taxon_text_type %}Edit {{ name }}{% endblocktrans %}</a>
+														<div class="dropdown-divider"></div>
+														<a data-url="{% url 'delete_taxon_text_type' field.field.taxon_text_type.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+													</div>
+												</div>
+											</div>
+										{% endif %}
+									</h4>
+
+									{% if field.field.language %}
+										<img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" /> {{ field.field.language }}
+									{% endif %}
+
+									{{ field }}
+									{% if field.help_text %}
+										<small class="form-text text-muted">{{ field.help_text }}</small>
+									{% endif %}
 								</div>
-							</h4>
-
-							{% if field.field.language %}
-								<img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" /> {{ field.field.language }}
-							{% endif %}
-
-							{{ field }}
-							{% if field.help_text %}
-								<small class="form-text text-muted">{{ field.help_text }}</small>
-							{% endif %}
+								<br><br>
+							{% endif %}	
 						</div>
-						<br><br>
-					{% endif %}	
+					</div>
+			{% if field.field.is_last %}
 				</div>
-			</div>
+			{% endif %}
 		{% endfor %}
+		{% if form.has_categories %}
+			</div>
+		{% endif %}
 	</div>
 
 	<div class="row">
@@ -52,7 +97,7 @@
 			{% endif %}
 		</div>
 	</div>
-	<div class="row">
+	<div class="row my-3">
 		<div class="col-12 text-center">
 			<a href="{% url taxon_profiles.manage_url meta_app.id taxon_profiles|ctype_id taxon_profiles.id %}" class="btn btn-primary">{% blocktrans with name=taxon_profiles %}Back to {{ name }}{% endblocktrans  %}</a>
 
@@ -63,6 +108,13 @@
 
 <script>
 	(function(){
+		
+	const short_profile_field = document.getElementById('id_short_profile');
+
+	ClassicEditor.create( short_profile_field, { 
+		toolbar: ['bold', 'italic', 'underline', '|', 'undo', 'redo']
+	});
+
 	{% for field_name in form.layoutable_simple_fields %}
 		var field = document.getElementById('id_{{ field_name }}');
 

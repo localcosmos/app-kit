@@ -8,7 +8,7 @@ from app_kit.tests.common import test_settings, powersetdic
 from app_kit.tests.mixins import WithMetaApp, WithFormTest
 
 from app_kit.features.taxon_profiles.forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm,
-                                                   ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm)
+    ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm, ManageTaxonTextTypeCategoryForm)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonTextType, TaxonProfile, TaxonText)
 
@@ -345,3 +345,21 @@ class TestAddTaxonProfilesNavigationEntryTaxonForm(WithTaxonProfilesNavigation, 
         form.is_valid()
         
         self.assertEqual(form.errors, {})
+        
+        
+class TestManageTaxonTextTypeCategoryForm(WithMetaApp, WithFormTest, TenantTestCase):
+
+    @test_settings
+    def test_form(self):
+
+        taxon_profiles_link = self.get_generic_content_link(TaxonProfiles)
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        post_data = {
+            'name' : 'Test type',
+            'taxon_profiles' : taxon_profiles.id,
+        }
+
+        form = ManageTaxonTextTypeCategoryForm()
+
+        self.perform_form_test(ManageTaxonTextTypeCategoryForm, post_data)

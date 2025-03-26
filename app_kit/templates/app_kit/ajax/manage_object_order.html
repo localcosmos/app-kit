@@ -1,0 +1,65 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+{% block title %}{% trans 'Manage order' %}{% endblock %}
+
+{% block body %}
+	<div class="alert alert-info my-3">
+		{% trans 'Drag and drop for ordering.' %}
+	</div>
+	<hr>
+	<div id="objects-for-ordering" class="row p-3" data-store-positions-url="{% url 'store_app_kit_object_order' content_type.id %}">
+		{% for object in order_objects %}
+			<div id="order-object-{{ object.id }}" data-object-id="{{ object.id }}" class="col-12 category-order-entry my-1 p-3">
+				{{ object }}
+			</div>
+		{% endfor %}
+	</div>
+{% endblock %}
+
+
+{% block footer %}
+		{% include 'localcosmos_server/modals/footers/close.html' %}
+{% endblock %}
+
+{% block script %}
+	<script>
+
+		(function(){
+			const container = document.getElementById('objects-for-ordering');
+
+			// enable drag and drop
+			const sortable = Sortable.create(container, {
+				onEnd: function (evt) {
+					
+					var itemEl = $(evt.item);  // dragged HTMLElement
+					positionmanager.store_positions(itemEl);
+
+					var $parent = itemEl.parent(); 
+
+					var order = [];
+
+					$parent.children().each(function(){
+						order.push(parseInt($(this).attr("data-object-id")));
+					});
+
+					// also sort text fields
+					const containerId = "{{ container_id }}";
+					const elementsContainer = document.getElementById(containerId);
+
+					const elements = elementsContainer.children;
+
+					for (let c=0; c<elements.length; c++){
+						let element = elements[c];
+
+						if (element.hasAttribute("data-object-id")){
+							let element_id = parseInt(element.getAttribute("data-object-id"));
+							element.style.order = order.indexOf(element_id);
+						}
+					}
+				}
+			});
+		})()
+
+	</script>
+{% endblock %}

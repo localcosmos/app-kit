@@ -1825,7 +1825,32 @@ class AppReleaseBuilder(AppBuilderBase):
                     
 
         return is_inactive
+    
 
+    def get_localized_taxonprofile_text(self, text, glossarized_locale, app_locale):
+        localized_text = None
+        
+        if text:
+            if text in glossarized_locale:
+                localized_text = glossarized_locale[text]
+            elif text in app_locale:
+                localized_text = app_locale[text]
+            
+        return localized_text
+        
+    def get_localized_taxonprofile_taxon_text(self, text_dict, glossarized_locale, app_locale):
+        
+        localized_short_text = None
+        localized_long_text = None
+                        
+        if text_dict['shortText']:
+            localized_short_text = self.get_localized_taxonprofile_text(text_dict['shortTextKey'], glossarized_locale, app_locale)
+            
+        if text_dict['longText']:
+            localized_long_text = self.get_localized_taxonprofile_text(text_dict['longTextKey'], glossarized_locale, app_locale)
+        
+        return localized_short_text, localized_long_text
+        
     def _build_TaxonProfiles(self, app_generic_content):
 
         taxon_profiles = app_generic_content.generic_content        
@@ -1977,25 +2002,34 @@ class AppReleaseBuilder(AppBuilderBase):
                     
                     localized_profile_json = profile_json.copy()
                     
+                    localized_short_profile = self.get_localized_taxonprofile_text(localized_profile_json['short_profile'], glossarized_locale, app_locale)
+                    localized_profile_json['short_profile'] = localized_short_profile
+                    
                     for index, text_dict in enumerate(profile_json['texts'], 0):
                         
-                        localized_short_text = None
-                        localized_long_text = None
-                        
-                        if text_dict['shortText'] and text_dict['shortTextKey'] in glossarized_locale:
-                            localized_short_text = glossarized_locale[text_dict['shortTextKey']]
-                        elif text_dict['shortText'] and text_dict['shortTextKey'] in app_locale:
-                            localized_short_text = app_locale[text_dict['shortTextKey']]
+                        localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
                             
                         localized_profile_json['texts'][index]['shortText'] = localized_short_text
-                        
-                        if text_dict['longText'] and text_dict['longTextKey'] in glossarized_locale:
-                            localized_long_text = glossarized_locale[text_dict['longTextKey']]
-                        elif text_dict['longText'] and text_dict['longTextKey'] in app_locale:
-                            localized_long_text = app_locale[text_dict['longTextKey']]
-                            
-                        
                         localized_profile_json['texts'][index]['longText'] = localized_long_text
+                        
+                    
+                    for c_index, category in enumerate(profile_json['categorized_texts'], 0):
+                        
+                        localized_category = category.copy()
+                        
+                        localized_category_name = self.get_localized_taxonprofile_text(category['category'], glossarized_locale, app_locale)
+                            
+                        if localized_category:
+                            localized_category['category'] = localized_category_name
+                        
+                        for index, text_dict in enumerate(category['texts'], 0):
+                            localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
+                            
+                            localized_category['texts'][index]['shortText'] = localized_short_text
+                            localized_category['texts'][index]['longText'] = localized_long_text
+                            
+                        localized_profile_json['categorized_texts'][c_index] = localized_category
+                    
                     
                     absolute_localized_taxonprofiles_folder = os.path.join(
                         app_absolute_taxonprofiles_path, language_code)

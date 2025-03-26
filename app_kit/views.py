@@ -1609,6 +1609,32 @@ class ChangeGenericContentPublicationStatus(MetaAppMixin, FormView):
         return self.render_to_response(context)
 
 
+class ManageObjectOrder(TemplateView):
+
+    template_name = 'app_kit/ajax/manage_object_order.html'
+    
+    def get_queryset(self):
+        return self.model.objects.all()
+    
+    def get_container_id(self):
+        return 'order-ctype-{0}-container'.format(self.content_type.id)
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_order_objects(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_order_objects(self, **kwargs):
+        self.content_type = ContentType.objects.get(pk=kwargs['content_type_id'])
+        self.model = self.content_type.model_class()
+        self.order_objects = self.get_queryset()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['order_objects'] = self.order_objects
+        context['content_type'] = self.content_type
+        context['container_id'] = self.get_container_id()
+        return context
 
 # LEGAL
 class IdentityMixin:

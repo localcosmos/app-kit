@@ -1,0 +1,36 @@
+{% load i18n localcosmos_tags %}
+{% if success is True %}
+	<script>
+
+		// reload taxon texts form
+		$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon_source taxon_profile.name_uuid %}", function(html){
+			$('#taxontexts').html(html);
+			ajaxify('taxontexts');
+
+		});
+		
+		$("#Modal").modal("hide");
+	</script>
+{% else %}
+	<form method="POST" action="{% if category %}{% url 'manage_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id category.id %}{% else %}{% url 'create_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id %}{% endif %}" class="xhr">{% csrf_token %}
+		<div class="modal-header">
+			<h5 class="modal-title">{% if category %}{% blocktrans with name=category %}Edit {{ name }}{% endblocktrans %}{% else %}{% trans 'Add new text category' %}{% endif %}</h5>
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		</div>
+		<div class="modal-body">
+			<p>
+				{% render_bootstrap_form form %}
+			</p>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+			<button type="submit" class="btn btn-outline-primary">{% if category %}{% trans 'Save' %}{% else %}{% trans 'Add' %}{% endif %}</button>
+		</div>
+	</form>
+
+	<script>
+		$("#Modal").modal("show");
+	</script>
+{% endif %}

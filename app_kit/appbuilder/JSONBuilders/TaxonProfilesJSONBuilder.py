@@ -133,7 +133,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
             'nodeDecisionRules' : [],
             'traits' : [], # a collection of traits (matrix filters)
+            'short_profile' : None,
             'texts': [],
+            'categorized_texts' : [],
             'images' : images,
             'synonyms' : [],
             'templateContents' : [],
@@ -251,30 +253,45 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         '''
 
         if db_profile:
+            
+            taxon_profile_json['short_profile'] = db_profile.short_profile
 
-            for text in db_profile.texts():
+            for category_name, text_list in db_profile.categorized_texts().items():
+                
+                categorized_texts_json = {
+                    'category' : category_name,
+                    'texts' : [],
+                }
+                
+                for text in text_list:
 
-                if text.text or text.long_text:
+                    if text.text or text.long_text:
 
-                    text_json = {
-                        'taxonTextType' : text.taxon_text_type.text_type,
-                        'shortText' : None,
-                        'shortTextKey' : None,
-                        'longText' : None,
-                        'longTextKey' : None
-                    }
+                        text_json = {
+                            'taxonTextType' : text.taxon_text_type.text_type,
+                            'shortText' : None,
+                            'shortTextKey' : None,
+                            'longText' : None,
+                            'longTextKey' : None
+                        }
 
-                    if text.text:
-                        text_json['shortText'] = text.text
-                        text_json['shortTextKey']  = self.generic_content.get_short_text_key(text)
+                        if text.text:
+                            text_json['shortText'] = text.text
+                            text_json['shortTextKey']  = self.generic_content.get_short_text_key(text)
 
-                    if text.long_text:
-                        text_json['longText'] = text.long_text
-                        text_json['longTextKey'] = self.generic_content.get_long_text_key(text)
+                        if text.long_text:
+                            text_json['longText'] = text.long_text
+                            text_json['longTextKey'] = self.generic_content.get_long_text_key(text)
 
 
-
-                    taxon_profile_json['texts'].append(text_json)
+                        if category_name == 'uncategorized':
+                            taxon_profile_json['texts'].append(text_json)
+                            
+                        else:
+                            categorized_texts_json['texts'].append(text_json)
+                    
+                if category_name != 'uncategorized':
+                    taxon_profile_json['categorized_texts'].append(categorized_texts_json)
 
         # template_contents
         template_contents = TemplateContent.objects.filter_by_taxon(profile_taxon)

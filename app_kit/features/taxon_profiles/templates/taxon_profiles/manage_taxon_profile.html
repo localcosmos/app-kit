@@ -176,10 +176,11 @@
 			</div>
 		</div>
 		<hr>
-		<div class="row">
+		<div class="row my-3">
 			<div class="col-12">
 				<a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
-				<a href data-url="{% url 'manage_taxon_text_types_order' taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage text order' %}</a>
+				<a href data-url="{% url 'create_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text category' %}</a>
+				<a href data-url="{% url 'manage_taxon_text_type_category_order' category_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage category order' %}</a>
 			</div>
 		</div>
 	</div>

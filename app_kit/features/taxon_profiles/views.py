@@ -9,11 +9,13 @@ from django.http import JsonResponse
 
 from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
-                    TaxonProfileStatusForm)
-from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
-                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
+                    TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm)
 
-from app_kit.views import ManageGenericContent, ManageContentImage, ManageContentImageWithText, DeleteContentImage
+from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
+                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory)
+
+from app_kit.views import (ManageGenericContent, ManageContentImage, ManageContentImageWithText, DeleteContentImage,
+                           ManageObjectOrder)
 from app_kit.view_mixins import MetaAppFormLanguageMixin, MetaAppMixin
 from app_kit.models import ContentImage
 from app_kit.forms import GenericContentStatusForm
@@ -267,6 +269,11 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = self.ajax_template_name
     
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['short_profile'] = self.taxon_profile.short_profile
+        return initial
+    
 
     def get_form(self, form_class=None):
         if form_class is None:
@@ -333,10 +340,18 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
             taxon_latname=self.taxon_profile.taxon_latname).exclude(pk=self.taxon_profile.pk)
         context['possible_duplicates'] = possible_duplicates
+        
+        context['category_content_type'] = ContentType.objects.get_for_model(TaxonTextTypeCategory)
+        context['text_type_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
         return context
 
 
     def form_valid(self, form):
+        
+        short_profile = form.cleaned_data.get('short_profile', None)
+        if short_profile:
+            self.taxon_profile.short_profile = short_profile
+            self.taxon_profile.save()
 
         # iterate over all text types and save them
         for field_name, value in form.cleaned_data.items():
@@ -624,23 +639,30 @@ class DeleteTaxonTextType(AjaxDeleteView):
     template_name = 'taxon_profiles/ajax/delete_taxon_text_type.html'
 
 
-class ManageTaxonTextTypesOrder(TemplateView):
+class ManageTaxonTextTypesOrder(ManageObjectOrder):
+    
+    def get_container_id(self):
+        
+        container_id = 'order-ctype-{0}'.format(self.content_type.id)
+        if 'taxon_text_type_category_id' in self.kwargs:
+            container_id = '{0}-{1}'.format(container_id, self.kwargs['taxon_text_type_category_id'])
+            
+        container_id = '{0}-container'.format(container_id)
+        return container_id
 
-    template_name = 'taxon_profiles/ajax/manage_text_types_order.html'
-
-    @method_decorator(ajax_required)
-    def dispatch(self, request, *args, **kwargs):
-        self.set_taxon_profiles(**kwargs)
-        return super().dispatch(request, *args, **kwargs)
-
-    def set_taxon_profiles(self, **kwargs):
-        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['text_types'] = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles)
-        context['text_types_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
-        return context
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        taxon_profiles = TaxonProfiles.objects.get(pk=self.kwargs['taxon_profiles_id'])
+        
+        queryset = queryset.filter(taxon_profiles=taxon_profiles)
+        
+        category = None
+        if 'taxon_text_type_category_id' in self.kwargs:
+            category = TaxonTextTypeCategory.objects.get(pk=self.kwargs['taxon_text_type_category_id'])
+        
+        queryset = queryset.filter(category=category)
+        
+        return queryset
 
 
 class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
@@ -1122,3 +1144,92 @@ class ChangeNavigationEntryPublicationStatus(MetaAppMixin, FormView):
         context['success'] = True
         
         return self.render_to_response(context)
+    
+    
+class ManageTaxonTextTypeCategory(MetaAppFormLanguageMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/manage_text_type_category.html'
+    form_class = ManageTaxonTextTypeCategoryForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_category(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_category(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        
+        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+        #taxon = get_taxon(taxon_profile.taxon_source, taxon_profile.name_uuid)
+        self.taxon = LazyTaxon(instance=self.taxon_profile)
+        
+        self.category = None
+        
+        if 'taxon_text_type_category_id' in kwargs:
+            self.category = TaxonTextTypeCategory.objects.get(pk=kwargs['taxon_text_type_category_id'])
+            
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_profile'] = self.taxon_profile
+        context['category'] = self.category
+        context['success'] = False
+        context['created'] = False
+        return context
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['taxon_profiles'] = self.taxon_profiles
+        return initial
+
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        return form_class(instance=self.category, **self.get_form_kwargs())
+    
+    
+    def form_valid(self, form):
+        
+        created = False
+        if not self.category:
+            created = True
+            self.category = TaxonTextTypeCategory(
+                taxon_profiles=self.taxon_profiles,
+            )
+            
+        self.category.name = form.cleaned_data['name']
+        self.category.save()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+        context['created'] = created
+        
+        return self.render_to_response(context)
+
+
+class DeleteTaxonTextTypeCategory(MetaAppMixin, AjaxDeleteView):
+    
+    model = TaxonTextTypeCategory
+    template_name = 'taxon_profiles/ajax/delete_taxon_text_type_category.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        taxon_profiles = self.object.taxon_profiles
+        taxon_profile = TaxonProfile.objects.get(pk=self.kwargs['taxon_profile_id'])
+        context['taxon_profiles'] = taxon_profiles
+        context['taxon_profile'] = taxon_profile
+
+        return context
+    
+
+class ManageTaxonTextTypeCategoryOrder(ManageObjectOrder):
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        taxon_profiles = TaxonProfiles.objects.get(pk=self.kwargs['taxon_profiles_id'])
+        queryset = queryset.filter(taxon_profiles=taxon_profiles)
+        
+        return queryset

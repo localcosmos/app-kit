@@ -4,7 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from app_kit.tests.common import test_settings
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
-        TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
+        TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa,
+        TaxonTextTypeCategory)
         
 from app_kit.models import MetaAppGenericContent
 
@@ -190,6 +191,7 @@ class TestTaxonProfiles(WithTaxonProfiles, WithMetaApp, WithNatureGuide, TenantT
 
         long_text_key = taxon_profiles.get_long_text_key(taxon_text)
         self.assertEqual(long_text_key, 'taxon_text_{0}_{1}_long'.format(text_type.id, taxon_text.id))
+        
 
 
 class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
@@ -212,6 +214,51 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
 
         self.assertEqual(texts.count(), 1)
         self.assertEqual(texts[0], taxon_text)
+        
+    @test_settings
+    def test_categorized_texts(self):
+        
+        taxon_profiles = self.get_taxon_profiles()
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+
+        text_type_name = 'Test Text Type'
+        taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
+                                            text_type_name, self.short_text_content, self.long_text_content)
+
+
+        category_name = 'test cat'
+        category = TaxonTextTypeCategory(
+            taxon_profiles=taxon_profiles,
+            name=category_name, 
+        )
+        category.save()
+        
+        cat_type_name = 'cat type'
+        # create a text type with text and add it to the category
+        cat_text_type, created = TaxonTextType.objects.get_or_create(taxon_profiles=taxon_profiles,
+                                                                 text_type=cat_type_name)
+        
+        cat_text_type.category = category
+        cat_text_type.save()
+
+        cat_taxon_text = TaxonText(
+            taxon_profile=taxon_profile,
+            taxon_text_type=cat_text_type,
+            text='cat text',
+        )
+
+        cat_taxon_text.save()
+        
+        categorized_texts = taxon_profile.categorized_texts()       
+        
+        self.assertIn('uncategorized', categorized_texts)
+        self.assertEqual(list(categorized_texts['uncategorized']), [taxon_text])
+        
+        self.assertIn(category_name, categorized_texts)
+        self.assertEqual(list(categorized_texts[category_name]), [cat_taxon_text])
         
 
     @test_settings
@@ -811,4 +858,46 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonPro
         for node in nodes:
             node.refresh_from_db()
             self.assertEqual(node.publication_status, ('publish'))
+
+
+class TestTaxonTextTypeCategory(WithTaxonProfiles, WithMetaApp, TenantTestCase):
+    
+    @test_settings
+    def test_str(self):
         
+        taxon_profiles = self.get_taxon_profiles()
+        
+        name = 'Test category'
+        
+        category = TaxonTextTypeCategory(
+            taxon_profiles=taxon_profiles,
+            name=name,
+        )
+        
+        category.save()
+        
+        self.assertEqual(str(category), name)
+    
+    
+    @test_settings
+    def test_taxon_text_type(self):
+        
+        taxon_profiles = self.get_taxon_profiles()
+        
+        category = TaxonTextTypeCategory(
+            taxon_profiles=taxon_profiles,
+            name='category name',
+        )
+        
+        category.save()
+        
+        
+        text_type = TaxonTextType(
+            taxon_profiles=taxon_profiles,
+            text_type='Test text type',
+            category=category,
+        )
+        
+        text_type.save()
+        
+        self.assertEqual(text_type.category, category)

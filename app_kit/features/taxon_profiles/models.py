@@ -160,6 +160,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     LazyTaxonClass = LazyTaxon
 
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
+    
+    short_profile = models.TextField(null=True)
 
     publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
     
@@ -169,6 +171,24 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
     def texts(self):
         return TaxonText.objects.filter(taxon_profile=self).order_by('taxon_text_type__position')
+    
+    def categorized_texts(self):
+        
+        categorized_texts = {
+            'uncategorized' : TaxonText.objects.filter(taxon_profile=self,
+                        taxon_text_type__category=None).order_by('taxon_text_type__position'),
+        }
+        
+        categories = TaxonTextTypeCategory.objects.filter(taxon_profiles=self.taxon_profiles)
+        
+        for category in categories:
+            query = TaxonText.objects.filter(taxon_profile=self,
+                        taxon_text_type__category=category).order_by('taxon_text_type__position')
+            
+
+            categorized_texts[category.name] = query
+        
+        return categorized_texts
 
     '''
     this checks taxon texts and vernacularnames[latter missing]
@@ -196,10 +216,25 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
         unique_together=('taxon_profiles', 'taxon_source', 'name_uuid')
 
 
+class TaxonTextTypeCategory(models.Model):
+    
+    taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
+    name = models.CharField(max_length=355)
+    position = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return '{0}'.format(self.name)
+
+    class Meta:
+        unique_together = ('taxon_profiles', 'name')
+        ordering = ['position']
+
+
 class TaxonTextType(models.Model):
 
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
     text_type = models.CharField(max_length=255) # the name of the text_type
+    category = models.ForeignKey(TaxonTextTypeCategory, null=True, blank=True, on_delete=models.SET_NULL)
     position = models.IntegerField(default=0)
     
     def __str__(self):
@@ -207,7 +242,7 @@ class TaxonTextType(models.Model):
 
     class Meta:
         unique_together = ('taxon_profiles', 'text_type')
-        ordering = ['position']
+        ordering = ['category', 'position']
 
 
 class TaxonText(models.Model):

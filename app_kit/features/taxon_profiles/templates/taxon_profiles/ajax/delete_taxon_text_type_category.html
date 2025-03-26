@@ -1,0 +1,15 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n %}
+
+{% block success_js %}
+	<script>
+		// reload taxon texts form
+		$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon_source taxon_profile.name_uuid %}", function(html){
+			$('#taxontexts').html(html);
+			ajaxify('taxontexts');
+
+		});
+
+		$("#Modal").modal("hide");
+	</script>
+{% endblock %}

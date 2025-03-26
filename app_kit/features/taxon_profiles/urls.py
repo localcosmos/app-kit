@@ -17,7 +17,10 @@ urlpatterns = [
     path('manage-taxon-text-type/<int:meta_app_id>/<int:taxon_text_type_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
         views.ManageTaxonTextType.as_view(), name='manage_taxon_text_type'),
     path('delete-taxon-text-type/<int:pk>/', views.DeleteTaxonTextType.as_view(), name='delete_taxon_text_type'),
-    path('manage-taxon-text-types-order/<int:taxon_profiles_id>/', views.ManageTaxonTextTypesOrder.as_view(), name='manage_taxon_text_types_order'),
+    path('manage-taxon-text-types-order/<int:content_type_id>/<int:taxon_profiles_id>/', views.ManageTaxonTextTypesOrder.as_view(),
+         name='manage_taxon_text_types_order'),
+    path('manage-taxon-text-types-order/<int:content_type_id>/<int:taxon_profiles_id>/<int:taxon_text_type_category_id>/',
+         views.ManageTaxonTextTypesOrder.as_view(), name='manage_taxon_text_types_order'),
     # change publication status
     path('change-taxon-profile-publication-status/<int:meta_app_id>/<int:taxon_profile_id>/',
          views.ChangeTaxonProfilePublicationStatus.as_view(), name='change_taxon_profile_publication_status'),
@@ -78,7 +81,16 @@ urlpatterns = [
     # prerender navigation
     path('manage-taxon-profiles-navigation/prerender/<int:meta_app_id>/<int:taxon_profiles_id>/',
          views.PrerenderTaxonProfilesNavigation.as_view(), name='prerender_taxonprofiles_navigation'),
-    # navigatoin entry publication status
+    # navigation entry publication status
     path('manage-taxon-profiles-navigation-entry/publication-status/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
          views.ChangeNavigationEntryPublicationStatus.as_view(), name='change_taxonprofiles_navigation_entry_publication_status'),
+    # categories
+    path('create-taxon-text-type-category/<int:meta_app_id>/<int:taxon_profiles_id>/<int:taxon_profile_id>/',
+         views.ManageTaxonTextTypeCategory.as_view(), name='create_taxon_text_type_category'),
+    path('manage-taxon-text-type-category/<int:meta_app_id>/<int:taxon_profiles_id>/<int:taxon_profile_id>/<int:taxon_text_type_category_id>/',
+        views.ManageTaxonTextTypeCategory.as_view(), name='manage_taxon_text_type_category'),
+    path('delete-taxon-text-type-category/<int:meta_app_id>/<int:taxon_profile_id>/<int:pk>/', views.DeleteTaxonTextTypeCategory.as_view(),
+         name='delete_taxon_text_type_category'),
+     path('manage-taxon-text-type-category-order/<int:content_type_id>/<int:taxon_profiles_id>/', views.ManageTaxonTextTypeCategoryOrder.as_view(),
+          name='manage_taxon_text_type_category_order'),
 ]
