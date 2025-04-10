@@ -2,7 +2,11 @@ from django.db import models
 
 from django.utils.translation import gettext_lazy as _, gettext as __
 
-from app_kit.models import ContentImageMixin
+from django.contrib.contenttypes.fields import GenericRelation
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+from app_kit.models import ContentImageMixin, AppKitSeoParameters
 from app_kit.generic import GenericContent, PUBLICATION_STATUS
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
@@ -168,6 +172,10 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     is_featured = models.BooleanField(default=False)
 
     tags = TaggableManager()
+    
+    seo_parameters = GenericRelation(AppKitSeoParameters)
+    
+    updated_at = models.DateTimeField(auto_now=True)
 
     def texts(self):
         return TaxonText.objects.filter(taxon_profile=self).order_by('taxon_text_type__position')
@@ -214,6 +222,16 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     class Meta:
         # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
         unique_together=('taxon_profiles', 'taxon_source', 'name_uuid')
+        
+        
+# Signal to clean up SeoParameters
+@receiver(post_delete, sender=TaxonProfile)
+def delete_seo_parameters(sender, instance, **kwargs):
+    content_type = ContentType.objects.get_for_model(instance)
+    AppKitSeoParameters.objects.filter(
+        content_type=content_type,
+        object_id=instance.id
+    ).delete()
 
 
 class TaxonTextTypeCategory(models.Model):

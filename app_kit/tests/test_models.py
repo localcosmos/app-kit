@@ -126,7 +126,6 @@ class TestCreateMetaApp(WithMedia, TenantTestCase):
         self.assertEqual(app.primary_language, primary_language)
         self.assertEqual(app.name, name)
         self.assertEqual(app.url, None)
-        self.assertEqual(app.apk_url, None)
         self.assertEqual(app.ipa_url, None)
         self.assertEqual(app.pwa_zip_url, None)
         self.assertEqual(app.published_version, None)
@@ -786,7 +785,6 @@ class TestMetaApp(WithMetaApp, WithMedia, TenantTestCase):
 
         self.assertTrue(self.meta_app.published_version != None)
         self.assertTrue(self.meta_app.app.published_version != None)
-        self.assertTrue(self.meta_app.app.apk_url != None)
         #self.assertTrue(self.meta_app.app.ipa_url != None)
         self.assertTrue(self.meta_app.app.pwa_zip_url != None)
 

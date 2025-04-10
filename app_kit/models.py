@@ -30,13 +30,11 @@ from taxonomy.lazy import LazyTaxon, LazyTaxonList
 
 from .utils import import_module
 
-from content_licencing.models import ContentLicenceRegistry
-
 from django_tenants.utils import get_tenant_model, get_tenant_domain_model
 
 from app_kit.app_kit_api.models import AppKitJobs
 
-from localcosmos_server.models import App, SecondaryAppLanguages
+from localcosmos_server.models import App, SecondaryAppLanguages, SeoParametersAbstract
 
 from PIL import Image, ImageFile, ImageColor
 ImageFile.LOAD_TRUNCATED_IMAGES = settings.APP_KIT_LOAD_TRUNCATED_IMAGES
@@ -723,8 +721,6 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
 
             # set aab_url
             self.app.aab_url = appbuilder.aab_published_url()
-            # set apk url
-            self.app.apk_url = appbuilder.apk_published_url()
             # set ipa_url
             self.app.ipa_url = appbuilder.ipa_published_url()
             # set pwa_zip_url
@@ -1108,6 +1104,10 @@ class LocalizedContentImage(ContentImageCommon, models.Model):
     class Meta:
         unique_together = ('content_image', 'language_code')
 
+
+
+class AppKitSeoParameters(SeoParametersAbstract):
+    pass
 
 '''--------------------------------------------------------------------------------------------------------------
     META CACHE

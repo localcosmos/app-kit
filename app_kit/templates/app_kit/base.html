@@ -245,7 +245,7 @@
 													<p>
 														<strong>{% trans 'Web app .zip' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.pwa_zip_url }}" target="_blank" download>{% trans 'Download' %}</a><br>
 
-														<strong>{% trans 'Android .apk' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a><br>
+														<strong>{% trans 'Android .aab' %}:</strong> <a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.aab_url }}" target="_blank">{% trans 'Download' %}</a><br>
 								
 														<strong>{% trans 'iOS .ipa' %}:</strong>
 														{% if meta_app.app.ipa_url %}
@@ -272,9 +272,9 @@
 											{% endif %}
 											<br>
 
-										<strong>{% trans 'Android .apk' %}:</strong>
-											{% if meta_app.app.apk_url %}
-												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.apk_url }}" target="_blank">{% trans 'Download' %}</a>
+										<strong>{% trans 'Android .aab' %}:</strong>
+											{% if meta_app.app.aab_url %}
+												<a href="{{request.scheme}}://{{ meta_app.domain }}{{ meta_app.app.aab_url }}" target="_blank">{% trans 'Download' %}</a>
 											{% else %}
 												<span class="text-danger">{% trans 'not available' %}</span>
 											{% endif %}

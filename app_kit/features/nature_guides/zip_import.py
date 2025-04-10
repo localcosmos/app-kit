@@ -793,7 +793,8 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                 if meta_node_image_path:
                     meta_node_image_licence_path = self.get_image_licence_path_from_abspath(
                         meta_node_image_path)
-                    self.save_content_image(meta_node_image_path, meta_node, meta_node_image_licence_path)
+                    meta_node_image_licence = self.get_licence_from_path(meta_node_image_licence_path)
+                    self.save_content_image(meta_node_image_path, meta_node, meta_node_image_licence)
 
                 # add nodelink to registry
                 #self.nodelink_registry['{0}__to__{1}'.format(parent_node_name, child_name)] = nodelink
@@ -1043,7 +1044,8 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                                         
                                         if image_abspath:
                                             image_licence_path = self.get_image_licence_path_from_abspath(image_abspath)
-                                            self.save_content_image(image_abspath, space, image_licence_path)
+                                            image_licence = self.get_licence_from_path(image_licence_path)
+                                            self.save_content_image(image_abspath, space, image_licence)
                                             
 
                                     node_space, created = NodeFilterSpace.objects.get_or_create(

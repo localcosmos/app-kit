@@ -208,17 +208,8 @@ class AddExistingGenericContentForm(forms.Form):
 class MetaAppOptionsForm(GenericContentOptionsForm):
 
     global_options_fields = ['allow_user_create_matrices', 'allow_anonymous_observations',
-                             'localcosmos_private', 'localcosmos_private_api_url',
-                             'do_not_build_large_images']
-
-    '''
-    allow_user_create_matrices = forms.BooleanField(required=False,
-                        label=_('allow the user to create his own button matrices'),
-                        help_text=_('only applies if your app contains at least one Button Matrix'))
-    '''
-    do_not_build_large_images = forms.BooleanField(required=False,
-                        label=_('Do not build large image sizes'),
-                        help_text=_('Reduces app package sizes. Use this option if your packages exceed the app store limits.'))
+                             'localcosmos_private', 'localcosmos_private_api_url']
+    
     allow_anonymous_observations = forms.BooleanField(required=False,
                         label=_('Allow unregistered users to report observations'),
                         help_text=_('Only applies if your app contains observation forms.'))
@@ -419,6 +410,8 @@ class BuildAppForm(forms.Form):
 from django.core.validators import FileExtensionValidator
 class ZipImportForm(forms.Form):
     zipfile = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
+    ignore_nonexistent_images = forms.BooleanField(label=_('Ignore non-existent images'), required=False,
+                        help_text=_('If checked, the import will ignore images that are not in the zip file.'))
 
 from taggit.forms import TagField
 class TagAnyElementForm(forms.Form):

@@ -5,9 +5,10 @@ from app_kit.generic_content_zip_import import GenericContentZipImporter
 
 from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
 
+from openpyxl.utils import get_column_letter
 
-import os, openpyxl
-
+GLOSSARY_SHEET_NAME = 'Glossary'
+GLOSSARY_IMAGES_SHEET_NAME = 'Glossary Images'
 
 '''
     Glossary as Spreadsheet
@@ -15,98 +16,137 @@ import os, openpyxl
 '''
 
 class GlossaryZipImporter(GenericContentZipImporter):
-
-    required_additional_files = {}
-
-
-    def validate(self):
-
-        self.errors = []
-        self.check_file_presence()
-
-        self.filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
-        if self.filepath is not None:
-            self.workbook = openpyxl.load_workbook(self.filepath)
-            self.workbook_filename = os.path.basename(self.filepath)
-            self.validate_spreadsheet()
-
-        is_valid = len(self.errors) == 0
-
-        return is_valid
     
+    images_sheet_name = GLOSSARY_IMAGES_SHEET_NAME
+    
+    def validate_definition_rows(self):
+        
+        glossary_sheet = self.get_sheet_by_name(GLOSSARY_SHEET_NAME)
+        
+        for row_index, row in enumerate(glossary_sheet.iter_rows(max_row=1), 1):
+            
+            col_A_value = self.get_stripped_cell_value_lowercase(row[0].value)
+            col_B_value = self.get_stripped_cell_value_lowercase(row[1].value)
+            col_C_value = self.get_stripped_cell_value_lowercase(row[2].value)
+
+            if col_A_value != 'term':
+                message = _('Cell content has to be "Term", not %(value)s') % {
+                    'value': row[0].value
+                }
+                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 'A', 0, message)
+
+
+            if col_B_value != 'synonyms (optional)':
+                message = _('Cell content has to be "Synonyms (optional)", not %(value)s') % {
+                    'value': row[1].value
+                }
+                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 'B', 0, message)
+                
+
+            if col_C_value != 'definition':
+                message = _('Cell content has to be "Definition", not %(value)s') % {
+                    'value' : row[2].value
+                }
+                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 'C', 0, message)
+
+    
+    def validate_content(self):
+        
+        glossary_sheet = self.get_sheet_by_name(GLOSSARY_SHEET_NAME)
+        
+        found_synonyms = {}
+        found_terms = []
+        
+        for row_index, row in enumerate(glossary_sheet.iter_rows(min_row=2), 1):
+            term = self.get_stripped_cell_value(row[0].value)
+            
+            if term:
+                term_lower = term.lower()
+                if term_lower in found_terms:
+                    message = _('Term %(term)s is not unique.') % {
+                        'term': term
+                    }
+                    self.add_cell_error(self.workbook_filename, GLOSSARY_SHEET_NAME, 'A', row_index, message)
+                else:
+                    found_terms.append(term_lower)
+            
+            synonyms = row[1].value
+            definition = self.get_stripped_cell_value(row[2].value)
+            
+            synonyms_list = []
+            
+            if synonyms:
+                synonyms_list = synonyms.split('|')
+                synonyms_list = [s.strip() for s in synonyms_list]
+                
+            self.validate_glossary_entry(term, synonyms_list, definition, row_index)
+                
+            for synonym in synonyms_list:
+                
+                synonym = synonym.lower()
+                
+                if synonym not in found_synonyms:
+                    found_synonyms[synonym] = term
+
+                else:
+                    if found_synonyms[synonym] != term:
+                        message = _('Unambiguous synonym: %(synonym)s is mapped to %(term)s and %(found_synonym)s') % {
+                            'synonym': synonym,
+                            'term': term,
+                            'found_synonym': found_synonyms[synonym]
+                        }
+                                    
+                        self.add_cell_error(self.workbook_filename, GLOSSARY_SHEET_NAME, 'B', 0, message)
+                        
+        for term in found_terms:
+            
+            if term.lower() in found_synonyms:
+                message = _('[%(filename)s][Sheet:%(sheet_name)s] Term %(term)s is also listed as a synonym.') % {
+                    'filename': self.workbook_filename,
+                    'sheet_name': GLOSSARY_SHEET_NAME,
+                    'term': term
+                }
+                self.errors.append(message)
+            
     # self.workbook is available
     def validate_spreadsheet(self):
+        
+        taxon_profiles_sheet = self.get_sheet_by_name(GLOSSARY_SHEET_NAME)
+        
+        if not taxon_profiles_sheet:
+            message = _('Sheet "%(sheet_name)s" not found in the spreadsheet') % {
+                'sheet_name': GLOSSARY_SHEET_NAME,
+            }
+            self.errors.append(message)
+        
+        else:
+            self.validate_definition_rows()
+            self.validate_content()
+        
 
-        glossary_sheet = self.get_sheet_by_index(0)
-        found_synonyms = {}
-
-        for row_index, row in enumerate(glossary_sheet.iter_rows(), 1):
-
-            if row_index == 0:
-
-                if row[0].value.lower() != 'term':
-                    message = _('Cell content has to be "Term", not {0}'.format(row[0].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
-
-
-                if row[1].value.lower() != 'synonyms':
-
-                    message = _('Cell content has to be "Synonyms", not {0}'.format(row[1].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
-                    
-
-                if row[2].value.lower() != 'definition':
-
-                    message = _('Cell content has to be "Definition", not {0}'.format(row[2].value))
-                    self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
-
-
-            else:
-
-                term = row[0].value
-                synonyms = row[1].value
-                definition = row[2].value
-
-                self.validate_glossary_entry(term, synonyms, definition, glossary_sheet.title, row_index)
-
-                if synonyms:
-                    synonyms_list = synonyms.split('|')
-                    synonyms_list = [s.strip() for s in synonyms_list]
-                    
-                    for synonym in synonyms_list:
-                        if synonym not in found_synonyms:
-                            found_synonyms[synonym] = term
-
-                        else:
-                            if found_synonyms[synonym] != term:
-                                message = _('Unambiguous synonym: {0} is mapped to {1} and {2}'.format(
-                                    synonym, term, found_synonyms[synonym]))
-                                            
-                                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 1, 0, message)
-                            
-
-    def validate_glossary_entry(self, term, synonyms, definition, glossary_sheet_name, row_index):
+    def validate_glossary_entry(self, term, synonyms_list, definition, row_index):
 
         if not term:
             message = _('No term found.')
-            self.add_cell_error(self.workbook_filename, glossary_sheet_name, 0, row_index, message)
+            self.add_cell_error(self.workbook_filename, GLOSSARY_SHEET_NAME, 'A', row_index, message)
             
         if not definition:
             message = _('No definition found.')
-            self.add_cell_error(self.workbook_filename, glossary_sheet_name, 1, row_index, message)
+            self.add_cell_error(self.workbook_filename, GLOSSARY_SHEET_NAME, 'B', row_index, message)
             
+        if len(synonyms_list) != len(set([s.lower() for s in synonyms_list])):
+            message = _('Synonyms %(synonyms)s are not unique.') % {
+                'synonyms': synonyms_list
+            }
+            self.add_cell_error(self.workbook_filename, GLOSSARY_SHEET_NAME, 'B', row_index, message)
 
-
-    def valdiate_images(self):
-        pass
-        
 
     def import_generic_content(self):
 
-        if len(self.errors) != 0:
+        if self.is_valid == False:
             raise ValueError('Only valid zipfiles can be imported.')
 
-        glossary_sheet = self.get_sheet_by_index(0)
+        glossary_sheet = self.get_sheet_by_name('Glossary')
 
         # check if the term exists - only update its synonyms and definition if it is new
         db_glossary_entries = GlossaryEntry.objects.filter(glossary=self.generic_content)
@@ -118,19 +158,17 @@ class GlossaryZipImporter(GenericContentZipImporter):
                 continue
 
             save_entry = False
-            created = False
 
-            term = row[0].value
+            term = self.get_stripped_cell_value(row[0].value)
 
             synonyms = []
-            synonyms_value = row[1].value
+            synonyms_value = self.get_stripped_cell_value(row[1].value)
             
             if synonyms_value:
                 synonyms = [s.strip() for s in synonyms_value.split('|')]
 
-            definition = row[2].value
+            definition = self.get_stripped_cell_value(row[2].value)
 
-            
             db_glossary_entry = GlossaryEntry.objects.filter(glossary=self.generic_content, term=term).first()
 
             if db_glossary_entry:
@@ -154,7 +192,6 @@ class GlossaryZipImporter(GenericContentZipImporter):
                         term=term,
                     )
 
-                    created = True
                     save_entry = True
 
 
@@ -162,7 +199,6 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
             # check if case has been altered, eg. TErm -> Term
             if db_glossary_entry.term != term:
-                
                 db_glossary_entry.term = term
                 save_entry = True
                 
@@ -175,7 +211,6 @@ class GlossaryZipImporter(GenericContentZipImporter):
 
             if save_entry == True:
                 db_glossary_entry.save()
-
 
 
             # add or delete synonyms

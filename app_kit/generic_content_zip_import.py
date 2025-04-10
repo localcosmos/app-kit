@@ -5,19 +5,25 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from app_kit.models import ImageStore, ContentImage
 
+from localcosmos_server.utils import generate_md5
+
 from content_licencing.models import ContentLicenceRegistry
-from content_licencing.licences import ContentLicence
+from content_licencing.licences import ContentLicence, LICENCE_LOOKUP
 from content_licencing import settings as content_licencing_settings
+
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
-import os, openpyxl, hashlib, json
+import os, openpyxl, json
 
 from PIL import Image
 
 LICENCES_SHORT = [l['short_name'] for l in content_licencing_settings.CONTENT_LICENCING_LICENCES]
+VALID_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+IMAGE_MAX_WIDTH = 2000
+IMAGE_MAX_HEIGHT = 2000
 
 '''
 openpyxl data_types
@@ -32,18 +38,16 @@ TYPE_FORMULA_CACHE_STRING = 'str'
 '''
 
 class GenericContentZipImporter:
-
-    required_additional_files = {
-        'Image_Licences' : ['xlsx',],
-    }
     
     spreadsheet_extensions = ['xlsx',]
 
     image_folder_name = 'images'
-    image_file_extensions = ['png', 'jpg', 'jpeg']
+    image_file_extensions = ['png', 'jpg', 'jpeg', 'webp']
+    
+    images_sheet_name = 'Images'
 
 
-    def __init__(self, user, generic_content, zip_contents_path):
+    def __init__(self, user, generic_content, zip_contents_path, ignore_nonexistent_images=False):
 
         self.user = user
 
@@ -51,20 +55,57 @@ class GenericContentZipImporter:
         self.zip_contents_path = zip_contents_path
 
         self.image_folder = os.path.join(zip_contents_path, self.image_folder_name)
+        
+        self.ignore_nonexistent_images = ignore_nonexistent_images
+        
+        self.is_valid = False
+        
+    
+    def import_generic_content(self):
+        raise NotImplementedError('GenericContentZipValidator classes require a import_generic_content method')
+
+    def validate_spreadsheet(self):
+        raise NotImplementedError('GenericContentZipValidator classes require a validate_spreadsheet method')
+        
+    
+    def load_workbook(self):
+        
+        filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
+        if filepath is None:
+            raise ValueError('No spreadsheet file found')
+        self.workbook = openpyxl.load_workbook(filepath)
+        self.workbook_filename = os.path.basename(filepath)
+        
+        
+    def get_stripped_cell_value(self, cell_value):
+        if cell_value:
+            cell_value = cell_value.strip()
+        else:
+            cell_value = None
+        return cell_value
+    
+    def get_stripped_cell_value_lowercase(self, cell_value):
+        if cell_value:
+            cell_value = cell_value.strip().lower()
+        else:
+            cell_value = None
+        return cell_value
 
 
     def validate(self):
-
+        
         self.errors = []
 
         self.check_file_presence()
-        self.validate_spreadsheet()
-        self.validate_image_licences()
-        self.validate_images()
+        
+        if not self.errors:
+            self.load_workbook()
+            self.validate_spreadsheet()
+            self.validate_images_sheet()
 
-        is_valid = len(self.errors) == 0
+        self.is_valid = len(self.errors) == 0
 
-        return is_valid
+        return self.is_valid
 
 
     def get_filepath(self, filename, allowed_extensions):
@@ -109,73 +150,17 @@ class GenericContentZipImporter:
                 'files': allowed_spreadsheet_files,
             })
 
-
-        for filename, extensionlist in self.required_additional_files.items():
-
-            file_found = False
-
-            allowed_files = []
-
-            for extension in extensionlist:
-
-                full_filename = '{0}.{1}'.format(filename, extension)
-
-                allowed_files.append(full_filename)
-
-                filepath = os.path.join(self.zip_contents_path, full_filename)
-
-                if os.path.isfile(filepath):
-                    file_found = True
-                    break
-
-            if file_found == False:
-                self.errors.append(_('Missing additional file. Allowed files: %(files)s') % {'files': allowed_files} )
-
-
-    def get_image_licences_workbook(self):
-
-        licence_workbook = None
-        workbook_filename = None
-        
-        for extension in self.required_additional_files['Image_Licences']:
-            filename = 'Image_Licences.{0}'.format(extension)
-
-            filepath = os.path.join(self.zip_contents_path, filename)
-
-            if os.path.isfile(filepath):
-                licence_workbook = openpyxl.load_workbook(filepath)
-                workbook_filename = filename
-
-
-        return licence_workbook, workbook_filename
-
-
-    def get_sheet_by_index(self, index):
-        sheet_names = self.workbook.sheetnames
-
-        sheet = self.workbook[sheet_names[0]]
-
-        return sheet
-
-
     # get a sheet by name
     def get_sheet_by_name(self, sheet_name):
 
         sheet_names = self.workbook.sheetnames
 
         if not sheet_name in sheet_names:
-
-            self.errors.append(_('Sheet "%(sheet_name)s" not found in %(filename)s') % {
-                    'filename' : self.workbook_filename,
-                    'sheet_name' : sheet_name,
-                })
-
             return None
 
         sheet = self.workbook[sheet_name]
 
         return sheet
-
 
 
     def get_optional_sheet_by_name(self, sheet_name):
@@ -185,92 +170,178 @@ class GenericContentZipImporter:
             return workbook[sheet_name]
 
         return None
+    
+    
+    def get_image_data_from_images_sheet(self, image_filename):
+        images_sheet = self.get_sheet_by_name(self.images_sheet_name)
+        image_data = None
+        
+        for row in images_sheet.iter_rows(min_row=2):
 
-
-    def import_generic_content(self):
-        raise NotImplementedError('GenericContentZipValidator classes require a import_generic_content method')
-
-    def validate_spreadsheet(self):
-        raise NotImplementedError('GenericContentZipValidator classes require a validate_spreadsheet method')
-
-    def validate_images(self):
-        raise NotImplementedError('GenericContentZipValidator classes require a validate_images method')
-
-    # validate all image licences
-    def validate_image_licences(self):
-
-        licence_workbook, workbook_filename = self.get_image_licences_workbook()
-
-        if licence_workbook is not None:
-
-            licence_sheet = licence_workbook[licence_workbook.sheetnames[0]]
-            licences = {}
-
-
-            for row_index, row in enumerate(licence_sheet.iter_rows(), 1):
-
-                if row_index == 0:
-                    continue
-
-
-                licences[row[0].value.lower()] = {
-                    'row' : row,
-                    'row_index' : row_index,
+            if row[0].value == image_filename:
+                image_data = {
+                    'identifier': self.get_stripped_cell_value(row[0].value),
+                    'author': self.get_stripped_cell_value(row[1].value),
+                    'licence': self.get_stripped_cell_value(row[2].value),
+                    'licence_version': self.get_stripped_cell_value(row[3].value),
+                    'link_to_source_image': self.get_stripped_cell_value(row[4].value),
+                    'title': self.get_stripped_cell_value(row[5].value),
+                    'caption': self.get_stripped_cell_value(row[6].value),
+                    'alt_text': self.get_stripped_cell_value(row[7].value),
+                    'primary_image': self.get_stripped_cell_value(row[8].value),
                 }
+                break
+        
+        return image_data
+    
 
-            # iterate over all images and check if there is a correct licence entry
-            for root, dirs, files in os.walk(self.image_folder):
+    def validate_listing_in_images_sheet(self, image_filename, col_letter, row_index):
+        
+        image_data = self.get_image_data_from_images_sheet(image_filename)
+        
+        if not image_data and self.ignore_nonexistent_images == False:
+            message = _('Image file "%(image_filename)s" not found in the %(images_sheet_name)s sheet.') % {
+                'image_filename': image_filename,
+                'images_sheet_name': self.images_sheet_name,
+            }
+            self.add_cell_error(self.workbook_filename, self.generic_content.name, col_letter, row_index, message)
+            
+    def get_image_file_disk_path(self, image_filename):
+        # check if the image exists in the unzipped folder
+        images_folder = os.path.join(self.zip_contents_path, self.image_folder_name)
+        image_path = os.path.join(images_folder, image_filename)
 
-                for file in files:
-
-                    abspath = os.path.join(root, file)
-
-                    # case insensitive lookup
-                    relpath = os.path.relpath(abspath, self.image_folder)
-                    relpath_lower = relpath.lower()
-
-                    # relpath has to be in image licences
-                    if relpath_lower not in licences:
-                        message = _('[%(licence_file)s] No image licence found for: "%(image_path)s"' % {
-                            'licence_file' : workbook_filename,
-                            'image_path' : relpath,
-                        })
-
-                        self.errors.append(message)
-
-                    else:
-
-                        licence_dic = licences[relpath_lower]
-                        licence = licence_dic['row']
-
-                        # some licences require a link to the creator. Creator Name is required
-                        licence_short = licence[1].value
-
-
-                        if not licence_short:
-                            message = _('No image licence found')
-
-                            self.add_cell_error(workbook_filename, licence_sheet.name, 1, licence_dic['row_index'],
-                                                message)
-
-                        elif licence_short not in LICENCES_SHORT:
-                            message = _('Invalid licence: %(licence)s' % {
-                                'licence': licence_short,
-                            })
-                            self.add_cell_error(workbook_filename, licence_sheet.name, 1, licence_dic['row_index'],
-                                                message)
-
-                        creator_name = licence[2].value
-
-                        if not creator_name:
-
-                            message = _('Creator name is missing')
-                            self.add_cell_error(workbook_filename, licence_sheet.name, 2, licence_dic['row_index'],
-                                                message)
+        return image_path
+    
+    def validate_image_data(self, image_data, sheet_name, row_index):
+        
+        if not image_data['author']:
+            message = _('Cell content has to be an author, found empty cell instead')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'B', row_index, message)
+            
+        if image_data['licence'] not in LICENCE_LOOKUP:
+            message = _('Invalid licence: %(cell_value)s. Licence choices are: %(licence_choices)s') % {
+                'cell_value': image_data['licence'],
+                'licence_choices': ', '.join(LICENCE_LOOKUP.keys()),
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'C', row_index, message)
+        
+        if image_data['licence'] in LICENCE_LOOKUP and image_data['licence_version'] not in LICENCE_LOOKUP[image_data['licence']]:
+            message = _('Invalid licence version: %(cell_value)s. Licence version choices are: %(licence_choices)s') % {
+                'cell_value': image_data['licence_version'],
+                'licence_choices': ', '.join(LICENCE_LOOKUP[image_data['licence']].keys()),
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'D', row_index, message)
+            
+            
+        # check if the image exists in the unzipped folder and if it meets the pixel sizes etc
+        # check if the image is a valid image format
+        image_filename = image_data['identifier']
+        
+        image_extension = os.path.splitext(image_filename)[1].lower()
+        if image_extension not in VALID_IMAGE_FORMATS:
+            message = _('Invalid image format: %(cell_value)s. Valid formats are: %(valid_formats)s') % {
+                'cell_value': image_extension,
+                'valid_formats': ', '.join(VALID_IMAGE_FORMATS),
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            
+        # check if the image exists in the unzipped folder
+        image_path = self.get_image_file_disk_path(image_filename)
+        if os.path.exists(image_path):
+            # check if the image is square
+            self.validate_square_image(image_path)
+                
+        else:
+            if self.ignore_nonexistent_images == False:
+                message = _('Image file not found: %(cell_value)s. Image file should be in the images folder.') % {
+                    'cell_value': image_filename,
+                }
+                self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            
+            
+            
+    def validate_images_sheet(self):
+        
+        images_sheet = self.get_sheet_by_name(self.images_sheet_name)
+        
+        if images_sheet:
+        
+            for row_index, row in enumerate(images_sheet.iter_rows(), 0):
+                
+                if row_index == 0:
+                    if not row[0].value or row[0].value.lower() != 'identifier':
                         
+                        message = _('Cell content has to be "Identifier", not %(cell_value)s') % {
+                            'cell_value': row[0].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'A', 0, message)
+                        
+                    if not row[1].value or row[1].value.lower() != 'author':
+                        message = _('Cell content has to be "Author", not %(cell_value)s') % {
+                            'cell_value': row[1].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'B', 0, message)
+                    if not row[2].value or row[2].value.lower() != 'licence':
+                        message = _('Cell content has to be "Licence", not %(cell_value)s') % {
+                            'cell_value': row[2].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'C', 0, message)
+                    if not row[3].value or row[3].value.lower() != 'licence version':
+                        message = _('Cell content has to be "Licence version", not %(cell_value)s') % {
+                            'cell_value': row[3].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'D', 0, message)
+                    if not row[4].value or row[4].value.lower() != 'link to source image (optional)':
+                        message = _('Cell content has to be "Link to source image (optional)", not %(cell_value)s') % {
+                            'cell_value': row[4].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'E', 0, message)
+                    if not row[5].value or row[5].value.lower() != 'title (optional)':
+                        message = _('Cell content has to be "Title (optional)", not %(cell_value)s') % {
+                            'cell_value': row[5].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'F', 0, message)
+                    if not row[6].value or row[6].value.lower() != 'caption (optional)':
+                        message = _('Cell content has to be "Caption (optional)", not %(cell_value)s') % {
+                            'cell_value': row[6].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'G', 0, message)
+                    if not row[7].value or row[7].value.lower() != 'alt text (optional)':
+                        message = _('Cell content has to be "Alt text (optional)", not %(cell_value)s') % {
+                            'cell_value': row[7].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'H', 0, message)
+                    if not row[8].value or row[8].value.lower() != 'primary image (optional)':
+                        message = _('Cell content has to be "Primary image (optional)", not %(cell_value)s') % {
+                            'cell_value': row[8].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, images_sheet.title, 'I', 0, message)
+            
+                else:
+                    if not row[0].value:
+                        continue
+                    
+                    image_data = {
+                        'identifier': self.get_stripped_cell_value(row[0].value),
+                        'author': self.get_stripped_cell_value(row[1].value),
+                        'licence': self.get_stripped_cell_value(row[2].value),
+                        'licence_version': self.get_stripped_cell_value(row[3].value),
+                        'link_to_source_image': self.get_stripped_cell_value(row[4].value),
+                        'title': self.get_stripped_cell_value(row[5].value),
+                        'caption': self.get_stripped_cell_value(row[6].value),
+                        'alt_text': self.get_stripped_cell_value(row[7].value),
+                        'primary_image': self.get_stripped_cell_value(row[8].value),
+                    }
+                    
+                    self.validate_image_data(image_data, images_sheet.title, row_index)
+                            
 
 
     def add_cell_error(self, filename, sheet_name, column, row, message):
+        
+        if isinstance(column, int):
+            column = openpyxl.utils.get_column_letter(column)
 
         error_message = _('[%(filename)s][Sheet:%(sheet_name)s][cell:%(column)s%(row)s] %(message)s' % {
             'filename' : filename,
@@ -285,7 +356,7 @@ class GenericContentZipImporter:
 
     def add_row_error(self, filename, sheet_name, row, message):
 
-        error_message = _('[%(filename)s][Sheet:%(sheet_name)s][row: %(row)s] %(message)s' % {
+        error_message = _('[%(filename)s][Sheet:%(sheet_name)s][row:%(row)s] %(message)s' % {
             'filename' : filename,
             'sheet_name' : sheet_name,
             'row' : row + 1,
@@ -295,36 +366,73 @@ class GenericContentZipImporter:
         self.errors.append(error_message)
 
 
-    def save_content_image(self, image_filepath, content_object, image_licence_path):
-        #print('image found: {0}'.format(image_filepath))
 
+    def get_existing_image_store(self, image_filepath, content_object):
+        
+        existing_image = None
+        with open(image_filepath, 'rb') as image_file:
+            new_image_md5 = generate_md5(image_file)
+        
+        return ImageStore.objects.filter(md5=new_image_md5).first()
+        
+    def save_content_image(self, image_filepath, content_object, image_data):
+        
+        image_store = self.get_existing_image_store(image_filepath, content_object)
+        
         content_type = ContentType.objects.get_for_model(content_object)
         object_id = content_object.id
+        
+        if not image_store:
+            
+            image_file = File(open(image_filepath, 'rb'))
 
-        image_file = File(open(image_filepath, 'rb'))
+            md5 = generate_md5(image_file)
 
-        md5 = hashlib.md5(image_file.read()).hexdigest()
+            image_store = ImageStore(
+                source_image=image_file,
+                md5=md5,
+                uploaded_by=self.user,
+            )
 
-        crop_parameters = self.get_crop_parameters(image_filepath)
-
-        image_store = ImageStore(
-            source_image=image_file,
-            md5=md5,
-            uploaded_by=self.user,
-        )
-
-        image_store.save()
-
-        content_image = ContentImage(
+            image_store.save()
+            image_file.close()
+            
+        content_image = ContentImage.objects.filter(
+            image_store=image_store,
+            content_type=content_type,
+            object_id=object_id,
+        ).first()
+        
+        if not content_image:
+            
+            crop_parameters = self.get_crop_parameters(image_filepath)
+            
+            content_image = ContentImage(
             image_store=image_store,
             crop_parameters=json.dumps(crop_parameters),
             content_type = content_type,
-            object_id = object_id,
-        )
+            object_id = object_id
+        )        
+        
+        if image_data['title']:
+            content_image.title = image_data['title']
+        if image_data['caption']:
+            content_image.text = image_data['caption']
+        if image_data['alt_text']:
+            content_image.alt_text = image_data['alt_text']
+        if image_data['primary_image']:
+            content_image.is_primary = True
 
         content_image.save()
+        
+        image_licence = {
+            'short_name' : image_data['licence'],
+            'version' : image_data['licence_version'],
+            'creator_name' : image_data['author'],
+            'source_link' : image_data['link_to_source_image'],
+        }
 
-        self.register_content_licence(image_store, 'source_image', image_licence_path)
+        self.register_content_licence(image_store, 'source_image', image_licence)
 
 
     def get_crop_parameters(self, image_filepath):
@@ -343,46 +451,20 @@ class GenericContentZipImporter:
 
         return crop_parameters
 
-
-    def get_licence_from_path(self, image_licence_path):
-
-        licence_workbook, workbook_filename = self.get_image_licences_workbook()
-        licence_sheet = licence_workbook[licence_workbook.sheetnames[0]]
-
-        licence_definition = None
-        
-        for row in licence_sheet.iter_rows():
-            
-            if row[0].value == image_licence_path:
-                
-                licence_definition = {
-                    'short_name' : row[1].value,
-                    'creator_name' : row[2].value,
-                    'creator_link' : row[3].value,
-                }
-
-                break
-
-        return licence_definition
-
         
     # image_licence_path is the entry in the 'Image' column of ImageLicences.xls(x)
-    def register_content_licence(self, instance, model_field, image_licence_path):
-        # register content licence
+    def register_content_licence(self, instance, model_field, image_licence):
 
-        licence_definition = self.get_licence_from_path(image_licence_path)
+        licence = ContentLicence(image_licence['short_name'], version=image_licence['version'])
 
-        if licence_definition:
-
-            licence = ContentLicence(licence_definition['short_name'])
-
-            licence_kwargs = {
-                'creator_name' : licence_definition['creator_name'],
-                'creator_link' : licence_definition['creator_link'],
-            }
-        
-            registry_entry = ContentLicenceRegistry.objects.register(instance, model_field, self.user,
-                            licence.short_name, licence.version, **licence_kwargs)
+        licence_kwargs = {
+            'creator_name' : image_licence['creator_name'],
+            'creator_link' : image_licence.get('creator_link', None),
+            'source_link' : image_licence.get('source_link', None),
+        }
+    
+        registry_entry = ContentLicenceRegistry.objects.register(instance, model_field, self.user,
+                        licence.short_name, licence.version, **licence_kwargs)
 
 
     def validate_taxon(self, taxon_latname, taxon_author, taxon_source, workbook_filename, sheet_name,
@@ -429,7 +511,7 @@ class GenericContentZipImporter:
                     })
 
                 else:
-                    message = _('Multiple results found for %(taxon_latname)s in %(taxon_source)s' % {
+                    message = _('Multiple results found for %(taxon_latname)s in %(taxon_source)s. You have to specify an author.' % {
                         'taxon_latname' : taxon_latname,
                         'taxon_source': taxon_source,
                     })
@@ -459,10 +541,34 @@ class GenericContentZipImporter:
 
         lazy_taxon = LazyTaxon(instance=taxon)
         return lazy_taxon
-        
-
-
-
-
-        
     
+    
+    def validate_square_image(self, image_filepath):
+        
+        filename = os.path.basename(image_filepath)
+        
+        im = Image.open(image_filepath)
+        width, height = im.size
+
+        if width != height:
+            message = _('Image is not square: %(filename)s' % {
+                'filename' : filename,
+            })
+
+            self.errors.append(message)
+            
+        if height > IMAGE_MAX_HEIGHT:
+            message = _('Image height is too large: %(filename)s. Maximum allowed height is %(max_height)s' % {
+                'filename' : filename,
+                'max_height' : IMAGE_MAX_HEIGHT,
+            })
+
+            self.errors.append(message)
+            
+        
+        if width > IMAGE_MAX_WIDTH:
+            message = _('Image width is too large: %(filename)s. Maximum allowed width is %(max_width)s' % {
+                'filename' : filename,
+                'max_width' : IMAGE_MAX_WIDTH,
+            })
+            self.errors.append(message)

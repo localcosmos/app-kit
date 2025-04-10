@@ -169,6 +169,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         # get taxon_profile_images
         if db_profile:
+            # this has to be changed to esnure ordering by pk of taggeditem
             taxon_profile_json['tags'] = [tag.name for tag in db_profile.tags.all()]
                         
         # get information (traits, node_names) from nature guides if possible
@@ -290,7 +291,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         else:
                             categorized_texts_json['texts'].append(text_json)
                     
-                if category_name != 'uncategorized':
+                if category_name != 'uncategorized' and len(categorized_texts_json['texts']) > 0:
                     taxon_profile_json['categorized_texts'].append(categorized_texts_json)
 
         # template_contents

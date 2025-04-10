@@ -78,7 +78,7 @@ class ManageTaxonTextsForm(LocalizeableForm):
     short_text_fields = []
     long_text_fields = []
     
-    short_profile = forms.CharField(widget=forms.Textarea, required=False, validators=[json_compatible])
+    short_profile = forms.CharField(max_length=150, widget=forms.Textarea, required=False, validators=[json_compatible])
     
     def __init__(self, taxon_profiles, taxon_profile=None, *args, **kwargs):
         self.localizeable_fields = ['short_profile']

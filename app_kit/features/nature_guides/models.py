@@ -60,7 +60,8 @@ RESULT_ACTIONS = (
 
 class NatureGuide(ContentImageMixin, GenericContent):
 
-    zip_import_supported = True
+    # has to be rewritten
+    zip_import_supported = False
 
     objects = NatureGuideManager()
 

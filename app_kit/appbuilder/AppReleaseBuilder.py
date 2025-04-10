@@ -159,16 +159,6 @@ class AppReleaseBuilder(AppBuilderBase):
     def aab_published_url(self):
         url = '/packages/published/android/{0}'.format(self._aab_filename)
         return url
-    
-    # does not return scheme and host
-    def apk_published_url(self):
-        url = '/packages/published/android/{0}'.format(self._apk_filename)
-        return url
-
-    # apk review url
-    def apk_review_url(self, request):
-        url = '{0}://{1}/packages/review/android/{2}'.format(request.scheme, self.meta_app.domain, self._apk_filename)
-        return url
 
     # relies on correct nginx conf
     # do not use request.get_host()
@@ -2098,12 +2088,21 @@ class AppReleaseBuilder(AppBuilderBase):
         # navigations
         navigation_json, navigation_slugs = jsonbuilder.build_navigation()
         
-        navigation_absolute_filepath = os.path.join(app_absolute_taxonprofiles_path, 'navigation.json')
-        with open(navigation_absolute_filepath, 'w', encoding='utf-8') as f:
-            json.dump(navigation_json, f, indent=4, ensure_ascii=False)
+        relative_navigation_folder = os.path.join(app_relative_taxonprofiles_folder, 'navigation')
+        absolute_navigation_folder = os.path.join(app_absolute_taxonprofiles_path, 'navigation')
         
-        relative_navigation_path = os.path.join(app_relative_taxonprofiles_folder, 'navigation.json')
-        self.build_features[generic_content_type]['navigation'] = '/{0}'.format(relative_navigation_path)
+        if not os.path.isdir(absolute_navigation_folder):
+            os.makedirs(absolute_navigation_folder)
+            
+        # store the navigation in chunks
+        for navigation_key, navigation_node in navigation_json.items():
+            navigation_filename = '{0}.json'.format(navigation_key)
+            absolute_navigation_node_filepath = os.path.join(absolute_navigation_folder, navigation_filename)
+
+            with open(absolute_navigation_node_filepath, 'w', encoding='utf-8') as f:
+                json.dump(navigation_node, f, indent=4, ensure_ascii=False)
+        
+        self.build_features[generic_content_type]['navigation'] = '/{0}'.format(relative_navigation_folder)
         
         # featured taxon profiles
         featured_taxon_profiles = jsonbuilder.build_featured_taxon_profiles_list(languages=self.meta_app.languages())
@@ -2417,10 +2416,6 @@ class AppReleaseBuilder(AppBuilderBase):
         if not image_sizes:
             image_sizes = ['regular', 'large']
 
-            if self.meta_app.get_global_option('do_not_build_large_images') == True:
-                image_sizes = ['regular']
-
-
         absolute_path = self._app_content_images_path
         relative_path = self._app_relative_content_images_path
 
@@ -2543,12 +2538,6 @@ class AppReleaseBuilder(AppBuilderBase):
         return filename
 
     @property
-    def _apk_filename(self):
-        filename = '{0}-{1}-{2}.apk'.format(self.meta_app.package_name, self.meta_app.current_version,
-            self.meta_app.build_number)
-        return filename
-
-    @property
     def _review_android_served_path(self):
         return os.path.join(self._review_served_packages_path, 'android')
 
@@ -2563,15 +2552,6 @@ class AppReleaseBuilder(AppBuilderBase):
     @property
     def _published_android_served_aab_filepath(self):
         return os.path.join(self._published_android_served_path, self._aab_filename)
-    
-    @property
-    def _published_android_served_apk_filepath(self):
-        return os.path.join(self._published_android_served_path, self._apk_filename)
-
-    # debug apk
-    @property
-    def _review_android_served_apk_filepath(self):
-        return os.path.join(self._review_android_served_path, self._apk_filename)
 
     #######################################################################################################
     # NGINX ios, review and published
@@ -2736,7 +2716,7 @@ class AppReleaseBuilder(AppBuilderBase):
         
         cordova_builder = self.get_cordova_builder()
         
-        aab_source_filepath, apk_source_filepath = cordova_builder.build_android(keystore_path,
+        aab_source_filepath = cordova_builder.build_android(keystore_path,
                         settings.APP_KIT_ANDROID_KEYSTORE_PASS, settings.APP_KIT_ANDROID_KEY_PASS)
 
         # symlink the aab into a browsable location
@@ -2744,9 +2724,6 @@ class AppReleaseBuilder(AppBuilderBase):
 
         aab_dest = self._review_android_served_aab_filepath
         os.symlink(aab_source_filepath, aab_dest)
-
-        apk_dest = self._review_android_served_apk_filepath
-        os.symlink(apk_source_filepath, apk_dest)
 
         self.logger.info('Successfully built Android')
     
@@ -2870,10 +2847,6 @@ class AppReleaseBuilder(AppBuilderBase):
         aab_dest = self._published_android_served_aab_filepath
 
         os.symlink(aab_source, aab_dest)
-        
-        # also release apk
-        apk_source = cordova_builder._apk_filepath
-        apk_dest = self._published_android_served_apk_filepath
 
         self.logger.info('Successfully released Android')
 

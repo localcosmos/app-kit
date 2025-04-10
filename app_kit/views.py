@@ -836,7 +836,6 @@ class BuildApp(FormView):
         # include review urls, if any present
         if not self.meta_app.published_version or self.meta_app.published_version != self.meta_app.current_version:
             context['aab_review_url'] = app_release_builder.aab_review_url(self.request)
-            context['apk_review_url'] = app_release_builder.apk_review_url(self.request)
             
             context['browser_review_url'] = app_release_builder.browser_review_url(self.request)
 
@@ -1473,9 +1472,11 @@ class ImportFromZip(MetaAppMixin, FormView):
             self.generic_content.lock('zip_import')
 
             try:
+                ignore_nonexistent_images = form.cleaned_data['ignore_nonexistent_images']
+                
                 # validate the zipfile, then import, maybe use threading in form_valid
                 zip_importer = self.generic_content.zip_import_class(self.request.user, self.generic_content,
-                                                                     unzip_path)
+                                                                     unzip_path, ignore_nonexistent_images=ignore_nonexistent_images)
                 zip_is_valid = zip_importer.validate()
 
                 if zip_is_valid == True:
