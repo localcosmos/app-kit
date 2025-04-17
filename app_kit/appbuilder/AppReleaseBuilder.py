@@ -1992,8 +1992,8 @@ class AppReleaseBuilder(AppBuilderBase):
                     
                     localized_profile_json = profile_json.copy()
                     
-                    localized_short_profile = self.get_localized_taxonprofile_text(localized_profile_json['short_profile'], glossarized_locale, app_locale)
-                    localized_profile_json['short_profile'] = localized_short_profile
+                    localized_short_profile = self.get_localized_taxonprofile_text(localized_profile_json['shortProfile'], glossarized_locale, app_locale)
+                    localized_profile_json['shortProfile'] = localized_short_profile
                     
                     for index, text_dict in enumerate(profile_json['texts'], 0):
                         
