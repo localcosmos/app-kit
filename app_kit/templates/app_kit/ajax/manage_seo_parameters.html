@@ -1,0 +1,21 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% url 'manage_app_kit_seo_parameters' meta_app.id content_type.id instance.id %}{% endblock %}
+
+{% block title %}
+	{% trans 'Manage SEO' %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+		<script>
+			$("#Modal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}

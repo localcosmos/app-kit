@@ -2019,7 +2019,19 @@ class AppReleaseBuilder(AppBuilderBase):
                             localized_category['texts'][index]['longText'] = localized_long_text
                             
                         localized_profile_json['categorized_texts'][c_index] = localized_category
+                        
+                    # localize seo, no glossarized locale
+                    localized_seo = localized_profile_json['seo'].copy()
+                    title = localized_seo['title']
+                    meta_description = localized_seo['meta_description']
                     
+                    if title and title in app_locale:
+                        localized_seo = app_locale[title]
+                        
+                    if meta_description and meta_description in app_locale:
+                        localized_seo['meta_description'] = app_locale[meta_description]
+                        
+                    localized_profile_json['seo'] = localized_seo
                     
                     absolute_localized_taxonprofiles_folder = os.path.join(
                         app_absolute_taxonprofiles_path, language_code)

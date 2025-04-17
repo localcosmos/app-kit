@@ -13,7 +13,9 @@ from django.db import close_old_connections
 
 from django.core import mail
 
-from .models import MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage
+from .models import (MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage,
+                     AppKitSeoParameters)
+
 from .generic import AppContentTaxonomicRestriction
 
 from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm, GenericContentStatusForm,
@@ -41,7 +43,7 @@ from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 
 from content_licencing.view_mixins import LicencingFormViewMixin
 
-from localcosmos_server.generic_views import AjaxDeleteView
+from localcosmos_server.generic_views import AjaxDeleteView, ManageSeoParameters
 
 import deepl
 
@@ -1637,6 +1639,11 @@ class ManageObjectOrder(TemplateView):
         context['container_id'] = self.get_container_id()
         return context
 
+class ManageAppKitSeoParameters(MetaAppFormLanguageMixin, ManageSeoParameters):
+    
+    template_name = 'app_kit/ajax/manage_seo_parameters.html'
+    seo_model_class = AppKitSeoParameters
+
 # LEGAL
 class IdentityMixin:
 
@@ -1664,4 +1671,3 @@ class PrivacyStatement(IdentityMixin, TemplateView):
     @method_decorator(requires_csrf_token)
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
-

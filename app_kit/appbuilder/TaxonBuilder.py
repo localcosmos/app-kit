@@ -182,7 +182,13 @@ class TaxonSerializer:
             taxon_json.update({
                 'gbifNubkey': gbif_nubkey,
                 'image': images['primary'],
+                'shortProfile': None,
             })
+            
+            taxon_profile = self.get_taxon_profile()
+            if taxon_profile:
+                taxon_json['shortProfile'] = taxon_profile.short_profile
+            
             
             self.taxa_builder.cache['extended'][self.lazy_taxon.name_uuid] = taxon_json
 

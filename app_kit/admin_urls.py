@@ -113,4 +113,7 @@ urlpatterns = [
         generic_views.StoreObjectOrder.as_view(), name='store_app_kit_object_order'),
     path('manage-object-order/<int:content_type_id>/',
         views.ManageObjectOrder.as_view(), name='manage_app_kit_object_order'),
+    # SEO
+    path('manage-seo/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/', views.ManageAppKitSeoParameters.as_view(),
+         name='manage_app_kit_seo_parameters'),
 ]

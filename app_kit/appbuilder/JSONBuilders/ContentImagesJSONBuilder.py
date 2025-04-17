@@ -40,19 +40,23 @@ class ContentImagesJSONBuilder:
         licence = self.app_release_builder.content_image_builder.build_licence(content_image)
         return licence
     
-    
+    '''
+        The licences are read from  LicenceRegistry
+    '''
     def get_image_json(self, content_image_mixedin):
 
         image_urls = self._get_image_urls(content_image_mixedin)
-        licence = {}
+        #licence = {}
 
-        if image_urls:
-            licence = self._get_image_licence(content_image_mixedin)
+        #if image_urls:
+        #    licence = self._get_image_licence(content_image_mixedin)
 
         image_entry = {
-            'text': content_image_mixedin.text,
+            'text': content_image_mixedin.text, # = caption
+            'alt_text': content_image_mixedin.alt_text,
+            'title': content_image_mixedin.title,
             'imageUrl' : image_urls,
-            'licence' : licence,
+            #'licence' : licence,
         }
 
         return image_entry

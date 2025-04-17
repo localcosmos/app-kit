@@ -349,9 +349,9 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
     def form_valid(self, form):
         
         short_profile = form.cleaned_data.get('short_profile', None)
-        if short_profile:
-            self.taxon_profile.short_profile = short_profile
-            self.taxon_profile.save()
+
+        self.taxon_profile.short_profile = short_profile
+        self.taxon_profile.save()
 
         # iterate over all text types and save them
         for field_name, value in form.cleaned_data.items():

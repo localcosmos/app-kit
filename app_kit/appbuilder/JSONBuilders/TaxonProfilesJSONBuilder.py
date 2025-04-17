@@ -133,7 +133,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
             'nodeDecisionRules' : [],
             'traits' : [], # a collection of traits (matrix filters)
-            'short_profile' : None,
+            'shortProfile' : None,
             'texts': [],
             'categorized_texts' : [],
             'images' : images,
@@ -141,6 +141,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
             'tags' : [],
+            'seo': {
+                'title': None,
+                'meta_description': None,
+            },
             'is_featured': is_featured,
         })
 
@@ -171,6 +175,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         if db_profile:
             # this has to be changed to esnure ordering by pk of taggeditem
             taxon_profile_json['tags'] = [tag.name for tag in db_profile.tags.all()]
+            
+            # localized SEO
+            seo_parameters = db_profile.seo_parameters.first()
+            
+            if seo_parameters:
+                
+                if seo_parameters.title:
+                    taxon_profile_json['seo']['title'] = seo_parameters.title
+                if seo_parameters.meta_description:
+                    taxon_profile_json['seo']['meta_description'] = seo_parameters.meta_description
                         
         # get information (traits, node_names) from nature guides if possible
         # collect node images
@@ -255,7 +269,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         if db_profile:
             
-            taxon_profile_json['short_profile'] = db_profile.short_profile
+            taxon_profile_json['shortProfile'] = db_profile.short_profile
 
             for category_name, text_list in db_profile.categorized_texts().items():
                 
