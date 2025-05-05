@@ -289,6 +289,10 @@ class GenericField(GenericFormVersionBumpMixin, models.Model):
 
     def __str__(self):
         return '{0}'.format(self.label)
+    
+    class Meta:
+        verbose_name = _('Observation Form Field')
+        verbose_name_plural = _('Observation Form Fields')
 
 
 '''

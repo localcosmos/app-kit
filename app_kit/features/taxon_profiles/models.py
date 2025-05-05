@@ -222,6 +222,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     class Meta:
         # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
         unique_together=('taxon_profiles', 'taxon_source', 'name_uuid')
+        verbose_name = _('Taxon Profile')
+        verbose_name_plural = _('Taxon Profiles')
         
         
 # Signal to clean up SeoParameters
@@ -611,4 +613,5 @@ class TaxonProfilesNavigationEntryTaxa(ModelWithRequiredTaxon):
     
     class Meta:
         unique_together=('navigation_entry', 'name_uuid')
+        verbose_name = _('Taxon Profiles Navigation Entry Taxon')
     

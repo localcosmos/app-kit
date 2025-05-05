@@ -164,7 +164,6 @@ class GenericContent(GenericContentMethodsMixin, models.Model):
     zip_import_supported = False
     zip_import_class = None
 
-
     def save(self, *args, **kwargs):
         set_published_version = kwargs.pop('set_published_version', False)
         increment_version = kwargs.pop('increment_version', True)

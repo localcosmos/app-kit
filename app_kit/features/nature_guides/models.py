@@ -186,8 +186,8 @@ class NatureGuide(ContentImageMixin, GenericContent):
     
 
     class Meta:
-        verbose_name = _('Nature guide')
-        verbose_name_plural = _('Nature guides')
+        verbose_name = _('Nature Guide')
+        verbose_name_plural = _('Nature Guides')
 
 
 FeatureModel = NatureGuide

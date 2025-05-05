@@ -16,8 +16,9 @@ from app_kit.view_mixins import MetaAppMixin
 from localcosmos_server.decorators import ajax_required
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 
-from .forms import (AddMultipleTaxaForm, ManageFulltreeForm, SearchTaxonomicBackboneForm)
+from .forms import (AddMultipleTaxaForm, ManageFulltreeForm, SearchTaxonomicBackboneForm, SwapTaxonForm)
 
+from .utils import TaxonManager, TaxonReferencesUpdater
 
 from taxonomy.models import TaxonomyModelRouter
 
@@ -418,3 +419,102 @@ class ManageBackboneTaxon(MetaAppMixin, TemplateView):
         context['taxon_profile'] = taxon_profile
         context['nature_guides_content_type'] = nature_guides_content_type
         return context
+    
+
+class AnalyzeSwapCommon:
+    
+    template_name = 'backbonetaxonomy/swap_taxon.html'
+    form_class = SwapTaxonForm
+    
+    def analyze_taxon(self, from_taxon, to_taxon):
+        taxon_manager = TaxonManager(self.meta_app)
+        analysis = taxon_manager.get_swap_analysis(from_taxon, to_taxon)
+        return analysis
+    
+    def get_taxon_occurrences(self, taxon):
+        taxon_manager = TaxonManager(self.meta_app)
+        occurrences = taxon_manager.get_verbose_occurrences(taxon)
+        return occurrences
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['analyzed'] = False
+        context['swapped'] = False
+        context['from_taxon'] = None
+        context['to_taxon'] = None
+        context['verbose_from_taxon_occurrences'] = []
+        context['verbose_to_taxon_occurrences'] = []
+        return context
+    
+    def get_form_valid_context_data(self, form):
+        
+        from_taxon = form.cleaned_data['from_taxon']
+        to_taxon = form.cleaned_data['to_taxon']
+        
+        context = self.get_context_data(**self.kwargs)
+        
+        context['form'] = form
+        context['from_taxon'] = from_taxon
+        context['to_taxon'] = to_taxon
+        context['analyzed'] = True
+        context['verbose_from_taxon_occurrences'] = self.analyze_taxon(from_taxon, to_taxon)
+        context['verbose_to_taxon_occurrences'] = self.get_taxon_occurrences(to_taxon)
+        
+        return context
+
+    
+class SwapTaxon(AnalyzeSwapCommon, MetaAppMixin, FormView):
+    
+    def form_valid(self, form):
+        
+        from_taxon = form.cleaned_data['from_taxon']
+        to_taxon = form.cleaned_data['to_taxon']
+        
+        taxon_manager = TaxonManager(self.meta_app)
+        taxon_manager.swap_taxon(from_taxon, to_taxon)
+        
+        context = self.get_form_valid_context_data(form)
+        
+        context['swapped'] = True
+        
+        return self.render_to_response(context)
+
+
+class AnalyzeTaxon(AnalyzeSwapCommon, MetaAppMixin, FormView):
+    
+    def form_valid(self, form):        
+        context = self.get_form_valid_context_data(form)
+        return self.render_to_response(context)
+    
+    
+class UpdateTaxonReferences(MetaAppMixin, TemplateView):
+    
+    template_name = 'backbonetaxonomy/update_taxon_references.html'
+    
+    def analyze(self):
+        updater = TaxonReferencesUpdater(self.meta_app)
+        result = updater.check_taxa()
+        return result
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['analyzed'] = False
+        context['updated'] = False
+        context['result'] = None
+        
+        if self.request.method == 'GET':
+            context['result'] = self.analyze()
+            context['analyzed'] = True
+        
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        
+        updater = TaxonReferencesUpdater(self.meta_app)
+        result = updater.check_taxa(update=True)
+        
+        context = self.get_context_data(**kwargs)
+        context['result'] = result
+        context['updated'] = True
+        
+        return self.render_to_response(context)

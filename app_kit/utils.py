@@ -1,5 +1,8 @@
 import re
-from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from app_kit.features.generic_forms.models import GenericFieldToGenericForm
+
+from localcosmos_server.utils import get_content_instance_app
 
 def import_module(module):
     module = str(module)
@@ -74,3 +77,94 @@ def camelCase_to_underscore_case(string):
 def underscore_to_camelCase(string):
     under_pat = re.compile(r'_([a-z])')
     return under_pat.sub(lambda x: x.group(1).upper(), string)
+
+
+'''
+    given a model instance, check which app it belongs to
+    - ModelWithRequiredTaxon
+        - AppContentTaxonomicRestriction
+            - GenericForm
+            - GenericField
+        - BackboneTaxa
+        - FilterTaxon
+        - TaxonProfile
+        - TaxonProfilesNavigationEntryTaxa
+    - ModelWithTaxon
+        - MetaNode
+        - ImageStore
+    - ContentImageMixin
+        - MetaApp
+        - Frontend
+        - GlossaryEntry
+        - NatureGuide
+        - MetaNode
+        - NatureGuidesTaxonTree
+        - MatrixFilterSpace
+        - TaxonProfile
+        - TaxonProfilesNavigationEntry
+'''
+
+def get_generic_content_meta_app(instance):
+    from app_kit.models import MetaAppGenericContent
+    meta_app = None
+    content_type = ContentType.objects.get_for_model(instance)
+    links = MetaAppGenericContent.objects.filter(content_type=content_type, object_id=instance.id)
+    if links.count() > 1:
+        raise Exception(f'More than one MetaAppGenericContent found for {instance.__class__.__name__})')
+    
+    elif links:
+        link = links.first()
+        meta_app = link.meta_app
+        
+    return meta_app 
+
+def get_content_instance_meta_app(instance):
+    from app_kit.models import MetaApp, ContentImage
+    if instance.__class__.__name__ == 'AppContentTaxonomicRestriction':
+        if instance.content.__class__.__name__ == 'GenericForm':
+            return get_generic_content_meta_app(instance.content)
+        
+        elif instance.content.__class__.__name__ == 'GenericField':
+            field_link = GenericFieldToGenericForm.objects.filter(generic_field=instance.content).first()
+            return get_generic_content_meta_app(field_link.generic_form)
+        
+    elif instance.__class__.__name__ == 'BackboneTaxa':
+        return get_generic_content_meta_app(instance.backbonetaxonomy)
+    elif instance.__class__.__name__ == 'FilterTaxon':
+        return get_generic_content_meta_app(instance.taxonomic_filter.map)
+    elif instance.__class__.__name__ == 'TaxonProfile':
+        return get_generic_content_meta_app(instance.taxon_profiles)
+    elif instance.__class__.__name__ == 'TaxonProfilesNavigationEntryTaxa':
+        return get_generic_content_meta_app(instance.navigation_entry.navigation.taxon_profiles)
+    elif instance.__class__.__name__ == 'MetaNode':
+        return get_generic_content_meta_app(instance.nature_guide)        
+    elif instance.__class__.__name__ in ['BackboneTaxonomy', 'TaxonProfiles', 'NatureGuide', 'Map', 'GenericForm', 'Frontend', 'Glossary']:
+        return get_generic_content_meta_app(instance)
+    elif instance.__class__.__name__ == 'MetaApp':
+        return instance
+    elif instance.__class__.__name__ == 'GlossaryEntry':
+        return get_generic_content_meta_app(instance.glossary)
+    elif instance.__class__.__name__ == 'MatrixFilterSpace':
+        return get_generic_content_meta_app(instance.matrix_filter.meta_node.nature_guide)
+    elif instance.__class__.__name__ == 'TaxonProfilesNavigationEntry':
+        return get_generic_content_meta_app(instance.navigation.taxon_profiles)
+    elif instance.__class__.__name__ == 'GenericField':
+        field_link = GenericFieldToGenericForm.objects.filter(generic_field=instance).first()
+        return get_generic_content_meta_app(field_link.generic_form)
+    elif instance.__class__.__name__ == 'ImageStore':
+        content_image = ContentImage.objects.filter(image_store=instance).first()
+        if content_image:
+            meta_app = get_generic_content_meta_app(content_image.content)
+            return meta_app
+        else:
+            return None
+    elif instance.__class__.__name__ in ['Dataset', 'DatasetValidationRoutine', 'ServerImageStore']:
+        app = get_content_instance_app(instance)
+        if app:
+            meta_app = MetaApp.objects.get(app__uuid=app.uuid)
+            return meta_app
+        else:
+            return None
+    else:
+        # raise error
+        raise NotImplementedError(f'get_generic_content_meta_app not implemented for {instance.__class__.__name__}')

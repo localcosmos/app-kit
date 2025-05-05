@@ -142,7 +142,7 @@ class BackboneTaxa(ModelWithRequiredTaxon):
     backbonetaxonomy = models.ForeignKey(BackboneTaxonomy, on_delete=models.CASCADE)
     
     class Meta:
-        verbose_name = _('Backbone taxonomy')
-        verbose_name_plural = _('Backbone taxonomies')
+        verbose_name = _('Backbone Taxon')
+        verbose_name_plural = _('Backbone Taxa')
         unique_together=('backbonetaxonomy', 'taxon_latname', 'taxon_author')
         ordering = ('taxon_latname', 'taxon_author')

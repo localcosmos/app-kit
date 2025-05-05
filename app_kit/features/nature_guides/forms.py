@@ -54,8 +54,7 @@ class NatureGuideOptionsForm(GenericContentOptionsForm):
     result_action = forms.ChoiceField(label=_('Action when tapping on an identification result'), required=False,
         help_text=_('Define what happens when the user taps on an entry (not a group) of this nature guide.'))
 
-    #image_recognition = forms.BooleanField(label=_('Enable automatic identification using image recognition'),
-    #                                       required=False)
+    version = forms.CharField(help_text=_('You can manually set you own version here. This will not affect the automated versioning.'), required=False)
     
 
     def __init__(self, *args, **kwargs):

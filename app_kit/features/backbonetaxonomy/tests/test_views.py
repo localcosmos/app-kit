@@ -11,7 +11,7 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 from app_kit.features.backbonetaxonomy.views import (ManageBackboneTaxonomy, BackboneFulltreeUpdate,
             AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy,
-            ManageBackboneTaxon) 
+            ManageBackboneTaxon, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences)
 
 from app_kit.features.backbonetaxonomy.forms import (AddSingleTaxonForm, AddMultipleTaxaForm,
                                                      ManageFulltreeForm, SearchTaxonomicBackboneForm)
@@ -454,3 +454,349 @@ class TestManageTaxon(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUs
         self.assertEqual(context_data['taxon_profiles'], taxon_profiles)
         self.assertEqual(context_data['taxon_profile'], taxon_profile)
         self.assertEqual(context_data['nature_guides_content_type'], ng_ctype)
+        
+
+class TestSwapTaxon(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
+                           WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'swap_taxon'
+    view_class = SwapTaxon
+    
+    def setUp(self):
+        super().setUp()
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        self.taxon = lacerta_agilis
+        
+        picea_abies = models.TaxonTreeModel.objects.get(taxon_latname='Picea abies')
+        picea_abies = LazyTaxon(instance=picea_abies)
+        self.taxon_2 = picea_abies
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=self.taxon,
+        )
+        
+        self.taxon_profile.save()
+        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    def get_post_data(self):
+        
+        post_data = {
+            'from_taxon_0' : 'taxonomy.sources.col',
+            'from_taxon_1' : self.taxon.taxon_latname,
+            'from_taxon_2' : self.taxon.taxon_author,
+            'from_taxon_3' : str(self.taxon.name_uuid),
+            'from_taxon_4' : self.taxon.taxon_nuid,
+            'to_taxon_0' : 'taxonomy.sources.col',
+            'to_taxon_1' : self.taxon_2.taxon_latname,
+            'to_taxon_2' : self.taxon_2.taxon_author,
+            'to_taxon_3' : str(self.taxon_2.name_uuid),
+            'to_taxon_4' : self.taxon_2.taxon_nuid,
+        }
+        
+        return post_data
+        
+    
+    @test_settings
+    def test_analyze_taxon(self):
+        view = self.get_view()
+        
+        analysis = view.analyze_taxon(self.taxon, self.taxon_2)
+        analysis[0]['occurrences'] = list(analysis[0]['occurrences'])
+        expected_analysis = [
+            {
+                'model': TaxonProfile,
+                'occurrences': [self.taxon_profile],
+                'verbose_model_name': 'Taxon Profile',
+                'verbose_occurrences': ['exists as a Taxon Profile'],
+                'is_swappable': True
+            }
+        ]
+        
+        self.assertEqual(analysis, expected_analysis)
+
+    
+    @test_settings
+    def test_get_taxon_occurrences(self):
+        view = self.get_view()
+        occurrences = view.get_taxon_occurrences(self.taxon)
+        
+        occurrences[0]['occurrences'] = list(occurrences[0]['occurrences'])
+        
+        expected_occurrences = [
+            {
+                'model': TaxonProfile,
+                'occurrences': [self.taxon_profile],
+                'verbose_model_name': 'Taxon Profile',
+                'verbose_occurrences': ['exists as a Taxon Profile'],
+            }
+        ]
+        
+        self.assertEqual(occurrences, expected_occurrences)
+        
+        occurrences_2 = view.get_taxon_occurrences(self.taxon_2)
+        self.assertEqual(occurrences_2, [])
+        
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['from_taxon'], None)
+        self.assertEqual(context_data['to_taxon'], None)
+        self.assertEqual(context_data['analyzed'], False)
+        self.assertEqual(context_data['swapped'], False)
+        self.assertEqual(context_data['verbose_from_taxon_occurrences'], [])
+        self.assertEqual(context_data['verbose_to_taxon_occurrences'], [])
+        
+    
+    @test_settings
+    def test_get_form_valid_context_data(self):
+        
+        view = self.get_view()
+        
+        post_data = self.get_post_data()
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        occurrences = view.get_taxon_occurrences(self.taxon_2)
+        analysis = view.analyze_taxon(self.taxon, self.taxon_2)
+        analysis[0]['occurrences'] = list(analysis[0]['occurrences'])
+        
+        context_data = view.get_form_valid_context_data(form)
+        context_data['verbose_from_taxon_occurrences'][0]['occurrences'] = list(context_data['verbose_from_taxon_occurrences'][0]['occurrences'])
+        
+        self.assertEqual(context_data['from_taxon'], self.taxon)
+        self.assertEqual(context_data['to_taxon'], self.taxon_2)
+        self.assertEqual(context_data['analyzed'], True)
+        self.assertEqual(context_data['swapped'], False)
+        self.assertEqual(context_data['verbose_from_taxon_occurrences'], analysis)
+        self.assertEqual(context_data['verbose_to_taxon_occurrences'], occurrences)
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        
+        post_data = self.get_post_data()
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['analyzed'], True)
+        
+        tp = TaxonProfile.objects.get(pk=self.taxon_profile.pk)
+        self.assertEqual(tp.taxon, self.taxon_2)
+
+ 
+class TestAnalyzeTaxon(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
+                           WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'analyze_taxon'
+    view_class = AnalyzeTaxon
+    
+    def setUp(self):
+        super().setUp()
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        self.taxon = lacerta_agilis
+        
+        picea_abies = models.TaxonTreeModel.objects.get(taxon_latname='Picea abies')
+        picea_abies = LazyTaxon(instance=picea_abies)
+        self.taxon_2 = picea_abies
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=self.taxon,
+        )
+        
+        self.taxon_profile.save()
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    def get_post_data(self):
+        
+        post_data = {
+            'from_taxon_0' : 'taxonomy.sources.col',
+            'from_taxon_1' : self.taxon.taxon_latname,
+            'from_taxon_2' : self.taxon.taxon_author,
+            'from_taxon_3' : str(self.taxon.name_uuid),
+            'from_taxon_4' : self.taxon.taxon_nuid,
+            'to_taxon_0' : 'taxonomy.sources.col',
+            'to_taxon_1' : self.taxon_2.taxon_latname,
+            'to_taxon_2' : self.taxon_2.taxon_author,
+            'to_taxon_3' : str(self.taxon_2.name_uuid),
+            'to_taxon_4' : self.taxon_2.taxon_nuid,
+        }
+        
+        return post_data
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        post_data = self.get_post_data()
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['analyzed'], True)
+        self.assertEqual(response.context_data['swapped'], False)
+        
+        
+class TestUpdateTaxonReferences(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
+                           WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'analyze_taxon'
+    view_class = UpdateTaxonReferences
+    
+    def setUp(self):
+        super().setUp()
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        
+        picea_abies = models.TaxonTreeModel.objects.get(taxon_latname='Picea abies')
+        self.picea_abies = LazyTaxon(instance=picea_abies)
+        
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        self.taxon_profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+        )
+        
+        self.taxon_profile.set_taxon(self.picea_abies)
+        
+        self.taxon_profile.save()
+        
+        self.reference_lazy_taxon = LazyTaxon(instance=self.taxon_profile)
+        
+        outdated_taxon_kwargs = {
+            'taxon_source': self.picea_abies.taxon_source,
+            'taxon_latname': self.picea_abies.taxon_latname,
+            'taxon_author': self.picea_abies.taxon_author,
+            'taxon_nuid': '001002003',
+            'name_uuid': 'aaaaaaaa-47ac-4ad4-bd6a-4158c78165be', # a uuid v4
+        }
+        
+        self.outdated_lazy_taxon = LazyTaxon(**outdated_taxon_kwargs)
+        self.taxon_profile.set_taxon(self.outdated_lazy_taxon)
+        self.taxon_profile.save()
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_analyze(self):
+        view = self.get_view()
+        result = view.analyze()
+        
+        expected_result = [
+            {
+                'instance': self.taxon_profile,
+                'taxon': self.outdated_lazy_taxon,
+                'errors': [
+                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2019',
+                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2019'
+                ],
+                'updated': False
+            }
+        ]
+        
+        self.assertEqual(result, expected_result)
+    
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        result = view.analyze()
+        
+        context_data = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context_data['analyzed'], True)
+        self.assertEqual(context_data['updated'], False)
+        self.assertEqual(context_data['result'], result)
+        
+    
+    @test_settings
+    def test_post(self):
+        
+        view = self.get_view()
+        
+        view.request.method = 'POST'
+        
+        response = view.post(view.request, **view.kwargs)
+        
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(response.context_data['analyzed'], False)
+        self.assertEqual(response.context_data['updated'], True)
+        
+        
+        expected_result = [
+            {
+                'instance': self.taxon_profile,
+                'taxon': self.reference_lazy_taxon,
+                'errors': [
+                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2019',
+                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2019'
+                ],
+                'updated': True
+            }
+        ]
+        
+        self.assertEqual(response.context_data['result'], expected_result)

@@ -206,27 +206,28 @@ class WithMetaApp:
         return link
 
 
-    def create_content_image(self, content_instance, user, taxon=None, image_type='image'):
+    def create_content_image(self, content_instance, user, taxon=None, image_type='image', image_store=None):
 
         image_name = '{0}-{1}.jpg'.format(content_instance.__class__.__name__, content_instance.id)
 
         md5 = hashlib.md5(Image.open(TEST_IMAGE_PATH).tobytes()).hexdigest()
 
-        image_store = ImageStore.objects.filter(md5=md5).first()
-
         if not image_store:
+            image_store = ImageStore.objects.filter(md5=md5).first()
 
-            image = SimpleUploadedFile(name=image_name, content=open(TEST_IMAGE_PATH, 'rb').read(),
-                                            content_type='image/jpeg')
+            if not image_store:
 
-            image_store = ImageStore(
-                source_image=image,
-                uploaded_by=user,
-                md5=md5,
-                taxon=taxon,
-            )
+                image = SimpleUploadedFile(name=image_name, content=open(TEST_IMAGE_PATH, 'rb').read(),
+                                                content_type='image/jpeg')
 
-            image_store.save()
+                image_store = ImageStore(
+                    source_image=image,
+                    uploaded_by=user,
+                    md5=md5,
+                    taxon=taxon,
+                )
+
+                image_store.save()
 
         content_type = ContentType.objects.get_for_model(content_instance)
 

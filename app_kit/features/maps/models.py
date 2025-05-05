@@ -87,5 +87,6 @@ class FilterTaxon(ModelWithRequiredTaxon):
 
     class Meta:
         unique_together = ('taxonomic_filter', 'name_uuid')
+        verbose_name = _('Map Filter Taxon')
 
 

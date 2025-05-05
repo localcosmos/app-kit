@@ -1,10 +1,8 @@
 from django.db import models
 from django.conf import settings
 
-from django.contrib.contenttypes.models import ContentType
-
 from app_kit.generic import GenericContent
-from app_kit.models import ContentImageMixin, MetaAppGenericContent, SingleFeatureMixin
+from app_kit.models import ContentImageMixin, SingleFeatureMixin
 
 from app_kit.utils import unCamelCase, camelCase_to_underscore_case
 

@@ -1,0 +1,139 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block content %}
+
+<div {% block container_class %}class="container"{% endblock %}>
+    <div class="row">
+        <div class="col-12">
+            <div>
+                <br>
+                <h1>{% trans 'Swap Taxon' %}</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <form id="swap-taxon-form" method="POST" action="">
+                {% csrf_token %}
+                {% render_bootstrap_form form %}
+
+                {% if analyzed %}
+                    <div>
+                        <div class="card mb-5">
+                            <div class="card-body">
+                                <h4 class="card-title">
+                                    {% trans 'Analyzation Result' %}
+                                </h4>
+                                <div>
+                                    <h5>
+                                        <strong>
+                                            <i>{{ from_taxon.taxon_latname }}</i> {{ from_taxon.taxon_author }}
+                                        </strong>
+                                    </h5>
+                                    <div class="ml-4">
+                                        {% if verbose_from_taxon_occurrences %}
+                                            {% for occurrences in verbose_from_taxon_occurrences %}
+                                                <div>
+                                                    <div class="my-3">
+                                                        <strong>{{ occurrences.verbose_model_name }}</strong>
+                                                        {% if occurrences.is_swappable %}
+                                                            <span class="badge badge-success">
+                                                                {% trans 'swappable' %}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="badge badge-danger">
+                                                                {% trans 'not swappable' %}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                    <ul>
+                                                        {% for verbose_occurrence in occurrences.verbose_occurrences %}
+                                                            <li>
+                                                                {{ verbose_occurrence }}
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% if swapped %}
+                                                <div class="alert alert-success">
+                                                    {% blocktrans with to_name=to_taxon from_name=from_taxon %}{{ from_name }} has been replaced with {{ to_name }} where possible.{% endblocktrans %}
+                                                </div>
+                                            {% else %}
+                                                <div class="alert alert-danger">
+                                                    {% blocktrans with name=from_taxon %}{{ name }} does not occur in your app and can't be swapped.{% endblocktrans %}
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="mt-4">
+                                    <h5>
+                                        <strong>
+                                            <i>{{ to_taxon.taxon_latname }}</i> {{ to_taxon.taxon_author }}
+                                        </strong>
+                                    </h5>
+                                    <div class="ml-4">
+                                        {% if verbose_to_taxon_occurrences %}
+                                            {% for to_occurrences in verbose_to_taxon_occurrences %}
+                                                <div>
+                                                    <div class="my-3">
+                                                        <strong>{{ to_occurrences.verbose_model_name }}</strong>
+                                                    </div>
+                                                    <ul>
+                                                        {% for to_verbose_occurrence in to_occurrences.verbose_occurrences %}
+                                                            <li>
+                                                                {{ to_verbose_occurrence }}
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="alert alert-success">
+                                                {% blocktrans with to_name=to_taxon from_name=from_taxon %}{{ to_name }} does not occur in your app and can replace {{ from_taxon }}.{% endblocktrans %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <div>
+                    <button type="submit" name="action" value="analyze" class="btn btn-outline-primary">
+                        {% trans 'Analyze' %}
+                    </button>
+                    {% if analyzed and verbose_from_taxon_occurrences %}
+                        <button type="submit" name="action" value="swap" class="btn btn-outline-success">
+                            {% trans 'Perform Swap' %}
+                        </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('swap-taxon-form').addEventListener('submit', function(event) {
+    const buttons = document.querySelectorAll('button[name="action"]');
+    let actionValue = '';
+    
+    buttons.forEach(button => {
+        if (button === document.activeElement) {
+            actionValue = button.value;
+        }
+    });
+
+    // Set the form's action URL based on the button clicked
+    if (actionValue === 'analyze') {
+        this.action = '{% url "analyze_taxon" meta_app.id %}';
+    } else if (actionValue === 'swap') {
+        this.action = '{% url "swap_taxon" meta_app.id %}';
+    }
+});
+</script>
+{% endblock %}

@@ -5,7 +5,7 @@ from app_kit.tests.common import test_settings, powersetdic
 from app_kit.tests.mixins import WithMetaApp, WithFormTest
 
 from app_kit.features.backbonetaxonomy.forms import (SearchTaxonomicBackboneForm, AddMultipleTaxaForm,
-                                                     ManageFulltreeForm)
+                                                     ManageFulltreeForm, SwapTaxonForm)
 
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
 
@@ -53,3 +53,11 @@ class TestManageFulltreeForm(WithMetaApp, WithFormTest, TenantTestCase):
         self.assertEqual(form.fields['include_full_tree'].initial, 'taxonomy.sources.col')
         
     
+class TestSwapTaxonForm(WithMetaApp, WithFormTest, TenantTestCase):
+    
+    @test_settings
+    def test_init(self):
+
+        form = SwapTaxonForm()
+        self.assertIn('from_taxon', form.fields)
+        self.assertIn('to_taxon', form.fields)

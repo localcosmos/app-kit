@@ -4,10 +4,6 @@ from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 from app_kit.server_side_cursors import server_side_cursors
 from taxonomy.lazy import LazyTaxon
 
-from app_kit.generic import AppContentTaxonomicRestriction
-
-from app_kit.features.taxon_profiles.models import TaxonProfile
-
 from django.template.defaultfilters import slugify 
 
 

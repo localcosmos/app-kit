@@ -20,4 +20,10 @@ urlpatterns = [
         views.CollectedVernacularNames.as_view(), name='collected_vernacular_names'),
     path('manage-backbone-taxon/<int:meta_app_id>/<str:taxon_source>/<uuid:name_uuid>/',
         views.ManageBackboneTaxon.as_view(), name='manage_backbone_taxon'),
+    # taxon swap
+    path('swap-taxon/<int:meta_app_id>/', views.SwapTaxon.as_view(), name='swap_taxon'),
+    path('analyze-taxon/<int:meta_app_id>/', views.AnalyzeTaxon.as_view(), name='analyze_taxon'),
+    # taxon update
+    path('update-taxon-references/<int:meta_app_id>/', views.UpdateTaxonReferences.as_view(),
+         name='update_taxon_references'),
 ]

@@ -51,37 +51,50 @@
 		</div>
 	</div>-->
 
-	{% if not generic_content.include_full_tree and alltaxa %}
-		{% with backbone=generic_content %}
-		<hr>
-		<div class="card">
-			<div class="card-body">
-				<h4 class="card-title">{% trans 'Add single taxon' %}</h4>
-				
-					<div>
-						{% include 'backbonetaxonomy/add_taxon_form.html' %}
-					</div>
-			</div>
-		</div>
-		<hr>
-		<div class="card">
-			<div class="card-body">
-				<h4 class="card-title">{% trans 'Add multiple taxa' %}</h4>
+	
+	{% with backbone=generic_content %}
+	<hr>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Add single taxon' %}</h4>
+			
 				<div>
-					{% include 'backbonetaxonomy/manage_backbone_taxa_form.html' %}
+					{% include 'backbonetaxonomy/add_taxon_form.html' %}
 				</div>
+		</div>
+	</div>
+	<hr>
+	<div class="card">
+		<div class="card-body">
+			<h4 class="card-title">{% trans 'Add multiple taxa' %}</h4>
+			<div>
+				{% include 'backbonetaxonomy/manage_backbone_taxa_form.html' %}
 			</div>
 		</div>
-		{% endwith %}
+	</div>
+	{% endwith %}
 
-		<hr>
+	<hr>
+	<h3>{% trans 'Swap taxa' %}</h3>
+	{% trans 'You can swap one taxon with another taxon across your app.' %}
+	<p>
+		<a href="{% url 'swap_taxon' meta_app.id %}" class="btn btn-primary">{% trans 'Manage Taxon Swap' %}</a>
+	</p>
 
-		<h3>{% trans 'Custom taxa' %}</h3>
-		{% trans 'If you want to add custom taxa or non-life taxa such as stones, you can create custom taxa. Custom taxa can appear in multiple apps. You only need to to create them once and then add them to the apps you want.' %}
-		<p>
-			<a href="{% url 'manage_custom_taxontree' meta_app.id meta_app.primary_language %}" class="btn btn-primary">{% trans 'Manage custom taxonomic tree' %}</a>
-		</p>
-	{% endif %}
+	<hr>
+	<h3>{% trans 'Update taxonomic references' %}</h3>
+	{% trans 'If you updated your taxonomic database, you can check you references here.' %}
+	<p>
+		<a href="{% url 'update_taxon_references' meta_app.id %}" class="btn btn-primary">{% trans 'Update Taxonomic References' %}</a>
+	</p>
+
+	<hr>
+
+	<h3>{% trans 'Custom taxa' %}</h3>
+	{% trans 'If you want to add custom taxa or non-life taxa such as stones, you can create custom taxa. Custom taxa can appear in multiple apps. You only need to to create them once and then add them to the apps you want.' %}
+	<p>
+		<a href="{% url 'manage_custom_taxontree' meta_app.id meta_app.primary_language %}" class="btn btn-primary">{% trans 'Manage custom taxonomic tree' %}</a>
+	</p>
 
 {% endblock %}
 

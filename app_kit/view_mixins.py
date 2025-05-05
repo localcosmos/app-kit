@@ -1,8 +1,5 @@
 from .models import MetaApp
 
-'''
-    things like formfields etc which are not GenericContent Subclasses
-'''
 class MetaAppMixin:
 
     def dispatch(self, request, *args, **kwargs):

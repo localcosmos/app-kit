@@ -53,3 +53,34 @@ class ManageFulltreeForm(forms.ModelForm):
         fields = []
 
 
+class SwapTaxonForm(forms.Form):
+    
+    def __init__(self, *args, **kwargs):
+        
+        taxon_search_url = reverse('search_taxon')
+
+        super().__init__(*args, **kwargs)
+
+        # the field_kwargs are also passed to the widget
+        field_kwargs = {
+            'taxon_search_url' : taxon_search_url,
+            'descendants_choice' : False,
+            'fixed_taxon_source' : False,
+            'widget_attrs' : {},
+            'lazy_taxon_class': LazyTaxon,
+        }
+
+        self.fields['from_taxon'] = TaxonField(label=_('Taxon 1 (will be replaced by Taxon 2)'), required=True, **field_kwargs)
+        self.fields['to_taxon'] = TaxonField(label=_('Taxon 2 (will repace Taxon 1)'), required=True, **field_kwargs)
+        
+        
+    # you ma y not select the same taxon twice
+    def clean(self):
+        cleaned_data = super().clean()
+        from_taxon = cleaned_data.get('from_taxon')
+        to_taxon = cleaned_data.get('to_taxon')
+
+        if from_taxon and to_taxon and from_taxon == to_taxon:
+            raise forms.ValidationError(_('You cannot select the same taxon twice.'))
+        
+        return cleaned_data
