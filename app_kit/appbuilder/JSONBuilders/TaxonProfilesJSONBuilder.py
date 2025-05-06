@@ -405,6 +405,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
                     vernacular_search_taxon_json = self.app_release_builder.taxa_builder.serialize_as_search_taxon(
                         lazy_taxon, 'vernacular', preferred_vernacular_name, True)
+                    
+                    # fix for an algaebase problem
+                    vernacular_search_taxon_json['taxon_latname'] = lazy_taxon.taxon_latname
+                    vernacular_search_taxon_json['taxon_author'] = lazy_taxon.taxon_author
 
                     localized_registries[language_code].append(vernacular_search_taxon_json)
                     

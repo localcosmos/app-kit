@@ -208,7 +208,7 @@ class AddExistingGenericContentForm(forms.Form):
 class MetaAppOptionsForm(GenericContentOptionsForm):
 
     global_options_fields = ['allow_user_create_matrices', 'allow_anonymous_observations',
-                             'localcosmos_private', 'localcosmos_private_api_url']
+                             'localcosmos_private', 'localcosmos_private_api_url', 'version']
     
     allow_anonymous_observations = forms.BooleanField(required=False,
                         label=_('Allow unregistered users to report observations'),
@@ -220,6 +220,8 @@ class MetaAppOptionsForm(GenericContentOptionsForm):
     localcosmos_private_api_url = forms.CharField(label=_('API URL of your private Local Cosmos Server'),
                                                 help_text=_('Only applies if you run your own Local Cosmos Server.'),
                                                 required=False)
+    
+    version = forms.CharField(max_length=30, required=False, help_text = _('Manually set the version of your app.'))
 
 
 
