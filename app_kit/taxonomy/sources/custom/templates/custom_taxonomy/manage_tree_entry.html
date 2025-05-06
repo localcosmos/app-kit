@@ -1,0 +1,31 @@
+{% load i18n localcosmos_tags %}
+<div id="ctype-{{ taxon|ctype_id }}-{{ taxon.id }}" class="card">
+	<div class="card-body">
+		<div>
+			{{ taxon.taxon_latname }}
+
+			<a href class="btn btn-xs btn-outline-primary xhr" data-url="{% url 'load_custom_taxon_children' taxon.name_uuid language %}" ajax-target="{{ taxon.name_uuid }}-children">{% trans 'Load children' %}</a>
+
+			<div class="btn-group dropup">
+				<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+					{% trans 'Modify' %}
+				</button>
+				<div class="dropdown-menu">
+					
+					
+					<a data-url="{% url 'create_new_custom_taxon' taxon.name_uuid  language %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add child' %}</a>
+					{% if taxon.is_locked %}
+					{% else %}
+						<div class="dropdown-divider"></div>
+						<a data-url="{% url 'move_custom_taxon' taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'move' %}</a>
+						<a data-url="{% url 'manage_custom_taxon' taxon.name_uuid language %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+						<div class="dropdown-divider"></div>
+						<a data-url="{% url 'delete_custom_taxon' taxon.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
+					{% endif %}
+					
+				</div>
+			</div>
+		</div>
+		<div id="{{ taxon.name_uuid }}-children"></div>
+	</div>
+</div>

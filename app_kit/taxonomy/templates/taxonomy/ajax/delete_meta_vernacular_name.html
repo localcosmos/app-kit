@@ -1,0 +1,12 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block extra_success_js %}
+    <script>
+        (function(){
+            let vernacular_names_list_container = document.getElementById("collected-vernacular-names");
+            if (vernacular_names_list_container) {
+                {% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}
+            }
+        })();
+</script>
+{% endblock %}

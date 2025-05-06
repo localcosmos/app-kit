@@ -1,0 +1,21 @@
+{% extends 'taxonomy/widgets/taxon_autocomplete_widget_base.html' %}
+{% load i18n %}
+
+{% block widgets %}
+	{% with widget=selected_indicator_widget %}
+	<div class="row">
+		<div class="col-12 col-md-6">
+			<input type="{{ widget.type }}" class="form-control" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %} />
+		</div>
+	</div>
+	{% endwith %}
+
+	{% block search_widgets %}
+		{% spaceless %}
+			{% for widget in search_widgets %}
+				{% include widget.template_name %}
+			{% endfor %}
+		{% endspaceless %}
+	{% endblock %}
+
+{% endblock %}

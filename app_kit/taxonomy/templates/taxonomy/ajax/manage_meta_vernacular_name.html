@@ -1,0 +1,51 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+{% if meta_vernacular_name %}{% url 'manage_meta_vernacular_name' meta_app.id meta_vernacular_name.id %}{% else %}{% url 'create_meta_vernacular_name' meta_app.id taxon.taxon_source taxon.name_uuid %}{% endif %}
+{% endblock %}
+
+{% block title %}
+    {% if meta_vernacular_name %}
+        {% trans 'Manage vernacular name' %}
+    {% else %}
+        {% trans 'Create vernacular name' %}
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <div>
+        <h4>
+            <i>
+                {{ taxon }}
+            </i>
+        </h4>
+    </div>
+	{% render_bootstrap_form form %}
+	{% if success %}
+		<div class="alert alert-success">
+			{% trans 'Your changes have been saved.' %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+    <script>
+        
+        {% if success %}
+            (function(){
+                let vernacular_names_list_container = document.getElementById("collected-vernacular-names");
+                if (vernacular_names_list_container) {
+                    {% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}
+                }
+            })();
+
+            $("#Modal").modal("hide");
+        {% endif %}
+    </script>
+{% endblock %}

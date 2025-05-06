@@ -1,0 +1,27 @@
+{% extends 'app_kit/base.html' %}
+
+{% load i18n %}
+
+{% block header %}
+	<div class="container-fluid d-none d-md-block">
+		<div class="row">
+			<div class="col-12 text-center text-white bg-primary">
+				<h2>{{ meta_app.name }}</h2>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block content %}
+	<div class="container">
+		{% block above_tree %}
+		{% endblock %}
+		{% block tree %}
+			
+				{% include 'taxonomy/treeview_children.html' %}
+			
+		{% endblock %}
+		{% block below_tree %}
+		{% endblock %}
+	</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'taxonomy/taxontreeview.html' %}
+
+{% load i18n %}
+
+{% block above_tree %}
+	<br>
+	<div class="row">
+		<div class="col-12">
+			<h2>{% trans 'Manage custom taxonomic tree' %}</h2>
+		</div>
+	</div>
+{% endblock %}
+{% block below_tree %}
+	<br>
+	<div class="row">
+		<div class="col-12">
+			<a href class="btn btn-primary xhr" data-url="{% url 'create_new_custom_root_taxon' language %}" ajax-target="ModalContent">{% trans 'Add root taxon' %}</a>
+		</div>
+	</div>
+	
+{% endblock %}

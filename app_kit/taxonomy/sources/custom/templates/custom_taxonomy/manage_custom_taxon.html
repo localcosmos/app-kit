@@ -1,0 +1,40 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n static %}
+
+{% block action %}{% if taxon %}{% url 'manage_custom_taxon' taxon.name_uuid language %}{% else %}{% if parent_taxon %}{% url 'create_new_custom_taxon' parent_taxon.name_uuid language %}{% else %}{% url 'create_new_custom_root_taxon' language %}{% endif %}{% endif %}{% endblock %}
+
+{% block title %}{% if taxon %}{% blocktrans with name=taxon.taxon_name %}Manage {{ name }}{% endblocktrans %}{% else %}Create new taxon{% endif %}{% endblock %}
+
+{% block body %}
+	<p>
+		{% include 'localcosmos_server/bootstrap_form.html' %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% trans 'Successfully saved taxon.' %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block open_modal %}
+	<script>
+		{% if success is True %}
+			$("#Modal").modal("hide");
+			{% if parent_taxon %}
+				$.get("{% url 'load_custom_taxon_children' parent_taxon.name_uuid language %}", function(html){
+					var container_id = "{{ parent_taxon.name_uuid }}-children";
+					$("#" + container_id).html(html);
+					ajaxify(container_id);
+				});
+			{% else %}
+				window.location.reload()
+			{% endif %}
+		{% else %}
+			$("#Modal").modal("show");
+		{% endif %}
+	</script>
+{% endblock %}

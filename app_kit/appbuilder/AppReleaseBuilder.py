@@ -909,24 +909,28 @@ class AppReleaseBuilder(AppBuilderBase):
             warning = ValidationWarning(taxon_profiles, taxon_profiles, [warning_message])
             result['warnings'].append(warning)
         
-        taxon_profile_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=taxon_profiles).first()
+        enable_taxonomic_navigation = taxon_profiles.get_option(self.meta_app, 'enable_taxonomic_navigation')
         
-        if taxon_profile_navigation:
-            uncovered_taxon_profiles = set(list(TaxonProfile.objects.filter(taxon_profiles=taxon_profiles)))
+        if enable_taxonomic_navigation == True:
+        
+            taxon_profile_navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=taxon_profiles).first()
+            
+            if taxon_profile_navigation:
+                uncovered_taxon_profiles = set(list(TaxonProfile.objects.filter(taxon_profiles=taxon_profiles)))
 
-            all_navigation_entries = TaxonProfilesNavigationEntry.objects.filter(navigation=taxon_profile_navigation)
-            
-            for navigation_entry in all_navigation_entries:
-                for attached_taxon_profile in navigation_entry.attached_taxon_profiles:
-                    uncovered_taxon_profiles.discard(attached_taxon_profile)
+                all_navigation_entries = TaxonProfilesNavigationEntry.objects.filter(navigation=taxon_profile_navigation)
                 
+                for navigation_entry in all_navigation_entries:
+                    for attached_taxon_profile in navigation_entry.attached_taxon_profiles:
+                        uncovered_taxon_profiles.discard(attached_taxon_profile)
+                    
+                    
                 
-            
-            for uncovered_taxon_profile in uncovered_taxon_profiles:
-                warning_message = _('The taxon profile of %(taxon_latname)s is not covered by the taxonomic navigation.') % {
-                    'taxon_latname':uncovered_taxon_profile.taxon_latname}
-                warning = ValidationWarning(taxon_profiles, taxon_profile_navigation, [warning_message])
-                result['warnings'].append(warning)
+                for uncovered_taxon_profile in uncovered_taxon_profiles:
+                    warning_message = _('The taxon profile of %(taxon_latname)s is not covered by the taxonomic navigation.') % {
+                        'taxon_latname':uncovered_taxon_profile.taxon_latname}
+                    warning = ValidationWarning(taxon_profiles, taxon_profile_navigation, [warning_message])
+                    result['warnings'].append(warning)
             
         return result
 

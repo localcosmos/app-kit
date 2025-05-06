@@ -1,0 +1,57 @@
+{% load i18n %}
+{% block widgets %}
+	{% with widget=selected_indicator_widget %}
+	<div class="row">
+		<div class="col-10 col-md-6">
+			<input type="{{ widget.type }}" class="form-control" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %} />
+		</div>
+		<div class="col-2 col-md-6 text-left">
+			<button id="id-clear-taxon" type="button" class="btn btn-secondary btn-xs">{% trans 'clear' %}</button>
+		</div>
+	</div>
+	{% endwith %}
+	<div class="card">
+		<div class="card-body">
+			{% block search_widgets %}
+				{% spaceless %}
+					{% for widget in search_widgets %}
+						{% include widget.template_name %}
+					{% endfor %}
+				{% endspaceless %}
+			{% endblock %}
+		</div>
+	</div>
+{% endblock %}
+
+{% block extra_html %}
+	<div id="{{ widget.attrs.id }}_info" class="text-danger" style="display:none">{% trans 'no taxa found' %}</div>
+{% endblock %}
+
+{% block js %}
+	<script type="text/javascript">
+
+		(function(){
+		
+			$("#{{ widget.attrs.id }}_3").taxonautocomplete({"url":"{{ url }}", "dispatch_change_event": {% if dispatch_change_event %}true{% else %}false{% endif %} });
+
+			{% if final_attrs.value %}
+				$.get("{% url 'get_taxon' widget.attrs.value language %}", function(taxon){
+				
+					if (taxon.vernacular){
+						var name = "" + taxon.vernacular + "(" + taxon.taxon_latname + ")";
+					}
+					else {
+						var name = taxon.taxon_latname;
+					}
+					$("#{{ widget.attrs.id }}_verbose").val(name);
+				});
+			{% endif %}
+
+			$("#id-clear-taxon").on("click", function(ev){
+				$("#{{ widget.attrs.id }}_3").val('')
+				$("#{{ widget.attrs.id }}_0").val('').removeClass('is-valid');
+				$("#{{ widget.attrs.id }}_4").val('')
+			});
+		})()
+	</script>
+{% endblock %}

@@ -342,6 +342,10 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 }
 
                 options['resultAction'] = result_action_json
+                
+            
+            custom_version = self.app_generic_content.options.get('version', None) 
+            options['version'] = custom_version
 
         return options
         

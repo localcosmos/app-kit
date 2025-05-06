@@ -1,0 +1,18 @@
+{% load i18n %}
+<br>
+{% if taxa %}
+	{% for taxon in taxa %}
+		<div class="row">
+			<div class="col-12">
+				{% include tree_entry_template %}
+			</div>
+		</div>
+	{% endfor %}
+{% else %}
+	<div id="{{ parent_taxon.name_uuid }}-notaxa" class="row">
+		<div class="col-12 text-secondary">
+			{% trans 'No children found for this taxon.' %}
+		</div>
+	</div>
+{% endif %}
+
