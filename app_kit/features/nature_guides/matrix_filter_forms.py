@@ -77,7 +77,7 @@ class MatrixFilterManagementFormWithUnit(MatrixFilterManagementForm):
 
 class MatrixFilterManagementFormWithMultipleValues(MatrixFilterManagementForm):
     
-    allow_multiple_values = forms.BooleanField(label=_('allow the selection of multiple values'),
+    allow_multiple_values = forms.BooleanField(label=_('allow the selection of multiple values (AND logic)'),
                                 help_text=_('The end user will be able to select more than one value. The selected values will be treated as "OR".'),
                                 required=False)
 

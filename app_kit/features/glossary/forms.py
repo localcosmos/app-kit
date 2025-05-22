@@ -6,6 +6,12 @@ from django.utils.translation import gettext_lazy as _
 
 from localcosmos_server.forms import LocalizeableModelForm
 
+from app_kit.forms import GenericContentOptionsForm
+
+class GlossaryOptionsForm(GenericContentOptionsForm):
+    
+    version = forms.CharField(help_text=_('You can manually set you own version here. This will not affect the automated versioning.'), required=False)
+    
 
 class GlossaryEntryForm(LocalizeableModelForm):
 

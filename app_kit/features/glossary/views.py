@@ -8,7 +8,7 @@ from app_kit.views import ManageGenericContent
 
 from app_kit.view_mixins import MetaAppMixin
 
-from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm
+from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm, GlossaryOptionsForm
 
 from .models import Glossary, GlossaryEntry, TermSynonym
 
@@ -18,6 +18,7 @@ from localcosmos_server.generic_views import AjaxDeleteView
 class ManageGlossary(ManageGenericContent):
 
     template_name = 'glossary/manage_glossary.html'
+    options_form_class = GlossaryOptionsForm
 
     def get_glossary_entry_form(self):
         initial = {

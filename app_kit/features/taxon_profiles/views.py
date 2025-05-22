@@ -117,7 +117,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
             name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
-        backbone_taxa_noprofile = BackboneTaxa.objects.exclude(
+        backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
         
         uses_taxon_profiles_navigation = self.generic_content.get_option(self.meta_app, 'enable_taxonomic_navigation')

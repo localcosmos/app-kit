@@ -170,11 +170,11 @@ class LazyTaxon(LazyTaxonBase):
         
         vernacular_name = None
         
-        locale = self.models.TaxonLocaleModel.objects.filter(name_uuid=self.name_uuid,
+        locale = self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid,
             language=language, preferred=True).first()
         
         if not locale:
-            self.models.TaxonLocaleModel.objects.filter(name_uuid=self.name_uuid,
+            self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid,
                 language=language).first()
             
         if locale:

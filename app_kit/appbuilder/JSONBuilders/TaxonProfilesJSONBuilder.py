@@ -117,6 +117,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         
         taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
+        
+        # if the taxonomic db got updated, still use the old taxon latname and author here
+        taxon_profile_json['taxonLatname'] = lazy_taxon.taxon_latname
+        taxon_profile_json['taxonAuthor'] = lazy_taxon.taxon_author
+        
         images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon)
 
         is_featured = False
@@ -383,6 +388,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             registry_taxon_json = self.app_release_builder.taxa_builder.serialize_as_registry_taxon(
                 lazy_taxon, languages, 'scientific', full_scientific_name, True)
             
+            # fix for an algaebase problem
+            registry_taxon_json['taxonLatname'] = lazy_taxon.taxon_latname
+            registry_taxon_json['taxonAuthor'] = lazy_taxon.taxon_author
+            
             registry[str(lazy_taxon.name_uuid)] = registry_taxon_json
             
             scientific_start_letter = full_scientific_name[0].upper()
@@ -407,8 +416,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                         lazy_taxon, 'vernacular', preferred_vernacular_name, True)
                     
                     # fix for an algaebase problem
-                    vernacular_search_taxon_json['taxon_latname'] = lazy_taxon.taxon_latname
-                    vernacular_search_taxon_json['taxon_author'] = lazy_taxon.taxon_author
+                    vernacular_search_taxon_json['taxonLatname'] = lazy_taxon.taxon_latname
+                    vernacular_search_taxon_json['taxonAuthor'] = lazy_taxon.taxon_author
 
                     localized_registries[language_code].append(vernacular_search_taxon_json)
                     

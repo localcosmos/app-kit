@@ -36,7 +36,8 @@ class PrivateFrontendImporter:
             if settings:
                 self.validate_settings_json(settings)
 
-        self.validate_frontend_files()
+        if not self.errors:
+            self.validate_frontend_files()
 
         self.is_valid = len(self.errors) == 0
 
@@ -68,6 +69,9 @@ class PrivateFrontendImporter:
                 subitem_path = os.path.join(self.unzip_path, subitem)
                 if os.path.isdir(subitem_path):
                     frontend_folder = subitem_path
+                    
+            if not frontend_folder:
+                self.errors.append(_('The Frontend zip file does not contain a folder. The Frontend zip file has to contain one folder'))
 
             self.temporary_frontend_folder  = frontend_folder
 
@@ -79,16 +83,14 @@ class PrivateFrontendImporter:
         if not self.errors and self.temporary_frontend_folder:
             settings_path = os.path.join(self.temporary_frontend_folder, 'settings.json')
             if os.path.isfile(settings_path):
-
                 with open(settings_path, 'rb') as settings_file:
                     try:
                         settings = json.loads(settings_file.read())
                     except Exception as e:
                         self.errors.append(_('Invalid json in settings.json file.'))
 
-        if not settings:
+        if not settings and not self.errors:
             self.errors.append(_('The uploaded Frontend is missing the settings.json file.'))
-
         return settings
 
 
@@ -118,7 +120,6 @@ class PrivateFrontendImporter:
 
 
     def validate_settings_json(self, frontend_settings):
-
         frontend_folder_name = os.path.basename(self.temporary_frontend_folder)
         frontend_name = frontend_settings.get('frontend', None)
 
