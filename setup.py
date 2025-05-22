@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    'localcosmos-server==0.22.5',
+    'localcosmos-server==0.22.6',
     'localcosmos-cordova-builder==0.9.4',
     'django-tenants==3.7.0',
     'django-cleanup==9.0.0',
