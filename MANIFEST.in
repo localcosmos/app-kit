@@ -21,5 +21,7 @@ recursive-include app_kit/features/taxon_profiles/templates *
 recursive-include app_kit/features/taxon_profiles/tests *
 recursive-include app_kit/app_kit_api/tests *
 recursive-include app_kit/multi_tenancy/templates *
+recursive-include app_kit/taxonomy/templates *
+recursive-include app_kit/taxonomy/sources/custom/templates *
 
 

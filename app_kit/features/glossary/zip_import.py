@@ -154,7 +154,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
                         
         for row_index, row in enumerate(glossary_sheet.iter_rows(), 1):
 
-            if row_index == 0:
+            if row_index == 1:
                 continue
 
             save_entry = False

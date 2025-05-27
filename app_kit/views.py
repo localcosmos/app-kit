@@ -838,6 +838,7 @@ class BuildApp(FormView):
         # include review urls, if any present
         if not self.meta_app.published_version or self.meta_app.published_version != self.meta_app.current_version:
             context['aab_review_url'] = app_release_builder.aab_review_url(self.request)
+            context['apk_review_url'] = app_release_builder.apk_review_url(self.request)
             
             context['browser_review_url'] = app_release_builder.browser_review_url(self.request)
 
