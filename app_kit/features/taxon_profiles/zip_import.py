@@ -516,7 +516,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 taxon_text.delete()
             
 
-        #cleanup seo:
+        # cleanup seo:
         all_seo_parameters = AppKitSeoParameters.objects.all()
         for seo_parameter in all_seo_parameters:
             if not seo_parameter.title and not seo_parameter.meta_description:

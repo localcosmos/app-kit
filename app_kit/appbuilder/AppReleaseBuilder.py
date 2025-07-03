@@ -379,6 +379,9 @@ class AppReleaseBuilder(AppBuilderBase):
                     result['warnings'] += options_result['warnings']
                     result['errors'] += options_result['errors']
 
+                template_content_result = self.validate_TemplateContent()
+                result['errors'] += template_content_result['errors']
+                result['warnings'] += template_content_result['warnings']
 
                 # store last validation result in db
                 validation_result = 'valid'
@@ -1050,6 +1053,27 @@ class AppReleaseBuilder(AppBuilderBase):
                 taxon_error = ValidationError(map, taxonomic_filter, [error_message])
                 result['errors'].append(taxon_error)
 
+        return result
+    
+    # sometimes, template contents from a different Frontent exist
+    def validate_TemplateContent(self):
+        
+        result = {
+            'errors' : [],
+            'warnings' : [],
+        }
+        
+        template_contents = TemplateContent.objects.filter(app=self.meta_app.app, template_type='page')
+
+        for template_content in template_contents:
+            if template_content.is_published == True:
+                
+                if not template_content.draft_template.template_exists:
+                    primary_ltc = template_content.get_locale(self.meta_app.primary_language)
+                    error_message = _('The page "%(name)s" is not supported by your frontend. You have to remove it first.') % {'name':primary_ltc.draft_title}
+                    error = ValidationError(self.meta_app, template_content, [error_message])
+                    result['errors'].append(error)
+                    
         return result
 
 
@@ -2182,8 +2206,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         languages = self.meta_app.languages()
         for template_content in template_contents:
+            
+            # check if it is supported by the app
 
-            if template_content.is_published == True:
+            if template_content.is_published == True and template_content.template.template_exists:
 
                 for language_code in languages:
                     localized_template_content = template_content.get_locale(language_code)
@@ -2801,7 +2827,6 @@ class AppReleaseBuilder(AppBuilderBase):
             self.meta_app.save(publish=True)
 
         except Exception as e:
-            success = False
             self.logger.error(e, exc_info=True)
 
             release_report['result'] = 'failure'

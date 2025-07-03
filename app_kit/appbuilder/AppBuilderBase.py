@@ -639,6 +639,7 @@ class AppBuilderBase:
             "BUILD_NUMBER" : self.meta_app.build_number,
             "API_URL" : api_url,
             "MEDIA_URL": media_url,
+            "SERVER_URL" : root_url, # the server URL without the api part
             "PREVIEW" : preview, # True is only needed for previewing template_content
         }
 

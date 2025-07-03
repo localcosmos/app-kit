@@ -20,7 +20,7 @@ install_requires = [
 
 setup(
     name='localcosmos_app_kit',
-    version='0.7.7',
+    version='0.7.8',
     description='LocalCosmos App Kit. Web Portal to build Android and iOS apps',
     long_description=long_description,
     long_description_content_type="text/markdown",

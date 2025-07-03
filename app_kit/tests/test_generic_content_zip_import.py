@@ -367,7 +367,65 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         self.assertEqual(lazy_taxon.taxon_latname, taxon_latname)
         self.assertEqual(lazy_taxon.taxon_author, 'L.')
         self.assertEqual(lazy_taxon.taxon_source, taxon_source)
+
+    @test_settings
+    def test_get_lazy_taxon_with_tolerance(self):
+        importer = self.get_zip_importer()
+        # Assume the DB contains "Quercus robur" with author "L."
+        taxon_latname = 'Quercus robur'
+        taxon_source = 'taxonomy.sources.col'
+
+        # Exact match
+        lazy_taxon = importer.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, 'L.')
+        self.assertIsNotNone(lazy_taxon)
+        self.assertEqual(lazy_taxon.taxon_latname, taxon_latname)
+        self.assertEqual(lazy_taxon.taxon_author, 'L.')
+        self.assertEqual(lazy_taxon.taxon_source, taxon_source)
+
+        # Tolerate one missing space (e.g. "L." vs "L .")
+        lazy_taxon = importer.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, 'L .')
+        self.assertIsNotNone(lazy_taxon)
+        self.assertEqual(lazy_taxon.taxon_latname, taxon_latname)
+        self.assertEqual(lazy_taxon.taxon_author, 'L.')
+        self.assertEqual(lazy_taxon.taxon_source, taxon_source)
+
+        # Should raise if no match
+        with self.assertRaises(ValueError):
+            importer.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, 'L  .')
     
+    @test_settings
+    def test_get_taxa_with_taxon_author_tolerance(self):
+        importer = self.get_zip_importer()
+        taxon_latname = 'Quercus robur'
+        taxon_source = 'taxonomy.sources.col'
+
+        # Exact match
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L.')
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].taxon_latname, taxon_latname)
+        self.assertEqual(matches[0].taxon_author, 'L.')
+
+        # Tolerate one missing space
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L .')
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].taxon_author, 'L.')
+
+        # Tolerate one extra space (should not match if more than one space)
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L  .')
+        self.assertEqual(len(matches), 0)
+
+        # No match for wrong author
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'Smith')
+        self.assertEqual(len(matches), 0)
+        
+        # real world test
+        # algaebase entry is : Desmarestia viridis (O.F.Müller) J.V.Lamouroux 1813
+        taxon_latname = 'Desmarestia viridis'
+        taxon_author= '(O.F.Müller) J.V. Lamouroux 1813'
+        taxon_source = 'taxonomy.sources.algaebase'
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, taxon_author)
+        #print(matches)
+        self.assertEqual(len(matches), 1)
     
 # try to cover all possible errors
 class TestGenericContentZipImporterInvalidData(WithUser, WithMetaApp, TenantTestCase):
@@ -517,7 +575,7 @@ class TestGenericContentZipImporterInvalidData(WithUser, WithMetaApp, TenantTest
         importer.validate_listing_in_images_sheet('unlisted.jpg', 'A', 2)
         
         expected_errors = [
-            '[Generic Content.xlsx][Sheet:Generic Content][cell:A3] Image file "unlisted.jpg" not found in the "Taxon Profile Images" sheet.'
+            '[Generic Content.xlsx][Sheet:Generic Content][cell:A3] Image file "unlisted.jpg" not found in the "{0}" sheet.'.format(importer.images_sheet_name)
         ]
         self.assertEqual(importer.errors, expected_errors)
         

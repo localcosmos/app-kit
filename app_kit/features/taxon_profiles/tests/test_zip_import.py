@@ -202,6 +202,102 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         
         self.assertEqual(len(quercus_robur_profile.images()), 1)
         qr_image = quercus_robur_profile.images()[0]
+        
+    @test_settings
+    def test_partial_import(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        
+        importer.errors = []
+        importer.validate()
+        
+        self.assertEqual(importer.errors, [])
+        
+        importer.import_generic_content()
+        
+        # check if the 2 profiles are present with all contents
+        quercus_robur_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
+                                                         taxon_latname='Quercus robur')
+        
+        all_initial_texts = quercus_robur_profile.categorized_texts()
+        text_categories = all_initial_texts.keys()
+        self.assertEqual(len(text_categories), 3)
+        
+        self.assertIn('Test category', text_categories)
+        self.assertIn('Test category 2', text_categories)
+        self.assertIn('uncategorized', text_categories)
+        
+        test_category_texts = all_initial_texts['Test category']
+        self.assertEqual(len(test_category_texts), 2)
+        self.assertEqual(test_category_texts[0].text, 'Quercus robur Tree as habitat')
+        self.assertEqual(test_category_texts[0].long_text, 'Quercus robur Tree as habitat longtext')
+        self.assertEqual(test_category_texts[0].taxon_text_type.text_type, 'Tree as habitat')
+        self.assertEqual(test_category_texts[1].text, 'Quercus robur Habitat')
+        self.assertEqual(test_category_texts[1].taxon_text_type.text_type, 'Habitat')
+        
+        test_category_2_texts = all_initial_texts['Test category 2']
+        self.assertEqual(len(test_category_2_texts), 1)
+        self.assertEqual(test_category_2_texts[0].text, 'Quercus robur Economic use')
+        self.assertEqual(test_category_2_texts[0].taxon_text_type.text_type, 'Economic use')
+        
+        uncategorized_texts = all_initial_texts['uncategorized']
+        self.assertEqual(len(uncategorized_texts), 3)
+        self.assertEqual(uncategorized_texts[0].text, 'Quercus robur Interesting facts')
+        self.assertEqual(uncategorized_texts[0].taxon_text_type.text_type, 'Interesting facts')
+        self.assertEqual(uncategorized_texts[1].text, 'Quercus robur Forest protection shorttext')
+        self.assertEqual(uncategorized_texts[1].taxon_text_type.text_type, 'Forest protection')
+        self.assertEqual(uncategorized_texts[1].long_text, 'Quercus robur Forest protection longtext')
+        self.assertEqual(uncategorized_texts[2].text, 'Quercus robur Occurrence')
+        self.assertEqual(uncategorized_texts[2].taxon_text_type.text_type, 'Occurrence')
+        
+        
+        self.assertEqual(quercus_robur_profile.short_profile, 'Quercus robur short profile')
+        
+        self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_partial_update')
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        
+        importer.errors = []
+        importer.validate()
+        
+        self.assertEqual(importer.errors, [])
+        
+        importer.import_generic_content()
+        
+        updated_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
+                                                   taxon_latname='Quercus robur')
+        all_updated_texts = updated_profile.categorized_texts()
+        text_categories = all_updated_texts.keys()
+        self.assertEqual(len(text_categories), 3)
+        
+        self.assertIn('Test category', text_categories)
+        self.assertIn('Test category 2', text_categories)
+        self.assertIn('uncategorized', text_categories)
+        
+        test_category_texts = all_updated_texts['Test category']
+        self.assertEqual(len(test_category_texts), 2)
+        self.assertEqual(test_category_texts[0].text, 'Quercus robur Tree as habitat')
+        self.assertEqual(test_category_texts[0].long_text, 'Quercus robur Tree as habitat longtext')
+        self.assertEqual(test_category_texts[0].taxon_text_type.text_type, 'Tree as habitat')
+        self.assertEqual(test_category_texts[1].text, 'Quercus robur Habitat')
+        self.assertEqual(test_category_texts[1].taxon_text_type.text_type, 'Habitat')
+        
+        test_category_2_texts = all_updated_texts['Test category 2']
+        self.assertEqual(len(test_category_2_texts), 1)
+        self.assertEqual(test_category_2_texts[0].text, 'Quercus robur Economic use')
+        self.assertEqual(test_category_2_texts[0].taxon_text_type.text_type, 'Economic use')
+        
+        uncategorized_texts = all_updated_texts['uncategorized']
+        self.assertEqual(len(uncategorized_texts), 3)
+        self.assertEqual(uncategorized_texts[0].text, 'Quercus robur Interesting facts updated')
+        self.assertEqual(uncategorized_texts[0].taxon_text_type.text_type, 'Interesting facts')
+        self.assertEqual(uncategorized_texts[1].text, 'Quercus robur Forest protection shorttext')
+        self.assertEqual(uncategorized_texts[1].taxon_text_type.text_type, 'Forest protection')
+        self.assertEqual(uncategorized_texts[1].long_text, 'Quercus robur Forest protection longtext')
+        self.assertEqual(uncategorized_texts[2].text, 'Quercus robur Occurrence')
+        self.assertEqual(uncategorized_texts[2].taxon_text_type.text_type, 'Occurrence')
+        
+        self.assertEqual(updated_profile.short_profile, 'Quercus robur short profile')
 
 
 class TestTaxonProfilesZipImporterInvalidData(WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):

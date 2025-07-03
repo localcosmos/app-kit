@@ -16,7 +16,7 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
-import os, openpyxl, json
+import os, openpyxl, json, re
 
 from PIL import Image
 
@@ -200,7 +200,7 @@ class GenericContentZipImporter:
         image_data = self.get_image_data_from_images_sheet(image_filename)
         
         if not image_data and self.ignore_nonexistent_images == False:
-            message = _('Image file "%(image_filename)s" not found in the %(images_sheet_name)s sheet.') % {
+            message = _('Image file "%(image_filename)s" not found in the "%(images_sheet_name)s" sheet.') % {
                 'image_filename': image_filename,
                 'images_sheet_name': self.images_sheet_name,
             }
@@ -467,6 +467,63 @@ class GenericContentZipImporter:
                         licence.short_name, licence.version, **licence_kwargs)
 
 
+    # the taxon validation allows a difference in the taxon author of one space
+    def get_taxa_with_taxon_author_tolerance(self, taxon_source, taxon_latname, taxon_author):
+        """
+        This method checks if the taxon author is valid by allowing a difference of one space.
+        It returns a list of valid candidates.
+        """
+        def is_one_space_difference(a, b):
+            # a and b are already stripped
+            if abs(len(a) - len(b)) != 1:
+                return False
+            # Ensure a is the longer string
+            if len(b) > len(a):
+                a, b = b, a
+            for i in range(len(b)):
+                if a[i] != b[i]:
+                    # Check if the difference is a space in the longer string
+                    return a[:i] + a[i+1:] == b and a[i] == ' '
+            # Check for extra space at the end
+            return a[:-1] == b and a[-1] == ' '
+        
+        def is_up_to_two_space_differences(a, b):
+            # a and b are already stripped
+            i, j = 0, 0
+            differences = 0
+            while i < len(a) and j < len(b):
+                if a[i] == b[j]:
+                    i += 1
+                    j += 1
+                elif a[i] == ' ':
+                    differences += 1
+                    i += 1
+                elif b[j] == ' ':
+                    differences += 1
+                    j += 1
+                else:
+                    # Not a space difference
+                    return False
+                if differences > 2:
+                    return False
+            # Count remaining spaces at the end
+            differences += a[i:].count(' ') + b[j:].count(' ')
+            return differences <= 2
+
+        matches = []
+        models = TaxonomyModelRouter(taxon_source)
+        queryset = models.TaxonTreeModel.objects.filter(taxon_latname=taxon_latname)
+        input_stripped = taxon_author.strip() if taxon_author else ''
+
+        for taxon in queryset:
+            if taxon.taxon_author:
+                db_stripped = taxon.taxon_author.strip()
+                if db_stripped == input_stripped:
+                    matches.append(taxon)
+                elif is_up_to_two_space_differences(db_stripped, input_stripped):
+                    matches.append(taxon)
+        return matches
+    
     def validate_taxon(self, taxon_latname, taxon_author, taxon_source, workbook_filename, sheet_name,
                        row_number, taxon_latname_column_index, taxon_source_column_index):
 
@@ -486,11 +543,29 @@ class GenericContentZipImporter:
             
             if taxon_count == 0:
                 if taxon_author:
-                    message = _('%(taxon_latname)s %(taxon_author)s not found in %(taxon_source)s' % {
-                        'taxon_latname' : taxon_latname,
-                        'taxon_author' : taxon_author,
-                        'taxon_source' : taxon_source,
-                    })
+                    
+                    # check if the taxon author is valid by allowing a difference of one space
+                    matches_with_tolerance = self.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, taxon_author)
+                    
+                    if len(matches_with_tolerance) == 0:
+                    
+                        message = _('%(taxon_latname)s %(taxon_author)s not found in %(taxon_source)s. Tolerance of two space characters was applied.' % {
+                            'taxon_latname' : taxon_latname,
+                            'taxon_author' : taxon_author,
+                            'taxon_source' : taxon_source,
+                        })
+                        
+                        self.add_row_error(workbook_filename, sheet_name, row_number, message)
+                    
+                    elif len(matches_with_tolerance) > 1:
+                        message = _('Multiple results found for %(taxon_latname)s %(taxon_author)s in %(taxon_source)s. Tolerance of two space characters was applied.' % {
+                            'taxon_latname' : taxon_latname,
+                            'taxon_author' : taxon_author,
+                            'taxon_source': taxon_source,
+                        })
+
+                        self.add_row_error(workbook_filename, sheet_name, row_number, message)
+                    
 
                 else:
                     message = _('%(taxon_latname)s not found in %(taxon_source)s' % {
@@ -499,7 +574,7 @@ class GenericContentZipImporter:
                     })
                     
 
-                self.add_row_error(workbook_filename, sheet_name, row_number, message)
+                    self.add_row_error(workbook_filename, sheet_name, row_number, message)
 
             elif taxon_count > 1:
 
@@ -526,6 +601,23 @@ class GenericContentZipImporter:
             self.add_cell_error(workbook_filename, sheet_name, taxon_source_column_index, row_number, message)
 
 
+
+    def get_lazy_taxon_with_tolerance(self, taxon_latname, taxon_source, taxon_author=None):
+        """
+        This method retrieves a taxon from the database, allowing for a difference of one space in the taxon author.
+        It returns a LazyTaxon instance.
+        """
+        matches = self.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, taxon_author)
+
+        if len(matches) == 0:
+            raise ValueError('No matching taxon found for {0} {1} in {2}'.format(taxon_latname, taxon_author, taxon_source))
+        
+        if len(matches) > 1:
+            raise ValueError('Multiple matching taxa found for {0} {1} in {2}'.format(taxon_latname, taxon_author, taxon_source))
+
+        return LazyTaxon(instance=matches[0])
+    
+    
     def get_lazy_taxon(self, taxon_latname, taxon_source, taxon_author=None):
 
         models = TaxonomyModelRouter(taxon_source)
@@ -537,10 +629,13 @@ class GenericContentZipImporter:
         if taxon_author:
             field_kwargs['taxon_author'] = taxon_author
 
-        taxon = models.TaxonTreeModel.objects.get(**field_kwargs)
-
-        lazy_taxon = LazyTaxon(instance=taxon)
-        return lazy_taxon
+        try:
+            taxon = models.TaxonTreeModel.objects.get(**field_kwargs)
+            lazy_taxon = LazyTaxon(instance=taxon)
+            return lazy_taxon
+        except models.TaxonTreeModel.DoesNotExist:
+            # fallback to tolerance method
+            return self.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, taxon_author)
     
     
     def validate_square_image(self, image_filepath):
