@@ -133,6 +133,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 is_featured = True
 
         taxon_profile_json.update({
+            'taxonProfileId': db_profile.id if db_profile else None,
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only

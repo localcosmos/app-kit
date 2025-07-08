@@ -1924,6 +1924,9 @@ class AppReleaseBuilder(AppBuilderBase):
         nature_guide_ids = MetaAppGenericContent.objects.filter(content_type=nature_guide_content_type,
                                                              meta_app=self.meta_app).values_list('object_id')
 
+
+        taxon_profile_id_to_taxon_map = {}
+        
         for profile_taxon in collected_taxa:
 
             db_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
@@ -1932,6 +1935,10 @@ class AppReleaseBuilder(AppBuilderBase):
         
             if db_profile and db_profile.publication_status == 'draft':
                 continue
+            
+            if db_profile:
+                lazy_taxon = LazyTaxon(instance=profile_taxon)
+                taxon_profile_id_to_taxon_map[db_profile.id] = self.taxa_builder.serialize_taxon(lazy_taxon)
             
             add = True
             
@@ -1989,6 +1996,7 @@ class AppReleaseBuilder(AppBuilderBase):
         self.logger.info('Building taxon profiles for {0} collected taxa'.format(len(active_collected_taxa)))
         
         self.build_features[generic_content_type]['localizedFiles'] = {}
+        
         for profile_taxon in active_collected_taxa:
 
             profile_json = jsonbuilder.build_taxon_profile(profile_taxon, 
@@ -2183,6 +2191,15 @@ class AppReleaseBuilder(AppBuilderBase):
         
         self.build_features[generic_content_type]['lookup'] = {}
         self.build_features[generic_content_type]['lookup'][str(taxon_profiles.uuid)] = '/{0}'.format(relative_taxon_profiles_filepath)
+        
+        # safe id to taxon map
+        taxon_profiles_map_filename = 'id_to_taxon_map.json'
+        absolute_taxon_profiles_map_filepath = os.path.join(app_absolute_taxonprofiles_path, taxon_profiles_map_filename)
+        relative_taxon_profiles_map_filepath = os.path.join(app_relative_taxonprofiles_folder, taxon_profiles_map_filename)
+        with open(absolute_taxon_profiles_map_filepath, 'w', encoding='utf-8') as f:
+            json.dump(taxon_profile_id_to_taxon_map, f, indent=4, ensure_ascii=False)
+            
+        self.build_features[generic_content_type]['idToTaxonMap'] = '/{0}'.format(relative_taxon_profiles_map_filepath)
 
         self.logger.info('finished building TaxonProfiles')
 

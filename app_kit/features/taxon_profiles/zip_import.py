@@ -267,10 +267,16 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         
 
     # additive import
+    # do not change the ordering of the texts if not all text types are included in the excel
     def import_generic_content(self):
 
         if len(self.errors) != 0:
             raise ValueError('Only valid .zip files can be imported.')
+        
+        all_existing_text_types = TaxonTextType.objects.filter(taxon_profiles=self.generic_content).values_list('text_type', flat=True)
+        all_existing_text_types = set(all_existing_text_types)
+        
+        all_excel_text_types = set([])
         
         taxon_profiles_sheet = self.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
         taxon_profile_content_type = ContentType.objects.get_for_model(TaxonProfile)
@@ -310,6 +316,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 
                 text_type = self.get_stripped_cell_value(col[1].value)
                 text_category = self.get_stripped_cell_value(col[2].value)
+                
+                all_excel_text_types.add(text_type)
                 
                 # add ther text_type to the column_content_type_map
                 column_content_type_map[column_letter]['text_type'] = text_type
@@ -363,12 +371,19 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             for text_type_position, text_type in enumerate(category_contents['text_types'], 1):
                 # check if the text_type already exists
                 # if not, create it
+                db_text_type_is_new = False
+                
                 db_text_type = TaxonTextType.objects.filter(
                     taxon_profiles=self.generic_content,
                     text_type=text_type,
                 ).first()
                 
+                
+                
                 if not db_text_type:
+                    
+                    db_text_type_is_new = True
+                    
                     # create a new text_type
                     db_text_type = TaxonTextType(
                         taxon_profiles=self.generic_content,
@@ -376,7 +391,9 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     )
                 
                 db_text_type.category = db_text_type_category
-                db_text_type.position = text_type_position
+                
+                if all_existing_text_types == all_excel_text_types or db_text_type_is_new:
+                    db_text_type.position = text_type_position
                 db_text_type.save()
         
         
@@ -419,6 +436,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             if column_type in [ColumnType.TEXT.value, ColumnType.SHORTTEXT.value, ColumnType.LONGTEXT.value]:
                                 
                                 taxon_text = cell_value
+                                if taxon_text:
+                                    taxon_text = taxon_text.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '<br>')
                                 
                                 text_type = column_content_type_map[column_letter]['text_type']
                                 
@@ -510,7 +529,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                 continue
                         
         # cleanup: iterate over all taxon texts and remove those that are empty
-        taxon_texts = TaxonText.objects.filter(taxon_profile__taxon_profiles=self.generic_content,)
+        taxon_texts = TaxonText.objects.filter(taxon_profile__taxon_profiles=self.generic_content)
         for taxon_text in taxon_texts:
             if not taxon_text.text and not taxon_text.long_text:
                 taxon_text.delete()

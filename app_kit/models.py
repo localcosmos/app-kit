@@ -112,7 +112,13 @@ APP_VALIDATION_STATUS = (
     used to create new apps
     - one subdomain per app on LC
 '''
-
+def strip_leading_numerals(name):
+    """
+    Removes leading numerals from the name.
+    E.g., '1001seaforest' -> 'seaforest'
+    """
+    import re
+    return re.sub(r'^\d+', '', name)
 
 class MetaAppManager(models.Manager):
 
@@ -147,9 +153,12 @@ class MetaAppManager(models.Manager):
         global_options = kwargs.pop('global_options', {})
 
         frontend = kwargs.pop('frontend', None)
+        
+        # Flip leading numerals before slugify
+        flipped_name = strip_leading_numerals(name)
+        cleaned_name = slugify(flipped_name).replace('-', '').lower()[:30]
 
-        package_name_base = 'org.localcosmos.{0}'.format(
-            slugify(name).replace('-', '').lower()[:30])
+        package_name_base = 'org.localcosmos.{0}'.format(cleaned_name)
         package_name = package_name_base
 
         # make sure it is unique
@@ -518,7 +527,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         include_full_tree = self.backbone().get_global_option('include_full_tree')
 
         if include_full_tree:
-            models = TaxonomyModelRouter(include_full_tree)
+            models = TaxonomyModelRouter(source)
             taxa = models.TaxonTreeModel.objects.all().order_by('taxon_latname')
         else:
             taxa = self.taxa()
