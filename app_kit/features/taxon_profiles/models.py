@@ -135,6 +135,11 @@ class TaxonProfiles(GenericContent):
                     
                 if navigation_entry.description and navigation_entry.description not in locale:
                     locale[navigation_entry.description] = navigation_entry.description
+                    
+        categories = TaxonTextTypeCategory.objects.filter(taxon_profiles=self)
+        for category in categories:
+            if category.name not in locale:
+                locale[category.name] = category.name
         return locale
 
 
