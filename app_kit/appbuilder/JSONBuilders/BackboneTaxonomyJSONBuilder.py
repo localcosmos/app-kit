@@ -103,7 +103,14 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         
         taxa = self.meta_app.taxa(include_draft_contents=False)
         
+        worked_taxon_uuids = set([])
+        
         for taxon_instance in taxa:
+            
+            if taxon_instance.name_uuid in worked_taxon_uuids:
+                continue
+            
+            worked_taxon_uuids.add(taxon_instance.name_uuid)
             
             existing_names = []
             

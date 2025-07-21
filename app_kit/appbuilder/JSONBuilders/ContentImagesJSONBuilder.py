@@ -53,7 +53,7 @@ class ContentImagesJSONBuilder:
 
         image_entry = {
             'text': content_image_mixedin.text, # = caption
-            'alt_text': content_image_mixedin.alt_text,
+            'altText': content_image_mixedin.alt_text,
             'title': content_image_mixedin.title,
             'imageUrl' : image_urls,
             #'licence' : licence,

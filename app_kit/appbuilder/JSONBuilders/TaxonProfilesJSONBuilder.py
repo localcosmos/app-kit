@@ -141,7 +141,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'traits' : [], # a collection of traits (matrix filters)
             'shortProfile' : None,
             'texts': [],
-            'categorized_texts' : [],
+            'categorizedTexts' : [],
             'images' : images,
             'synonyms' : [],
             'templateContents' : [],
@@ -151,7 +151,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'title': None,
                 'meta_description': None,
             },
-            'is_featured': is_featured,
+            'isFeatured': is_featured,
         })
 
         synonyms = profile_taxon.synonyms()
@@ -312,7 +312,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                             categorized_texts_json['texts'].append(text_json)
                     
                 if category_name != 'uncategorized' and len(categorized_texts_json['texts']) > 0:
-                    taxon_profile_json['categorized_texts'].append(categorized_texts_json)
+                    taxon_profile_json['categorizedTexts'].append(categorized_texts_json)
 
         # template_contents
         template_contents = TemplateContent.objects.filter_by_taxon(profile_taxon)

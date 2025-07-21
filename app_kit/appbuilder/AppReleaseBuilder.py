@@ -2047,7 +2047,7 @@ class AppReleaseBuilder(AppBuilderBase):
                         localized_profile_json['texts'][index]['longText'] = localized_long_text
                         
                     
-                    for c_index, category in enumerate(profile_json['categorized_texts'], 0):
+                    for c_index, category in enumerate(profile_json['categorizedTexts'], 0):
                         
                         localized_category = category.copy()
                         
@@ -2062,7 +2062,7 @@ class AppReleaseBuilder(AppBuilderBase):
                             localized_category['texts'][index]['shortText'] = localized_short_text
                             localized_category['texts'][index]['longText'] = localized_long_text
                             
-                        localized_profile_json['categorized_texts'][c_index] = localized_category
+                        localized_profile_json['categorizedTexts'][c_index] = localized_category
                         
                     # localize seo, no glossarized locale
                     localized_seo = localized_profile_json['seo'].copy()
