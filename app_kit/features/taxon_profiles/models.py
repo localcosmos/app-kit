@@ -270,7 +270,7 @@ class TaxonTextType(models.Model):
         ordering = ['category', 'position']
 
 
-class TaxonText(models.Model):
+class TaxonText(ContentImageMixin, models.Model):
     taxon_profile = models.ForeignKey(TaxonProfile, on_delete=models.CASCADE)
     taxon_text_type = models.ForeignKey(TaxonTextType, on_delete=models.CASCADE)
 

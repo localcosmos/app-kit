@@ -1,0 +1,36 @@
+{% load i18n static localcosmos_tags %}
+<div id="content-images-{{ content_instance|ctype_id }}-{{ content_instance.id }}" class="w-full content-images-list" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
+    {% for image in content_instance.images %}
+        <div id="content_images_{{ image.id }}" data-object-id="{{ image.id }}">
+            <div>
+                <img src="{{ image.image_url }}" class="content-image sm" />
+            </div>
+            <div class="btn-group dropup">
+                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {% trans 'modify' %}
+                </button>
+                <div class="dropdown-menu">
+                    <a data-url="{% url 'manage_content_images_with_text' meta_app.id image.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-center tti-moveleftbutton" data-targetid="content_images_{{ image.id }}">&#9664; {% trans 'Move left' %}</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-center tti-moverightbutton" data-targetid="content_images_{{ image.id }}">{% trans 'Move right' %} &#9654;</a>
+                </div>
+            </div>
+            
+        </div>
+    {% endfor %}
+</div>
+<div>
+    <button data-url="{% url 'manage_content_images_with_text' meta_app.id content_instance|ctype_id content_instance.id %}?new=1" type="button" class="btn btn-sm btn-outline-primary xhr" ajax-target="LargeModalContent">{% blocktrans %}add image{% endblocktrans %}</button>
+</div>
+<script>
+    (function() {
+        $("#content-images-{{ content_instance|ctype_id }}-{{ content_instance.id }} .tti-moveleftbutton").on("click", function (event) {
+            positionmanager.onMoveForward.call(this, event);
+        });
+	    $("#content-images-{{ content_instance|ctype_id }}-{{ content_instance.id }} .tti-moverightbutton").on("click", function (event) {
+            positionmanager.onMoveBack.call(this, event);
+        });
+    })();
+</script>

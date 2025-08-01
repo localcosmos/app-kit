@@ -132,6 +132,7 @@ class ManageTaxonTextsForm(LocalizeableForm):
                 short_text_field.taxon_text_type = text_type
                 short_text_field.is_short_version = True
                 short_text_field.is_last = False
+                short_text_field.taxon_text = None
 
                 self.fields[short_text_field_name] = short_text_field
                 self.localizeable_fields.append(short_text_field_name)
@@ -167,9 +168,11 @@ class ManageTaxonTextsForm(LocalizeableForm):
                                     taxon_profile=taxon_profile).first()
                     if content:
                         short_text_field.initial = content.text
+                        short_text_field.taxon_text = content
 
                         if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
                             long_text_field.initial = content.long_text
+                            long_text_field.taxon_text = content
     
     
     def get_long_text_form_field_name(self, text_type):

@@ -1,6 +1,10 @@
 {% extends 'app_kit/manage_generic_content.html' %}
 {% load i18n static localcosmos_tags taxon_profile_tags app_tags %}
 
+{% block extra_head_script %}
+	<script src="{% static 'app_kit/ckeditor5/build/ckeditor.js' %}"></script>
+{% endblock%}
+
 {% block generic_content_specific %}
 	{% if uses_taxon_profiles_navigation %}
 		<div class="card mb-5">

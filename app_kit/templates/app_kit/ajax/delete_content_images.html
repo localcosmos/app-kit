@@ -1,0 +1,16 @@
+{% extends 'localcosmos_server/ajax/delete_server_content_image.html' %}
+{% load localcosmos_tags %}
+{% block success_js %}
+	<script>
+		$.get("{% url 'content_images_list' meta_app.id content_instance|ctype_id content_instance.id %}", function(html){
+
+            const container_id = 'content-images-list-{{ content_instance|ctype_id }}-{{ content_instance.id }}';
+
+            $("#" + container_id).html(html);
+            ajaxify(container_id);
+        });
+		$("#Modal").modal("hide");
+	</script>
+
+	{% block extra_success_js %}{% endblock %}
+{% endblock %}

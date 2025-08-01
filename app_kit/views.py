@@ -1239,7 +1239,24 @@ class ManageContentImageSuggestions(TemplateView):
 from localcosmos_server.views import ManageContentImageBase
 class ManageContentImage(ManageContentImageMixin, ManageContentImageBase, FormView):
     template_name = 'app_kit/ajax/content_image_form.html'
+
+# manage multiple content images with preview
+class ContentImagesList(MetaAppMixin, TemplateView):
+    template_name = 'app_kit/ajax/content_images_list.html'
     
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.content_type = ContentType.objects.get(pk=kwargs['content_type_id'])
+        self.ModelClass = self.content_type.model_class()
+        self.content_instance = self.content_type.get_object_for_this_type(pk=kwargs['object_id'])
+
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
+        context['content_instance'] = self.content_instance
+        return context
 
 
 from app_kit.view_mixins import FormLanguageMixin
@@ -1252,6 +1269,9 @@ class ManageContentImageWithText(FormLanguageMixin, ManageContentImage):
         meta_app = MetaApp.objects.get(pk=self.kwargs['meta_app_id'])
         self.primary_language = meta_app.primary_language
 
+
+class ManageContentImagesWithText(ManageContentImageWithText):
+    template_name = 'app_kit/ajax/content_images_with_text_form.html'
 
 
 class ManageLocalizedContentImage(LicencingFormViewMixin, FormView):
@@ -1378,6 +1398,19 @@ class DeleteContentImage(MetaAppMixin, AjaxDeleteView):
         context = super().get_context_data(**kwargs)
         context['image_type'] = self.object.image_type
         context['content_instance'] = self.object.content
+        return context
+
+
+class DeleteContentImages(MetaAppMixin, AjaxDeleteView):
+    
+    template_name = 'app_kit/ajax/delete_content_images.html'
+    model = ContentImage
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['image_type'] = self.object.image_type
+        context['content_instance'] = self.object.content
+        context['content_image_id'] = self.object.id
         return context
 
 

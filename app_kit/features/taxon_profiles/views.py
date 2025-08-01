@@ -343,6 +343,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         
         context['category_content_type'] = ContentType.objects.get_for_model(TaxonTextTypeCategory)
         context['text_type_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
+        
+        context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
         return context
 
 

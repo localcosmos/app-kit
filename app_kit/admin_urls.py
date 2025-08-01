@@ -87,6 +87,17 @@ urlpatterns = [
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
     path('manage-content-image-with-text/<int:meta_app_id>/<int:content_image_id>/',
         views.ManageContentImageWithText.as_view(), name='manage_content_image_with_text'),
+    # urls for multiple content images
+    path('content-images-list/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
+        views.ContentImagesList.as_view(), name='content_images_list'),
+    path('manage-content-images-with-text/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
+        views.ManageContentImagesWithText.as_view(), name='manage_content_images_with_text'),
+    path('manage-content-images-with-text/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<str:image_type>/',
+        views.ManageContentImagesWithText.as_view(), name='manage_content_images_with_text'),
+    path('manage-content-images-with-text/<int:meta_app_id>/<int:content_image_id>/',
+        views.ManageContentImagesWithText.as_view(), name='manage_content_images_with_text'),
+    path('delete-content-images/<int:meta_app_id>/<int:pk>/',
+        views.DeleteContentImages.as_view(), name='delete_content_images'),
     # localized content image
     path('manage-localized-content-image/<int:content_image_id>/<str:language_code>/',
         views.ManageLocalizedContentImage.as_view(), name='manage_localized_content_image'),

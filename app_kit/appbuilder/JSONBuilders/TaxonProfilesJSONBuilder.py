@@ -287,13 +287,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 for text in text_list:
 
                     if text.text or text.long_text:
+                        
+                        images = self.get_taxon_text_images(text)
 
                         text_json = {
                             'taxonTextType' : text.taxon_text_type.text_type,
                             'shortText' : None,
                             'shortTextKey' : None,
                             'longText' : None,
-                            'longTextKey' : None
+                            'longTextKey' : None,
+                            'images': images,
                         }
 
                         if text.text:
@@ -575,6 +578,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         images = []
         
         for content_image in navigation_entry.images():
+            image_entry = self.get_image_json(content_image)
+            images.append(image_entry)
+            
+        return images
+        
+        
+    def get_taxon_text_images(self, taxon_text):
+        images = []
+        
+        for content_image in taxon_text.images():
             image_entry = self.get_image_json(content_image)
             images.append(image_entry)
             
