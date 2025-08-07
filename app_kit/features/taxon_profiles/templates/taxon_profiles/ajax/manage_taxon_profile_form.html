@@ -76,7 +76,7 @@
 									{% endif %}
 								</div>
 
-								{% if field.field.is_short_version %}
+								{% if field.field.taxon_text and field.field.is_short_version %}
 									{% with content_instance=field.field.taxon_text %}
 										<div id="content-images-list-{{ content_instance|ctype_id }}-{{ content_instance.id }}">
 											{% include 'app_kit/ajax/content_images_list.html' %}

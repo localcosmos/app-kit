@@ -78,6 +78,9 @@ class GenericContentZipImporter:
         
         
     def get_stripped_cell_value(self, cell_value):
+        if not isinstance(cell_value, str):
+            cell_value = None
+            
         if cell_value:
             cell_value = cell_value.strip()
         else:
@@ -85,6 +88,10 @@ class GenericContentZipImporter:
         return cell_value
     
     def get_stripped_cell_value_lowercase(self, cell_value):
+        
+        if not isinstance(cell_value, str):
+            cell_value = None
+        
         if cell_value:
             cell_value = cell_value.strip().lower()
         else:
