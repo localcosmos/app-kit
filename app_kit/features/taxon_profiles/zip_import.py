@@ -420,12 +420,23 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                         taxon_profile.save()
 
                 else:
-                    taxon_profile = TaxonProfile(
+                    
+                    # in some cases, the CoL lists names as synonyms of itself, so the name_uuid lookup might fail
+                    # in this case, we have to look for the taxon by latname and source
+                    taxon_profile = TaxonProfile.objects.filter(
                         taxon_profiles=self.generic_content,
-                        taxon=lazy_taxon,
-                    )
+                        taxon_source=lazy_taxon.taxon_source,
+                        taxon_latname=lazy_taxon.taxon_latname,
+                        taxon_author=lazy_taxon.taxon_author,
+                    ).first()
+                    
+                    if not taxon_profile:
+                        taxon_profile = TaxonProfile(
+                            taxon_profiles=self.generic_content,
+                            taxon=lazy_taxon,
+                        )
 
-                    taxon_profile.save()
+                        taxon_profile.save()
 
 
                 # iterate over all columns of the current row

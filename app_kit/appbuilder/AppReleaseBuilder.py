@@ -913,6 +913,18 @@ class AppReleaseBuilder(AppBuilderBase):
             if not taxon_profile:
                 missing_profile_count += 1
 
+        # detect duplicates by name
+        all_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles)
+        for taxon_profile in all_taxon_profiles:
+            duplicates = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
+                taxon_source=taxon_profile.taxon_source, taxon_latname=taxon_profile.taxon_latname,
+                taxon_author=taxon_profile.taxon_author).exclude(pk=taxon_profile.pk)
+            if duplicates.exists():
+                warning_message = _('The taxon profile of %(taxon_latname)s has duplicates.') % {
+                    'taxon_latname':taxon_profile.taxon_latname}
+                warning = ValidationWarning(taxon_profiles, taxon_profile, [warning_message])
+                result['warnings'].append(warning)
+
         if missing_profile_count > 0:
             
             warning_message = _('Profile of %(count)s taxa missing. A generic profile will be used instead.') % {
