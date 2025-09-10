@@ -1,4 +1,3 @@
-from turtle import position
 from django.db import models
 
 from django.utils.translation import gettext_lazy as _, gettext as __
