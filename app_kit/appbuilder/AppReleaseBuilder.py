@@ -2079,14 +2079,14 @@ class AppReleaseBuilder(AppBuilderBase):
                     # localize seo, no glossarized locale
                     localized_seo = localized_profile_json['seo'].copy()
                     title = localized_seo['title']
-                    meta_description = localized_seo['meta_description']
+                    meta_description = localized_seo['metaDescription']
                     
                     if title and title in app_locale:
                         localized_seo = app_locale[title]
                         
                     if meta_description and meta_description in app_locale:
-                        localized_seo['meta_description'] = app_locale[meta_description]
-                        
+                        localized_seo['metaDescription'] = app_locale[meta_description]
+
                     localized_profile_json['seo'] = localized_seo
                     
                     absolute_localized_taxonprofiles_folder = os.path.join(

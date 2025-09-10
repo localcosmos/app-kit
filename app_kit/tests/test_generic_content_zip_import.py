@@ -391,7 +391,7 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
 
         # Should raise if no match
         with self.assertRaises(ValueError):
-            importer.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, 'L  .')
+            importer.get_lazy_taxon_with_tolerance(taxon_latname, taxon_source, 'L   .')
     
     @test_settings
     def test_get_taxa_with_taxon_author_tolerance(self):
@@ -409,9 +409,13 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L .')
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].taxon_author, 'L.')
+        
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L  .')
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].taxon_author, 'L.')
 
         # Tolerate one extra space (should not match if more than one space)
-        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L  .')
+        matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'L   .')
         self.assertEqual(len(matches), 0)
 
         # No match for wrong author

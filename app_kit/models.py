@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 from django.conf import settings
 from django.db import connection, models
+from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.templatetags.static import static
@@ -16,7 +17,6 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.urls import reverse
 
-from django.contrib.contenttypes.fields import GenericRelation
 
 import os, io, json, numpy, cv2
 
@@ -34,12 +34,10 @@ from django_tenants.utils import get_tenant_model, get_tenant_domain_model
 
 from app_kit.app_kit_api.models import AppKitJobs
 
-from localcosmos_server.models import App, SecondaryAppLanguages, SeoParametersAbstract
+from localcosmos_server.models import App, SecondaryAppLanguages, SeoParametersAbstract, ExternalMediaAbstract
 
 from PIL import Image, ImageFile, ImageColor
 ImageFile.LOAD_TRUNCATED_IMAGES = settings.APP_KIT_LOAD_TRUNCATED_IMAGES
-
-# draw features on image
 
 
 LOCALIZED_CONTENT_IMAGE_TRANSLATION_PREFIX = 'localized_content_image'
@@ -1116,6 +1114,10 @@ class LocalizedContentImage(ContentImageCommon, models.Model):
 
 
 class AppKitSeoParameters(SeoParametersAbstract):
+    pass
+
+
+class AppKitExternalMedia(ExternalMediaAbstract):
     pass
 
 '''--------------------------------------------------------------------------------------------------------------

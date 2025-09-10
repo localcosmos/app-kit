@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from app_kit.models import ImageStore, ContentImage
 
 from localcosmos_server.utils import generate_md5
+from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
 
 from content_licencing.models import ContentLicenceRegistry
 from content_licencing.licences import ContentLicence, LICENCE_LOOKUP
@@ -15,6 +16,8 @@ from content_licencing import settings as content_licencing_settings
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
+
+AVAILABLE_EXTERNAL_MEDIA_TYPES = [d[0] for d in EXTERNAL_MEDIA_TYPES]
 
 import os, openpyxl, json, re
 
@@ -45,6 +48,7 @@ class GenericContentZipImporter:
     image_file_extensions = ['png', 'jpg', 'jpeg', 'webp']
     
     images_sheet_name = 'Images'
+    external_media_sheet_name = 'External Media'
 
 
     def __init__(self, user, generic_content, zip_contents_path, ignore_nonexistent_images=False):
@@ -71,6 +75,7 @@ class GenericContentZipImporter:
     def load_workbook(self):
         
         filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
+
         if filepath is None:
             raise ValueError('No spreadsheet file found')
         self.workbook = openpyxl.load_workbook(filepath)
@@ -97,6 +102,31 @@ class GenericContentZipImporter:
         else:
             cell_value = None
         return cell_value
+    
+    
+    def validate_cell_value_content_type(self, cell_value, sheet_name, col_letter, row_index):
+        
+        if cell_value == None:
+            pass
+        
+        else:
+            if isinstance(cell_value, str):
+                if cell_value.startswith('='):
+                    message = _('Invalid cell content: %(cell_value)s. Formulas are not allowed.') % {
+                        'cell_value': cell_value
+                    }
+                    self.add_cell_error(self.workbook_filename, sheet_name, col_letter, row_index, message)
+                    return False
+            elif isinstance(cell_value, (int, float)):
+                pass
+            else:
+                message = _('Invalid cell content type: %(cell_value)s. Only strings, numbers and empty cells are allowed.') % {
+                    'cell_value': cell_value
+                }
+                self.add_cell_error(self.workbook_filename, sheet_name, col_letter, row_index, message)
+                return False
+        
+        return True
 
 
     def validate(self):
@@ -107,8 +137,12 @@ class GenericContentZipImporter:
         
         if not self.errors:
             self.load_workbook()
-            self.validate_spreadsheet()
-            self.validate_images_sheet()
+            self.validate_cell_value_content_types()
+
+            if not self.errors:
+                self.validate_spreadsheet()
+                self.validate_images_sheet()
+                self.validate_external_media_sheet()
 
         self.is_valid = len(self.errors) == 0
 
@@ -201,6 +235,30 @@ class GenericContentZipImporter:
         
         return image_data
     
+    def validate_cell_value_content_types(self):
+        sheet_names_to_validate = [self.generic_content.name, self.images_sheet_name, self.external_media_sheet_name]
+        
+        total_error_count = 0  # Track errors across all sheets
+
+        for sheet_name in sheet_names_to_validate:
+            
+            if sheet_name in self.workbook.sheetnames:
+                
+                sheet = self.workbook[sheet_name]
+
+                for row_index, row in enumerate(sheet.iter_rows(), 0):
+                    
+                    if total_error_count > 10:  # Check total errors
+                        message = _('Too many content type errors found. Please fix data types before proceeding.')
+                        self.errors.append(message)
+                        return  # Exit entire method
+
+                    for col_index, col in enumerate(row):
+                        col_letter = openpyxl.utils.get_column_letter(col_index + 1)
+                        cell_value = col.value
+                        if not self.validate_cell_value_content_type(cell_value, sheet_name, col_letter, row_index):
+                            total_error_count += 1  # Increment total count
+
 
     def validate_listing_in_images_sheet(self, image_filename, col_letter, row_index):
         
@@ -212,6 +270,48 @@ class GenericContentZipImporter:
                 'images_sheet_name': self.images_sheet_name,
             }
             self.add_cell_error(self.workbook_filename, self.generic_content.name, col_letter, row_index, message)
+    
+    
+    def get_external_media_data_from_external_media_sheet(self, url):
+        external_media_sheet = self.get_sheet_by_name(self.external_media_sheet_name)
+        media_data = None
+        
+        if external_media_sheet:
+            for row in external_media_sheet.iter_rows(min_row=2):
+                row_url = self.get_stripped_cell_value(row[0].value)
+                if row_url == url:
+                    media_data = {
+                        'url': row_url,
+                        'media_type': self.get_stripped_cell_value(row[1].value),
+                        'title': self.get_stripped_cell_value(row[2].value),
+                        'author': self.get_stripped_cell_value(row[3].value),
+                        'licence': self.get_stripped_cell_value(row[4].value),
+                        'caption': self.get_stripped_cell_value(row[5].value),
+                        'alt_text': self.get_stripped_cell_value(row[6].value),
+                    }
+                    break
+        
+        return media_data
+
+
+    def validate_listing_in_external_media_sheet(self, url, expected_media_type, col_letter, row_index):
+
+        media_data = self.get_external_media_data_from_external_media_sheet(url)
+        
+        if media_data:
+            if media_data['media_type'] != expected_media_type:
+                message = _('Expected media type "%(expected_media_type)s", found "%(actual_media_type)s"') % {
+                    'expected_media_type': expected_media_type,
+                    'actual_media_type': media_data['media_type'],
+                }
+                self.add_cell_error(self.workbook_filename, self.generic_content.name, col_letter, row_index, message)
+        else:
+            message = _('External media URL "%(url)s" not found in the "%(external_media_sheet_name)s" sheet.') % {
+                'url': url,
+                'external_media_sheet_name': self.external_media_sheet_name,
+            }
+            self.add_cell_error(self.workbook_filename, self.generic_content.name, col_letter, row_index, message)
+            
             
     def get_image_file_disk_path(self, image_filename):
         # check if the image exists in the unzipped folder
@@ -329,22 +429,128 @@ class GenericContentZipImporter:
                     if not row[0].value:
                         continue
                     
+                    # check content_types
+                    identifier = row[0].value
+                    author = row[1].value
+                    licence = row[2].value
+                    licence_version = row[3].value
+                    link_to_source_image = row[4].value
+                    title = row[5].value
+                    caption = row[6].value
+                    alt_text = row[7].value
+                    primary_image = row[8].value
+
+                    
                     image_data = {
-                        'identifier': self.get_stripped_cell_value(row[0].value),
-                        'author': self.get_stripped_cell_value(row[1].value),
-                        'licence': self.get_stripped_cell_value(row[2].value),
-                        'licence_version': self.get_stripped_cell_value(row[3].value),
-                        'link_to_source_image': self.get_stripped_cell_value(row[4].value),
-                        'title': self.get_stripped_cell_value(row[5].value),
-                        'caption': self.get_stripped_cell_value(row[6].value),
-                        'alt_text': self.get_stripped_cell_value(row[7].value),
-                        'primary_image': self.get_stripped_cell_value(row[8].value),
+                        'identifier': self.get_stripped_cell_value(identifier),
+                        'author': self.get_stripped_cell_value(author),
+                        'licence': self.get_stripped_cell_value(licence),
+                        'licence_version': self.get_stripped_cell_value(licence_version),
+                        'link_to_source_image': self.get_stripped_cell_value(link_to_source_image),
+                        'title': self.get_stripped_cell_value(title),
+                        'caption': self.get_stripped_cell_value(caption),
+                        'alt_text': self.get_stripped_cell_value(alt_text),
+                        'primary_image': self.get_stripped_cell_value(primary_image),
                     }
                     
                     self.validate_image_data(image_data, images_sheet.title, row_index)
                             
 
+    def validate_external_media_sheet(self):
+        
+        external_media_sheet = self.get_sheet_by_name(self.external_media_sheet_name)
+        if external_media_sheet:
 
+            for row_index, row in enumerate(external_media_sheet.iter_rows(), 0):
+            
+                if row_index == 0:
+                    if not row[0].value or row[0].value.lower() != 'url':
+                        
+                        message = _('Cell content has to be "URL", not %(cell_value)s') % {
+                            'cell_value': row[0].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'A', 0, message)
+
+                    if not row[1].value or row[1].value.lower() != 'media type':
+                        message = _('Cell content has to be "Media type", not %(cell_value)s') % {
+                            'cell_value': row[1].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'B', 0, message)
+                    if not row[2].value or row[2].value.lower() != 'title':
+                        message = _('Cell content has to be "Title", not %(cell_value)s') % {
+                            'cell_value': row[2].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'C', 0, message)
+                    if not row[3].value or row[3].value.lower() != 'author (optional)':
+                        message = _('Cell content has to be "Author (optional)", not %(cell_value)s') % {
+                            'cell_value': row[3].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'D', 0, message)
+                    if not row[4].value or row[4].value.lower() != 'licence (optional)':
+                        message = _('Cell content has to be "Licence (optional)", not %(cell_value)s') % {
+                            'cell_value': row[4].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'E', 0, message)
+                    if not row[5].value or row[5].value.lower() != 'caption (optional)':
+                        message = _('Cell content has to be "Caption (optional)", not %(cell_value)s') % {
+                            'cell_value': row[5].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'F', 0, message)
+                    if not row[6].value or row[6].value.lower() != 'alt text (optional)':
+                        message = _('Cell content has to be "Alt text (optional)", not %(cell_value)s') % {
+                            'cell_value': row[6].value,
+                        }
+                        self.add_cell_error(self.workbook_filename, external_media_sheet.title, 'G', 0, message)
+                        
+                else:
+                    if not row[0].value:
+                        continue
+
+                    url = row[0].value
+                    media_type = row[1].value
+                    title = row[2].value
+                    author = row[3].value
+                    licence = row[4].value
+                    caption = row[5].value
+                    alt_text = row[6].value
+                    
+                    external_media_data = {
+                        'url': self.get_stripped_cell_value(url),
+                        'media_type': self.get_stripped_cell_value(media_type),
+                        'title': self.get_stripped_cell_value(title),
+                        'author': self.get_stripped_cell_value(author),
+                        'licence': self.get_stripped_cell_value(licence),
+                        'caption': self.get_stripped_cell_value(caption),
+                        'alt_text': self.get_stripped_cell_value(alt_text),
+                    }
+                    
+                    self.validate_external_media_data(external_media_data, external_media_sheet.title, row_index)
+    
+    
+    def validate_external_media_data(self, external_media_data, sheet_name, row_index):
+        
+        # url, media_type and title are mandatory
+        if not external_media_data['url']:
+            message = _('Cell content has to be a URL, found empty cell instead')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+
+        if not external_media_data['media_type']:
+            message = _('Cell content has to be a Media type, found empty cell instead')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'B', row_index, message)
+            
+        if not external_media_data['title']:
+            message = _('Cell content has to be a Title, found empty cell instead')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'C', row_index, message)
+            
+        # check if media type is one of the allowed media types
+        if external_media_data['media_type'] and external_media_data['media_type'] not in AVAILABLE_EXTERNAL_MEDIA_TYPES:
+            message = _('Invalid media type: %(cell_value)s. Valid media types are: %(valid_media_types)s') % {
+                'cell_value': external_media_data['media_type'],
+                'valid_media_types': ', '.join(AVAILABLE_EXTERNAL_MEDIA_TYPES),
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'B', row_index, message)
+    
+    
     def add_cell_error(self, filename, sheet_name, column, row, message):
         
         if isinstance(column, int):

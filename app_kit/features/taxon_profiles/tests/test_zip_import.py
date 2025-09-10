@@ -168,8 +168,74 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         self.assertEqual(qr_image.alt_text, 'Leaf alt text')
         
         self.assertEqual([tag.name for tag in quercus_robur_profile.tags.all()], ['tree', 'deciduous'])
-            
-    
+        
+        # test external media
+        external_media = quercus_robur_profile.external_media.all()
+        self.assertEqual(len(external_media), 7)
+        
+        external_image = quercus_robur_profile.external_media.filter(media_type='image').first()
+        self.assertIsNotNone(external_image)
+        self.assertEqual(external_image.url, 'https://code-for-nature.com/images/Biodiversity-illustration-screen-sm.png')
+        self.assertEqual(external_image.title, 'Biodiversity illustration')
+        self.assertEqual(external_image.author, 'external media author')
+        self.assertEqual(external_image.licence, 'external media licence')
+        self.assertEqual(external_image.caption, 'external media caption')
+        self.assertEqual(external_image.alt_text, 'external media alt text')
+        
+        external_youtube = quercus_robur_profile.external_media.filter(media_type='youtube').first()
+        self.assertIsNotNone(external_youtube)
+        self.assertEqual(external_youtube.url, 'https://www.youtube.com/watch?v=v5ekOVJ5uzU')
+        self.assertEqual(external_youtube.title, 'Patchwork Cuttlefish')
+        self.assertEqual(external_youtube.author, None)
+        self.assertEqual(external_youtube.licence, None)
+        self.assertEqual(external_youtube.caption, None)
+        self.assertEqual(external_youtube.alt_text, None)
+        
+        external_mp3 = quercus_robur_profile.external_media.filter(media_type='mp3').first()
+        self.assertIsNotNone(external_mp3)
+        self.assertEqual(external_mp3.url, 'https://samplelib.com/lib/preview/mp3/sample-3s.mp3')
+        self.assertEqual(external_mp3.title, 'sample mp3')
+        self.assertEqual(external_mp3.author, None)
+        self.assertEqual(external_mp3.licence, None)
+        self.assertEqual(external_mp3.caption, None)
+        self.assertEqual(external_mp3.alt_text, None)
+        
+        external_wav = quercus_robur_profile.external_media.filter(media_type='wav').first()
+        self.assertIsNotNone(external_wav)
+        self.assertEqual(external_wav.url, 'https://samplelib.com/lib/preview/wav/sample-3s.wav')
+        self.assertEqual(external_wav.title, 'sample wav')
+        self.assertEqual(external_wav.author, None)
+        self.assertEqual(external_wav.licence, None)
+        self.assertEqual(external_wav.caption, None)
+        self.assertEqual(external_wav.alt_text, None)
+        
+        external_pdf = quercus_robur_profile.external_media.filter(media_type='pdf').first()
+        self.assertIsNotNone(external_pdf)
+        self.assertEqual(external_pdf.url, 'https://file-examples.com/storage/fe42043ddc68bdea5933232/2017/10/file-sample_150kB.pdf')
+        self.assertEqual(external_pdf.title, 'sample pdf')
+        self.assertEqual(external_pdf.author, None)
+        self.assertEqual(external_pdf.licence, None)
+        self.assertEqual(external_pdf.caption, None)
+        self.assertEqual(external_pdf.alt_text, None)
+        
+        external_website = quercus_robur_profile.external_media.filter(media_type='website').first()
+        self.assertIsNotNone(external_website)
+        self.assertEqual(external_website.url, 'https://code-for-nature.com')
+        self.assertEqual(external_website.title, 'sample website')
+        self.assertEqual(external_website.author, None)
+        self.assertEqual(external_website.licence, None)
+        self.assertEqual(external_website.caption, None)
+        self.assertEqual(external_website.alt_text, None)
+        
+        external_file = quercus_robur_profile.external_media.filter(media_type='file').first()
+        self.assertIsNotNone(external_file)
+        self.assertEqual(external_file.url, 'https://file-examples.com/wp-content/storage/2017/02/file_example_CSV_5000.csv')
+        self.assertEqual(external_file.title, 'sample file')
+        self.assertEqual(external_file.author, None)
+        self.assertEqual(external_file.licence, None)
+        self.assertEqual(external_file.caption, None)
+        self.assertEqual(external_file.alt_text, None)
+
         # now test the update
         self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_update')
         importer = self.get_zip_importer()
@@ -202,6 +268,80 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         
         self.assertEqual(len(quercus_robur_profile.images()), 1)
         qr_image = quercus_robur_profile.images()[0]
+        
+        # test external media update
+        external_media = quercus_robur_profile.external_media.all()
+        self.assertEqual(len(external_media), 7)
+        
+        external_image = quercus_robur_profile.external_media.filter(media_type='image').first()
+        external_image.refresh_from_db()
+        self.assertIsNotNone(external_image)
+        self.assertEqual(external_image.url, 'https://code-for-nature.com/images/Biodiversity-illustration-screen-sm.png')
+        self.assertEqual(external_image.title, 'Biodiversity illustration')
+        self.assertEqual(external_image.author, 'external media author update')
+        self.assertEqual(external_image.licence, None)
+        self.assertEqual(external_image.caption, 'external media caption')
+        self.assertEqual(external_image.alt_text, 'external media alt text')
+        
+        external_youtube = quercus_robur_profile.external_media.filter(media_type='youtube').first()
+        external_youtube.refresh_from_db()
+        self.assertIsNotNone(external_youtube)
+        self.assertEqual(external_youtube.url, 'https://www.youtube.com/watch?v=v5ekOVJ5uzU')
+        self.assertEqual(external_youtube.title, 'Patchwork Cuttlefish')
+        self.assertEqual(external_youtube.author, 'Author 2')
+        self.assertEqual(external_youtube.licence, None)
+        self.assertEqual(external_youtube.caption, None)
+        self.assertEqual(external_youtube.alt_text, None)
+        
+        external_mp3 = quercus_robur_profile.external_media.filter(media_type='mp3').first()
+        external_mp3.refresh_from_db()
+        self.assertIsNotNone(external_mp3)
+        self.assertEqual(external_mp3.url, 'https://samplelib.com/lib/preview/mp3/sample-3s.mp3')
+        self.assertEqual(external_mp3.title, 'sample mp3')
+        self.assertEqual(external_mp3.author, None)
+        self.assertEqual(external_mp3.licence, None)
+        self.assertEqual(external_mp3.caption, None)
+        self.assertEqual(external_mp3.alt_text, None)
+        
+        external_wav = quercus_robur_profile.external_media.filter(media_type='wav').first()
+        external_wav.refresh_from_db()
+        self.assertIsNotNone(external_wav)
+        self.assertEqual(external_wav.url, 'https://samplelib.com/lib/preview/wav/sample-3s.wav')
+        self.assertEqual(external_wav.title, 'sample wav')
+        self.assertEqual(external_wav.author, None)
+        self.assertEqual(external_wav.licence, None)
+        self.assertEqual(external_wav.caption, None)
+        self.assertEqual(external_wav.alt_text, None)
+        
+        external_pdf = quercus_robur_profile.external_media.filter(media_type='pdf').first()
+        external_pdf.refresh_from_db()
+        self.assertIsNotNone(external_pdf)
+        self.assertEqual(external_pdf.url, 'https://file-examples.com/storage/fe42043ddc68bdea5933232/2017/10/file-sample_150kB.pdf')
+        self.assertEqual(external_pdf.title, 'sample pdf')
+        self.assertEqual(external_pdf.author, None)
+        self.assertEqual(external_pdf.licence, None)
+        self.assertEqual(external_pdf.caption, None)
+        self.assertEqual(external_pdf.alt_text, None)
+        
+        external_website = quercus_robur_profile.external_media.filter(media_type='website').first()
+        external_website.refresh_from_db()
+        self.assertIsNotNone(external_website)
+        self.assertEqual(external_website.url, 'https://code-for-nature.com')
+        self.assertEqual(external_website.title, 'sample website')
+        self.assertEqual(external_website.author, None)
+        self.assertEqual(external_website.licence, None)
+        self.assertEqual(external_website.caption, None)
+        self.assertEqual(external_website.alt_text, None)
+        
+        external_file = quercus_robur_profile.external_media.filter(media_type='file').first()
+        external_file.refresh_from_db()
+        self.assertIsNotNone(external_file)
+        self.assertEqual(external_file.url, 'https://file-examples.com/wp-content/storage/2017/02/file_example_CSV_5000.csv')
+        self.assertEqual(external_file.title, 'sample file')
+        self.assertEqual(external_file.author, None)
+        self.assertEqual(external_file.licence, None)
+        self.assertEqual(external_file.caption, None)
+        self.assertEqual(external_file.alt_text, None)
         
     @test_settings
     def test_partial_import(self):
@@ -300,6 +440,32 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         self.assertEqual(updated_profile.short_profile, 'Quercus robur short profile')
 
 
+
+class TestTaxonProfilesZipImporterInvalidCellContentType(WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
+    def setUp(self):
+        super().setUp()
+        self.superuser = self.create_superuser()
+        self.user = self.create_user()
+        self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'invalid_content_type')
+        self.taxon_profiles = self.get_taxon_profiles()
+        
+    def get_zip_importer(self):
+        return TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
+    
+    
+    @test_settings
+    def test_validate_cell_value_content_types(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        
+        importer.errors = []
+        importer.validate_cell_value_content_types()
+        expected_errors = [
+            '[Taxon profiles.xlsx][Sheet:Taxon profiles][cell:E4] Invalid cell content: =SUM(). Formulas are not allowed.'
+        ]
+
+        self.assertEqual(importer.errors, expected_errors)
+
 class TestTaxonProfilesZipImporterInvalidData(WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
     
     def setUp(self):
@@ -311,7 +477,6 @@ class TestTaxonProfilesZipImporterInvalidData(WithTaxonProfiles, WithUser, WithM
         
     def get_zip_importer(self):
         return TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
-    
     
     @test_settings
     def test_validate_definition_rows(self):

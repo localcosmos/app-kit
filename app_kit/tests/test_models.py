@@ -13,6 +13,8 @@ from app_kit.tests.common import test_settings, TESTS_ROOT, TEST_IMAGE_PATH
 from app_kit.tests.mixins import WithMetaApp, WithUser, WithMedia, WithImageStore
 from app_kit.tests.cases import TransactionTenantTestCase
 
+from datetime import timedelta
+
 from localcosmos_server.models import SecondaryAppLanguages
 from django_tenants.utils import get_tenant_domain_model
 Domain = get_tenant_domain_model()
@@ -1475,3 +1477,4 @@ class TestLocalizedContentImage(WithMedia, WithImageStore, WithMetaApp, WithUser
         )
 
         localized_content_image.save()
+        

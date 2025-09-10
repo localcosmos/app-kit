@@ -1,0 +1,10 @@
+{% load i18n app_tags localcosmos_tags %}
+<div id="external-media-{{ content_object|ctype_id }}-{{ content_object.id }}">
+    {% if external_media %}
+        render external media
+    {% else %}
+        <div class="alert alert-info">
+            {% trans 'No external media yet.' %}
+        </div>
+    {% endif %}
+</div>

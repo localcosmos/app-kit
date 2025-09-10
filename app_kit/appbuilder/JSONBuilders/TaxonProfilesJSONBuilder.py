@@ -149,8 +149,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'tags' : [],
             'seo': {
                 'title': None,
-                'meta_description': None,
+                'metaDescription': None,
             },
+            'externalMedia': [],
             'isFeatured': is_featured,
         })
 
@@ -181,7 +182,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         if db_profile:
             # this has to be changed to esnure ordering by pk of taggeditem
             taxon_profile_json['tags'] = [tag.name for tag in db_profile.tags.all()]
-            
+
+            taxon_profile_json['externalMedia'] = self.build_external_media_json(db_profile)
+
             # localized SEO
             seo_parameters = db_profile.seo_parameters.first()
             
@@ -190,7 +193,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if seo_parameters.title:
                     taxon_profile_json['seo']['title'] = seo_parameters.title
                 if seo_parameters.meta_description:
-                    taxon_profile_json['seo']['meta_description'] = seo_parameters.meta_description
+                    taxon_profile_json['seo']['metaDescription'] = seo_parameters.meta_description
                         
         # get information (traits, node_names) from nature guides if possible
         # collect node images

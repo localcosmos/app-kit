@@ -127,4 +127,9 @@ urlpatterns = [
     # SEO
     path('manage-seo/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/', views.ManageAppKitSeoParameters.as_view(),
          name='manage_app_kit_seo_parameters'),
+    # EXTERNAL MEDIA
+    path('create-external-media/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<str:media_type>/',
+         views.ManageAppKitExternalMedia.as_view(), name='create_app_kit_external_media'),
+    path('update-external-media/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<int:external_media_id>/',
+         views.ManageAppKitExternalMedia.as_view(), name='update_app_kit_external_media'),
 ]

@@ -1,12 +1,16 @@
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 from app_kit.generic_content_zip_import import GenericContentZipImporter
 
 from app_kit.features.taxon_profiles.models import (TaxonProfile, TaxonTextType, TaxonText, TaxonTextTypeCategory)
 
-from app_kit.models import AppKitSeoParameters
+from app_kit.models import AppKitSeoParameters, AppKitExternalMedia
+
+from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
 
 from openpyxl.utils import get_column_letter
 
@@ -26,12 +30,7 @@ class SEO(Enum):
     TITLE = 'title'
     META_DESCRIPTION = 'meta_description'
     
-class ExternalMediaTypes(Enum):
-    IMAGE = 'image'
-    PDF = 'pdf'
-    YOUTUBE = 'youtube'
-    LINK = 'link'
-    FILE = 'file'
+AVAILABLE_EXTERNAL_MEDIA_TYPES = [d[0] for d in EXTERNAL_MEDIA_TYPES]
 
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 TAXON_PROFILES_SHEET_NAME = 'Taxon Profiles'
@@ -98,7 +97,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     
             elif col_index == 2:
                 if not row_1_value or row_1_value != 'author (optional)':
-                    message = _('Cell content has to be "Author (optional)", not %(cell_value)') % {
+                    message = _('Cell content has to be "Author (optional)", not %(cell_value)s') % {
                         'cell_value' : col[0].value,
                     }
                     self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 0, message)
@@ -145,7 +144,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             
                     elif column_type in [ColumnType.IMAGE.value, ColumnType.SHORT_PROFILE.value, ColumnType.TAGS.value]:
                         row_2_value = col[1].value
-                        
+
                         if row_2_value:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 2') % {
                                 'column_type': column_type,
@@ -153,7 +152,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
                         
                         row_3_value = col[2].value
-                        if row_3_value:
+                        if row_3_value and r3v_is_valid_content_type == True:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -163,7 +162,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     elif column_type == ColumnType.SEO.value:
                         row_2_value = self.get_stripped_cell_value_lowercase(col[1].value)
                         row_3_value = self.get_stripped_cell_value_lowercase(col[2].value)
-                        
+
                         if row_2_value:
                             if row_2_value not in [SEO.TITLE.value, SEO.META_DESCRIPTION.value]:
                                 message = _('Cell content has to be one of %(valid_choices)s. Found %(cell_value)s instead') % {
@@ -171,8 +170,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                     'cell_value': col[1].value
                                 }
                                 self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
-                        
-                        if row_3_value:
+
+                        if row_3_value and r3v_is_valid_content_type == True:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -182,15 +181,15 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     elif column_type == ColumnType.EXTERNAL_MEDIA.value:
                         row_2_value = self.get_stripped_cell_value_lowercase(col[1].value)
                         row_3_value = self.get_stripped_cell_value_lowercase(col[2].value)
-                        
-                        if row_2_value not in  ExternalMediaTypes._value2member_map_:
+
+                        if row_2_value and row_2_value not in AVAILABLE_EXTERNAL_MEDIA_TYPES:
                             message = _('Cell content has to be one of %(valid_choices)s. Found %(cell_value)s instead') % {
-                                'valid_choices': ', '.join(ExternalMediaTypes._value2member_map_),
+                                'valid_choices': ', '.join(AVAILABLE_EXTERNAL_MEDIA_TYPES),
                                 'cell_value': col[1].value
                             }
                             self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
-                            
-                        if row_3_value:
+
+                        if row_3_value and row_3_value not in AVAILABLE_EXTERNAL_MEDIA_TYPES:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -204,6 +203,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             col_1_value = self.get_stripped_cell_value(row[0].value)
             col_2_value = self.get_stripped_cell_value(row[1].value)
             col_3_value = self.get_stripped_cell_value(row[2].value)
+
+            # skip empty rows
             if not col_1_value:
                 continue
             
@@ -228,7 +229,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
     def validate_content(self):
         
         taxon_profiles_sheet = self.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
-        
+
         # the texts and images have to be validated column by column
         for col_index, col in enumerate(taxon_profiles_sheet.iter_cols(min_col=5), 1):
             
@@ -239,7 +240,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             for row_index, cell in enumerate(col, 1):
                     
                 if row_index >= 4:
-            
+
                     if column_type == ColumnType.IMAGE.value:
                 
                         if cell.value:
@@ -247,23 +248,40 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             self.validate_listing_in_images_sheet(image_filename, col_letter, row_index)
                         
                     elif column_type == ColumnType.EXTERNAL_MEDIA.value:
+                        
+                        media_type = col[1].value
                 
                         if cell.value:
                             url = self.get_stripped_cell_value(cell.value)
                             # check if the external media is valid
-                            self.validate_external_media(url, col_letter)
-                    
-    
-    def validate_external_media(self, url, col_letter):
-        # check if the url is reachable
+                            is_valid = self.validate_external_media(url, col_letter, row_index)
+                            if is_valid:
+                                self.validate_listing_in_external_media_sheet(url, media_type, col_letter, row_index)
+
+
+    def validate_external_media(self, url, col_letter, row_index):
+        validator = URLValidator()
         
-        if url.startswith('https://'):
-            pass
-        else:
-            message = _('External media URL has to start with "https://", found %(url)s instead') % {
+        is_valid = True
+    
+        try:
+            validator(url)
+            is_valid_url = True
+        except ValidationError:
+            message = _('Invalid URL format: %(url)s') % {
                 'url': url,
             }
-            self.add_cell_error(self.workbook_filename, TAXON_PROFILES_SHEET_NAME, col_letter, 0, message)
+            self.add_cell_error(self.workbook_filename, TAXON_PROFILES_SHEET_NAME, col_letter, row_index, message)
+            is_valid = False
+
+        if is_valid and not url.startswith('https://'):
+            message = _('External media URL has to start with "https://", found %(url)s instead') % {
+                'url': url[:8],
+            }
+            self.add_cell_error(self.workbook_filename, TAXON_PROFILES_SHEET_NAME, col_letter, row_index, message)
+            is_valid = False
+            
+        return is_valid
         
 
     # additive import
@@ -541,11 +559,34 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                 
                             elif column_type == ColumnType.EXTERNAL_MEDIA.value:
                                 
-                                external_media_type = column_content_type_map[column_letter]['external_media_type']
                                 external_media_url = cell_value
-                                # this is not implemented yet in the database and a future project
-                                continue
-                        
+
+                                external_media_data = self.get_external_media_data_from_external_media_sheet(external_media_url)
+
+                                if external_media_data:
+                                    taxon_profile_external_media = AppKitExternalMedia.objects.filter(
+                                        content_type=taxon_profile_content_type,
+                                        object_id=taxon_profile.id,
+                                        url=external_media_url,
+                                    ).first()
+                                    
+                                    if not taxon_profile_external_media:
+                                        taxon_profile_external_media = AppKitExternalMedia(
+                                            content_type=taxon_profile_content_type,
+                                            object_id=taxon_profile.id,
+                                            url=external_media_url,
+                                        )
+                                    
+                                    taxon_profile_external_media.media_type = external_media_data['media_type']
+                                    
+                                    taxon_profile_external_media.title = external_media_data['title']
+                                    taxon_profile_external_media.author = external_media_data['author']
+                                    taxon_profile_external_media.licence = external_media_data['licence']
+                                    taxon_profile_external_media.caption = external_media_data['caption']
+                                    taxon_profile_external_media.alt_text = external_media_data['alt_text']
+                                    taxon_profile_external_media.save()  
+                                    
+
         # cleanup: iterate over all taxon texts and remove those that are empty
         taxon_texts = TaxonText.objects.filter(taxon_profile__taxon_profiles=self.generic_content)
         for taxon_text in taxon_texts:

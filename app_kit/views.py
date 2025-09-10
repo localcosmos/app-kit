@@ -3,7 +3,7 @@ from django.shortcuts import redirect
 from django.views.generic import TemplateView, FormView
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from django.http import HttpResponse, JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponseBadRequest
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt, requires_csrf_token
@@ -14,7 +14,7 @@ from django.db import close_old_connections
 from django.core import mail
 
 from .models import (MetaApp, MetaAppGenericContent, ImageStore, ContentImage, LocalizedContentImage,
-                     AppKitSeoParameters)
+                     AppKitSeoParameters, AppKitExternalMedia)
 
 from .generic import AppContentTaxonomicRestriction
 
@@ -43,11 +43,11 @@ from taxonomy.models import TaxonomyModelRouter, MetaVernacularNames
 
 from content_licencing.view_mixins import LicencingFormViewMixin
 
-from localcosmos_server.generic_views import AjaxDeleteView, ManageSeoParameters
+from localcosmos_server.generic_views import AjaxDeleteView, ManageSeoParameters, ManageExternalMedia
 
 import deepl
 
-import json, urllib.request, urllib.parse, urllib.error, traceback, threading
+import traceback, threading
 from django.db import connection
 
 # activate permission rules
@@ -1677,6 +1677,13 @@ class ManageAppKitSeoParameters(MetaAppFormLanguageMixin, ManageSeoParameters):
     
     template_name = 'app_kit/ajax/manage_seo_parameters.html'
     seo_model_class = AppKitSeoParameters
+
+
+class ManageAppKitExternalMedia(MetaAppFormLanguageMixin, ManageExternalMedia):
+    
+    template_name = 'app_kit/ajax/manage_external_media.html'
+    external_media_model_class = AppKitExternalMedia
+    
 
 # LEGAL
 class IdentityMixin:

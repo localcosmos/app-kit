@@ -155,3 +155,23 @@ class JSONBuilder(ContentImagesJSONBuilder):
                 global_options[camel_case_key] = value
         
         return global_options
+    
+    
+    def build_external_media_json(self, generic_content):
+        external_media_json = []
+        
+        if generic_content and hasattr(generic_content, 'external_media'):
+
+            for media in generic_content.external_media.all():
+                media_json = {
+                    'mediaType': media.media_type,
+                    'url': media.url,
+                    'title': media.title,
+                    'author': media.author,
+                    'licence': media.licence,
+                    'caption': media.caption,
+                    'altText': media.alt_text,
+                }
+                external_media_json.append(media_json)
+
+        return external_media_json

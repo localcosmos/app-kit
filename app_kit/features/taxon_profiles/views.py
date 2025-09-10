@@ -31,6 +31,7 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.generic_views import AjaxDeleteView
+from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
 
 
 def get_taxon(taxon_source, name_uuid):
@@ -345,6 +346,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context['text_type_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
         
         context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
+
+        context['external_media_types'] = EXTERNAL_MEDIA_TYPES
         return context
 
 

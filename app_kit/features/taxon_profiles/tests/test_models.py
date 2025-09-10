@@ -901,3 +901,4 @@ class TestTaxonTextTypeCategory(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         text_type.save()
         
         self.assertEqual(text_type.category, category)
+

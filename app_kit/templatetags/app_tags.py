@@ -65,6 +65,22 @@ def render_content_images(meta_app, content_object):
     
     return context
 
+@register.inclusion_tag('app_kit/ajax/external_media.html')
+def render_external_media(meta_app, content_object):
+
+    external_media = []
+
+    if content_object:
+        pass
+
+    context = {
+        'meta_app': meta_app,
+        'content_object' : content_object,
+        'external_media' : external_media,
+    }
+
+    return context
+
 @register.filter
 def clean_taxa(lazy_taxon_list):
     cleaned = []

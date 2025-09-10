@@ -1,3 +1,4 @@
+from turtle import position
 from django.db import models
 
 from django.utils.translation import gettext_lazy as _, gettext as __
@@ -6,7 +7,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
-from app_kit.models import ContentImageMixin, AppKitSeoParameters
+from app_kit.models import ContentImageMixin, AppKitSeoParameters, AppKitExternalMedia
 from app_kit.generic import GenericContent, PUBLICATION_STATUS
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
@@ -14,6 +15,7 @@ from taxonomy.lazy import LazyTaxonList, LazyTaxon
 
 from taxonomy.models import TaxonomyModelRouter
 from django.db.models import Q
+
 
 '''
     The content of the feature
@@ -179,6 +181,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     tags = TaggableManager()
     
     seo_parameters = GenericRelation(AppKitSeoParameters)
+    
+    external_media = GenericRelation(AppKitExternalMedia)
     
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -620,3 +624,4 @@ class TaxonProfilesNavigationEntryTaxa(ModelWithRequiredTaxon):
         unique_together=('navigation_entry', 'name_uuid')
         verbose_name = _('Taxon Profiles Navigation Entry Taxon')
     
+
