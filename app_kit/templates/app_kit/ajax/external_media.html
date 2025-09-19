@@ -1,10 +1,16 @@
-{% load i18n app_tags localcosmos_tags %}
-<div id="external-media-{{ content_object|ctype_id }}-{{ content_object.id }}">
-    {% if external_media %}
-        render external media
-    {% else %}
-        <div class="alert alert-info">
-            {% trans 'No external media yet.' %}
+{% load i18n static app_tags localcosmos_tags %}
+<div id="external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }}">
+    {% include 'app_kit/ajax/external_media_list.html' %}
+</div>
+<div>
+    <div class="btn-group dropup">
+        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {% trans 'Add External Media' %} <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu pull-right">
+            {% for media_type in external_media_types %}
+                <a href data-url="{% url 'create_app_kit_external_media' meta_app.id external_media_object|ctype_id external_media_object.id media_type.0 %}" ajax-target="LargeModalContent" class="dropdown-item xhr">{{ media_type.1 }}</a>
+            {% endfor %}
         </div>
-    {% endif %}
+    </div>
 </div>

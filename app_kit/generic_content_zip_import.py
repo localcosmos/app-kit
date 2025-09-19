@@ -314,11 +314,30 @@ class GenericContentZipImporter:
             
             
     def get_image_file_disk_path(self, image_filename):
-        # check if the image exists in the unzipped folder
+        """
+        Get the actual file path, handling case-insensitive extension matching
+        """
         images_folder = os.path.join(self.zip_contents_path, self.image_folder_name)
-        image_path = os.path.join(images_folder, image_filename)
+        exact_path = os.path.join(images_folder, image_filename)
+        
+        # First try exact match
+        if os.path.exists(exact_path):
+            return exact_path
+        
+        # Try with different case extensions
+        name_without_ext, ext = os.path.splitext(image_filename)
+        
+        # Try common variations of the extension
+        if ext.lower() in VALID_IMAGE_FORMATS:
+            variations = [ext.lower(), ext.upper(), ext.capitalize()]
+            
+            for variation in variations:
+                path_candidate = os.path.join(images_folder, name_without_ext + variation)
+                if os.path.exists(path_candidate):
+                    return path_candidate
 
-        return image_path
+        # Return original path if no match found for error handling
+        return exact_path
     
     def validate_image_data(self, image_data, sheet_name, row_index):
         

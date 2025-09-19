@@ -5,7 +5,7 @@
 
 	<div class="card">
 		<div class="card-body">
-			<h4 class="card-title">{% trans 'Taxonomic restriction' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large" data-toggle="popover" data-placement="top" title="{% trans 'Taxonomic restriction' %}" data-content="{% trans 'You can optionally define which taxa your observation form can be used for. If you add a higher taxon (e.g. birds/aves) only descendants of that taxon can use this form. You can also restrict only certain fields to taxa.' %}" /></h4>
+			<h4 class="card-title">{% trans 'Taxonomic restriction' %} <img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon" data-toggle="popover" data-placement="top" title="{% trans 'Taxonomic restriction' %}" data-content="{% trans 'You can optionally define which taxa your observation form can be used for. If you add a higher taxon (e.g. birds/aves) only descendants of that taxon can use this form. You can also restrict only certain fields to taxa.' %}" /></h4>
 			<div>
 			
 				{% render_taxonomic_restriction meta_app.app generic_content %}
@@ -20,7 +20,7 @@
 		<div class="card-body">
 			<h4>{% trans 'Observation form fields' %}</h4>
 			<p>
-				<h5>{% trans 'Fundamental fields' %} <img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'Basic fields' %}" data-content="{% trans 'Every observation form needs at least fields for Taxon (e.g. Species), Time of Observation and Geographic Reference (e.g. GPS).' %}" /></h5>
+				<h5>{% trans 'Fundamental fields' %} <img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon"  data-toggle="popover" title="{% trans 'Basic fields' %}" data-content="{% trans 'Every observation form needs at least fields for Taxon (e.g. Species), Time of Observation and Geographic Reference (e.g. GPS).' %}" /></h5>
 				<div>
 					<ul id="generic-form-taxonomic_reference-fields" class="simpleul">
 						{% if taxonomic_reference_field %}

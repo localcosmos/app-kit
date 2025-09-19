@@ -78,12 +78,16 @@ urlpatterns = [
         views.ManageNavigationImage.as_view(), name='manage_taxon_profiles_navigation_image'),
     path('manage-taxon-profiles-navigation/delete-navigation-image/<int:meta_app_id>/<int:pk>/',
         views.DeleteNavigationImage.as_view(), name='delete_taxon_profiles_navigation_image'),
+    path('manage-taxon-profiles-navigation/move-entry/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
+         views.MoveTaxonProfilesNavigationEntry.as_view(), name='move_taxonprofiles_navigation_entry'),
     # prerender navigation
     path('manage-taxon-profiles-navigation/prerender/<int:meta_app_id>/<int:taxon_profiles_id>/',
          views.PrerenderTaxonProfilesNavigation.as_view(), name='prerender_taxonprofiles_navigation'),
     # navigation entry publication status
     path('manage-taxon-profiles-navigation-entry/publication-status/<int:meta_app_id>/<int:taxon_profiles_id>/<int:navigation_entry_id>/',
          views.ChangeNavigationEntryPublicationStatus.as_view(), name='change_taxonprofiles_navigation_entry_publication_status'),
+    path('search-for-taxonprofiles-navigation-entry/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.SearchForTaxonProfilesNavigationEntry.as_view(), name='search_for_taxonprofiles_navigation_entry'),
     # categories
     path('create-taxon-text-type-category/<int:meta_app_id>/<int:taxon_profiles_id>/<int:taxon_profile_id>/',
          views.ManageTaxonTextTypeCategory.as_view(), name='create_taxon_text_type_category'),

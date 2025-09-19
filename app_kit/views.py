@@ -1683,8 +1683,46 @@ class ManageAppKitExternalMedia(MetaAppFormLanguageMixin, ManageExternalMedia):
     
     template_name = 'app_kit/ajax/manage_external_media.html'
     external_media_model_class = AppKitExternalMedia
-    
 
+
+class ListAppKitExternalMedia(MetaAppMixin, TemplateView):
+    
+    template_name = 'app_kit/ajax/external_media_list.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
+        self.content_type = ContentType.objects.get(pk=kwargs['content_type_id'])
+        self.object_id = kwargs['object_id']
+        self.external_media_object = self.content_type.get_object_for_this_type(pk=self.object_id)
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meta_app'] = self.meta_app
+        context['content_type'] = self.content_type
+        context['external_media_object'] = self.external_media_object
+        external_media_qs = AppKitExternalMedia.objects.filter(
+            content_type=self.content_type,
+            object_id=self.object_id
+        )
+        context['external_media'] = external_media_qs
+        return context
+
+
+class DeleteAppKitExternalMedia(MetaAppMixin, AjaxDeleteView):
+    
+    template_name = 'app_kit/ajax/delete_app_kit_external_media.html'
+    model = AppKitExternalMedia
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['external_media_object'] = self.object.content_object
+        return context
+    
 # LEGAL
 class IdentityMixin:
 

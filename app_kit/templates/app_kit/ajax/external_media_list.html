@@ -1,0 +1,89 @@
+{% load i18n static localcosmos_tags %}
+{% if external_media %}
+    <div class="external-media-list" data-store-positions-url="{% url 'store_app_kit_object_order' external_media.0|ctype_id %}">
+        {% for media in external_media %}
+            <div id="external_media_{{ media.id }}" class="external-media-item" data-object-id="{{ media.id }}">
+                <div>
+                    {% if media.media_type == 'image' %}
+                        <img
+                            src="{% static 'phosphor-icons/image.svg' %}"
+                            alt="image" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'youtube' %}
+                        <img
+                            src="{% static 'phosphor-icons/video.svg' %}"
+                            alt="video" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'mp3' %}
+                        <img
+                            src="{% static 'phosphor-icons/music-notes.svg' %}"
+                            alt="mp3" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'wav' %}
+                        <img
+                            src="{% static 'phosphor-icons/music-notes.svg' %}"
+                            alt="wav" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'pdf' %}
+                        <img
+                            src="{% static 'phosphor-icons/file-pdf.svg' %}"
+                            alt="pdf" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'website' %}
+                        <img
+                            src="{% static 'phosphor-icons/globe.svg' %}"
+                            alt="website" class="phicon" 
+                        />
+                    {% endif %}
+                    {% if media.media_type == 'file' %}
+                        <img
+                            src="{% static 'phosphor-icons/file.svg' %}"
+                            alt="file" class="phicon" 
+                        />
+                    {% endif %}
+                </div>
+                <div>
+                    <div>
+                        <a href="{{ media.url }}" target="_blank" rel="noopener noreferrer">
+                            {{ media.title }}
+                        </a>
+                    </div>
+                    {% if media.caption %}
+                        <div>
+                            <small>
+                                {{ media.caption }}
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <small>
+                        <div class="btn-group dropup">
+                            <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {% trans 'modify' %} <span class="caret"></span>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a data-url="{% url 'update_app_kit_external_media' meta_app.id external_media_object|ctype_id external_media_object.id media.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'edit' %}</a>
+                                <a data-url="{% url 'delete_app_kit_external_media' meta_app.id media.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'delete' %}</a>
+
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center move-em-forwardbutton" data-targetid="external_media_{{ media.id }}">&#9650; {% trans 'Move up' %}</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center move-em-backwardbutton" data-targetid="external_media_{{ media.id }}">&#9660; {% trans 'Move down' %}</a>
+                            </div>
+                        </div>
+                    </small>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        {% trans 'No external media yet.' %}
+    </div>
+{% endif %}

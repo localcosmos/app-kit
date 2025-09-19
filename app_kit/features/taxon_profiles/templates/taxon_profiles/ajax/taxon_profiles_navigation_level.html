@@ -24,6 +24,8 @@
                             <a class="dropdown-item text-left moveforwardbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25B2; {% trans 'Move up' %}</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-left movebackbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="{% url 'move_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Move to different parent' %}</a>
                         </div>
                     </div>
                 </div>

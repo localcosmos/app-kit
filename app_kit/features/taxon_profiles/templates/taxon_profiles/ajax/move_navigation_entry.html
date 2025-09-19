@@ -1,0 +1,65 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block action %}
+	{% url 'move_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id navigation_entry.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Move {{ navigation_entry }} to a different parent{% endblocktrans %}
+{% endblock %}
+
+{% block body %}
+    <div>
+        {% if success %}
+            <div>
+                <div class="alert alert-success">
+                    {% if navigation_entry.parent %}
+                        {% blocktrans with new_parent=navigation_entry.parent %}{{ navigation_entry }} has been moved to {{ new_parent }}.{% endblocktrans %}
+                    {% else %}
+                        {% blocktrans %}{{ navigation_entry }} has been moved to top level.{% endblocktrans %}
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div>
+                {% render_bootstrap_form form %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block footer %}
+    {% if success %}
+        {% include 'localcosmos_server/modals/footers/close.html' %}
+    {% else %}
+	    {% include 'localcosmos_server/modals/footers/save.html' %}
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+
+    <script type="text/javascript" src="{% static 'taxon_profiles/jquery-searchfornavigationentry-autocomplete.js' %}"></script>
+	<script>
+        (function(){
+            let url = "{% url 'search_for_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id %}";
+            $('#id_search_entry_name').searchfornavigationentryautocomplete(url, {
+                "afterSelect" : function(item){
+                    $("#id_target_parent_pk").val(item.id);
+                }
+            });
+        })();
+	</script>
+
+	{% if success %}
+	
+		<script>
+			// reload navigation
+            $.get("{% url 'get_taxonprofiles_navigation' meta_app.id taxon_profiles.id %}", (html) => {
+                $("#taxon-profiles-navigation").html(html);
+                ajaxify('taxon-profiles-navigation');
+                
+            });
+		</script>
+	{% endif %}
+{% endblock %}

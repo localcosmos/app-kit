@@ -18,7 +18,7 @@ from app_kit.views import (TenantPasswordResetView, CreateGenericContent, Create
             ManageContentImage, ManageContentImageWithText, DeleteContentImage, ReloadTags,
             MockButton, DeleteLocalizedContentImage, TagAnyElement, TranslateVernacularNames,
             ImportFromZip, IdentityMixin, LegalNotice, PrivacyStatement, GetDeepLTranslation,
-            ManageLocalizedContentImage, ChangeGenericContentPublicationStatus)
+            ManageLocalizedContentImage, ChangeGenericContentPublicationStatus, ListAppKitExternalMedia)
 
 from localcosmos_server.generic_views import StoreObjectOrder
 
@@ -2730,5 +2730,34 @@ class TestTranslateVernacularNames(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         self.assertFalse(mvn_de.exists())
 
 
+class TestListAppKitExternalMedia(ViewTestMixin, WithLoggedInUser, WithUser, WithTenantClient,
+                          WithMetaApp, WithFormTest, TenantTestCase):
+
+    url_name = 'list_app_kit_external_media'
+    view_class = ListAppKitExternalMedia
+
+    def setUp(self):
+        super().setUp()
+        self.content_type = ContentType.objects.get_for_model(MetaApp)
+        self.generic_content = self.meta_app
         
-        
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.generic_content.id,
+        }
+        return url_kwargs
+
+
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['content_type'], self.content_type)
+        self.assertEqual(context['external_media_object'], self.generic_content)
+        self.assertIn('external_media', context)

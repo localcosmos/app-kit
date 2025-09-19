@@ -1,0 +1,29 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+
+{% load i18n localcosmos_tags %}
+
+{% block action %}{% if external_media %}{% url 'update_app_kit_external_media' meta_app.id content_type.id external_media_object.id external_media.id %}{% else %}{% url 'create_app_kit_external_media' meta_app.id content_type.id external_media_object.id media_type %}{% endif %}{% endblock %}
+
+{% block title %}
+	{% trans 'Manage External Media' %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+		<script>
+			$.get("{% url 'list_app_kit_external_media' meta_app.id content_type.id external_media_object.id %}", (html) => {
+				const container_id = 'external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }}';
+				$("#" + container_id).html(html);
+				ajaxify(container_id);
+
+				$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-forwardbutton").on("click", positionmanager.onMoveForward);
+				$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-backwardbutton").on("click", positionmanager.onMoveBack);
+			});
+			$("#LargeModal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}

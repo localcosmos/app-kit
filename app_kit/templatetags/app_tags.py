@@ -7,7 +7,8 @@ from django.urls import reverse
 from django.templatetags.static import static
 from django.contrib.staticfiles import finders
 
-from app_kit.models import MetaApp
+from app_kit.models import MetaApp, AppKitExternalMedia
+from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
 
 
 from django.contrib.contenttypes.models import ContentType
@@ -66,17 +67,18 @@ def render_content_images(meta_app, content_object):
     return context
 
 @register.inclusion_tag('app_kit/ajax/external_media.html')
-def render_external_media(meta_app, content_object):
+def render_external_media(meta_app, external_media_object):
 
-    external_media = []
-
-    if content_object:
-        pass
+    external_media = AppKitExternalMedia.objects.filter(
+        content_type=ContentType.objects.get_for_model(external_media_object),
+        object_id=external_media_object.id
+    )
 
     context = {
         'meta_app': meta_app,
-        'content_object' : content_object,
+        'external_media_object' : external_media_object,
         'external_media' : external_media,
+        'external_media_types' : EXTERNAL_MEDIA_TYPES,
     }
 
     return context

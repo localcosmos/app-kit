@@ -9,7 +9,7 @@ from django.http import JsonResponse
 
 from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
-                    TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm)
+                    TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm)
 
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                      TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory)
@@ -31,7 +31,6 @@ from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
 from localcosmos_server.generic_views import AjaxDeleteView
-from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
 
 
 def get_taxon(taxon_source, name_uuid):
@@ -346,8 +345,6 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context['text_type_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
         
         context['content_image_ctype'] = ContentType.objects.get_for_model(ContentImage)
-
-        context['external_media_types'] = EXTERNAL_MEDIA_TYPES
         return context
 
 
@@ -1149,6 +1146,102 @@ class ChangeNavigationEntryPublicationStatus(MetaAppMixin, FormView):
         context['success'] = True
         
         return self.render_to_response(context)
+    
+    
+class MoveTaxonProfilesNavigationEntry(MetaAppMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/move_navigation_entry.html'
+    form_class = MoveTaxonProfilesNavigationEntryForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.navigation_entry = TaxonProfilesNavigationEntry.objects.get(pk=kwargs['navigation_entry_id'])
+        
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        return form_class(self.navigation_entry, **self.get_form_kwargs())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['navigation_entry'] = self.navigation_entry
+        context['success'] = False
+        return context
+    
+    def form_valid(self, form):
+        
+        target_parent_pk = form.cleaned_data.get('target_parent_pk', None)
+
+        if target_parent_pk:
+            target_parent = TaxonProfilesNavigationEntry.objects.get(pk=target_parent_pk)
+            self.navigation_entry.parent = target_parent
+        else:
+            self.navigation_entry.parent = None
+            
+        self.navigation_entry.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        self.navigation_entry.navigation.prerender()
+
+        return self.render_to_response(context)
+
+
+class SearchForTaxonProfilesNavigationEntry(MetaAppFormLanguageMixin, TemplateView):
+
+    def get_queryset(self, request, **kwargs):
+
+        navigation_entries = []
+        searchtext = request.GET.get('name', '')
+        
+        if len(searchtext) > 2:
+
+            navigation_entries = list(TaxonProfilesNavigationEntry.objects.filter(
+                navigation=self.navigation,
+                name__icontains=searchtext.lower()
+            ))
+
+            taxa_links = TaxonProfilesNavigationEntryTaxa.objects.filter(
+                navigation_entry__navigation=self.navigation,
+                taxon_latname__istartswith=searchtext.lower()
+            )
+            
+            if taxa_links:
+                navigation_entries += [link.navigation_entry for link in taxa_links]
+                navigation_entries = list(set(navigation_entries))
+
+        return navigation_entries
+        
+        
+    @method_decorator(ajax_required)
+    def get(self, request, *args, **kwargs):
+
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self.taxon_profiles).first()
+
+        results = []
+
+        navigation_entries = self.get_queryset(request, **kwargs)
+
+        for entry in navigation_entries:
+
+            choice = {
+                'name' : str(entry),
+                'id' : entry.id,
+            }
+            
+            results.append(choice)
+
+        return JsonResponse(results, safe=False) 
     
     
 class ManageTaxonTextTypeCategory(MetaAppFormLanguageMixin, FormView):

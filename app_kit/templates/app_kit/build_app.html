@@ -1,5 +1,5 @@
 {% extends 'app_kit/base.html' %}
-{% load i18n localcosmos_tags static app_tags octicons %}
+{% load i18n localcosmos_tags static app_tags %}
 
 {% block extra_style %}{% endblock %}
 
@@ -274,7 +274,7 @@
 										{% if meta_app.validation_status == 'valid' or meta_app.validation_status == 'warnings' %}
 											<div class="col-auto">
 												<button type="submit" action="{% url 'build_app' meta_app.id 'validate' %}" class="btn btn-outline-primary">{% trans 'Validate' %}</button>
-												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+												&nbsp;<img src="{% static 'phosphor-icons/arrow-right.svg' %}" class="phicon" />
 											</div>
 											<div class="col-auto">
 												
@@ -284,7 +284,7 @@
 											{% if meta_app.global_build_status == 'passing' and meta_app.last_build_report.result == 'success' %}
 												<div class="col-auto">
 													
-													&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+													&nbsp;<img src="{% static 'phosphor-icons/arrow-right.svg' %}" class="phicon" />&nbsp;
 													{% block release_button %}
 														<button type="submit" {% if app_kit_mode == 'live' %}action="{% url 'build_app' meta_app.id 'release' %}"{% else %}disabled{% endif %} class="btn btn-outline-danger">{% trans 'Release' %}</button>
 													{% endblock %}
@@ -302,20 +302,20 @@
 
 											{% else %}
 												<div class="col-auto">
-													&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+													&nbsp;<img src="{% static 'phosphor-icons/arrow-right.svg' %}" class="phicon" />&nbsp;
 													<button type="button" class="btn btn-outline-primary" disabled>{% trans 'Release' %}</button>
 												</div>
 											{% endif %}
 										{% else %}
 											<div class="col-auto">
 												<button type="submit" action="{% url 'build_app' meta_app.id 'validate' %}" class="btn btn-outline-primary">{% trans 'Validate' %}</button>
-												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+												&nbsp;<img src="{% static 'phosphor-icons/arrow-right.svg' %}" class="phicon" />&nbsp;
 											</div>
 											<div class="col-auto">
 												<button type="button" disabled class="btn btn-outline-primary">{% trans 'Build' %}</button>
 											</div>
 											<div class="col-auto">
-												&nbsp;{% octicon 'arrow-right' width="20" %}&nbsp;
+												&nbsp;<img src="{% static 'phosphor-icons/arrow-right.svg' %}" class="phicon" />&nbsp;
 												<button type="button" class="btn btn-outline-primary" disabled>{% trans 'Release' %}</button>
 											</div>
 										{% endif %}

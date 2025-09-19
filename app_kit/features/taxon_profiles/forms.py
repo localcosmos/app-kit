@@ -274,6 +274,36 @@ class AddTaxonProfilesNavigationEntryTaxonForm(AddSingleTaxonForm):
         return cleaned_data
     
 
+
+class MoveTaxonProfilesNavigationEntryForm(forms.Form):
+    
+    search_entry_name = forms.CharField(label=_('Search for target parent navigation entry'), required=False,
+                                        help_text=_('Start typing to search. Leave empty to move to root level.'))
+    target_parent_pk = forms.IntegerField(required=False, widget=forms.HiddenInput)
+    
+    def __init__(self, navigation_entry, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.navigation_entry = navigation_entry
+
+    def clean(self):
+        cleaned_data = super().clean()
+        target_parent_pk = cleaned_data.get('target_parent_pk')
+
+        if target_parent_pk:
+            target_parent = TaxonProfilesNavigationEntry.objects.filter(pk=target_parent_pk).first()
+            if target_parent:
+                # travel up the tree using .parent to see if we hit self.navigation_entry
+                current = target_parent
+                while current:
+                    if current == self.navigation_entry:
+                        self.add_error('target_parent_pk', _('You cannot move a navigation entry into one of its own descendants'))
+                        break
+                    current = current.parent
+            else:
+                self.add_error('target_parent_pk', _('The selected target parent does not exist'))
+        return cleaned_data
+
+
 class TaxonProfileStatusForm(GenericContentStatusForm):
     
     is_featured = forms.BooleanField(required=False)

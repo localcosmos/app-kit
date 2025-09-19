@@ -1,10 +1,12 @@
-{% load i18n static app_tags octicons %}
+{% load i18n static app_tags %}
 
 <div id="matrix-filters" class="text-left">
 	{% if meta_node_has_matrix_filters %}
 		<div class="row mb-4">
 			<div class="col-12">
-				<button id="btn-reset-filters" type="button" class="btn btn-sm btn-secondary">{% octicon "sync" %} {% trans 'reset selection' %}</button>
+				<button id="btn-reset-filters" type="button" class="btn btn-sm btn-secondary">
+					<img src="{% static 'phosphor-icons/arrows-clockwise.svg' %}" class="phicon" alt="reset selection" /> {% trans 'reset selection' %}
+				</button>
 				
 			</div>
 		</div>
@@ -35,7 +37,7 @@
 							
 							{% if field.field.matrix_filter.is_restricted %}
 								<span id="{{ field.field.matrix_filter.uuid }}_restriction_indicator" class="badge badge-danger">{% trans 'visibility' %}</span>
-								<img src="{% static 'octicons/question.svg' %}" alt="question" class="octicon large"  data-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
+								<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon"  data-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
 							{% endif %}
 
 							{% if not field.field.matrix_filter.is_active %}

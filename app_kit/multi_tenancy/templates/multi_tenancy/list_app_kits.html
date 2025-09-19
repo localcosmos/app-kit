@@ -1,4 +1,4 @@
-{% load i18n static localcosmos_tags app_tags octicons %}
+{% load i18n static localcosmos_tags app_tags %}
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -66,7 +66,7 @@
 							<ul class="navbar-nav flex-row ml-md-auto d-md-flex">
 								<li class="nav-item dropdown">
 									<a class="nav-link dropdown-toggle" href="#" id="accountDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-										{% octicon "person" width="20" height="auto" %}
+										<img src="{% static 'phosphor-icons/user-circle.svg' %}" class="phicon phicon-20" />
 									</a>
 									<div class="dropdown-menu dropdown-menu-right" aria-labelledby="accountDropdown">
 										<a href="{% url 'log_out' %}" class="dropdown-item" >{% trans 'Sign out' %}</a>

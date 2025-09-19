@@ -30,11 +30,6 @@ footer {
   height: 16px;
 }
 
-.octicon.large {
-	width: 1.5rem;
-	height: 1.5rem;
-}
-
 .identification-means	{
 	width: 2.5rem;
 	height: 2.5rem;
@@ -758,12 +753,6 @@ input[type="color"] {
   border-radius: 0.2rem;
 }
 
-.octicon {
-  display: inline-block;
-  vertical-align: middle;
-  fill: currentColor;
-}
-
 /* GRID CHOICES */
 .grid-choices {
 	display: flex;
@@ -1016,6 +1005,27 @@ input[type="color"] {
 	flex-wrap: wrap;
 	gap: 1rem;
 	margin-bottom: 1rem;
+}
+
+.external-media-list {
+	display: flex;
+	flex-direction: column;
+	gap: .5rem;
+	margin-bottom: 1rem;
+}
+.external-media-item {
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	gap: .5rem;
+	padding: .5rem;
+	border-radius: .5rem;
+}
+
+.external-media-item > div:first-child {
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
 }
 
 /* non-bootstrap barrier for the phone demo */

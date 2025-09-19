@@ -178,18 +178,6 @@
 			<div id="external-media" class="col-12">
 				{% render_external_media meta_app taxon_profile %}
 			</div>
-			<div class="col-12">
-				<div class="btn-group dropup">
-					<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						{% trans 'Add External Media' %} <span class="caret"></span>
-					</button>
-					<div class="dropdown-menu pull-right">
-						{% for media in external_media_types %}
-							<a href data-url="{% url 'create_app_kit_external_media' meta_app.id content_type.id taxon_profile.id media.0 %}" ajax-target="ModalContent" class="dropdown-item xhr">{{ media.1 }}</a>
-						{% endfor %}
-					</div>
-				</div>
-			</div>
 		</div>
 		<hr>
 		<div class="row">
@@ -223,6 +211,12 @@
 
 		{% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}
 		
+
+		(function(){
+			$(".move-em-forwardbutton").on("click", positionmanager.onMoveForward);
+			$(".move-em-backwardbutton").on("click", positionmanager.onMoveBack);
+		})();
+
 	</script>
 
 	

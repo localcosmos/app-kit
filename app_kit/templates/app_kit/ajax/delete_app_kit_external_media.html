@@ -1,0 +1,24 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block success_js %}
+	<script>
+		$.get("{% url 'list_app_kit_external_media' meta_app.id external_media_object|ctype_id external_media_object.id %}", (html) => {
+			const container_id = 'external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }}';
+			$("#" + container_id).html(html);
+			ajaxify(container_id);
+
+			$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-forwardbutton").on("click", positionmanager.onMoveForward);
+			$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-backwardbutton").on("click", positionmanager.onMoveBack);
+		});
+		$("#Modal").modal("hide");
+	</script>
+
+	{% block extra_success_js %}{% endblock %}
+{% endblock %}
+
+{% block title %}{% blocktrans %}Delete external media{% endblocktrans %}{% endblock %}
+
+{% block deletion_text %}
+	{% trans 'Do you really want to delete this external media?' %}
+{% endblock %}
