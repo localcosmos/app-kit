@@ -1,0 +1,103 @@
+{% extends 'app_kit/manage_generic_content.html' %}
+{% load i18n static localcosmos_tags %}
+
+{% block content %}
+
+<div {% block container_class %}class="container"{% endblock %}>
+    <div class="row">
+        <div class="col-12">
+            <div>
+                <br>
+                <h1>{% trans 'Taxon Relationships' %}</h1>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card mt-3">
+				<div class="card-header">
+					{% trans 'Relationship Types' %}
+				</div>
+				<div class="card-body">
+                    <div id="taxon-relationship-types" data-store-positions-url="{% url 'store_app_kit_object_order' taxon_relationship_types_content_type.id %}">
+                        {% for relationship_type in taxon_relationship_types %}
+                            <div id="ctype-{{ relationship_type|ctype_id }}-{{ relationship_type.id }}" data-object-id="{{ relationship_type.id }}" class="mb-2">
+                                <strong>{{ relationship_type.relationship_name }}</strong>
+                                <div class="btn-group dropup">
+                                    <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        {% trans 'Modify' %} <span class="caret"></span>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a data-url="{% url 'update_taxon_relationship_type' meta_app.id backbone_taxonomy.id relationship_type.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                                        <a data-url="{% url 'delete_taxon_relationship_type' meta_app.id relationship_type.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-center moveforwardbutton" data-targetid="ctype-{{ relationship_type|ctype_id }}-{{ relationship_type.id }}">&#x25B2; {% trans 'Move up' %}</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-center movebackbutton" data-targetid="ctype-{{ relationship_type|ctype_id }}-{{ relationship_type.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div>
+                                <em>{% trans 'No relationship types yet.' %}</em>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary xhr" ajax-target="LargeModalContent" data-url="{% url 'create_taxon_relationship_type' meta_app_id backbone_id %}">
+                            {% trans 'Create Relationship Type' %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-12">
+             <div class="card mt-3">
+				<div class="card-header">
+                    {% trans 'Existing Relationships' %}
+				</div>
+				<div class="card-body">
+                    <div>
+                        {% if not taxon_relationship_types %}
+                            <div>
+                                <em>{% trans 'You have to create a Taxon Relationship Type first' %}</em>
+                            </div>
+                        {% else %}
+                            {% include 'backbonetaxonomy/ajax/taxon_relationship_list.html' %}
+                        {% endif %}
+                    </div>
+                    <div class="mt-3">
+                        {% if taxon_relationship_types %}
+                            <div class="btn-group dropup">
+                                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    {% trans 'Add Taxon Relationship' %} <span class="caret"></span>
+                                </button>
+                                <div class="dropdown-menu">
+                                    {% for relationship_type in taxon_relationship_types %}
+                                        <a data-url="{% url 'create_taxon_relationship' meta_app.id backbone_taxonomy.id relationship_type.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Add {{ relationship_type }}{% endblocktrans %}</a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        $("#taxon-relationship-types .moveforwardbutton").on("click", function(event){
+            positionmanager.onMoveForward.bind(this)(event);
+        });
+        $("#taxon-relationship-types .movebackbutton").on("click", function(event){
+            positionmanager.onMoveBack.bind(this)(event);
+        });
+    })();
+</script>
+
+{% endblock %}

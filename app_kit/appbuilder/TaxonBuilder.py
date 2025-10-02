@@ -179,10 +179,16 @@ class TaxonSerializer:
 
             taxon_json = self.serialize()
             
+            has_taxon_profile = False
+            taxon_profile = self.get_taxon_profile()
+            if taxon_profile:
+                has_taxon_profile = True
+            
             taxon_json.update({
                 'gbifNubkey': gbif_nubkey,
                 'image': images['primary'],
                 'shortProfile': None,
+                'hasTaxonProfile': has_taxon_profile,
             })
             
             taxon_profile = self.get_taxon_profile()

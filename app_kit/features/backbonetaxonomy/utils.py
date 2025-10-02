@@ -3,10 +3,11 @@ from localcosmos_server.taxonomy.TaxonManager import (TaxonManager as BaseTaxonM
                                                       SWAPPABILITY_CHECK_STATIC_FIELDS)
 
 from django.utils.translation import gettext_lazy as _
+from django.db.models import Q
 
 from app_kit.models import ContentImage, ImageStore
 from app_kit.generic import AppContentTaxonomicRestriction
-from app_kit.features.backbonetaxonomy.models import BackboneTaxa
+from app_kit.features.backbonetaxonomy.models import BackboneTaxa, TaxonRelationship
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
         TaxonProfilesNavigationEntryTaxa)
 from app_kit.features.maps.models import Map, FilterTaxon
@@ -34,12 +35,13 @@ CUSTOM_TAXONOMY_NAME = 'taxonomy.sources.custom'
 '''
 
 APP_KIT_SUPPORTED_SWAP_MODELS = [AppContentTaxonomicRestriction, BackboneTaxa, FilterTaxon, TaxonProfile,
-                                 TaxonProfilesNavigationEntryTaxa, MetaNode, ImageStore]
+                                 TaxonProfilesNavigationEntryTaxa, MetaNode, ImageStore, TaxonRelationship]
 
 APP_KIT_SWAPPABILITY_CHECK_STATIC_FIELDS = SWAPPABILITY_CHECK_STATIC_FIELDS.copy()
 APP_KIT_SWAPPABILITY_CHECK_STATIC_FIELDS.update({
     'AppContentTaxonomicRestriction': ['content_type', 'object_id'],
     'BackboneTaxa': ['backbonetaxonomy'],
+    'TaxonRelationship': ['backbonetaxonomy'],
     'FilterTaxon': ['taxonomic_filter__map'],
     'TaxonProfile': ['taxon_profiles'],
     'TaxonProfilesNavigationEntryTaxa': ['navigation_entry'],
@@ -57,13 +59,13 @@ class TaxonManager(BaseTaxonManager):
         super().__init__(meta_app.app)
         self.meta_app = meta_app
     
-    def _get_BackboneTaxa_occurrences(self, occurrence_qry):
+    def _get_BackboneTaxa_occurrences(self, occurrence_qry, lazy_taxon):
         backbonetaxonomy = self.meta_app.backbone()
         occurrence_qry = occurrence_qry.filter(backbonetaxonomy=backbonetaxonomy)
         return occurrence_qry
         
     
-    def _get_TaxonProfile_occurrences(self, occurrence_qry):
+    def _get_TaxonProfile_occurrences(self, occurrence_qry, lazy_taxon):
         taxon_profiles_links = self.meta_app.get_generic_content_links(TaxonProfiles)
         taxon_profiles_link = taxon_profiles_links.first()
         taxon_profiles = taxon_profiles_link.generic_content
@@ -71,7 +73,7 @@ class TaxonManager(BaseTaxonManager):
         occurrence_qry = occurrence_qry.filter(taxon_profiles=taxon_profiles)
         return occurrence_qry
     
-    def _get_TaxonProfilesNavigationEntryTaxa_occurrences(self, occurrence_qry):
+    def _get_TaxonProfilesNavigationEntryTaxa_occurrences(self, occurrence_qry, lazy_taxon):
         taxon_profiles_links = self.meta_app.get_generic_content_links(TaxonProfiles)
         taxon_profiles_link = taxon_profiles_links.first()
         taxon_profiles = taxon_profiles_link.generic_content
@@ -81,21 +83,34 @@ class TaxonManager(BaseTaxonManager):
         occurrence_qry = occurrence_qry.filter(navigation_entry__navigation=navigation)
         return occurrence_qry
     
-    def _get_FilterTaxon_occurrences(self, occurrence_qry):
+    def _get_FilterTaxon_occurrences(self, occurrence_qry, lazy_taxon):
         map_links = self.meta_app.get_generic_content_links(Map)
         maps = [map_link.generic_content for map_link in map_links]
         occurrence_qry = occurrence_qry.filter(taxonomic_filter__map__in=maps)
         return occurrence_qry
     
-    def _get_MetaNode_occurrences(self, occurrence_qry):
+    def _get_MetaNode_occurrences(self, occurrence_qry, lazy_taxon):
         nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
         nature_guides = [nature_guide_link.generic_content for nature_guide_link in nature_guide_links]
         occurrence_qry = occurrence_qry.filter(nature_guide__in=nature_guides)
         return occurrence_qry
     
     
+    def _get_TaxonRelationship_occurrences(self, occurrence_qry, lazy_taxon):
+        backbonetaxonomy = self.meta_app.backbone()
+        occurrence_qry = occurrence_qry.filter(backbonetaxonomy=backbonetaxonomy)
+
+        related_taxon_qry = TaxonRelationship.objects.filter(backbonetaxonomy=backbonetaxonomy,
+            related_taxon_source=lazy_taxon.taxon_source,
+            related_taxon_latname=lazy_taxon.taxon_latname,
+            related_taxon_author=lazy_taxon.taxon_author)
+
+        occurrence_qry = occurrence_qry.union(related_taxon_qry)
+        return occurrence_qry
+    
+    
     # has no reference to MetaApp
-    def _get_AppContentTaxonomicRestriction_occurrences(self, occurrence_qry):
+    def _get_AppContentTaxonomicRestriction_occurrences(self, occurrence_qry, lazy_taxon):
         matching_occurrences = []
         
         for occurrence in occurrence_qry:
@@ -107,7 +122,7 @@ class TaxonManager(BaseTaxonManager):
         return matching_occurrences
     
     # has no reference to MetaApp
-    def _get_ImageStore_occurrences(self, occurrence_qry):
+    def _get_ImageStore_occurrences(self, occurrence_qry, lazy_taxon):
         
         matching_image_stores = []
         
@@ -179,6 +194,19 @@ class TaxonManager(BaseTaxonManager):
         
         return [verbose_entry]
     
+    
+    def _get_TaxonRelationship_occurrences_verbose(self, occurrences_entry):
+        
+        occurrences = occurrences_entry['occurrences']
+        model = occurrences_entry['model']
+        
+        verbose_model_name = str(model._meta.verbose_name)
+        verbose_occurrences = [_('is used in %(count)s taxon relationship(s)') % {'count': len(occurrences)}]
+        
+        verbose_entry = self._get_verbose_entry(model, occurrences, verbose_model_name, verbose_occurrences)
+        
+        return [verbose_entry]
+    
     def _get_MetaNode_occurrences_verbose(self, occurrences_entry):
         
         occurrences = occurrences_entry['occurrences']
@@ -220,6 +248,22 @@ class TaxonManager(BaseTaxonManager):
         
 
         return [verbose_entry]
+    
+    # support for swapping related_taxon
+    def _swap_taxon_TaxonRelationship(self, lazy_taxon, new_lazy_taxon):
+        
+        # swap TaxonRelationship.taxon
+        self.perform_swap(TaxonRelationship, lazy_taxon, new_lazy_taxon)
+        
+        # swap TaxonRelationship.related_taxon
+        backbonetaxonomy = self.meta_app.backbone()
+
+        occurrences = TaxonRelationship.objects.filter(backbonetaxonomy=backbonetaxonomy,
+            related_taxon_source=lazy_taxon.taxon_source, related_taxon_latname=lazy_taxon.taxon_latname)
+        
+        for occurrence in occurrences:
+            occurrence.set_related_taxon(new_lazy_taxon)
+            occurrence.save()
     
     
 '''

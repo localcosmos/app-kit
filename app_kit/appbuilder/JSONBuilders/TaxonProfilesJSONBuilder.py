@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Q
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -8,7 +9,7 @@ from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import MatrixFilterS
 from app_kit.features.taxon_profiles.models import (TaxonProfile, TaxonProfilesNavigation,
     TaxonProfilesNavigationEntry)
 from app_kit.features.nature_guides.models import (MatrixFilter, NodeFilterSpace)
-
+from app_kit.features.backbonetaxonomy.models import TaxonRelationship, TaxonRelationshipType
 from app_kit.features.generic_forms.models import GenericForm
 
 from app_kit.models import ContentImage, MetaAppGenericContent
@@ -146,6 +147,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'synonyms' : [],
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
+            'taxonRelationships': self.collect_taxon_relationships(profile_taxon),
             'tags' : [],
             'seo': {
                 'title': None,
@@ -489,6 +491,58 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             usable_forms.append(generic_form_json)
         
         return usable_forms
+    
+    # these should be grouped by type
+    def collect_taxon_relationships(self, profile_taxon):
+        
+        backbone_taxonomy = self.meta_app.backbone()
+        relationships = []
+
+        relationship_types = TaxonRelationshipType.objects.filter(backbonetaxonomy=backbone_taxonomy).order_by('position', 'relationship_name')
+
+        
+        for relationship_type in relationship_types:
+            typed_relationships = {
+                'relationshipType' : {
+                    'name': relationship_type.relationship_name,
+                    'taxonRole' : relationship_type.taxon_role,
+                    'relatedTaxonRole' : relationship_type.related_taxon_role,
+                },
+                'relationships' : [],
+            }
+
+            taxon_nuid = profile_taxon.taxon_nuid
+            
+            branch_taxon_nuids = [taxon_nuid]
+            # collect all parent nuids
+            while len(taxon_nuid) > 3:
+                taxon_nuid = taxon_nuid[:-3]
+                branch_taxon_nuids.append(taxon_nuid)
+            
+            relationships_db = TaxonRelationship.objects.filter(
+                Q(taxon_nuid__in=branch_taxon_nuids, backbonetaxonomy=backbone_taxonomy, taxon_source=profile_taxon.taxon_source, relationship_type=relationship_type) |
+                Q(related_taxon_nuid__in=branch_taxon_nuids, backbonetaxonomy=backbone_taxonomy, related_taxon_source=profile_taxon.taxon_source, relationship_type=relationship_type)
+            ).distinct().order_by('relationship_type__relationship_name')
+            
+            for relationship in relationships_db:
+                
+                taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(relationship.taxon)
+                related_taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(relationship.related_taxon)
+                
+                relationship_json = {
+                    'taxon': taxon_json,
+                    'relatedTaxon': related_taxon_json,
+                    'description' : relationship.description,
+                }
+
+                typed_relationships['relationships'].append(relationship_json)
+
+            
+            if len(typed_relationships['relationships']) > 0:
+                relationships.append(typed_relationships)
+
+        return relationships
+    
 
     def _get_generic_form_entry(self, generic_form_for_sorting):
 

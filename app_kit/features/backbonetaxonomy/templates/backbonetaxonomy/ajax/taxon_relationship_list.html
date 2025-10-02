@@ -1,0 +1,43 @@
+{% load i18n static localcosmos_tags el_pagination_tags %}
+
+{% paginate 20 taxon_relationships %}
+
+{% show_pages %}
+
+{% for relationship in taxon_relationships %}
+    <div id="ctype-{{ relationship|ctype_id }}-{{ relationship.id }}" class="mb-2">
+        <strong>{{ relationship.relationship_type.relationship_name }}:</strong> 
+        {{ relationship.taxon }} 
+        {% if relationship.relationship_type.taxon_role %}
+            <span class="badge badge-sm badge-info">
+                {{ relationship.relationship_type.taxon_role }}
+            </span>
+        {% endif %}
+
+        <img src="{% static 'phosphor-icons/arrows-horizontal.svg' %}" class="phicon"  />
+        
+        {{ relationship.related_taxon }}
+
+        {% if relationship.relationship_type.related_taxon_role %}
+            <span class="badge badge-sm badge-info">
+                {{ relationship.relationship_type.related_taxon_role }}
+            </span>
+        {% endif %}
+
+        <div class="btn-group dropup">
+            <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {% trans 'Modify' %} <span class="caret"></span>
+            </button>
+            <div class="dropdown-menu">
+                <a data-url="{% url 'update_taxon_relationship' meta_app.id backbone_taxonomy.id relationship.relationship_type.id relationship.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% trans 'Edit' %}</a>
+                <a data-url="{% url 'delete_taxon_relationship' meta_app.id relationship.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+            </div>
+        </div>
+    </div>
+{% empty %}
+    <div>
+        <em>{% trans 'No relationships yet.' %}</em>
+    </div>
+{% endfor %}
+
+{% show_pages %}

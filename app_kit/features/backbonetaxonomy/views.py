@@ -11,12 +11,16 @@ from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneT
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree
 from app_kit.utils import get_appkit_taxon_search_url
-from app_kit.view_mixins import MetaAppMixin
+from app_kit.view_mixins import MetaAppMixin, MetaAppFormLanguageMixin
 
 from localcosmos_server.decorators import ajax_required
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
+from localcosmos_server.generic_views import AjaxDeleteView
 
-from .forms import (AddMultipleTaxaForm, ManageFulltreeForm, SearchTaxonomicBackboneForm, SwapTaxonForm)
+from .forms import (AddMultipleTaxaForm, ManageFulltreeForm, SearchTaxonomicBackboneForm, SwapTaxonForm,
+                    TaxonRelationshipTypeForm, TaxonRelationshipForm)
+
+from .models import TaxonRelationshipType, TaxonRelationship
 
 from .utils import TaxonManager, TaxonReferencesUpdater
 
@@ -518,3 +522,152 @@ class UpdateTaxonReferences(MetaAppMixin, TemplateView):
         context['updated'] = True
         
         return self.render_to_response(context)
+    
+
+
+class TaxonRelationships(MetaAppMixin, TemplateView):
+    
+    template_name = 'backbonetaxonomy/taxon_relationships.html'
+    
+    def get_context_data(self, **kwargs):
+        
+        backbone_taxonomy = BackboneTaxonomy.objects.filter(pk=kwargs['backbone_id']).first()
+        context = super().get_context_data(**kwargs)
+        context['backbone_taxonomy'] = backbone_taxonomy
+        context['generic_content'] = backbone_taxonomy
+        context['taxon_relationship_types_content_type'] = ContentType.objects.get_for_model(TaxonRelationshipType)
+        context['taxon_relationship_types'] = TaxonRelationshipType.objects.filter(backbonetaxonomy=backbone_taxonomy)
+        context['taxon_relationships'] = TaxonRelationship.objects.filter(backbonetaxonomy=backbone_taxonomy).order_by('relationship_type__relationship_name', 'taxon_latname')
+        return context
+    
+    
+class ManageTaxonRelationshipType(MetaAppFormLanguageMixin, FormView):
+    
+    template_name = 'backbonetaxonomy/ajax/manage_taxon_relationship_type.html'
+    form_class = TaxonRelationshipTypeForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.backbonetaxonomy = BackboneTaxonomy.objects.filter(pk=kwargs['backbone_id']).first()
+        self.relationship_type = None
+        if 'relationship_type_id' in kwargs:
+            self.relationship_type = TaxonRelationshipType.objects.filter(pk=kwargs['relationship_type_id'],
+                                                                         backbonetaxonomy=self.backbonetaxonomy).first()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['backbone_taxonomy'] = self.backbonetaxonomy
+        context['relationship_type'] = self.relationship_type
+        return context
+    
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.relationship_type:
+            initial['relationship_name'] = self.relationship_type.relationship_name
+            initial['taxon_role'] = self.relationship_type.taxon_role
+            initial['related_taxon_role'] = self.relationship_type.related_taxon_role
+        return initial
+
+    def form_valid(self, form):
+        
+        if not self.relationship_type:
+            self.relationship_type = TaxonRelationshipType(backbonetaxonomy=self.backbonetaxonomy)
+            
+        self.relationship_type.relationship_name = form.cleaned_data['relationship_name']
+        self.relationship_type.taxon_role = form.cleaned_data['taxon_role']
+        self.relationship_type.related_taxon_role = form.cleaned_data['related_taxon_role']
+        self.relationship_type.save()
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        return self.render_to_response(context)
+
+ 
+class DeleteTaxonRelationshipType(MetaAppMixin, AjaxDeleteView):
+    
+    model = TaxonRelationshipType
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['backbone_taxonomy'] = self.object.backbonetaxonomy
+        return context
+    
+    
+class ManageTaxonRelationship(MetaAppMixin, FormView):
+    
+    template_name = 'backbonetaxonomy/ajax/manage_taxon_relationship.html'
+    form_class = TaxonRelationshipForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.backbone_taxonomy = BackboneTaxonomy.objects.filter(pk=kwargs['backbone_id']).first()
+        self.relationship_type = TaxonRelationshipType.objects.filter(pk=kwargs['relationship_type_id'],
+                                                                     backbonetaxonomy=self.backbone_taxonomy).first()
+        self.relationship = None
+        if 'relationship_id' in kwargs:
+            self.relationship = TaxonRelationship.objects.filter(pk=kwargs['relationship_id'],
+                                                                backbonetaxonomy=self.backbone_taxonomy,
+                                                                relationship_type=self.relationship_type).first()
+            
+            
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.relationship_type, **self.get_form_kwargs())
+    
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        if self.relationship:
+            initial['taxon'] = self.relationship.taxon
+            initial['related_taxon'] = self.relationship.related_taxon
+            initial['description'] = self.relationship.description
+        return initial
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['backbone_taxonomy'] = self.backbone_taxonomy
+        context['relationship_type'] = self.relationship_type
+        context['relationship'] = self.relationship
+        return context
+    
+    
+    def form_valid(self, form):
+        
+        if not self.relationship:
+            self.relationship = TaxonRelationship(backbonetaxonomy=self.backbone_taxonomy,
+                                                 relationship_type=self.relationship_type)
+        
+        taxon = form.cleaned_data['taxon']
+        related_taxon = form.cleaned_data['related_taxon']
+        self.relationship.taxon = taxon
+        self.relationship.set_taxon(taxon)
+        self.relationship.set_related_taxon(related_taxon)
+        self.relationship.description = form.cleaned_data['description']
+        self.relationship.save()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        return self.render_to_response(context)
+    
+    
+class DeleteTaxonRelationship(MetaAppMixin, AjaxDeleteView):
+    
+    model = TaxonRelationship
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['backbone_taxonomy'] = self.object.backbonetaxonomy
+        return context

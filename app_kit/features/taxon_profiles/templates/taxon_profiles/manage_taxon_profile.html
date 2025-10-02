@@ -96,40 +96,67 @@
 		</div>
 		<div class="row">
 			<div class="col-12">
-				<h4>{% trans 'Classification' %}</h4>
-				<h5>{{ taxon_tree_model }}</h5>
-				{% if taxonomic_branch %}
-					<div>
-						<small>
-							{% for node in taxonomic_branch %}
-								<span>{{ node }}</span> &rarr;
-							{% endfor %}
-							<span>{{ taxon }}</span>
-						</small>
+				<div class="card">
+					<div class="card-header">
+						{% trans 'Classification' %}
 					</div>
-				{% endif %}
-				{% if navigation_branches %}
-					<div class="mt-4">
-						<h5>{% trans 'Taxonomic Navigation' %}</h5>
-						{% for branch in navigation_branches %}
-							<div>
-								<small>
-									{% for node in branch %}
-										<span>{{ node }}</span> &rarr;
+					<div class="card-body">
+						<div>
+							<h5>{{ taxon_tree_model }}</h5>
+							{% if taxonomic_branch %}
+								<div>
+									<small>
+										{% for node in taxonomic_branch %}
+											<span>{{ node }}</span> &rarr;
+										{% endfor %}
+										<span>{{ taxon }}</span>
+									</small>
+								</div>
+							{% endif %}
+							{% if navigation_branches %}
+								<div class="mt-4">
+									<h5>{% trans 'Taxonomic Navigation' %}</h5>
+									{% for branch in navigation_branches %}
+										<div>
+											<small>
+												{% for node in branch %}
+													<span>{{ node }}</span> &rarr;
+												{% endfor %}
+												<span>{{ taxon }}</span>
+											</small>
+										</div>
 									{% endfor %}
-									<span>{{ taxon }}</span>
-								</small>
-							</div>
-						{% endfor %}
+								</div>
+							{% endif %}
+						</div>
 					</div>
-				{% endif %}
+				</div>
 			</div>
 		</div>
-		<hr>
-		<div class="row">
+		<div class="row mt-5">
 			<div class="col-12">
-				<h4>{% trans 'Vernacular names' %}</h4>
-				<div id="collected-vernacular-names"></div>
+				<div class="card">
+					<div class="card-header">
+						{% trans 'Vernacular names' %}
+					</div>
+					<div class="card-body">
+						<div id="collected-vernacular-names"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row mt-5">
+			<div class="col-12">
+				<div class="card">
+					<div class="card-header">
+						{% trans 'Taxon Relationships' %}
+					</div>
+					<div class="card-body">
+						<div>
+							{% render_taxon_relationships meta_app taxon %}
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<hr>
@@ -163,24 +190,39 @@
 		<hr>
 		<div class="row">
 			<div class="col-12">
-				<h4>{% trans 'Images' %}</h4>
-				<div id="taxon-images"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
-			</div>
-			<div class="col-12 mt-3">
-				<button type="button" class="btn btn-outline-primary xhr" data-url="{% url 'manage_taxon_profile_image' meta_app.id taxon_profile|ctype_id taxon_profile.id %}?taxon_source={{ taxon.taxon_source }}&name_uuid={{ taxon.name_uuid }}&new=1" ajax-target="LargeModalContent">{% trans 'Add image with text' %}</button>
+
+				<div class="card">
+					<div class="card-header">
+						{% trans 'Images' %}
+					</div>
+					<div class="card-body">
+						<div>
+							<div id="taxon-images"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+						</div>
+						<div class="mt-3">
+							<button type="button" class="btn btn-outline-primary xhr" data-url="{% url 'manage_taxon_profile_image' meta_app.id taxon_profile|ctype_id taxon_profile.id %}?taxon_source={{ taxon.taxon_source }}&name_uuid={{ taxon.name_uuid }}&new=1" ajax-target="LargeModalContent">{% trans 'Add image with text' %}</button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
-		<hr>
-		<div class="row">
+		<div class="row mt-5">
 			<div class="col-12">
-				<h4>{% trans 'External Media' %}</h4>
-			</div>
-			<div id="external-media" class="col-12">
-				{% render_external_media meta_app taxon_profile %}
+
+				<div class="card">
+					<div class="card-header">
+						{% trans 'External Media' %}
+					</div>
+					<div class="card-body">
+						<div id="external-media">
+							{% render_external_media meta_app taxon_profile %}
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<hr>
-		<div class="row">
+		<div class="row mt-5">
 			<div id="taxontexts" class="col-12">
 				{% include 'taxon_profiles/ajax/manage_taxon_profile_form.html' %}
 			</div>

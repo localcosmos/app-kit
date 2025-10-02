@@ -26,4 +26,19 @@ urlpatterns = [
     # taxon update
     path('update-taxon-references/<int:meta_app_id>/', views.UpdateTaxonReferences.as_view(),
          name='update_taxon_references'),
+    # taxon relationships
+    path('taxon-relationships/<int:meta_app_id>/<int:backbone_id>/', views.TaxonRelationships.as_view(),
+         name='taxon_relationships'),
+    path('create-taxon-relationship-type/<int:meta_app_id>/<int:backbone_id>/', views.ManageTaxonRelationshipType.as_view(),
+         name='create_taxon_relationship_type'),
+    path('update-taxon-relationship-type/<int:meta_app_id>/<int:backbone_id>/<int:relationship_type_id>/',
+         views.ManageTaxonRelationshipType.as_view(), name='update_taxon_relationship_type'),
+    path('delete-taxon-relationship-type/<int:meta_app_id>/<int:pk>/', views.DeleteTaxonRelationshipType.as_view(),
+         name='delete_taxon_relationship_type'),
+    path('create-taxon-relationship/<int:meta_app_id>/<int:backbone_id>/<int:relationship_type_id>/',
+         views.ManageTaxonRelationship.as_view(), name='create_taxon_relationship'),
+    path('update-taxon-relationship/<int:meta_app_id>/<int:backbone_id>/<int:relationship_type_id>/<int:relationship_id>/', views.ManageTaxonRelationship.as_view(),
+         name='update_taxon_relationship'),
+    path('delete-taxon-relationship/<int:meta_app_id>/<int:pk>/', views.DeleteTaxonRelationship.as_view(),
+         name='delete_taxon_relationship'),
 ]

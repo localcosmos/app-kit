@@ -1,7 +1,8 @@
 from django import forms
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.contrib.contenttypes.models import ContentType
+from django.db.models.fields import BLANK_CHOICE_DASH
+
 
 from taxonomy.lazy import LazyTaxon
 
@@ -16,6 +17,11 @@ CUSTOM_TAXONOMY_SOURCE = 'taxonomy.sources.custom'
 
 # this should be a simpletaxonautocompletewidget searching all backbone taxa
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
+
+from localcosmos_server.forms import LocalizeableModelForm
+
+from .models import TaxonRelationshipType
+
 class SearchTaxonomicBackboneForm(AddSingleTaxonForm):
     
     lazy_taxon_class = LazyTaxon
@@ -31,7 +37,6 @@ class AddMultipleTaxaForm(forms.Form):
                            label = _('Enter your taxa below. Only scientific names, separated by commas:'))
 
 
-from django.db.models.fields import BLANK_CHOICE_DASH
 fulltree_choices = BLANK_CHOICE_DASH + list(settings.TAXONOMY_DATABASES)
 
 
@@ -84,3 +89,65 @@ class SwapTaxonForm(forms.Form):
             raise forms.ValidationError(_('You cannot select the same taxon twice.'))
         
         return cleaned_data
+    
+    
+class TaxonRelationshipTypeForm(LocalizeableModelForm):
+
+    localizeable_fields = ['relationship_name', 'taxon_role', 'related_taxon_role']
+    
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        taxon_role = cleaned_data.get('taxon_role')
+        related_taxon_role = cleaned_data.get('related_taxon_role')
+
+        if taxon_role and not related_taxon_role:
+            raise forms.ValidationError(_('If a role for the main taxon is provided, a role for the related taxon must also be provided.'))
+
+        if related_taxon_role and not taxon_role:
+            raise forms.ValidationError(_('If a role for the related taxon is provided, a role for the main taxon must also be provided.'))
+
+        return cleaned_data
+
+    class Meta:
+        model = TaxonRelationshipType
+        fields = ['relationship_name', 'taxon_role', 'related_taxon_role']
+        help_texts = {
+            'relationship_name': _('Abstract name like "predation", "competition", etc.'),
+            'taxon_role': _('Role of the main taxon (e.g., "predator", "host", "parasite")'),
+            'related_taxon_role': _('Role of the related taxon (e.g., "prey", "guest", "host")'),
+        }
+
+
+class TaxonRelationshipForm(forms.Form):
+    
+    description = forms.CharField(widget=forms.Textarea, required=False,
+                                  label=_('Description'),
+                                  help_text=_('Optional description of this relationship.'))
+
+    
+    def __init__(self, relationship_type, *args, **kwargs):
+        
+        taxon_search_url = reverse('search_taxon')
+        
+        super().__init__(*args, **kwargs)
+        
+        
+        field_kwargs = {
+            'taxon_search_url' : taxon_search_url,
+            'descendants_choice' : False,
+            'fixed_taxon_source' : False,
+            'widget_attrs' : {},
+            'lazy_taxon_class': LazyTaxon,
+        }
+
+        self.fields['taxon'] = TaxonField(label=_('Main taxon'), required=True, **field_kwargs)
+        self.fields['related_taxon'] = TaxonField(label=_('Related taxon'), required=True, **field_kwargs)
+
+        self.relationship_type = relationship_type
+        if relationship_type.taxon_role:
+            self.fields['taxon'].label = relationship_type.taxon_role
+        if relationship_type.related_taxon_role:
+            self.fields['related_taxon'].label = relationship_type.related_taxon_role
+            
+        self.order_fields(['taxon', 'related_taxon', 'description'])

@@ -6,9 +6,12 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.templatetags.static import static
 from django.contrib.staticfiles import finders
+from django.db.models import Q
 
 from app_kit.models import MetaApp, AppKitExternalMedia
 from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
+
+from app_kit.features.backbonetaxonomy.models import TaxonRelationship, TaxonRelationshipType
 
 
 from django.contrib.contenttypes.models import ContentType
@@ -275,3 +278,36 @@ def root_url(context, url_name, *args):
     root_url = '{0}://{1}{2}'.format(request.scheme, host, url)
     
     return root_url
+
+
+# for pagination, context is required to access the request GET parameters
+@register.inclusion_tag('app_kit/ajax/taxon_relationships.html', takes_context=True)
+def render_taxon_relationships(context, meta_app, lazy_taxon):
+    
+    taxon_nuid = lazy_taxon.taxon_nuid
+    
+    branch_taxon_nuids = [taxon_nuid]
+    
+    while len(taxon_nuid) > 3:
+        parent_nuid = taxon_nuid[:-3]
+        branch_taxon_nuids.append(parent_nuid)
+        taxon_nuid = parent_nuid
+
+    backbone_taxonomy = meta_app.backbone()
+    
+    relationships = TaxonRelationship.objects.filter(
+        Q(taxon_nuid__in=branch_taxon_nuids, backbonetaxonomy=backbone_taxonomy, taxon_source=lazy_taxon.taxon_source) |
+        Q(related_taxon_nuid__in=branch_taxon_nuids, backbonetaxonomy=backbone_taxonomy, related_taxon_source=lazy_taxon.taxon_source)
+    ).distinct().order_by('relationship_type__relationship_name')
+    
+    relationship_types = TaxonRelationshipType.objects.filter(backbonetaxonomy=backbone_taxonomy)
+
+    tag_context = {
+        'request': context['request'],
+        'meta_app': meta_app,
+        'backbone_taxonomy': backbone_taxonomy,
+        'taxon_relationships': relationships,
+        'taxon_relationship_types': relationship_types,
+    }
+
+    return tag_context

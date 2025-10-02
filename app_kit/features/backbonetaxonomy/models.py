@@ -124,6 +124,19 @@ class BackboneTaxonomy(GenericContent):
             if taxon_latname not in translation:
                 translation[taxon_latname] = locale.name
 
+
+        taxon_relationship_types = TaxonRelationshipType.objects.filter(backbonetaxonomy=self)
+        for relationship_type in taxon_relationship_types:
+            name = relationship_type.relationship_name
+            if name and name not in translation:
+                translation[name] = name
+                
+        taxon_relationships = TaxonRelationship.objects.filter(backbonetaxonomy=self)
+        for relationship in taxon_relationships:
+            description = relationship.description
+            if description and description not in translation:
+                translation[description] = description
+
         return translation
 
 
@@ -146,3 +159,75 @@ class BackboneTaxa(ModelWithRequiredTaxon):
         verbose_name_plural = _('Backbone Taxa')
         unique_together=('backbonetaxonomy', 'taxon_latname', 'taxon_author')
         ordering = ('taxon_latname', 'taxon_author')
+
+
+
+class TaxonRelationshipType(models.Model):
+    
+    backbonetaxonomy = models.ForeignKey(BackboneTaxonomy, on_delete=models.CASCADE)
+    
+    # Abstract relationship name
+    relationship_name = models.CharField(max_length=100)
+    
+    # Directional role names (optional)
+    taxon_role = models.CharField(max_length=100, null=True, blank=True)
+    related_taxon_role = models.CharField(max_length=100, null=True, blank=True)
+
+    position = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.relationship_name
+
+    class Meta:
+        verbose_name = _('Taxon Relationship Type')
+        verbose_name_plural = _('Taxon Relationship Types')
+        unique_together = ('backbonetaxonomy', 'relationship_name')
+        ordering = ('position', 'relationship_name')
+    
+
+class TaxonRelationship(ModelWithRequiredTaxon):
+    
+    backbonetaxonomy = models.ForeignKey(BackboneTaxonomy, on_delete=models.CASCADE)
+    
+    related_taxon_source = models.CharField(max_length=100, choices=settings.TAXONOMY_DATABASES)
+    related_taxon_name_uuid = models.UUIDField()
+    related_taxon_latname = models.CharField(max_length=255)
+    related_taxon_author = models.CharField(max_length=255, null=True, blank=True)
+    related_taxon_nuid = models.CharField(max_length=255)
+    related_taxon_include_descendants = models.BooleanField(default=False)
+    
+    relationship_type = models.ForeignKey(TaxonRelationshipType, on_delete=models.CASCADE)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.relationship_type.relationship_name}: {self.taxon.taxon_latname} - {self.related_taxon_latname}"
+    
+    @property
+    def related_taxon(self):
+        models = TaxonomyModelRouter(self.related_taxon_source)
+        taxon = models.TaxonTreeModel.objects.filter(name_uuid=self.related_taxon_name_uuid).first()
+        if taxon:
+            return LazyTaxon(instance=taxon)
+
+        taxon_kwargs = {
+            'taxon_source': self.related_taxon_source,
+            'name_uuid': self.related_taxon_name_uuid,
+            'taxon_latname': self.related_taxon_latname,
+            'taxon_author': self.related_taxon_author,
+            'taxon_nuid': self.related_taxon_nuid,
+            'taxon_include_descendants': self.related_taxon_include_descendants,
+        }
+        return LazyTaxon(**taxon_kwargs)
+    
+    def set_related_taxon(self, lazy_taxon):
+        self.related_taxon_source = lazy_taxon.taxon_source
+        self.related_taxon_name_uuid = lazy_taxon.name_uuid
+        self.related_taxon_latname = lazy_taxon.taxon_latname
+        self.related_taxon_author = lazy_taxon.taxon_author
+        self.related_taxon_nuid = lazy_taxon.taxon_nuid
+        self.related_taxon_include_descendants = lazy_taxon.taxon_include_descendants
+
+    class Meta:
+        verbose_name = _('Taxon Relationship')
+        verbose_name_plural = _('Taxon Relationships')
+        ordering = ('taxon_latname', 'related_taxon_latname')

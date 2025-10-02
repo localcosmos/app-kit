@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.tests.common import test_settings
 from app_kit.tests.mixins import (WithMetaApp, WithUser, WithImageStore, WithMedia)
 
-from app_kit.features.backbonetaxonomy.models import BackboneTaxa
+from app_kit.features.backbonetaxonomy.models import BackboneTaxa, TaxonRelationship, TaxonRelationshipType
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa)
 from app_kit.features.maps.models import FilterTaxon, Map, MapTaxonomicFilter
@@ -32,7 +32,8 @@ ALL_TAXON_MODELS = [
     DatasetValidationRoutine,
     MetaNode,
     ServerImageStore,
-    ImageStore
+    ImageStore,
+    TaxonRelationship,
 ]
 
 class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantTestCase):
@@ -72,7 +73,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(BackboneTaxa, self.picea_abies)
-        occurrences = taxon_manager._get_BackboneTaxa_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_BackboneTaxa_occurrences(occurrence_qry, self.picea_abies)
         
         self.assertEqual(list(occurrences), [])
         
@@ -85,7 +86,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         backbone_taxon.set_taxon(self.picea_abies)
         backbone_taxon.save()
         
-        occurrences = taxon_manager._get_BackboneTaxa_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_BackboneTaxa_occurrences(occurrence_qry, self.picea_abies)
         
         expected_occurrences = [backbone_taxon]
         
@@ -97,7 +98,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(TaxonProfile, self.picea_abies)
-        occurrences = taxon_manager._get_TaxonProfile_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_TaxonProfile_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [])
         
         taxon_profiles_links = self.meta_app.get_generic_content_links(TaxonProfiles)
@@ -108,7 +109,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         )
         taxon_profile.set_taxon(self.picea_abies)
         taxon_profile.save()
-        occurrences = taxon_manager._get_TaxonProfile_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_TaxonProfile_occurrences(occurrence_qry, self.picea_abies)
         expected_occurrences = [taxon_profile]
         self.assertEqual(list(occurrences), expected_occurrences)
         
@@ -117,7 +118,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(TaxonProfilesNavigationEntryTaxa, self.picea_abies)
-        occurrences = taxon_manager._get_TaxonProfilesNavigationEntryTaxa_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_TaxonProfilesNavigationEntryTaxa_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [])
         
         taxon_profiles_links = self.meta_app.get_generic_content_links(TaxonProfiles)
@@ -138,7 +139,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         )
         tpne_taxa.set_taxon(self.picea_abies)
         tpne_taxa.save()
-        occurrences = taxon_manager._get_TaxonProfilesNavigationEntryTaxa_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_TaxonProfilesNavigationEntryTaxa_occurrences(occurrence_qry, self.picea_abies)
         expected_occurrences = [tpne_taxa]
         self.assertEqual(list(occurrences), expected_occurrences)
         
@@ -147,7 +148,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(FilterTaxon, self.picea_abies)
-        occurrences = taxon_manager._get_FilterTaxon_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_FilterTaxon_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [])
         
         map = Map.objects.create(name='Map', primary_language=self.meta_app.primary_language)
@@ -168,7 +169,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         )
         filter_taxon.set_taxon(self.picea_abies)
         filter_taxon.save()
-        occurrences = taxon_manager._get_FilterTaxon_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_FilterTaxon_occurrences(occurrence_qry, self.picea_abies)
         expected_occurrences = [filter_taxon]
         self.assertEqual(list(occurrences), expected_occurrences)
         
@@ -177,7 +178,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(MetaNode, self.picea_abies)
-        occurrences = taxon_manager._get_MetaNode_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_MetaNode_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [])
         
         nature_guide = NatureGuide.objects.create(name='Nature Guide', primary_language=self.meta_app.primary_language)
@@ -194,7 +195,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         meta_node.set_taxon(self.picea_abies)
         meta_node.save()
 
-        occurrences = taxon_manager._get_MetaNode_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_MetaNode_occurrences(occurrence_qry, self.picea_abies)
         expected_occurrences = [meta_node]
         self.assertEqual(list(occurrences), expected_occurrences)
         
@@ -203,7 +204,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(AppContentTaxonomicRestriction, self.lacerta_agilis)
-        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry, self.lacerta_agilis)
         self.assertEqual(list(occurrences), [])
         
         generic_form = GenericForm.objects.create(
@@ -225,9 +226,9 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         app_content_taxonomic_restriction.set_taxon(self.lacerta_agilis)
         app_content_taxonomic_restriction.save()
         
-        
-        occurrence_qry = taxon_manager.get_base_occurrence_query(AppContentTaxonomicRestriction, self.lacerta_agilis)        
-        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry)
+
+        occurrence_qry = taxon_manager.get_base_occurrence_query(AppContentTaxonomicRestriction, self.lacerta_agilis)
+        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry, self.lacerta_agilis)
         expected_occurrences = [app_content_taxonomic_restriction]
         self.assertEqual(list(occurrences), expected_occurrences)
         
@@ -253,7 +254,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         generic_field_taxonomic_restriction.save()
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(AppContentTaxonomicRestriction, self.lacerta_agilis)
-        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_AppContentTaxonomicRestriction_occurrences(occurrence_qry, self.lacerta_agilis)
         expected_occurrences = [app_content_taxonomic_restriction, generic_field_taxonomic_restriction]
 
         self.assertEqual(list(occurrences), expected_occurrences)
@@ -264,7 +265,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_manager = TaxonManager(self.meta_app)
         
         occurrence_qry = taxon_manager.get_base_occurrence_query(ImageStore, self.picea_abies)
-        occurrences = taxon_manager._get_ImageStore_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_ImageStore_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [])
         
         
@@ -291,7 +292,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         meta_node_image = self.create_content_image(meta_node, self.user, image_store=lacerta_agilis_image_store)
         
         lacerta_agilis_occurrence_qry = taxon_manager.get_base_occurrence_query(ImageStore, self.lacerta_agilis)
-        occurrences = taxon_manager._get_ImageStore_occurrences(lacerta_agilis_occurrence_qry)
+        occurrences = taxon_manager._get_ImageStore_occurrences(lacerta_agilis_occurrence_qry, self.lacerta_agilis)
 
         expected_occurrences = [lacerta_agilis_image_store]
         self.assertEqual(list(occurrences), expected_occurrences)
@@ -309,15 +310,50 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         taxon_profile_image = self.create_content_image(taxon_profile, self.user, image_store=picea_abies_image_store)
 
         occurrence_qry = taxon_manager.get_base_occurrence_query(ImageStore, self.picea_abies)
-        occurrences = taxon_manager._get_ImageStore_occurrences(occurrence_qry)
+        occurrences = taxon_manager._get_ImageStore_occurrences(occurrence_qry, self.picea_abies)
         self.assertEqual(list(occurrences), [picea_abies_image_store])
+    
+    
+    @test_settings
+    def test_get_TaxonRelationship_occurrences(self):
+        taxon_manager = TaxonManager(self.meta_app)
+        
+        occurrence_qry = taxon_manager.get_base_occurrence_query(TaxonRelationship, self.picea_abies)
+        occurrences = taxon_manager._get_TaxonRelationship_occurrences(occurrence_qry, self.picea_abies)
+        self.assertEqual(list(occurrences), [])
+        
+        backbonetaxnomy = self.meta_app.backbone()
+        
+        relationship_type = TaxonRelationshipType(
+            backbonetaxonomy=backbonetaxnomy,
+            relationship_name='Predation',
+            taxon_role='predator',
+            related_taxon_role='prey',
+        )
+        
+        relationship_type.save()
+        
+        relationship = TaxonRelationship(
+            backbonetaxonomy=backbonetaxnomy,
+            relationship_type=relationship_type,
+        )
+        
+        relationship.set_taxon(self.picea_abies)
+        relationship.set_related_taxon(self.lacerta_agilis)
+        relationship.save()
+        
+        occurrences = taxon_manager._get_TaxonRelationship_occurrences(occurrence_qry, self.picea_abies)
+        
+        expected_occurrences = [relationship]
+        
+        self.assertEqual(list(occurrences), expected_occurrences)
         
     
     def create_all_contents(self):
-        backbonetaxnomy = self.meta_app.backbone()
+        backbonetaxonomy = self.meta_app.backbone()
         
         backbone_taxon = BackboneTaxa(
-            backbonetaxonomy=backbonetaxnomy,
+            backbonetaxonomy=backbonetaxonomy,
         )
         
         backbone_taxon.set_taxon(self.picea_abies)
@@ -416,13 +452,30 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         picea_abies_image_store = self.create_image_store_with_taxon(lazy_taxon=self.picea_abies)
         meta_node_image = self.create_content_image(meta_node, self.user, image_store=picea_abies_image_store)
         
-        return backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store
+        
+        # create TaxonRelationship
+        taxon_relationship_type = TaxonRelationshipType(
+            backbonetaxonomy=backbonetaxonomy,
+            relationship_name='Predation',
+            taxon_role='predator',
+            related_taxon_role='prey',
+        )
+        taxon_relationship_type.save()
+        taxon_relationship = TaxonRelationship(
+            backbonetaxonomy=backbonetaxonomy,
+            relationship_type=taxon_relationship_type
+        )   
+        taxon_relationship.set_taxon(self.picea_abies)
+        taxon_relationship.set_related_taxon(self.lacerta_agilis)
+        taxon_relationship.save()
+
+        return backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store, taxon_relationship
         
     
     @test_settings
     def test_get_taxon_occurrences(self):
-                
-        backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store = self.create_all_contents()
+
+        backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store, taxon_relationship = self.create_all_contents()
 
         taxon_manager = TaxonManager(self.meta_app)
         occurrences = taxon_manager.get_taxon_occurrences(self.picea_abies)
@@ -434,6 +487,10 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
             {
                 'model': BackboneTaxa,
                 'occurrences': [backbone_taxon]
+            },
+            {
+                'model': TaxonRelationship,
+                'occurrences': [taxon_relationship]
             },
             {
                 'model': TaxonProfile,
@@ -461,15 +518,15 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
             {
                 'model': ImageStore,
                 'occurrences': [picea_abies_image_store]
-            }
+            },
         ]
         
         self.assertEqual(occurrences, expected_occurrences)
     
     @test_settings
     def test_swap(self):
-        
-        backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store = self.create_all_contents()
+
+        backbone_taxon, taxon_profile, tpne_taxa, filter_taxon, meta_node, app_content_taxonomic_restriction, generic_field_taxonomic_restriction, picea_abies_image_store, taxon_relationship = self.create_all_contents()
 
         
         taxon_manager = TaxonManager(self.meta_app)
@@ -485,6 +542,8 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         generic_field_taxonomic_restriction = AppContentTaxonomicRestriction.objects.get(id=generic_field_taxonomic_restriction.id)
         picea_abies_image_store = ImageStore.objects.get(id=picea_abies_image_store.id)
 
+        taxon_relationship = TaxonRelationship.objects.get(id=taxon_relationship.id)
+
         self.assertEqual(backbone_taxon.taxon, self.lacerta_agilis)
         self.assertEqual(taxon_profile.taxon, self.lacerta_agilis)
         self.assertEqual(tpne_taxa.taxon, self.lacerta_agilis)
@@ -493,6 +552,8 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         self.assertEqual(app_content_taxonomic_restriction.taxon, self.lacerta_agilis)
         self.assertEqual(generic_field_taxonomic_restriction.taxon, self.lacerta_agilis)
         self.assertEqual(picea_abies_image_store.taxon, self.lacerta_agilis)
+        
+        self.assertEqual(taxon_relationship.taxon, self.lacerta_agilis)
         
     @test_settings
     def test_get_BackboneTaxa_occurrences_verbose(self):        
@@ -709,6 +770,51 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
             'occurrences': [meta_node],
             'verbose_model_name': 'Nature Guide',
             'verbose_occurrences': ['occurs in Nature Guide Nature Guide'],
+        }]
+        
+        self.assertEqual(occurrences_verbose, expected_occurrences)
+        
+    @test_settings
+    def test_get_TaxonRelationship_occurrences_verbose(self):
+        backbonetaxnomy = self.meta_app.backbone()
+        
+        relationship_type = TaxonRelationshipType(
+            backbonetaxonomy=backbonetaxnomy,
+            relationship_name='Predation',
+            taxon_role='predator',
+            related_taxon_role='prey',
+        )
+        
+        relationship_type.save()
+        
+        relationship = TaxonRelationship(
+            backbonetaxonomy=backbonetaxnomy,
+            relationship_type=relationship_type,
+        )
+        
+        relationship.set_taxon(self.picea_abies)
+        relationship.set_related_taxon(self.lacerta_agilis)
+        relationship.save()
+        
+        relationship_2 = TaxonRelationship(
+            backbonetaxonomy=backbonetaxnomy,
+            relationship_type=relationship_type,
+        )
+        relationship_2.set_taxon(self.lacerta_agilis)
+        relationship_2.set_related_taxon(self.picea_abies)
+        relationship_2.save()
+        
+        taxon_manager = TaxonManager(self.meta_app)
+        occurrences = taxon_manager.get_taxon_occurrences(self.picea_abies)
+        occurrences_verbose = taxon_manager._get_TaxonRelationship_occurrences_verbose(occurrences[0])
+        
+        occurrences_verbose[0]['occurrences'] = list(occurrences_verbose[0]['occurrences'])
+        
+        expected_occurrences = [{
+            'model': TaxonRelationship,
+            'occurrences': [relationship, relationship_2],
+            'verbose_model_name': 'Taxon Relationship',
+            'verbose_occurrences': ['is used in 2 taxon relationship(s)'],
         }]
         
         self.assertEqual(occurrences_verbose, expected_occurrences)

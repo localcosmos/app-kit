@@ -75,6 +75,13 @@
 	{% endwith %}
 
 	<hr>
+	<h3>{% trans 'Taxon Relationships' %}</h3>
+	{% trans 'You can manage relationships between taxa, like similarity or predation.' %}
+	<p>
+		<a href="{% url 'taxon_relationships' meta_app.id generic_content.id %}" class="btn btn-primary">{% trans 'Manage Taxon Relationships' %}</a>
+	</p>
+
+	<hr>
 	<h3>{% trans 'Swap taxa' %}</h3>
 	{% trans 'You can swap one taxon with another taxon across your app.' %}
 	<p>

@@ -1,0 +1,25 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% if relationship %}{% url 'update_taxon_relationship' meta_app.id backbone_taxonomy.id relationship.relationship_type.id relationship.id %}{% else %}{% url 'create_taxon_relationship' meta_app.id backbone_taxonomy.id relationship_type.id %}{% endif %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Manage {{ relationship_type }}{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			$("#LargeModal").modal("hide");
+            window.location.reload();
+		</script>
+	{% endif %}
+{% endblock %}

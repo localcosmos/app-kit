@@ -165,6 +165,7 @@ class JSONBuilder(ContentImagesJSONBuilder):
             for media in generic_content.external_media.all():
                 media_json = {
                     'mediaType': media.media_type,
+                    'mediaCategory' : media.media_category, 
                     'url': media.url,
                     'title': media.title,
                     'author': media.author,

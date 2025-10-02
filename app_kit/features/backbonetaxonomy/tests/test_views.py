@@ -11,12 +11,14 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 from app_kit.features.backbonetaxonomy.views import (ManageBackboneTaxonomy, BackboneFulltreeUpdate,
             AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy,
-            ManageBackboneTaxon, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences)
+            ManageBackboneTaxon, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences,
+            TaxonRelationships, ManageTaxonRelationshipType, DeleteTaxonRelationshipType,
+            ManageTaxonRelationship, DeleteTaxonRelationship)
 
 from app_kit.features.backbonetaxonomy.forms import (AddSingleTaxonForm, AddMultipleTaxaForm,
-                                                     ManageFulltreeForm, SearchTaxonomicBackboneForm)
+    ManageFulltreeForm, SearchTaxonomicBackboneForm, TaxonRelationshipForm)
 
-from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
+from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa, TaxonRelationshipType, TaxonRelationship
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree
@@ -614,8 +616,96 @@ class TestSwapTaxon(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, Wi
         
         tp = TaxonProfile.objects.get(pk=self.taxon_profile.pk)
         self.assertEqual(tp.taxon, self.taxon_2)
+        
+        
+    @test_settings
+    def test_swap_TaxonRelationship(self):
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        pica_pica = models.TaxonTreeModel.objects.get(taxon_latname='Pica pica')
+        pica_pica = LazyTaxon(instance=pica_pica)
+        
+        #swap to
+        larix_decidua = models.TaxonTreeModel.objects.get(taxon_latname='Larix decidua')
+        larix_decidua = LazyTaxon(instance=larix_decidua)
+        
+        turdus_merula = models.TaxonTreeModel.objects.get(taxon_latname='Turdus merula')
+        turdus_merula = LazyTaxon(instance=turdus_merula)
+        
+        relationship_type = TaxonRelationshipType(
+            backbonetaxonomy = self.generic_content,
+            relationship_name = 'Predation',
+            taxon_role = 'Predator',
+            related_taxon_role = 'Prey',
+        )
 
- 
+        relationship_type.save()
+
+        relationship = TaxonRelationship(
+            backbonetaxonomy = self.generic_content,
+            taxon = lacerta_agilis,
+            relationship_type = relationship_type,
+        )
+
+        relationship.set_related_taxon(pica_pica)
+        relationship.save()
+        
+        
+        
+        post_data = {
+            'from_taxon_0' : 'taxonomy.sources.col',
+            'from_taxon_1' : lacerta_agilis.taxon_latname,
+            'from_taxon_2' : lacerta_agilis.taxon_author,
+            'from_taxon_3' : str(lacerta_agilis.name_uuid),
+            'from_taxon_4' : lacerta_agilis.taxon_nuid,
+            'to_taxon_0' : 'taxonomy.sources.col',
+            'to_taxon_1' : larix_decidua.taxon_latname,
+            'to_taxon_2' : larix_decidua.taxon_author,
+            'to_taxon_3' : str(larix_decidua.name_uuid),
+            'to_taxon_4' : larix_decidua.taxon_nuid,
+        }
+        
+        view = self.get_view()
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['analyzed'], True)
+        
+        updated_relationship = TaxonRelationship.objects.get(pk=relationship.pk)
+        self.assertEqual(updated_relationship.taxon, larix_decidua)
+        
+        
+        # update related taxon
+        post_data = {
+            'from_taxon_0' : 'taxonomy.sources.col',
+            'from_taxon_1' : pica_pica.taxon_latname,
+            'from_taxon_2' : pica_pica.taxon_author,
+            'from_taxon_3' : str(pica_pica.name_uuid),
+            'from_taxon_4' : pica_pica.taxon_nuid,
+            'to_taxon_0' : 'taxonomy.sources.col',
+            'to_taxon_1' : turdus_merula.taxon_latname,
+            'to_taxon_2' : turdus_merula.taxon_author,
+            'to_taxon_3' : str(turdus_merula.name_uuid),
+            'to_taxon_4' : turdus_merula.taxon_nuid,
+        }
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['analyzed'], True)
+        updated_relationship = TaxonRelationship.objects.get(pk=relationship.pk)
+        self.assertEqual(updated_relationship.related_taxon, turdus_merula)
+
 class TestAnalyzeTaxon(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
                            WithMetaApp, WithTenantClient, TenantTestCase):
 
@@ -800,3 +890,535 @@ class TestUpdateTaxonReferences(ViewTestMixin, WithAdminOnly, WithLoggedInUser, 
         ]
         
         self.assertEqual(response.context_data['result'], expected_result)
+        
+        
+
+
+class WithTaxonRelationship:
+    
+    def setUp(self):
+        super().setUp()
+        
+        
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        pica_pica = models.TaxonTreeModel.objects.get(taxon_latname='Pica pica')
+        pica_pica = LazyTaxon(instance=pica_pica)
+        
+        self.relationship_type = TaxonRelationshipType(
+            backbonetaxonomy = self.generic_content,
+            relationship_name = 'Predation',
+            taxon_role = 'Predator',
+            related_taxon_role = 'Prey',
+        )
+
+        self.relationship_type.save()
+
+        self.relationship = TaxonRelationship(
+            backbonetaxonomy = self.generic_content,
+            taxon = lacerta_agilis,
+            relationship_type = self.relationship_type,
+        )
+
+        self.relationship.set_related_taxon(pica_pica)
+        self.relationship.save()
+
+
+class TestTaxonRelationships(ViewTestMixin, WithTaxonRelationship, WithAdminOnly, WithLoggedInUser, WithUser,
+                             WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+
+    url_name = 'taxon_relationships'
+    view_class = TaxonRelationships       
+        
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'backbone_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.backbone = self.generic_content
+        view.meta_app = self.meta_app
+        
+        context_data = view.get_context_data(**view.kwargs)
+        
+        existing_types = TaxonRelationshipType.objects.filter(backbonetaxonomy=self.generic_content)
+        existing_relationships = TaxonRelationship.objects.filter(backbonetaxonomy=self.generic_content)
+        
+        self.assertEqual(context_data['generic_content'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        self.assertEqual(list(context_data['taxon_relationship_types']), list(existing_types))
+        self.assertEqual(list(context_data['taxon_relationships']), list(existing_relationships))
+        
+        
+class TestCreateTaxonRelationshipType(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                                     WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_taxon_relationship_type'
+    view_class = ManageTaxonRelationshipType
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'backbone_id': self.generic_content.id,
+        }
+        return url_kwargs
+
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        self.assertEqual(view.backbonetaxonomy, self.generic_content)
+        self.assertEqual(view.meta_app, self.meta_app)
+        self.assertEqual(view.relationship_type, None)
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        self.assertEqual(context_data['relationship_type'], None)
+        
+        
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        initial = view.get_initial()
+        self.assertEqual(initial, {})
+    
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        post_data = {
+            'input_language' : self.meta_app.primary_language,
+            'relationship_name' : 'Predation',
+            'taxon_role' : 'Predator',
+            'related_taxon_role' : 'Prey',
+        }
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        create_relationship_type = TaxonRelationshipType.objects.filter(
+            backbonetaxonomy=self.generic_content,
+            relationship_name='Predation').first()
+        
+        self.assertIsNotNone(create_relationship_type)
+        self.assertEqual(create_relationship_type.taxon_role, 'Predator')
+        self.assertEqual(create_relationship_type.related_taxon_role, 'Prey')
+        
+        
+class TestUpdateTaxonRelationshipType(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+            WithTaxonRelationship, WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'update_taxon_relationship_type'
+    view_class = ManageTaxonRelationshipType
+    
+    def get_url_kwargs(self):
+        
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'backbone_id': self.generic_content.id,
+            'relationship_type_id': self.relationship_type.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        self.assertEqual(view.backbonetaxonomy, self.generic_content)
+        self.assertEqual(view.meta_app, self.meta_app)
+        self.assertEqual(view.relationship_type, self.relationship_type)
+        
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        self.assertEqual(context_data['relationship_type'], self.relationship_type)
+        
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        initial = view.get_initial()
+                
+        expected_initial = {
+            'relationship_name' : self.relationship_type.relationship_name,
+            'taxon_role' : self.relationship_type.taxon_role,
+            'related_taxon_role' : self.relationship_type.related_taxon_role,
+        }
+        
+        self.assertEqual(initial, expected_initial)
+
+
+    @test_settings
+    def test_form_valid(self):
+        
+        post_data = {
+            'input_language' : self.meta_app.primary_language,
+            'relationship_name' : 'New name',
+            'taxon_role' : 'New taxon role',
+            'related_taxon_role' : 'New related taxon role',
+        }
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form = view.form_class(data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        self.relationship_type.refresh_from_db()
+
+        self.assertIsNotNone(self.relationship_type)
+        self.assertEqual(self.relationship_type.relationship_name, 'New name')
+        self.assertEqual(self.relationship_type.taxon_role, 'New taxon role')
+        self.assertEqual(self.relationship_type.related_taxon_role, 'New related taxon role')
+        
+        
+class TestDeleteTaxonRelationshipType(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+            WithTaxonRelationship, WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_taxon_relationship_type'
+    view_class = DeleteTaxonRelationshipType
+    
+    def get_url_kwargs(self):
+        
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'pk': self.relationship_type.id,
+        }
+        return url_kwargs
+        
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.relationship_type
+        
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        
+    @test_settings
+    def test_post(self):
+        
+        self.make_user_tenant_admin(self.user, self.tenant)
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        
+        relationship_type_id = self.relationship_type.id
+        
+        relationship_type_qry = TaxonRelationshipType.objects.filter(id=relationship_type_id)
+        self.assertTrue(relationship_type_qry.exists())
+        
+        response = self.tenant_client.post(view.request.path, data={}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['deleted'], True)
+        
+        self.assertFalse(relationship_type_qry.exists())
+        
+        
+class TestCreateTaxonRelationship(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                             WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_taxon_relationship'
+    view_class = ManageTaxonRelationship
+
+    def setUp(self):
+        super().setUp()
+
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        pica_pica = models.TaxonTreeModel.objects.get(taxon_latname='Pica pica')
+        self.pica_pica = LazyTaxon(instance=pica_pica)
+
+        self.relationship_type = TaxonRelationshipType(
+            backbonetaxonomy=self.generic_content,
+            relationship_name='Predation',
+            taxon_role='Predator',
+            related_taxon_role='Prey',
+        )
+
+        self.relationship_type.save()
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'backbone_id': self.generic_content.id,
+            'relationship_type_id': self.relationship_type.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        self.assertEqual(view.backbone_taxonomy, self.generic_content)
+        self.assertEqual(view.meta_app, self.meta_app)
+        self.assertEqual(view.relationship_type, self.relationship_type)
+        self.assertEqual(view.relationship, None)
+        
+    @test_settings
+    def test_get_form(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        form = view.get_form()
+        self.assertEqual(form.__class__, TaxonRelationshipForm)
+        self.assertEqual(form.relationship_type, self.relationship_type)
+        
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        initial = view.get_initial()
+        self.assertEqual(initial, {})
+
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        self.assertEqual(context_data['relationship_type'], self.relationship_type)
+        self.assertEqual(context_data['relationship'], None)
+        
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        post_data = {
+            'input_language' : self.meta_app.primary_language,
+            'taxon_0' : self.lacerta_agilis.taxon_source,
+            'taxon_1' : self.lacerta_agilis.taxon_latname,
+            'taxon_2' : self.lacerta_agilis.taxon_author,
+            'taxon_3' : str(self.lacerta_agilis.name_uuid),
+            'taxon_4' : self.lacerta_agilis.taxon_nuid,
+            'related_taxon_0' : self.pica_pica.taxon_source,
+            'related_taxon_1' : self.pica_pica.taxon_latname,
+            'related_taxon_2' : self.pica_pica.taxon_author,
+            'related_taxon_3' : str(self.pica_pica.name_uuid),
+            'related_taxon_4' : self.pica_pica.taxon_nuid,
+            'description' : 'A description of the relationship',
+        }
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        form = view.form_class(data=post_data, relationship_type=self.relationship_type)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        create_relationship = TaxonRelationship.objects.filter(
+            backbonetaxonomy=self.generic_content,
+            name_uuid=self.lacerta_agilis.name_uuid,
+            relationship_type=self.relationship_type).first()
+        
+        self.assertIsNotNone(create_relationship)
+        self.assertEqual(create_relationship.taxon, self.lacerta_agilis)
+        self.assertEqual(create_relationship.related_taxon, self.pica_pica)
+        self.assertEqual(create_relationship.description, 'A description of the relationship')
+        
+        
+class TestUpdateTaxonRelationship(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                             WithTaxonRelationship, WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'update_taxon_relationship'
+    view_class = ManageTaxonRelationship
+    
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'backbone_id': self.generic_content.id,
+            'relationship_type_id': self.relationship_type.id,
+            'relationship_id': self.relationship.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_instances(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        self.assertEqual(view.backbone_taxonomy, self.generic_content)
+        self.assertEqual(view.meta_app, self.meta_app)
+        self.assertEqual(view.relationship_type, self.relationship_type)
+        self.assertEqual(view.relationship, self.relationship)
+        
+    @test_settings
+    def test_get_form(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        form = view.get_form()
+        self.assertEqual(form.__class__, TaxonRelationshipForm)
+        self.assertEqual(form.relationship_type, self.relationship_type)
+
+    @test_settings
+    def test_get_initial(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        initial = view.get_initial()
+        
+        expected_initial = {
+            'taxon' : self.relationship.taxon,
+            'related_taxon' : self.relationship.related_taxon,
+            'description' : self.relationship.description,
+        }
+                
+        self.assertEqual(initial, expected_initial)
+        
+        
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        self.assertEqual(context_data['relationship_type'], self.relationship_type)
+        self.assertEqual(context_data['relationship'], self.relationship)
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        turdus_merula = models.TaxonTreeModel.objects.get(taxon_latname='Turdus merula')
+        turdus_merula = LazyTaxon(instance=turdus_merula)
+
+        larix_decidua = models.TaxonTreeModel.objects.get(taxon_latname='Larix decidua')
+        larix_decidua = LazyTaxon(instance=larix_decidua)
+
+        post_data = {
+            'input_language' : self.meta_app.primary_language,
+            'taxon_0' : turdus_merula.taxon_source,
+            'taxon_1' : turdus_merula.taxon_latname,
+            'taxon_2' : turdus_merula.taxon_author,
+            'taxon_3' : str(turdus_merula.name_uuid),
+            'taxon_4' : turdus_merula.taxon_nuid,
+            'related_taxon_0' : larix_decidua.taxon_source,
+            'related_taxon_1' : larix_decidua.taxon_latname,
+            'related_taxon_2' : larix_decidua.taxon_author,
+            'related_taxon_3' : str(larix_decidua.name_uuid),
+            'related_taxon_4' : larix_decidua.taxon_nuid,
+            'description' : 'An updated description of the relationship',
+        }
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+
+        self.assertEqual(view.relationship, self.relationship)
+
+        form = view.form_class(data=post_data, relationship_type=self.relationship_type)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        self.assertEqual(form.cleaned_data['taxon'], turdus_merula)
+        self.assertEqual(form.cleaned_data['related_taxon'], larix_decidua)
+        self.assertEqual(form.cleaned_data['description'], 'An updated description of the relationship')
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        self.relationship = TaxonRelationship.objects.get(id=self.relationship.id)
+                
+        self.assertIsNotNone(self.relationship)
+        self.assertEqual(self.relationship.related_taxon.taxon_latname, larix_decidua.taxon_latname)
+        self.assertEqual(self.relationship.taxon.taxon_latname, turdus_merula.taxon_latname)
+        self.assertEqual(self.relationship.description, 'An updated description of the relationship')
+        
+        
+class TestDeleteTaxonRelationship(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+            WithTaxonRelationship, WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'delete_taxon_relationship'
+    view_class = DeleteTaxonRelationship
+    
+    def get_url_kwargs(self):
+        return {
+            'meta_app_id': self.meta_app.id,
+            'pk': self.relationship.id
+        }
+        
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.object = self.relationship
+        
+        context_data = view.get_context_data(**view.kwargs)
+        self.assertEqual(context_data['backbone_taxonomy'], self.generic_content)
+        self.assertEqual(context_data['meta_app'], self.meta_app)
+        
+    @test_settings
+    def test_post(self):
+        
+        self.make_user_tenant_admin(self.user, self.tenant)
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        
+        relationship_id = self.relationship.id
+        
+        relationship_qry = TaxonRelationship.objects.filter(id=relationship_id)
+        self.assertTrue(relationship_qry.exists())
+        
+        response = self.tenant_client.post(view.request.path, data={}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['deleted'], True)
+        
+        self.assertFalse(relationship_qry.exists())

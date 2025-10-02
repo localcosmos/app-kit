@@ -1,0 +1,20 @@
+{% load i18n %}
+<div>
+    <div>
+        {% include 'backbonetaxonomy/ajax/taxon_relationship_list.html' %}
+    </div>
+    <div>
+        {% if taxon_relationship_types %}
+            <div class="btn-group dropup">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {% trans 'Add Taxon Relationship' %} <span class="caret"></span>
+                </button>
+                <div class="dropdown-menu">
+                    {% for relationship_type in taxon_relationship_types %}
+                        <a data-url="{% url 'create_taxon_relationship' meta_app.id backbone_taxonomy.id relationship_type.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Add {{ relationship_type }}{% endblocktrans %}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
