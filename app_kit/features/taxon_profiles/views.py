@@ -26,6 +26,7 @@ from app_kit.features.backbonetaxonomy.models import BackboneTaxa, BackboneTaxon
 from localcosmos_server.decorators import ajax_required
 
 from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
+from localcosmos_server.template_content.models import TemplateContent
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
@@ -303,6 +304,14 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
                 
         return branches
 
+    def get_template_contents(self):
+        ltcs = []
+        template_contents = TemplateContent.objects.filter_by_taxon(self.meta_app.app, self.taxon)
+        for template_content in template_contents:
+            ltc = template_content.get_locale(self.meta_app.primary_language)
+            if ltc:
+                ltcs.append(ltc)
+        return ltcs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -335,6 +344,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context['taxonomic_branch'] = self.taxon.get_taxonomic_branch()
         
         context['navigation_branches'] = self.get_navigation_branches()
+        
+        context['template_contents'] = self.get_template_contents()
 
         # show possible duplicates
         possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,

@@ -187,6 +187,8 @@ class TaxonRelationshipType(models.Model):
 
 class TaxonRelationship(ModelWithRequiredTaxon):
     
+    LazyTaxonClass = LazyTaxon
+    
     backbonetaxonomy = models.ForeignKey(BackboneTaxonomy, on_delete=models.CASCADE)
     
     related_taxon_source = models.CharField(max_length=100, choices=settings.TAXONOMY_DATABASES)

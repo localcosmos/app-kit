@@ -102,8 +102,12 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             return self.vernacular_names_from_nature_guide_cache[lazy_taxon.name_uuid]
         
         return lazy_taxon.get_primary_locale_vernacular_name_from_nature_guides(self.meta_app)
-        
     
+    
+    def get_taxon_profile_template_content_links(self, profile_taxon, language_code):
+        template_contents = self.get_template_content_json_for_taxon(profile_taxon, language_code)
+        return template_contents
+
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, languages):
         
@@ -154,6 +158,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'metaDescription': None,
             },
             'externalMedia': [],
+            'templateContents': [],
             'isFeatured': is_featured,
         })
 
@@ -176,9 +181,11 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             all_vernacular_names = profile_taxon.all_vernacular_names(self.meta_app,
                                                                       languages=[language_code])
             
-            
             names_list = [name_reference['name'] for name_reference in all_vernacular_names]
             taxon_profile_json['allVernacularNames'][language_code] = names_list
+            
+            # template contents
+            taxon_profile_json['templateContents'] = self.get_taxon_profile_template_content_links(profile_taxon, language_code)
 
         # get taxon_profile_images
         if db_profile:
@@ -322,17 +329,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 if category_name != 'uncategorized' and len(categorized_texts_json['texts']) > 0:
                     taxon_profile_json['categorizedTexts'].append(categorized_texts_json)
 
-        # template_contents
-        template_contents = TemplateContent.objects.filter_by_taxon(profile_taxon)
-
-        for template_content in template_contents:
-
-            if template_content.is_published:
-                template_content_json = {}
-                ltc = template_content.get_locale(self.meta_app.primary_language)
-                template_content_json['templateName'] = template_content.template.name
-                template_content_json['slug'] = ltc.slug
-                taxon_profile_json['templateContents'].append(template_content_json)
 
         self.built_taxon_profiles_cache[str(profile_taxon.name_uuid)] = taxon_profile_json
 

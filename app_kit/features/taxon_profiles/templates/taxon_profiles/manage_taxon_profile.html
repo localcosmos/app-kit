@@ -235,6 +235,40 @@
 				<a href data-url="{% url 'manage_taxon_text_type_category_order' category_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage category order' %}</a>
 			</div>
 		</div>
+		<hr>
+		<div class="row my-3">
+			<div class="col-12">
+				<div class="card">
+					<div class="card-header">
+						{% trans 'Template Contents' %}
+					</div>
+					<div class="card-body">
+						<div>
+							{% trans 'This taxon is linked to the following Template Contents:' %}
+						</div>
+						<div class="mt-3">
+							{% if template_contents %}
+								<ul>
+									{% for ltc in template_contents %}
+										<li>
+											<strong>
+												{% if ltc.template_content.is_published %}
+													{{ ltc.published_title }} <span class="badge badge-success">{% trans 'published' %}</span>
+												{% else %}
+													{{ ltc.draft_title }} <span class="badge badge-warning">{% trans 'draft' %}</span>
+												{% endif %}
+											</strong>
+										</li>
+									{% endfor %}
+								</ul>
+							{% else %}
+								<p>{% trans 'No template contents found.' %}</p>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 {% endblock %}
 

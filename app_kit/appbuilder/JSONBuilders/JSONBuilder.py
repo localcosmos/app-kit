@@ -99,27 +99,37 @@ class JSONBuilder(ContentImagesJSONBuilder):
         return taxonomic_restriction_json
 
 
-    def get_template_content_json_for_taxon(self, taxon):
+    def get_template_content_json_for_taxon(self, taxon, language_code):
 
         template_contents = []
 
-        template_contents_query = TemplateContent.objects.filter_by_taxon(taxon)
+        template_contents_query = TemplateContent.objects.filter_by_taxon(self.meta_app.app, taxon)
 
         for template_content in template_contents_query:
-            template_content_json = self.get_template_content_json(template_content)
-            template_contents.append(template_content_json)
+            template_content_json = self.get_template_content_json(template_content, language_code)
+
+            if template_content_json:
+                template_contents.append(template_content_json)
 
         return template_contents
 
 
-    def get_template_content_json(self, template_content):
+    def get_template_content_json(self, template_content, language_code):
+                
+        if not template_content.is_published:
+            return None
+        
+        template_content_json = None
 
-        ltc = template_content.get_locale(self.meta_app.primary_language)
+        ltc = template_content.get_locale(language_code)
 
-        template_content_json = {
-            'slug' : ltc.slug,
-            'title' : ltc.published_title,
-        }
+        if ltc:
+
+            template_content_json = {
+                'slug' : ltc.slug,
+                'title' : ltc.published_title,
+                'templateName' : template_content.template.name,
+            }
 
         return template_content_json
 

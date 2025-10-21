@@ -6,6 +6,8 @@ from app_kit.models import ContentImage
 
 from app_kit.appbuilder.JSONBuilders.ContentImagesJSONBuilder import ContentImagesJSONBuilder
 
+from app_kit.taxonomy.lazy import LazyTaxon
+
 import copy
 
 class TaxaBuilder(ContentImagesJSONBuilder):
@@ -131,17 +133,20 @@ class TaxonSerializer:
     def serialize_with_slugs(self):
         
         taxon_json = self.serialize()
+                
+        taxon_latname_slug = self.taxa_builder.app_release_builder._build_taxon_latname_slug(self.lazy_taxon)
         
         taxon_json.update({
-            'slug': self.taxa_builder.app_release_builder.taxon_slugs['taxon_latname'].get(
-                taxon_json['nameUuid'], None),
+            'slug': taxon_latname_slug,
             'localizedSlug': {},
         })
         
-        for language_code, vernacular_slugs in self.taxa_builder.app_release_builder.taxon_slugs['vernacular'].items():
+        for language_code in self.taxa_builder.meta_app.languages():
+
+            localized_slug =  self.taxa_builder.app_release_builder._build_taxon_vernacular_slug(self.lazy_taxon, language_code)
             
-            taxon_json['localizedSlug'][language_code] = vernacular_slugs.get(
-                taxon_json['nameUuid'], None)
+            if localized_slug:
+                taxon_json['localizedSlug'][language_code] = localized_slug
             
         return taxon_json
     
@@ -177,7 +182,7 @@ class TaxonSerializer:
             
             images = self.serialize_images()
 
-            taxon_json = self.serialize()
+            taxon_json = self.serialize_with_slugs()
             
             has_taxon_profile = False
             taxon_profile = self.get_taxon_profile()

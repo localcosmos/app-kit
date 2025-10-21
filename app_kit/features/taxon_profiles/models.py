@@ -610,6 +610,9 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
         
 
 class TaxonProfilesNavigationEntryTaxa(ModelWithRequiredTaxon):
+    
+    LazyTaxonClass = LazyTaxon
+    
     navigation_entry = models.ForeignKey(TaxonProfilesNavigationEntry, on_delete=models.CASCADE)
     
     def __str__(self):

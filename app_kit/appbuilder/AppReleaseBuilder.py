@@ -30,6 +30,7 @@ from app_kit.features.generic_forms.models import (GenericForm, GenericFieldToGe
                                                        GenericValues, DJANGO_FIELD_CLASSES)
 
 from app_kit.features.glossary.models import Glossary
+from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                                                     TaxonProfilesNavigationEntry)
 from app_kit.features.frontend.models import Frontend
@@ -1172,7 +1173,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 'licences' : {},
             }
             
-            # cache taxn slugs
+            # cache taxon slugs
             self.taxon_slugs = {
                 'taxon_latname' : {},
                 'vernacular' : {},
@@ -1293,9 +1294,17 @@ class AppReleaseBuilder(AppBuilderBase):
 
             # options are on the link, pass the link
             self._build_Glossary(glossary_link)
+            
+        # build the backbone taxonomy
+        backbone_taxonomy_content_type = ContentType.objects.get_for_model(BackboneTaxonomy)
+        backbone_taxonomy_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
+                                                                  content_type=backbone_taxonomy_content_type)
+        backbone_taxonomy = backbone_taxonomy_link.generic_content
+        
+        self._build_BackboneTaxonomy(backbone_taxonomy_link)
         
         # iterate over all features (except glossary) and create the necessary json files
-        exclude_content_types = [taxon_profiles_content_type, glossary_content_type, frontend_content_type]
+        exclude_content_types = [taxon_profiles_content_type, glossary_content_type, frontend_content_type, backbone_taxonomy_content_type]
         generic_content_links = MetaAppGenericContent.objects.filter(meta_app=self.meta_app).exclude(
             content_type__in=exclude_content_types)
 
@@ -1333,6 +1342,9 @@ class AppReleaseBuilder(AppBuilderBase):
         app_features_json_file = self._app_features_json_filepath
         with open(app_features_json_file, 'w', encoding='utf-8') as f:
             f.write(app_features_string)
+            
+            
+        self._save_taxon_slugs(backbone_taxonomy)
         
             
         # save licence registry
@@ -1691,11 +1703,90 @@ class AppReleaseBuilder(AppBuilderBase):
             is_default = generic_content_json['options'].get('isDefault', False)
             self._add_default_to_features(generic_content_type, generic_content, force_add=is_default)
 
+    
+    def _build_taxon_latname_slug(self, lazy_taxon):
+        
+        name = slugify(lazy_taxon.taxon_latname)
+        
+        slug = name
 
+        if slug in self.taxon_slugs['taxon_latname'] and self.taxon_slugs['taxon_latname'][slug] == str(lazy_taxon.name_uuid):
+            return slug
+        
+        counter = 2
+        
+        while slug in self.taxon_slugs['taxon_latname']:
+            if self.taxon_slugs['taxon_latname'][slug] == str(lazy_taxon.name_uuid):
+                break
+            slug = '{0}-{1}'.format(name, counter)
+            counter = counter +1
+
+        self.taxon_slugs['taxon_latname'][slug] = str(lazy_taxon.name_uuid)
+        
+        return slug
+
+    def _build_taxon_vernacular_slug(self, lazy_taxon, language_code):
+
+        if language_code not in self.taxon_slugs['vernacular']:
+            self.taxon_slugs['vernacular'][language_code] = {}
+
+
+        vernacular_name = lazy_taxon.vernacular(language=language_code,
+                                                        meta_app=self.meta_app)
+        
+        if vernacular_name:
+            
+            slug_base = slugify(vernacular_name)
+            vernacular_slug = slug_base
+
+            if vernacular_slug in self.taxon_slugs['vernacular'][language_code] and self.taxon_slugs['vernacular'][language_code][vernacular_slug] == str(lazy_taxon.name_uuid):
+                return vernacular_slug
+
+            while vernacular_slug in self.taxon_slugs['vernacular'][language_code]:
+                if self.taxon_slugs['vernacular'][language_code][vernacular_slug] == str(lazy_taxon.name_uuid):
+                    break
+                vernacular_slug = '{0}-{1}'.format(slug_base, counter)
+                counter = counter +1
+
+            self.taxon_slugs['vernacular'][language_code][vernacular_slug] = str(lazy_taxon.name_uuid)
+            return vernacular_slug
+        
     ###############################################################################################################
     # BACKBONE TAXONOMY
     # - dump taxonomic trees as json
     # - files for quick searching in alphabet/AA.json and vernacular/en.json
+    def _save_taxon_slugs(self, backbone_taxonomy):
+        absolute_generic_content_path = self._app_absolute_generic_content_path(backbone_taxonomy)
+        
+        if not os.path.isdir(absolute_generic_content_path):
+            os.makedirs(absolute_generic_content_path)
+        
+        slugs_filename = 'slugs.json'
+        
+        absolute_slugs_path = os.path.join(absolute_generic_content_path, slugs_filename)
+        
+        with open(absolute_slugs_path, 'w', encoding='utf-8') as f:
+            json.dump(self.taxon_slugs['taxon_latname'], f, indent=4, ensure_ascii=False)
+            
+            
+        absolute_vernacular_slugs_folder = os.path.join(absolute_generic_content_path, 'slugs')
+        
+        if not os.path.isdir(absolute_vernacular_slugs_folder):
+            os.makedirs(absolute_vernacular_slugs_folder)
+            
+        for language_code in self.meta_app.languages():
+            
+            if language_code not in self.taxon_slugs['vernacular']:
+                localized_slugs = {}
+            else:
+                localized_slugs = self.taxon_slugs['vernacular'][language_code]
+
+            vernacular_slugs_filename = '{0}.json'.format(language_code)
+            absolute_localized_slugs_path = os.path.join(absolute_vernacular_slugs_folder, vernacular_slugs_filename)
+            
+            with open(absolute_localized_slugs_path, 'w', encoding='utf-8') as f:
+                json.dump(localized_slugs, f, indent=4, ensure_ascii=False)
+                
     
     def _build_BackboneTaxonomy(self, app_generic_content):
 
@@ -1713,6 +1804,26 @@ class AppReleaseBuilder(AppBuilderBase):
         relative_vernacular_search_folder_path = os.path.join(relative_search_folder_path, 'vernacular')
 
         feature_entry = self._get_features_json_entry(app_generic_content)
+        
+        if not os.path.isdir(absolute_generic_content_path):
+            os.makedirs(absolute_generic_content_path)
+            
+        # slugs first
+        # fill app_release_builder.taxon_slugs
+        jsonbuilder.build_slugs(languages=self.meta_app.languages())
+        slugs_filename = 'slugs.json'
+        
+        relative_slugs_path = os.path.join(relative_generic_content_path, slugs_filename)
+            
+        feature_entry['slugs'] = '/{0}'.format(relative_slugs_path)
+        feature_entry['localizedSlugs'] = {}
+        
+        relative_vernacular_slugs_folder = os.path.join(relative_generic_content_path, 'slugs')
+        
+        for language_code in self.meta_app.languages():
+            vernacular_slugs_filename = '{0}.json'.format(language_code)
+            relative_localized_slugs_path =  os.path.join(relative_vernacular_slugs_folder, vernacular_slugs_filename)
+            feature_entry['localizedSlugs'][language_code] = '/{0}'.format(relative_localized_slugs_path)
 
         feature_entry.update({
             'search': {
@@ -1773,48 +1884,6 @@ class AppReleaseBuilder(AppBuilderBase):
                     
             feature_entry['search']['vernacular'][language_code] = '/{0}'.format(relative_vernacular_search_language_folder_path)
             feature_entry['lookup']['vernacular'][language_code] = '/{0}'.format(relative_vernacular_lookup_language_filepath)
-
-        # slugs
-        slugs, localized_slugs = jsonbuilder.build_slugs(languages=self.meta_app.languages())
-        slugs_filename = 'slugs.json'
-        
-        for slug, name_uuid in slugs.items():
-            self.taxon_slugs['taxon_latname'][name_uuid] = slug
-
-        for language_code, vernacular_slugs in localized_slugs.items():
-            
-            self.taxon_slugs['vernacular'][language_code] = {}
-            
-            for vernacular_slug, name_uuid in vernacular_slugs.items():
-                self.taxon_slugs['vernacular'][language_code][name_uuid] = vernacular_slug
-        
-        relative_slugs_path = os.path.join(relative_generic_content_path, slugs_filename)
-        absolute_slugs_path = os.path.join(absolute_generic_content_path, slugs_filename)
-        
-        with open(absolute_slugs_path, 'w', encoding='utf-8') as f:
-            json.dump(slugs, f, indent=4, ensure_ascii=False)
-            
-        feature_entry['slugs'] = '/{0}'.format(relative_slugs_path)
-        feature_entry['localizedSlugs'] = {}
-        
-        absolute_vernacular_slugs_folder = os.path.join(absolute_generic_content_path, 'slugs')
-        relative_vernacular_slugs_folder = os.path.join(relative_generic_content_path, 'slugs')
-        
-        if not os.path.isdir(absolute_vernacular_slugs_folder):
-            os.makedirs(absolute_vernacular_slugs_folder)
-        
-        for language_code in self.meta_app.languages():
-            
-            vernacular_slugs_filename = '{0}.json'.format(language_code)
-            
-            relative_localized_slugs_path =  os.path.join(relative_vernacular_slugs_folder, vernacular_slugs_filename)
-            absolute_localized_slugs_path = os.path.join(absolute_vernacular_slugs_folder, vernacular_slugs_filename)
-        
-            with open(absolute_localized_slugs_path, 'w', encoding='utf-8') as f:
-                json.dump(localized_slugs[language_code], f, indent=4, ensure_ascii=False)
-                
-                
-            feature_entry['localizedSlugs'][language_code] = '/{0}'.format(relative_localized_slugs_path)
         
         # add to settings, there is only one BackboneTaxonomy per app
         self.build_features[backbone_taxonomy.__class__.__name__] =  feature_entry
@@ -2218,7 +2287,7 @@ class AppReleaseBuilder(AppBuilderBase):
     ###############################################################################################################
     # Template Content
     # - one file per localized template content
-    # - respect taxonomic restriction if any    
+    # - respect taxonomic restriction if any
     
     def _build_TemplateContent(self):
 

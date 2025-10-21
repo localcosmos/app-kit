@@ -147,56 +147,17 @@ class BackboneTaxonomyJSONBuilder(JSONBuilder):
         
         return vernacular_index, vernacular_lookup
     
-    
+    # only fills app_release_builder.taxon_slugs
     def build_slugs(self, languages=[]):
         
         taxa = self.meta_app.taxa(include_draft_contents=False)
         
-        # taxon latname slugs
-        slugs = {}
-        
-        # vernacular slugs
-        localized_slugs = {}
-        
         for taxon in taxa:
             lazy_taxon = LazyTaxon(instance=taxon)
             
-            name = slugify(taxon.taxon_latname)
-        
-            slug = name
-            
-            if slug in slugs and slugs[slug] == str(taxon.name_uuid):
-                continue
-            
-            counter = 2
-            
-            while slug in slugs:
-                slug = '{0}-{1}'.format(name, counter)
-                counter = counter +1
-                
-            slugs[slug] = str(taxon.name_uuid)
+            slug = self.app_release_builder._build_taxon_latname_slug(lazy_taxon)
             
             for language_code in languages:
                 
-                if language_code not in localized_slugs:
-                    localized_slugs[language_code] = {}
-                
-                vernacular_name = lazy_taxon.vernacular(language=language_code,
-                                                                meta_app=self.meta_app)
-                
-                if vernacular_name:
-                    
-                    slug_base = slugify(vernacular_name)
-                    vernacular_slug = slug_base
-                    
-                    if vernacular_slug in localized_slugs[language_code] and localized_slugs[language_code][vernacular_slug] == str(taxon.name_uuid):
-                        continue
-                    
-                    while vernacular_slug in localized_slugs[language_code]:
-                        vernacular_slug = '{0}-{1}'.format(slug_base, counter)
-                        counter = counter +1
-                        
-                    localized_slugs[language_code][vernacular_slug] = str(taxon.name_uuid)
-   
-        
-        return slugs, localized_slugs
+                vernacular_slug = self.app_release_builder._build_taxon_vernacular_slug(
+                    lazy_taxon, language_code)

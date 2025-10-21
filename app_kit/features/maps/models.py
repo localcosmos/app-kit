@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from app_kit.generic import GenericContentManager, GenericContent
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 
-from taxonomy.lazy import LazyTaxonList
+from taxonomy.lazy import LazyTaxonList, LazyTaxon
 
 MAP_TYPES = (
     ('observations', _('Observations')),
@@ -76,6 +76,8 @@ class MapTaxonomicFilter(models.Model):
 
 
 class FilterTaxon(ModelWithRequiredTaxon):
+    
+    LazyTaxonClass = LazyTaxon
 
     taxonomic_filter = models.ForeignKey(MapTaxonomicFilter, on_delete=models.CASCADE)
 

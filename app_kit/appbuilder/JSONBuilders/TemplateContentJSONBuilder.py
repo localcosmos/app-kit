@@ -2,6 +2,9 @@ from app_kit.appbuilder.JSONBuilders.JSONBuilder import JSONBuilder
 
 from localcosmos_server.template_content.utils import get_published_image_type, get_component_image_type
 from localcosmos_server.template_content.api.serializers import LocalizedTemplateContentSerializer, ContentLicenceSerializer
+from localcosmos_server.template_content.Templates import Template
+
+from taxonomy.lazy import LazyTaxon
 
 '''
      save template_contents_json to features/TemplateContent/app_uuid.json
@@ -123,16 +126,24 @@ class TemplateContentJSONBuilder(JSONBuilder):
                         content_json['contents'][content_key].update(image_data)
                             
 
-                elif content_definition['type'] == 'component':
+                elif content_definition['type'] in ['component', 'stream']:
                     
-                    component_template = localized_template_content.template_content.get_component_template(content_key)
-                    component_definition = component_template.definition
+                    allow_multiple = content_definition.get('allowMultiple', False)
 
-                    if content_definition.get('allowMultiple', False) == True:
+                    if allow_multiple == True or content_definition['type'] == 'stream':
 
                         components = content_json['contents'][content_key]
 
                         for component_index, component in enumerate(components, 0):
+                            
+                            if content_definition['type'] == 'stream':
+                                component_template_name = component['templateName']
+                                component_template = Template(self.meta_app.app, component_template_name, 'component')
+                                component_definition = component_template.definition
+                            
+                            else:
+                                component_template = localized_template_content.template_content.get_component_template(content_key)
+                                component_definition = component_template.definition
                             
                             # do not use add_image_data_to_component which uses djangos /media/... urls instead of built urls
                             component_with_image_data = self.add_image_data_to_component(content_key, component,
@@ -141,12 +152,25 @@ class TemplateContentJSONBuilder(JSONBuilder):
                             content_json['contents'][content_key][component_index] = component_with_image_data
 
                     else:
-                        
+
+                        component_template = localized_template_content.template_content.get_component_template(content_key)
+                        component_definition = component_template.definition
+
                         component = content_json['contents'][content_key]
 
                         component_with_image_data = self.add_image_data_to_component(content_key, component,
                             component_definition, localized_template_content)
 
                         content_json['contents'][content_key] = component_with_image_data
+
+        linked_taxa = content_json.get('linkedTaxa', [])
+        linked_taxon_profiles = []
+        
+        for taxon_json in linked_taxa:
+            lazy_taxon = LazyTaxon(**taxon_json)
+            extended_taxon = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
+            linked_taxon_profiles.append(extended_taxon)
+
+        content_json['linkedTaxonProfiles'] = linked_taxon_profiles
 
         return content_json
