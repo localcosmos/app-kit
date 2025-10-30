@@ -21,16 +21,13 @@ from taxonomy.models import TaxonomyModelRouter
 CUSTOM_TAXONOMY_SOURCE = 'taxonomy.sources.custom'
 
 class BackboneTaxonomy(GenericContent):
-
-    ''' moved to JSON texts
-    translations = TranslatedFields(
-        name = models.CharField(max_length=255, null=True),
-        slug = models.SlugField(unique=True, null=True),
-    )
-    '''
-
-    # moved to options
-    # include_full_tree = models.CharField(max_length=100, null=True, blank=True, choices=settings.TAXONOMY_DATABASES)
+    
+    zip_import_supported = True
+    
+    @property
+    def zip_import_class(self):
+        from .zip_import import BackbonetaxonomyZipImporter
+        return BackbonetaxonomyZipImporter
 
 
     def __init__(self, *args, **kwargs):

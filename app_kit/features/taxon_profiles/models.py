@@ -124,6 +124,10 @@ class TaxonProfiles(GenericContent):
 
                 content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
                 locale.update(content_images_primary_localization)
+                
+                short_profile = taxon_profile.short_profile
+                if short_profile:
+                    locale[short_profile] = short_profile
         
         navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self).first()
         

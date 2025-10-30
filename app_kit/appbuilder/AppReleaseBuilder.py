@@ -1742,6 +1742,8 @@ class AppReleaseBuilder(AppBuilderBase):
             if vernacular_slug in self.taxon_slugs['vernacular'][language_code] and self.taxon_slugs['vernacular'][language_code][vernacular_slug] == str(lazy_taxon.name_uuid):
                 return vernacular_slug
 
+            counter = 2
+            
             while vernacular_slug in self.taxon_slugs['vernacular'][language_code]:
                 if self.taxon_slugs['vernacular'][language_code][vernacular_slug] == str(lazy_taxon.name_uuid):
                     break

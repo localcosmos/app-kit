@@ -1133,6 +1133,16 @@ class AddTaxonomicRestriction(ManageTaxonomicRestrictionsCommon, FormView):
     template_name = 'localcosmos_server/taxonomy/taxonomic_restrictions.html'
 
     restriction_model = AppContentTaxonomicRestriction
+    
+    def get_action_url(self):
+        url_kwargs = {
+            'content_type_id' : self.content_type.id,
+            'object_id' : self.content_instance.id,
+        }
+        
+        if self.typed == 'typed':
+            url_kwargs['typed'] = 'typed'
+        return reverse('add_taxonomic_restriction', kwargs=url_kwargs)
 
     def get_taxon_search_url(self):
         return reverse('search_taxon')

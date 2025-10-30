@@ -46,7 +46,9 @@ class GenericContentZipImporter:
 
     image_folder_name = 'images'
     image_file_extensions = ['png', 'jpg', 'jpeg', 'webp']
-    
+
+    required_sheet_names = []
+
     images_sheet_name = 'Images'
     external_media_sheet_name = 'External Media'
 
@@ -77,7 +79,7 @@ class GenericContentZipImporter:
         filepath = self.get_filepath(self.generic_content.name, self.spreadsheet_extensions)
 
         if filepath is None:
-            raise ValueError('No spreadsheet file found')
+            raise ValueError('No spreadsheet file found. Tried filename: {0}'.format(self.generic_content.name))
         self.workbook = openpyxl.load_workbook(filepath)
         self.workbook_filename = os.path.basename(filepath)
         
@@ -236,13 +238,13 @@ class GenericContentZipImporter:
         return image_data
     
     def validate_cell_value_content_types(self):
-        sheet_names_to_validate = [self.generic_content.name, self.images_sheet_name, self.external_media_sheet_name]
+        sheet_names_to_validate = [self.generic_content.name, self.images_sheet_name, self.external_media_sheet_name] + self.required_sheet_names
         
         total_error_count = 0  # Track errors across all sheets
 
         for sheet_name in sheet_names_to_validate:
             
-            if sheet_name in self.workbook.sheetnames:
+            if sheet_name and sheet_name in self.workbook.sheetnames:
                 
                 sheet = self.workbook[sheet_name]
 
