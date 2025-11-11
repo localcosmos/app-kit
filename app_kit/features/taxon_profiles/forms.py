@@ -4,7 +4,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from .models import (TaxonTextType, TaxonText, TaxonProfilesNavigationEntryTaxa, TaxonProfilesNavigationEntry,
-                     TaxonTextTypeCategory)
+                     TaxonTextTypeCategory, TaxonTextSet, TaxonProfile)
 
 from app_kit.validators import json_compatible
 
@@ -33,6 +33,13 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
 
 
 class ManageTaxonTextTypeForm(LocalizeableModelForm):
+    
+    def __init__(self, taxon_profiles, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['category'].queryset = TaxonTextTypeCategory.objects.filter(
+                taxon_profiles=taxon_profiles
+            ).order_by('position')
 
     localizeable_fields = ['text_type']
 
@@ -71,7 +78,7 @@ class ManageTaxonTextTypeCategoryForm(LocalizeableModelForm):
         }
 
 '''
-    a form for managing all texts of one taxon at onces
+    a form for managing all texts of one taxon at once
 '''
 class ManageTaxonTextsForm(LocalizeableForm):
 
@@ -82,7 +89,7 @@ class ManageTaxonTextsForm(LocalizeableForm):
     
     short_profile = forms.CharField(widget=forms.Textarea, required=False, validators=[json_compatible])
     
-    def __init__(self, taxon_profiles, taxon_profile=None, *args, **kwargs):
+    def __init__(self, taxon_profiles, taxon_profile, *args, **kwargs):
         self.localizeable_fields = ['short_profile']
 
         self.layoutable_simple_fields = []
@@ -93,13 +100,18 @@ class ManageTaxonTextsForm(LocalizeableForm):
         
         categories = [None] + list(TaxonTextTypeCategory.objects.filter(taxon_profiles=taxon_profiles))
         
+        allowed_text_types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles).values_list('pk', flat=True)
+        
+        if taxon_profile.taxon_text_set:
+            allowed_text_types = taxon_profile.taxon_text_set.text_types.values_list('pk', flat=True)
+        
         if len(categories) > 1:
             self.has_categories = True
         
         for category_index, category in enumerate(categories, 1):
-            
-            types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles, category=category).order_by('category', 'position')
-            
+
+            types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles, category=category, pk__in=allowed_text_types).order_by('category', 'position')
+
             category_label = 'uncategorized'
             if category:
                 category_label = category.name
@@ -307,3 +319,74 @@ class MoveTaxonProfilesNavigationEntryForm(forms.Form):
 class TaxonProfileStatusForm(GenericContentStatusForm):
     
     is_featured = forms.BooleanField(required=False)
+
+
+class ManageTaxonTextSetForm(LocalizeableModelForm):
+
+    localizeable_fields = ['name']
+
+    def __init__(self, taxon_profiles, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Add checkboxes for selecting text types, filtered by taxon_profiles
+        self.fields['text_types'] = forms.ModelMultipleChoiceField(
+            queryset=TaxonTextType.objects.filter(taxon_profiles=taxon_profiles).order_by('category__name', 'position'),
+            widget=forms.CheckboxSelectMultiple,
+            required=False,
+            label=_('Text Types'),
+            help_text=_('Select the text types to include in this text set.')
+            )
+
+    class Meta:
+        model = TaxonTextSet
+        fields = ('name', 'taxon_profiles', 'text_types')
+
+        labels = {
+            'name': _('Name of the text set'),
+        }
+
+        widgets = {
+            'taxon_profiles': forms.HiddenInput,
+        }
+
+
+class SetTaxonTextSetForTaxonProfileForm(forms.Form):
+    
+    text_set = forms.ModelChoiceField(
+        queryset=TaxonTextSet.objects.none(),
+        required=False,
+        label=_('Select Text Set'),
+        help_text=_('Select a text set to apply to this taxon profile.')
+    )
+    
+    def __init__(self, taxon_profiles, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.fields['text_set'].queryset = TaxonTextSet.objects.filter(
+            taxon_profiles=taxon_profiles
+        ).order_by('name')
+        
+        
+class TaxonProfileMorphotypeForm(LocalizeableForm):
+    
+    localizeable_fields = ['morphotype']
+
+    morphotype = forms.CharField(required=True, help_text=_('The name of the morphotype: "Imago", "Adult", "Female", "Egg", etc.'))
+
+    def __init__(self, taxon_profile, *args, **kwargs):
+        self.taxon_profile = taxon_profile
+        self.taxon = taxon_profile.taxon
+        super().__init__(*args, **kwargs)
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        # check if this morphotype already exists for this taxon
+        morphotype_text = cleaned_data.get('morphotype', '').strip()
+        if morphotype_text:
+            morphotype_profile_exists = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profile.taxon_profiles,
+                taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid, morphotype__iexact=morphotype_text).exclude(
+                    pk=self.taxon_profile.pk)
+            
+            if morphotype_profile_exists.exists():
+                self.add_error('morphotype', _('A morphotype profile with this morphotype already exists for this taxon.'))
+        return cleaned_data

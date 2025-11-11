@@ -4,9 +4,9 @@
 {% block success_js %}
 	<script>
 		// reload taxon texts form
-		$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon_source taxon_profile.name_uuid %}", function(html){
-			$('#taxontexts').html(html);
-			ajaxify('taxontexts');
+		$.get("{% url 'get_taxon_texts_management' meta_app.id taxon_profiles.id %}", function(html){
+			$('#taxon-texts-management').html(html);
+			ajaxify('taxon-texts-management');
 
 		});
 

@@ -1,0 +1,18 @@
+{% load i18n localcosmos_tags %}
+<div id="ctype-{{ text_type|ctype_id }}-{{ text_type.id }}" data-object-id="{{ text_type.id }}" class="my-2">
+    <div class="btn-group dropup">
+        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {{ text_type.text_type }}
+            <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu">
+            <a href="{% url 'manage_taxon_text_type' meta_app.id taxon_profiles.id text_type.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+            <div class="dropdown-divider"></div>
+            <a data-url="{% url 'delete_taxon_text_type' text_type.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-left move-text-type-forwardbutton" data-targetid="ctype-{{ text_type|ctype_id }}-{{ text_type.id }}">&#x25B2; {% trans 'Move up' %}</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-left move-text-type-backwardbutton" data-targetid="ctype-{{ text_type|ctype_id }}-{{ text_type.id }}">&#x25BC; {% trans 'Move down' %}</a>
+        </div>
+    </div>
+</div>

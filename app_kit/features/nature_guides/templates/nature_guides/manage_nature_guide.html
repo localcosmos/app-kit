@@ -9,11 +9,13 @@
 {% block container_class %}class="container-fluid"{% endblock %}
 
 {% block options_form_block %}
-	<div class="row">
-		<div class="col-12 col-md-6 col-lg-5">
-			{% include 'app_kit/ajax/options_form.html' %}
+	{% if parent_node.meta_node.node_type == 'root' %}
+		<div class="row">
+			<div class="col-12 col-md-6 col-lg-5">
+				{% include 'app_kit/ajax/options_form.html' %}
+			</div>
 		</div>
-	</div>
+	{% endif %}
 {% endblock %}
 
 {% block generic_content_specific %}
@@ -22,10 +24,23 @@
 
 
 	<div class="row">
-		<div class="col-12 col-md-6 col-lg-5">
+		<div class="col-12 col-md-6 col-lg-4">
 		
 			{% render_bootstrap_form search_for_node_form %}
 		
+		</div>
+	</div>
+
+	<div class="row mb-5 mt-3">
+		<div class="col-12 col-md-6 col-lg-4">
+			<div class="card">
+				<div class="card-header">
+					{% blocktrans with meta_node=parent_node.meta_node %}Settings of {{ meta_node }}{% endblocktrans %}
+				</div>
+				<div class="card-body" id="node-settings-form">
+					
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -67,7 +82,7 @@
 
 							<div class="btn-group dropdown">
 								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-									{% trans 'Add trait or filter' %} <span class="caret"></span>
+									{% trans 'Add trait' %} <span class="caret"></span>
 								</button>
 								<div class="dropdown-menu dropdown-menu-right">
 									{% for filter_type in matrix_filter_types %}
@@ -86,7 +101,7 @@
 					<div class="text-left">
 						<div class="btn-group dropup">
 							<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-								{% trans 'Add trait or filter' %} <span class="caret"></span>
+								{% trans 'Add trait' %} <span class="caret"></span>
 							</button>
 							<div class="dropdown-menu">
 								{% for filter_type in matrix_filter_types %}
@@ -102,72 +117,55 @@
 			<br>
 
 		</div>
-		
-		<div class="col-12 col-md-5 col-lg-4">
-			<div class="card">
-				<div class="card-header">
-					<span class="h4 align-center">
-						{% if parent_node.meta_node.node_type == 'root' %}
-							{{ parent_node.nature_guide.name }}
-						{% else %}
-							{{ parent_node.meta_node }}
-							<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
-						{% endif %}
-					</span>
-					{% content_image parent_node.meta_node 'overview' as overview_image %}
-					
-					<span id="overview-image-indicator" class="badge badge-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
-					<div class="btn-group dropdown">
-						{% with menualign='alignright' %}
-							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
-						{% endwith %}
-					</div>
-					{% if parent_node.meta_node.description %}
-						<hr>
-						<div>
-							{{ parent_node.meta_node.description|safe }}
-						</div>
-					{% endif %}
-				
-					<hr />
-					<!--
-					<div>
-						Mode: 
-						<div class="btn-group btn-group-toggle" data-toggle="buttons">
-							<label class="btn btn-sm btn-outline-primary {% if meta_node.identification_mode == 'strict' %}{% else %}active{% endif %} identification-mode-label" data-input-id="identification-mode-fluid" data-value="fluid">
-								<input id="identification-mode-fluid" type="radio" name="identificationmode" value="fluid"> {% trans 'ranking' %}
-							</label>
-							<label class="btn btn-sm btn-outline-primary identification-mode-label {% if meta_node.identification_mode == 'strict' %}active{% else %}{% endif %}" data-value="strict" data-input-id="identification-mode-strict">
-								<input id="identification-mode-strict" type="radio" name="identificationmode" value="strict"> {% trans 'exclusion criterion' %}
-							</label>
-						</div>
-						<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon mr-1"  data-toggle="popover" title="{% trans 'Identification mode' %}" data-content="{% blocktrans %}RANKING: Entries are ranked according to user selection. Entries are not sorted out. EXCLUSION: Entries are sorted out if an selection does not match.{% endblocktrans %}" data-placement="top" />
-					</div>
-					-->
-				
-
-				</div>
-				<div class="card-body">
-					<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
-					
-					<div>
-						<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+			<div class="col-12 col-md-5 col-lg-4">
+				<div class="card">
+					<div class="card-header">
+						<span class="h4 align-center">
+							{% if parent_node.meta_node.node_type == 'root' %}
+								{{ parent_node.nature_guide.name }}
+							{% else %}
+								{{ parent_node.meta_node }}
+								<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
+							{% endif %}
+						</span>
+						{% content_image parent_node.meta_node 'overview' as overview_image %}
 						
-						<div id="sorted-out-container" class="collapse mt-4">
-							<h5>{% trans 'Sorted out:' %}</h5>
-							<div id="sorted-out-keynodes" class="row"></div>	
-						</div>
-					</div>
-					
-					<hr>
+						<span id="overview-image-indicator" class="badge badge-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
 
-					<div class="btn-group dropup">
-						{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+						<div class="btn-group dropdown">
+							{% with menualign='alignright' %}
+								{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+							{% endwith %}
+						</div>
+						{% if parent_node.meta_node.description %}
+							<hr>
+							<div>
+								{{ parent_node.meta_node.description|safe }}
+							</div>
+						{% endif %}
+
+					</div>
+					<div class="card-body">
+						<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
+						
+						<div>
+							<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+							
+							<div id="sorted-out-container" class="collapse mt-4">
+								<h5>{% trans 'Sorted out:' %}</h5>
+								<div id="sorted-out-keynodes" class="row"></div>	
+							</div>
+						</div>
+
+						<hr>
+
+						<div class="btn-group dropup">
+							{% include 'nature_guides/ajax/add_keynodes_menu.html' %}
+						</div>
+
 					</div>
 				</div>
 			</div>
-		</div>
-
 	</div>
 {% endblock %}
 {% block extra_script %}
@@ -189,6 +187,12 @@
 				trigger: 'hover'
 			});
 		})();
+
+		let settings_url = "{% url 'manage_node_settings' meta_app.id parent_node.meta_node.id %}";
+		$.get(settings_url, function(data){
+			$('#node-settings-form').html(data);
+			ajaxify('node-settings-form');
+		});
 
 	</script>
 

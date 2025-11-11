@@ -3,16 +3,16 @@
 	<script>
 
 		// reload taxon texts form
-		$.get("{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}", function(html){
-			$('#taxontexts').html(html);
-			ajaxify('taxontexts');
+		$.get("{% url 'get_taxon_texts_management' meta_app.id taxon_profiles.id %}", function(html){
+			$('#taxon-texts-management').html(html);
+			ajaxify('taxon-texts-management');
 
 		});
 		
 		$("#Modal").modal("hide");
 	</script>
 {% else %}
-	<form method="POST" action="{% if taxon_text_type %}{% url 'manage_taxon_text_type' meta_app.id taxon_text_type.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}{% else %}{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}{% endif %}" class="xhr">{% csrf_token %}
+	<form method="POST" action="{% if taxon_text_type %}{% url 'manage_taxon_text_type' meta_app.id taxon_profiles.id taxon_text_type.id %}{% else %}{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id %}{% endif %}" class="xhr">{% csrf_token %}
 		<div class="modal-header">
 			<h5 class="modal-title">{% if taxon_text_type %}{% blocktrans with name=taxon_text_type %}Edit {{ name }}{% endblocktrans %}{% else %}{% trans 'Add new text type' %}{% endif %}</h5>
 			<button type="button" class="close" data-dismiss="modal" aria-label="Close">

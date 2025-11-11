@@ -1,0 +1,19 @@
+{% load i18n localcosmos_tags %}
+<form method="post" action="{% url 'set_taxon_text_set_for_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.id %}" class="xhr">
+    {% csrf_token %}
+    {% render_bootstrap_form form %}
+    {% if success %}
+        <div class="alert alert-success">
+            {% trans "Text set updated successfully." %}
+        </div>
+    {% endif %}
+    <div>
+        <button type="submit" class="btn btn-primary">{% trans 'Save' %}</button>
+    </div>
+</form>
+<script>
+    {% if success %}
+        // Handle success case
+        window.location.reload();
+    {% endif %}
+</script>

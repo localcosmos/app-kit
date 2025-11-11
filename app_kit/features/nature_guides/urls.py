@@ -77,4 +77,7 @@ urlpatterns = [
         views.ManageOverviewImage.as_view(), name='manage_overview_image'),
     path('delete-overview-image/<int:meta_app_id>/<int:pk>/', views.DeleteOverviewImage.as_view(),
         name='delete_overview_image'),
+    # node settings
+    path('manage-node-settings/<int:meta_app_id>/<int:meta_node_id>/',
+         views.ManageIdentificationNodeSettings.as_view(), name='manage_node_settings'),
 ]

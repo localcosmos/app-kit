@@ -88,8 +88,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
             identification_mode = IDENTIFICATION_MODE_STRICT
 
-            #if parent_node.meta_node.settings:
-            #    identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
+            if parent_node.meta_node.settings:
+                identification_mode = parent_node.meta_node.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
 
             primary_locale_slug = self.add_to_localized_slugs(parent_node)
 

@@ -8,33 +8,58 @@
 {% block generic_content_specific %}
 	{% if uses_taxon_profiles_navigation %}
 		<div class="card mb-5">
-			<div class="card-body">
+			<div class="card-header">
 				<div class="cursor-pointer" data-toggle="collapse" data-target="#collapseTaxonNav" role="button" aria-expanded="false" aria-controls="collapseTaxonNav">
 					<div class="d-flex">
 						<div>
 							<h4 class="card-title">{% trans 'Taxonomic Navigation' %}</h4>
 						</div>
-						<div>
+						<div class="text-right flex-grow-1">
 							<img id="CTN-chevron-down" src="{% static 'phosphor-icons/caret-down.svg' %}" class="phicon" />
 							<img id="CTN-chevron-up" src="{% static 'phosphor-icons/caret-up.svg' %}" class="phicon" style="display: none;" />
 						</div>
 					</div>
 				</div>
+			</div>
+			<div class="card-body collapse" id="collapseTaxonNav">
+				<div>
+					<button type="button" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent" data-url="{% url 'create_taxonprofiles_navigation_entry' meta_app.id generic_content.id %}">
+						{% trans 'add toplevel navigation entry' %}
+					</button>
+				</div>
+				<hr>
+				<div id="taxon-profiles-navigation" class="mt-3">
 
-				<div class="collapse" id="collapseTaxonNav">
-					<div>
-						<button type="button" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent" data-url="{% url 'create_taxonprofiles_navigation_entry' meta_app.id generic_content.id %}">
-							{% trans 'add toplevel navigation entry' %}
-						</button>
-					</div>	
-					<div id="taxon-profiles-navigation" class="mt-3">
-
-					</div>
 				</div>
 			</div>
 		</div>
 		<hr>
 	{% endif %}
+	<div class="mb-5">
+		<div class="row my-3">
+			<div class="col-12">
+				<div class="card">
+					<div class="card-header">
+						<div class="cursor-pointer" data-toggle="collapse" data-target="#collapseTextManagement" role="button" aria-expanded="false" aria-controls="collapseTextManagement">
+							<div class="d-flex">
+								<div>
+									<h4 class="card-title">{% trans 'Text Management' %}</h4>
+								</div>
+								<div class="text-right flex-grow-1">
+									<img id="CTN-chevron-down" src="{% static 'phosphor-icons/caret-down.svg' %}" class="phicon" />
+									<img id="CTN-chevron-up" src="{% static 'phosphor-icons/caret-up.svg' %}" class="phicon" style="display: none;" />
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="card-body collapse" id="collapseTextManagement">
+						<div id="taxon-texts-management" class="col-12"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<hr>
 	<div class="card">
 		<div class="card-body">
 			<h4 class="card-title">{% trans 'Create your taxon profiles' %}</h4>
@@ -213,6 +238,11 @@
 		$('#collapseTaxonNav').on('show.bs.collapse', function () {
 			$("#CTN-chevron-up").show();
 			$("#CTN-chevron-down").hide();
+		});
+
+		$.get("{% url 'get_taxon_texts_management' meta_app.id generic_content.id %}", (html) => {
+			$("#taxon-texts-management").html(html);
+			ajaxify('taxon-texts-management');
 		});
 
 

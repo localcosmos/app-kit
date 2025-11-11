@@ -15,32 +15,16 @@
 								{% if field.field.category %}
 									<h2>
 										{{ field.field.category }}
-										<div class="btn-group dropup">
-											<div class="dropdown">
-												<button id="dropdownMenu-{{ field.field.category.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-													{% trans 'Modify' %}
-												<span class="caret"></span>
-												</button>
-												<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ field.field.category.id }}">
-													<a data-url="{% url 'manage_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id field.field.category.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.category %}Edit {{ name }}{% endblocktrans %}</a>
-													<div class="dropdown-divider"></div>
-													<a data-url="{% url 'manage_taxon_text_types_order' text_type_content_type.id taxon_profiles.id field.field.category.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Manage text order' %}</a>
-													<div class="dropdown-divider"></div>
-													<a data-url="{% url 'delete_taxon_text_type_category' meta_app.id taxon_profile.id field.field.category.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
-												</div>
-											</div>
-										</div>
 									</h2>
 
 									{% if not field.field.text_type_count %}
-										<div class="alert alert-info">{% trans 'No text types in this category yet.' %}</div>
+										{% if taxon_profile.taxon_text_set %}
+											<div class="alert alert-info">{% trans 'The selected Text Set does not include any text types for this category.' %}</div>
+										{% else %}
+											<div class="alert alert-info">{% trans 'No text types for this this category yet.' %}</div>
+										{% endif %}
 									{% endif %}
 								{% else %}
-									{% if field.field.is_category_field %}
-										<div class="mb-3">
-											<a href data-url="{% url 'manage_taxon_text_types_order' text_type_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage text order' %}</a>
-										</div>
-									{% endif %}
 								{% endif %}
 								{{ field }}
 							{% else %}
@@ -50,19 +34,6 @@
 										{{ field.label }}
 										{% if field.field.taxon_text_type %}
 											{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
-											<div class="btn-group dropup">
-												<div class="dropdown">
-													<button id="dropdownMenu-{{ field.field.taxon_text_type.id }}" class="btn btn-xs btn-outline-primary dropdown-toggle taxonmenuloader" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-														{% trans 'Modify' %}
-													<span class="caret"></span>
-													</button>
-													<div class="dropdown-menu" aria-labelledby="dropdownMenu-{{ field.field.taxon_text_type.id }}">
-														<a data-url="{% url 'manage_taxon_text_type' meta_app.id field.field.taxon_text_type.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.field.taxon_text_type %}Edit {{ name }}{% endblocktrans %}</a>
-														<div class="dropdown-divider"></div>
-														<a data-url="{% url 'delete_taxon_text_type' field.field.taxon_text_type.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
-													</div>
-												</div>
-											</div>
 										{% endif %}
 									</h4>
 
@@ -107,8 +78,6 @@
 	</div>
 	<div class="row my-3">
 		<div class="col-12 text-center">
-			<a href="{% url taxon_profiles.manage_url meta_app.id taxon_profiles|ctype_id taxon_profiles.id %}" class="btn btn-primary">{% blocktrans with name=taxon_profiles %}Back to {{ name }}{% endblocktrans  %}</a>
-
 			<button type="submit" class="btn btn-outline-primary">{% trans 'Save texts' %}</button>
 		</div>
 	</div>

@@ -1,0 +1,34 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n static localcosmos_tags %}
+
+{% block action %}
+	{% url 'manage_taxon_profile_morphotype' meta_app.id taxon_profiles.id taxon_profile.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Manage Taxon Profile Morphotype{% endblocktrans %}
+{% endblock %}
+
+{% block footer %}
+    {% if success %}
+        {% include 'localcosmos_server/modals/footers/close.html' %}
+    {% else %}
+	    {% include 'localcosmos_server/modals/footers/save.html' %}
+    {% endif %}
+{% endblock %}
+
+
+{% block script %}
+	{% if success %}
+        <script>
+            {% if created %}
+                window.location.href = "{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon.taxon_source taxon_profile.taxon.name_uuid taxon_profile.morphotype %}";
+            {% else %}
+                // Reload the page to show the updated morphotype
+                $('#Modal').modal('hide');
+                window.location.reload();
+            {% endif %}
+        </script>
+	{% endif %}
+{% endblock %}

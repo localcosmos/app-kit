@@ -159,6 +159,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             },
             'externalMedia': [],
             'templateContents': [],
+            'morphotypeProfiles': [],
             'isFeatured': is_featured,
         })
 
@@ -287,8 +288,10 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         if db_profile:
             
+            taxon_profile_json['morphotypeProfiles'] = self.collect_morphotype_profiles(db_profile, languages)
+            
             taxon_profile_json['shortProfile'] = db_profile.short_profile
-
+            
             for category_name, text_list in db_profile.categorized_texts().items():
                 
                 categorized_texts_json = {
@@ -443,6 +446,45 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             start_letters['vernacular'][language_code].sort()
 
         return registry, localized_registries, start_letters
+
+
+    def collect_morphotype_profiles(self, taxon_profile, languages):
+
+        morphotype_profiles = []
+        
+        morphotype_profiles_db = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+                                            taxon_source=taxon_profile.taxon_source,
+                                            name_uuid=taxon_profile.name_uuid).exclude(morphotype__isnull=True)
+
+        for morphotype in morphotype_profiles_db:
+            
+            primary_image = morphotype.primary_image()
+            if primary_image:
+                image_entry = self.get_image_json(primary_image)
+            else:
+                image_entry = None
+
+            lazy_taxon = LazyTaxon(instance=morphotype)
+            
+            morphotype_json = {
+                'taxonProfileId': morphotype.id,
+                'parentTaxonProfileId': taxon_profile.id,
+                'morphotype': morphotype.morphotype,
+                'taxon': self.app_release_builder.taxa_builder.serialize_taxon(lazy_taxon),
+                'vernacular' : {},
+                'image': image_entry,
+            }
+            
+            for language_code in languages:
+
+                preferred_vernacular_name = lazy_taxon.get_preferred_vernacular_name(language_code,
+                                                                                        self.meta_app)
+
+                morphotype_json['vernacular'][language_code] = preferred_vernacular_name
+            
+            morphotype_profiles.append(morphotype_json)
+
+        return morphotype_profiles
 
 
     def collect_usable_generic_forms(self, profile_taxon):

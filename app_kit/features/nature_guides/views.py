@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, reverse
+from django.shortcuts import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, FormView
 from django.contrib.contenttypes.models import ContentType
@@ -7,10 +7,11 @@ from django.http import JsonResponse # NodeSearch
 
 from .models import (NatureGuide, MetaNode, MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
                      NatureGuidesTaxonTree, CrosslinkManager, NatureGuideCrosslinks, ChildrenCacheManager,
-                     MatrixFilterRestriction)
+                     MatrixFilterRestriction, IDENTIFICATION_MODE_POLYTOMOUS)
 
 from .forms import (NatureGuideOptionsForm, IdentificationMatrixForm, SearchForNodeForm, ManageNodelinkForm,
-                    MoveNodeForm, ManageMatrixFilterRestrictionsForm, CopyTreeBranchForm)
+                    MoveNodeForm, ManageMatrixFilterRestrictionsForm, CopyTreeBranchForm,
+                    IdentificationNodeSettingsForm)
 
 # do not delete these imports, they are generically read
 from .matrix_filter_forms import (MatrixFilterManagementForm, DescriptiveTextAndImagesFilterManagementForm,
@@ -1638,3 +1639,47 @@ class ManageOverviewImage(ManageContentImage):
 
 class DeleteOverviewImage(DeleteContentImage):
     template_name = 'nature_guides/ajax/delete_overview_image.html'
+    
+
+class ManageIdentificationNodeSettings(MetaAppMixin, FormView):
+
+    template_name = 'nature_guides/ajax/manage_identification_node_settings.html'
+    form_class = IdentificationNodeSettingsForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_instances(self, **kwargs):
+        self.meta_node = MetaNode.objects.get(pk=kwargs['meta_node_id'])
+        
+    
+    def get_initial (self):
+        initial = super().get_initial()
+        identification_mode = self.meta_node.identification_mode
+        initial['identification_mode'] = identification_mode
+        return initial
+    
+    
+    def get_form(self, form_class=None):
+
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.meta_node, **self.get_form_kwargs())
+        
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['meta_node'] = self.meta_node
+        return context
+    
+    def form_valid(self, form):
+
+        identification_mode = form.cleaned_data['identification_mode']
+        self.meta_node.add_setting('identification_mode', identification_mode)
+        self.meta_node.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        return self.render_to_response(context)

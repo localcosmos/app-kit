@@ -191,14 +191,18 @@ class BackbonetaxonomyZipImporter(GenericContentZipImporter):
         else:
             for row_index, row in enumerate(taxon_relationship_types_sheet.iter_rows(min_row=2), 1):
                 relationship_name = self.get_stripped_cell_value(row[0].value)
-                
-                if not relationship_name:
-                    message = _('Relationship Name is required.')
-                    self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIP_TYPES_SHEET_NAME, 'A', row_index + 2, message)
-
                 taxon_role = self.get_stripped_cell_value(row[1].value)
                 related_taxon_role = self.get_stripped_cell_value(row[2].value)
                 
+                # skip empty rows
+                if not relationship_name and not taxon_role and not related_taxon_role:
+                    continue
+                
+                # respect empty rows
+                if not relationship_name and (taxon_role or related_taxon_role):
+                    message = _('Relationship Name is required.')
+                    self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIP_TYPES_SHEET_NAME, 'A', row_index + 2, message)
+
                 if taxon_role and not related_taxon_role:
                     message = _('Related Taxon Role is required if Taxon Role is provided.')
                     self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIP_TYPES_SHEET_NAME, 'C', row_index + 2, message)
@@ -230,23 +234,28 @@ class BackbonetaxonomyZipImporter(GenericContentZipImporter):
         related_taxon_source = self.get_stripped_cell_value(row[6].value)
         description = self.get_stripped_cell_value(row[7].value)
         
-        if relationship_name:
-            # check if relationship type exists
-            taxon_relationship_type = self.get_taxon_relationship_type_by_name(relationship_name)
-            if not taxon_relationship_type:
-                message = _('Relationship Type "%(relationship_name)s" not found.') % {
-                    'relationship_name': relationship_name
-                }
-                self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME, 'A', row_index, message)
-        else:
-            message = _('Relationship is required.')
-            self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME, 'A', row_index, message)
-
-        self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME,
-                                     row_index, 2, 3)
+        # skip empty rows
+        if not relationship_name and not taxon_latname and not taxon_source and not related_taxon_latname and not related_taxon_source:
+            pass
         
-        self.validate_taxon(related_taxon_latname, related_taxon_author, related_taxon_source, self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME,
-                                     row_index, 5, 6)
+        else:
+            if relationship_name:
+                # check if relationship type exists
+                taxon_relationship_type = self.get_taxon_relationship_type_by_name(relationship_name)
+                if not taxon_relationship_type:
+                    message = _('Relationship Type "%(relationship_name)s" not found.') % {
+                        'relationship_name': relationship_name
+                    }
+                    self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME, 'A', row_index, message)
+            else:
+                message = _('Relationship is required.')
+                self.add_cell_error(self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME, 'A', row_index, message)
+
+            self.validate_taxon(taxon_latname, taxon_author, taxon_source, self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME,
+                                        row_index, 2, 3)
+            
+            self.validate_taxon(related_taxon_latname, related_taxon_author, related_taxon_source, self.workbook_filename, TAXON_RELATIONSHIPS_SHEET_NAME,
+                                        row_index, 5, 6)
 
     # content, not definition rows
     def validate_taxon_relationships_sheet(self):
@@ -279,6 +288,11 @@ class BackbonetaxonomyZipImporter(GenericContentZipImporter):
             taxon_role = self.get_stripped_cell_value(row[1].value)
             related_taxon_role = self.get_stripped_cell_value(row[2].value)
             
+            
+            # skip empty rows
+            if not relationship_name and not taxon_role and not related_taxon_role:
+                continue
+            
             taxon_relationship_type, created = TaxonRelationshipType.objects.get_or_create(
                 backbonetaxonomy=self.generic_content,
                 relationship_name=relationship_name,
@@ -298,6 +312,7 @@ class BackbonetaxonomyZipImporter(GenericContentZipImporter):
         taxon_relationships_sheet = self.get_sheet_by_name(TAXON_RELATIONSHIPS_SHEET_NAME)
         
         for row in taxon_relationships_sheet.iter_rows(min_row=3):
+            
             relationship_name = self.get_stripped_cell_value(row[0].value)
             taxon_latname = self.get_stripped_cell_value(row[1].value)
             taxon_author = self.get_stripped_cell_value(row[2].value)
@@ -306,6 +321,10 @@ class BackbonetaxonomyZipImporter(GenericContentZipImporter):
             related_taxon_author = self.get_stripped_cell_value(row[5].value)
             related_taxon_source = self.get_stripped_cell_value(row[6].value)
             description = self.get_stripped_cell_value(row[7].value)
+            
+            # skip empty rows
+            if not relationship_name and not taxon_latname and not taxon_source and not related_taxon_latname and not related_taxon_source:
+                continue
             
             lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
             related_lazy_taxon = self.get_lazy_taxon(related_taxon_latname, related_taxon_source, taxon_author=related_taxon_author)

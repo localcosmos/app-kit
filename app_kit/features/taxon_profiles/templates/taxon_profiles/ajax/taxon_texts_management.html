@@ -1,0 +1,96 @@
+{% load i18n static localcosmos_tags %}
+<div>
+    <div>
+        <div class="mb-3">
+            <a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
+            <a href data-url="{% url 'create_taxon_text_type_category' meta_app.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text category' %}</a>
+            <a href data-url="{% url 'manage_taxon_text_type_category_order' category_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage category order' %}</a>
+        </div>
+        <hr>
+        <div>
+            {% if uncategorized_text_types %}
+                <div class="d-flex flex-column" data-store-positions-url="{% url 'store_app_kit_object_order' text_type_content_type.id %}">
+                    {% for text_type in uncategorized_text_types %}
+                        {% include 'taxon_profiles/ajax/taxon_text_type_management.html' %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- Then categorized texts -->
+             <div id="order-ctype-{{ category_content_type.id }}-container" data-store-positions-url="{% url 'store_app_kit_object_order' category_content_type.id %}" class="d-flex flex-column">
+                {% for category, text_types in categorized_text_types.items %}
+                    <div id="ctype-{{ category_content_type.id }}-{{ category.id }}" data-object-id="{{ category.id }}" class="mt-3">
+                        <div>
+                            <div class="btn-group dropup">
+                                <button type="button" class="btn btn-outline-primary btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    {{ category.name }}
+                                    <span class="caret"></span>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a href="{% url 'manage_taxon_text_type_category' meta_app.id taxon_profiles.id category.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a data-url="{% url 'delete_taxon_text_type_category' meta_app.id taxon_profiles.id category.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-left move-text-category-forwardbutton" data-targetid="ctype-{{ category_content_type.id }}-{{ category.id }}">&#x25B2; {% trans 'Move up' %}</a>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item text-left move-text-category-backwardbutton" data-targetid="ctype-{{ category_content_type.id }}-{{ category.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-column pl-3" data-store-positions-url="{% url 'store_app_kit_object_order' text_type_content_type.id %}">
+                            {% for text_type in text_types %}
+                                {% include 'taxon_profiles/ajax/taxon_text_type_management.html' %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+             </div>
+        </div>
+    </div>
+    <hr>
+    <div>
+        <div>
+            <h3>
+                {% trans 'Text Sets' %}
+            </h3>
+            <div class="text-muted">
+                {% trans 'With text sets you can assign a collection of text types to Taxon Profiles. You can select a text set when managing your Taxon Profile.' %}
+            </div>
+            <div class="my-3">
+                <a href data-url="{% url 'create_taxon_text_set' meta_app.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Create new text set' %}</a>
+            </div>
+        </div>
+        <div>
+            {% for text_set in taxon_text_sets %}
+                <div id="ctype-{{ text_set|ctype_id }}-{{ text_set.id }}" class="my-2">
+                    <div class="btn-group dropup">
+                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ text_set.name }}
+                            <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{% url 'manage_taxon_text_set' meta_app.id taxon_profiles.id text_set.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
+                            <div class="dropdown-divider"></div>
+                            <a data-url="{% url 'delete_taxon_text_set' text_set.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Delete' %}</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div>
+                    <div class="alert alert-info">
+                        {% trans 'You have no text sets yet. You can create text sets for specific groups of taxa here.' %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<script>
+    (function(){
+        $(".move-text-category-forwardbutton").on("click", positionmanager.onMoveForward);
+		$(".move-text-category-backwardbutton").on("click", positionmanager.onMoveBack);
+
+        $(".move-text-type-forwardbutton").on("click", positionmanager.onMoveForward);
+		$(".move-text-type-backwardbutton").on("click", positionmanager.onMoveBack);
+    })()
+</script>

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Prefetch
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -9,10 +10,12 @@ from django.http import JsonResponse
 
 from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
-                    TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm)
+                    TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm,
+                    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, TaxonProfileMorphotypeForm)
 
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
-                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory)
+                     TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory,
+                     TaxonTextSet)
 
 from app_kit.views import (ManageGenericContent, ManageContentImage, ManageContentImageWithText, DeleteContentImage,
                            ManageObjectOrder)
@@ -108,7 +111,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
             nature_guide_results.append(entry)
 
-        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content).exclude(
+        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, morphotype=None).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
         backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
@@ -117,6 +120,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
             backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
+            morphotype=None,
             name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
@@ -171,20 +175,16 @@ class NatureGuideTaxonProfilePage(GetNatureGuideTaxaMixin, ManageGenericContent)
 
 class CreateTaxonProfileMixin:
 
-    def create_taxon_profile(self, taxon_profiles, taxon):
+    def create_taxon_profile(self, taxon_profiles, taxon, morphotype=None):
 
-        '''
         taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
-            taxon_source=taxon.taxon_source, taxon_latname=taxon.taxon_latname,
-            taxon_author=taxon.taxon_author).first()
-        '''
-        taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
-            taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid).first()
+            taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid, morphotype=morphotype).first()
 
         if not taxon_profile:
             taxon_profile = TaxonProfile(
                 taxon_profiles=taxon_profiles,
                 taxon=taxon,
+                morphotype=morphotype
             )
             taxon_profile.save()
 
@@ -230,6 +230,55 @@ class CreateTaxonProfile(CreateTaxonProfileMixin, MetaAppMixin, TemplateView):
         return self.render_to_response(context)
 
 
+class ManageTaxonProfileMorphotype(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/manage_taxon_profile_morphotype.html'
+    form_class = TaxonProfileMorphotypeForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profile(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_taxon_profile(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+        self.taxon = LazyTaxon(instance=self.taxon_profile)
+        
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['morphotype'] = self.taxon_profile.morphotype
+        return initial
+    
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.taxon_profile, **self.get_form_kwargs())
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_profile'] = self.taxon_profile
+        context['success'] = False
+        context['created'] = False
+        return context
+    
+    def form_valid(self, form):
+        morphotype = form.cleaned_data['morphotype'].strip()
+        
+        context = self.get_context_data(**self.kwargs)
+        
+        if not self.taxon_profile.morphotype:
+            context['created'] = True
+            # create new taxon profile with this morphotype
+            self.taxon_profile = self.create_taxon_profile(self.taxon_profiles, self.taxon, morphotype=morphotype)
+        else:
+            self.taxon_profile.morphotype = morphotype
+            self.taxon_profile.save()
+        
+        context['success'] = True
+        return self.render_to_response(context)
+    
 '''
     since the "copy tree branches" requirement has been implemented (AWI), name duplicates are possible
     -> lookup of profiles can only be done by name_uuid
@@ -251,21 +300,14 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
 
         taxon_source = kwargs['taxon_source']
         name_uuid = kwargs['name_uuid']
-
-        taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
-                                                 taxon_source=taxon_source, name_uuid=name_uuid)
-
-        # the taxcon might not exist anymore in the source
-        #taxon = get_taxon(taxon_source, name_uuid)
-
-        self.taxon = LazyTaxon(instance=taxon_profile)
-
-        # unique constraing covers source, latname authot
-        #taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-        #            taxon_source=self.taxon.taxon_source, name_uuid=name_uuid).first()
-
         
-        self.taxon_profile = self.create_taxon_profile(self.taxon_profiles, self.taxon)
+        morphotype = kwargs.get('morphotype', None)
+
+        self.taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
+                                                taxon_source=taxon_source, name_uuid=name_uuid,
+                                                morphotype=morphotype)
+
+        self.taxon = LazyTaxon(instance=self.taxon_profile)
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             self.template_name = self.ajax_template_name
@@ -317,6 +359,7 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         context = super().get_context_data(**kwargs)
 
         nature_guides = []
+        
         if self.taxon_profile.taxon_source == 'app_kit.features.nature_guides':
             tree_entry = NatureGuidesTaxonTree.objects.filter(name_uuid=self.taxon_profile.name_uuid).first()
             if tree_entry:
@@ -324,7 +367,7 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         else:
             possible_nature_guide_ids = self.meta_app.get_generic_content_links(NatureGuide).values_list('object_id', flat=True)
             nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid,
-                nature_guide_id__in=possible_nature_guide_ids).values_list('nature_guide', flat=True).distinct()
+                nature_guide_id__in=possible_nature_guide_ids, morphotype=self.taxon_profile.morphotype).values_list('nature_guide', flat=True).distinct()
             nature_guides = NatureGuide.objects.filter(pk__in=nature_guide_ids)
 
         context['nature_guides'] = nature_guides
@@ -349,7 +392,7 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
 
         # show possible duplicates
         possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-            taxon_latname=self.taxon_profile.taxon_latname).exclude(pk=self.taxon_profile.pk)
+            taxon_latname=self.taxon_profile.taxon_latname, morphotype=None).exclude(pk=self.taxon_profile.pk)
         context['possible_duplicates'] = possible_duplicates
         
         context['category_content_type'] = ContentType.objects.get_for_model(TaxonTextTypeCategory)
@@ -506,7 +549,7 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                 taxon_source = meta_node.taxon_source
                 name_uuid = meta_node.name_uuid
                 taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                                                taxon_source=taxon_source, name_uuid=name_uuid).first()
+                                taxon_source=taxon_source, name_uuid=name_uuid, morphotype=None).first()
                 
                 if taxon_profile:
                     self.change_taxon_profile_publication_status(taxon_profile, publication_status)
@@ -515,7 +558,8 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                 fallback_taxa = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node, nature_guide=self.nature_guide)
                 for fallback_taxon in fallback_taxa:
                     fallback_taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                        taxon_source='app_kit.features.nature_guides', name_uuid=fallback_taxon.name_uuid).first()
+                        taxon_source='app_kit.features.nature_guides', name_uuid=fallback_taxon.name_uuid,
+                        morphotype=None).first()
                     if fallback_taxon_profile:
                         self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
 
@@ -554,7 +598,7 @@ class GetManageOrCreateTaxonProfileURL(MetaAppMixin, TemplateView):
     def get(self, request, *args, **kwargs):
 
         taxon_profile_exists = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-            taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid).exists()
+            taxon_source=self.taxon.taxon_source, name_uuid=self.taxon.name_uuid, morphotype=None).exists()
 
         url = None
 
@@ -593,12 +637,6 @@ class ManageTaxonTextType(MetaAppFormLanguageMixin, FormView):
 
 
     def set_taxon_text_type(self, **kwargs):
-
-        # get the taxon
-        taxon_source = kwargs['taxon_source']
-        name_uuid = kwargs['name_uuid']
-        taxon = get_taxon(taxon_source, name_uuid)
-        self.taxon = LazyTaxon(instance=taxon)
         
         self.taxon_profiles =  TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
 
@@ -617,14 +655,13 @@ class ManageTaxonTextType(MetaAppFormLanguageMixin, FormView):
         if form_class is None:
             form_class = self.get_form_class()
 
-        return form_class(instance=self.taxon_text_type, **self.get_form_kwargs())
+        return form_class(self.taxon_profiles, instance=self.taxon_text_type, **self.get_form_kwargs())
 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['taxon_text_type'] = self.taxon_text_type
         context['taxon_profiles'] = self.taxon_profiles
-        context['taxon'] = self.taxon
         return context
     
 
@@ -694,6 +731,7 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
         #name_uuid = kwargs['name_uuid']
         #taxon = get_taxon(taxon_source, name_uuid)
         self.taxon = LazyTaxon(instance=self.taxon_profile)
+        self.morphotype = kwargs.get('morphotype', None)
 
 
     def get_taxon_profile_images(self):
@@ -712,8 +750,8 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
     # images can be on MetNode or NatureGuidesTaxonTree
     def get_nature_guide_images(self, exclude=[]):
         
-        meta_nodes = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source,
-                                taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author)
+        meta_nodes = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source, 
+            taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author, morphotype=self.morphotype)
 
         nature_guide_images = []
 
@@ -789,9 +827,7 @@ class CollectTaxonTraits(MetaAppMixin, TemplateView):
         name_uuid = kwargs['name_uuid']
 
         taxon_profile = TaxonProfile.objects.get(taxon_profiles=taxon_profiles,
-                                                 taxon_source=taxon_source, name_uuid=name_uuid)
-
-        #taxon = get_taxon(taxon_source, name_uuid)
+                                                 taxon_source=taxon_source, name_uuid=name_uuid, morphotype=None)
 
         self.taxon = LazyTaxon(instance=taxon_profile)
 
@@ -1267,11 +1303,7 @@ class ManageTaxonTextTypeCategory(MetaAppFormLanguageMixin, FormView):
     
     def set_category(self, **kwargs):
         self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
-        
-        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
-        #taxon = get_taxon(taxon_profile.taxon_source, taxon_profile.name_uuid)
-        self.taxon = LazyTaxon(instance=self.taxon_profile)
-        
+                
         self.category = None
         
         if 'taxon_text_type_category_id' in kwargs:
@@ -1280,7 +1312,6 @@ class ManageTaxonTextTypeCategory(MetaAppFormLanguageMixin, FormView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['taxon_profiles'] = self.taxon_profiles
-        context['taxon_profile'] = self.taxon_profile
         context['category'] = self.category
         context['success'] = False
         context['created'] = False
@@ -1327,9 +1358,7 @@ class DeleteTaxonTextTypeCategory(MetaAppMixin, AjaxDeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         taxon_profiles = self.object.taxon_profiles
-        taxon_profile = TaxonProfile.objects.get(pk=self.kwargs['taxon_profile_id'])
         context['taxon_profiles'] = taxon_profiles
-        context['taxon_profile'] = taxon_profile
 
         return context
     
@@ -1342,3 +1371,149 @@ class ManageTaxonTextTypeCategoryOrder(ManageObjectOrder):
         queryset = queryset.filter(taxon_profiles=taxon_profiles)
         
         return queryset
+    
+    
+class ManageTaxonTextSet(MetaAppFormLanguageMixin, FormView):
+
+    template_name = 'taxon_profiles/ajax/manage_taxon_text_set.html'
+    form_class = ManageTaxonTextSetForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.taxon_text_set = None
+        
+        if 'taxon_text_set_id' in kwargs:
+            self.taxon_text_set = TaxonTextSet.objects.get(pk=kwargs['taxon_text_set_id'])
+            
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_text_set'] = self.taxon_text_set
+        context['success'] = False
+        return context
+    
+    
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['taxon_profiles'] = self.taxon_profiles
+        return initial
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.taxon_profiles, instance=self.taxon_text_set, **self.get_form_kwargs())
+    
+    def form_valid(self, form):
+        context = self.get_context_data(**self.kwargs)
+        self.taxon_text_set = form.save()
+        context['form'] = form
+        context['success'] = True
+        return self.render_to_response(context)
+
+
+class DeleteTaxonTextSet(AjaxDeleteView):
+    model = TaxonTextSet
+
+
+class GetTaxonTextsManagement(MetaAppMixin, TemplateView):
+
+    template_name = 'taxon_profiles/ajax/taxon_texts_management.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profiles(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_taxon_profiles(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        
+        context['text_type_content_type'] = ContentType.objects.get_for_model(TaxonTextType)
+        context['category_content_type'] = ContentType.objects.get_for_model(TaxonTextTypeCategory)
+
+        categories = TaxonTextTypeCategory.objects.filter(taxon_profiles=self.taxon_profiles).order_by('position')
+        text_types = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles).select_related('category').order_by('category__name', 'position')
+        
+        # Separate uncategorized and categorized text types
+        uncategorized_text_types = []
+        categorized_taxon_text_types = {}
+
+        for category in categories:
+            categorized_taxon_text_types[category] = []
+
+        for text_type in text_types:
+            if text_type.category is None:
+                uncategorized_text_types.append(text_type)
+            else:
+                category = text_type.category
+                if category not in categorized_taxon_text_types:
+                    categorized_taxon_text_types[category] = []
+                categorized_taxon_text_types[category].append(text_type)
+        
+        context['uncategorized_text_types'] = uncategorized_text_types
+        context['categorized_text_types'] = categorized_taxon_text_types
+
+        taxon_text_sets = TaxonTextSet.objects.filter(taxon_profiles=self.taxon_profiles)
+        context['taxon_text_sets'] = taxon_text_sets
+        return context
+    
+
+class SetTaxonTextSetForTaxonProfile(MetaAppMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/set_taxon_text_set_for_taxon_profile.html'
+    form_class = SetTaxonTextSetForTaxonProfileForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+
+    def set_instances(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_profile'] = self.taxon_profile
+        context['success'] = False
+        return context
+
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['text_set'] = self.taxon_profile.taxon_text_set
+        return initial
+
+
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        return form_class(self.taxon_profiles, **self.get_form_kwargs())
+
+
+    def form_valid(self, form):
+        
+        text_set = form.cleaned_data.get('text_set', None)
+        
+        self.taxon_profile.taxon_text_set = text_set
+        self.taxon_profile.save()
+
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        return self.render_to_response(context)

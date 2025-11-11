@@ -19,11 +19,12 @@ from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTa
                 CreateTaxonProfile, ManageTaxonProfilesNavigationEntry, AddTaxonProfilesNavigationEntryTaxon,
                 DeleteTaxonProfilesNavigationEntry, GetTaxonProfilesNavigation, ManageNavigationImage,
                 DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon, DeleteTaxonTextTypeCategory,
-                ChangeNavigationEntryPublicationStatus, ManageTaxonTextTypeCategory)
+                ChangeNavigationEntryPublicationStatus, ManageTaxonTextTypeCategory, ManageTaxonTextSet,
+                DeleteTaxonTextSet, GetTaxonTextsManagement, SetTaxonTextSetForTaxonProfile)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
                 TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry,
-                TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory)
+                TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory, TaxonTextSet)
 
 from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm
 
@@ -370,7 +371,7 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         post_data[text_type.text_type] = text_content
         post_data[long_text_key] = long_text_content
 
-        form = ManageTaxonTextsForm(self.generic_content, data=post_data)
+        form = ManageTaxonTextsForm(self.generic_content, self.taxon_profile, data=post_data)
         form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -392,7 +393,7 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
         post_data[text_type.text_type] = text_content_2
         post_data[long_text_key] = long_text_content_2
 
-        form_2 = ManageTaxonTextsForm(self.generic_content, data=post_data)
+        form_2 = ManageTaxonTextsForm(self.generic_content, self.taxon_profile, data=post_data)
         form_2.is_valid()
         self.assertEqual(form_2.errors, {})
 
@@ -411,7 +412,7 @@ class TestManageTaxonProfile(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
             self.assertEqual(taxon_text.long_text, long_text_content_2)
 
 
-class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestCreateTaxonTextType(WithTaxonProfiles, ViewTestMixin,
                 WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'create_taxon_text_type'
@@ -435,8 +436,6 @@ class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
             'taxon_profiles_id' : self.generic_content.id,
-            'taxon_source' : self.lazy_taxon.taxon_source,
-            'name_uuid' : str(self.lazy_taxon.name_uuid),
         }
         return url_kwargs
 
@@ -446,7 +445,6 @@ class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
 
         view = self.get_view()
         view.set_taxon_text_type(**view.kwargs)
-        self.assertEqual(view.taxon, self.lazy_taxon)
         self.assertEqual(view.taxon_profiles, self.generic_content)
         self.assertEqual(view.taxon_text_type, None)
 
@@ -478,7 +476,6 @@ class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['taxon_text_type'], None)
         self.assertEqual(context['taxon_profiles'], self.generic_content)
-        self.assertEqual(context['taxon'], self.lazy_taxon)
         
 
     @test_settings
@@ -495,7 +492,7 @@ class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
             'taxon_profiles' : self.generic_content.id,
         }
 
-        form = ManageTaxonTextTypeForm(instance=None, data=post_data)
+        form = ManageTaxonTextTypeForm(self.generic_content, instance=None, data=post_data)
         form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -512,7 +509,7 @@ class TestCreateTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
 
 
 
-class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestManageTaxonTextType(WithTaxonProfiles, ViewTestMixin,
                 WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'manage_taxon_text_type'
@@ -541,8 +538,6 @@ class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
             'meta_app_id' : self.meta_app.id,
             'taxon_text_type_id' : self.taxon_text_type.id,
             'taxon_profiles_id' : self.generic_content.id,
-            'taxon_source' : self.lazy_taxon.taxon_source,
-            'name_uuid' : str(self.lazy_taxon.name_uuid),
         }
         return url_kwargs
 
@@ -552,7 +547,6 @@ class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
 
         view = self.get_view()
         view.set_taxon_text_type(**view.kwargs)
-        self.assertEqual(view.taxon, self.lazy_taxon)
         self.assertEqual(view.taxon_profiles, self.generic_content)
         self.assertEqual(view.taxon_text_type, self.taxon_text_type)
 
@@ -592,7 +586,7 @@ class TestManageTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
         }
 
 
-        form = ManageTaxonTextTypeForm(instance=self.taxon_text_type, data=post_data)
+        form = ManageTaxonTextTypeForm(self.generic_content, instance=self.taxon_text_type, data=post_data)
         form.is_valid()
         self.assertEqual(form.errors, {})
 
@@ -1979,7 +1973,7 @@ class TestChangeNavigationEntryPublicationStatus(WithTaxonProfilesNavigationEntr
 
 
 
-class TestCreateTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestCreateTaxonTextTypeCategory(WithTaxonProfiles, ViewTestMixin,
                 WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'create_taxon_text_type_category'
@@ -1997,7 +1991,6 @@ class TestCreateTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
             'taxon_profiles_id': self.generic_content.id,
-            'taxon_profile_id' : self.taxon_profile.id,
         }
         return url_kwargs
     
@@ -2008,7 +2001,6 @@ class TestCreateTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         view.set_category(**view.kwargs)
         
         self.assertEqual(view.taxon_profiles, self.generic_content)
-        self.assertEqual(view.taxon_profile, self.taxon_profile)
         self.assertEqual(view.category, None)
     
     @test_settings
@@ -2019,7 +2011,6 @@ class TestCreateTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         context = view.get_context_data(**view.kwargs)
         
         self.assertEqual(context['taxon_profiles'], self.generic_content)
-        self.assertEqual(context['taxon_profile'], self.taxon_profile)
         self.assertEqual(context['category'], None)
         self.assertEqual(context['success'], False)
         self.assertEqual(context['created'], False)
@@ -2077,7 +2068,7 @@ class TestCreateTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
     
     
     
-class TestManageTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly,
+class TestManageTaxonTextTypeCategory(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly,
         WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
     
     url_name = 'manage_taxon_text_type_category'
@@ -2104,7 +2095,6 @@ class TestManageTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
             'taxon_profiles_id': self.generic_content.id,
-            'taxon_profile_id' : self.taxon_profile.id,
             'taxon_text_type_category_id': self.category.id,
         }
         return url_kwargs
@@ -2117,7 +2107,6 @@ class TestManageTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         view.set_category(**view.kwargs)
         
         self.assertEqual(view.taxon_profiles, self.generic_content)
-        self.assertEqual(view.taxon_profile, self.taxon_profile)
         self.assertEqual(view.category, self.category)
     
     @test_settings
@@ -2128,7 +2117,6 @@ class TestManageTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         context = view.get_context_data(**view.kwargs)
         
         self.assertEqual(context['taxon_profiles'], self.generic_content)
-        self.assertEqual(context['taxon_profile'], self.taxon_profile)
         self.assertEqual(context['category'], self.category)
         self.assertEqual(context['success'], False)
         self.assertEqual(context['created'], False)
@@ -2180,7 +2168,7 @@ class TestManageTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
         self.category.refresh_from_db()
         self.assertEqual(self.category.name, test_name)
         
-class TestDeleteTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestDeleteTaxonTextTypeCategory(WithTaxonProfiles, ViewTestMixin,
                 WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'delete_taxon_text_type_category'
@@ -2200,7 +2188,406 @@ class TestDeleteTaxonTextTypeCategory(WithTaxonProfile, WithTaxonProfiles, ViewT
     def get_url_kwargs(self):
         url_kwargs = {
             'meta_app_id': self.meta_app.id,
-            'taxon_profile_id': self.taxon_profile.id,
+            'taxon_profiles_id': self.generic_content.id,
             'pk' : self.category.id,
         }
         return url_kwargs
+
+
+class TestCreateTaxonTextSet(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+        WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_taxon_text_set'
+    view_class = ManageTaxonTextSet
+    
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+        }
+        return url_kwargs
+    
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_set_instances(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon_text_set, None)
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['taxon_text_set'], None)
+        self.assertEqual(context['success'], False)
+        
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        initial = view.get_initial()
+        
+        self.assertEqual(initial['taxon_profiles'], self.generic_content)
+        
+    @test_settings
+    def test_get_form(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        form = view.get_form()
+        
+        self.assertEqual(form.__class__, view.form_class)
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        post_data = {
+            'name' : 'Test Text Set',
+            'taxon_profiles': self.generic_content.id,
+            'input_language': self.meta_app.primary_language,
+        }
+        
+        form = view.form_class(self.generic_content, data=post_data)
+        
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        text_set_qry = TaxonTextSet.objects.filter(name=post_data['name'],
+            taxon_profiles=self.generic_content)
+        
+        self.assertTrue(text_set_qry.exists())
+
+
+
+class TestManageTaxonTextSet(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'manage_taxon_text_set'
+    view_class = ManageTaxonTextSet
+    
+    def setUp(self):
+        super().setUp()
+        
+        self.taxon_text_set = TaxonTextSet(
+            taxon_profiles=self.generic_content,
+            name='Test Text Set',
+        )
+        
+        self.taxon_text_set.save()
+    
+    
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+            'taxon_text_set_id': self.taxon_text_set.id,
+        }
+        return url_kwargs
+    
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_set_instances(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon_text_set, self.taxon_text_set)
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['taxon_text_set'], self.taxon_text_set)
+        self.assertEqual(context['success'], False)
+        
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        initial = view.get_initial()
+        self.assertEqual(initial['taxon_profiles'], self.generic_content)
+        
+        form = view.get_form()
+        self.assertEqual(form.initial['name'], form.instance.name)
+        
+    @test_settings
+    def test_get_form(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        form = view.get_form()
+        
+        self.assertEqual(form.__class__, view.form_class)
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        post_data = {
+            'name' : 'Test Text Set Changed',
+            'taxon_profiles': self.generic_content.id,
+            'input_language': self.meta_app.primary_language,
+        }
+
+        form = view.form_class(self.generic_content, instance=self.taxon_text_set, data=post_data)
+
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        self.taxon_text_set.refresh_from_db()
+        
+        self.assertEqual(self.taxon_text_set.name, post_data['name'])
+
+
+class TestDeleteTaxonTextSet(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_taxon_text_set'
+    view_class = DeleteTaxonTextSet
+    
+    def setUp(self):
+        super().setUp()
+        
+        self.taxon_text_set = TaxonTextSet(
+            taxon_profiles=self.generic_content,
+            name='Test Text Set',
+        )
+        
+        self.taxon_text_set.save()
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'pk': self.taxon_text_set.id,
+        }
+        return url_kwargs
+    
+
+class TestGetTaxonTextsManagement(WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    
+    url_name = 'get_taxon_texts_management'
+    view_class = GetTaxonTextsManagement
+    
+    def setUp(self):
+        super().setUp()
+        
+        # create text types, text sets and categories
+        self.text_type_category = TaxonTextTypeCategory(
+            taxon_profiles=self.generic_content,
+            name='Test Category',
+        )
+        self.text_type_category.save()
+        self.text_type = TaxonTextType(
+            taxon_profiles=self.generic_content,
+            text_type='Test Text Type',
+            category=self.text_type_category,
+        )
+        self.text_type.save()
+        
+        self.text_type_uncategorized = TaxonTextType(
+            taxon_profiles=self.generic_content,
+            text_type='Test Text Type Uncategorised',
+        )
+        self.text_type_uncategorized.save()
+
+        self.text_set = TaxonTextSet(
+            taxon_profiles=self.generic_content,
+            name='Test Text Set',
+        )
+        self.text_set.save()
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def test_set_taxon_profiles(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profiles(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profiles(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['text_type_content_type'], ContentType.objects.get_for_model(TaxonTextType))
+        self.assertEqual(context['category_content_type'], ContentType.objects.get_for_model(TaxonTextTypeCategory))
+    
+        self.assertIn('uncategorized_text_types', context)
+        self.assertEqual(context['uncategorized_text_types'], [self.text_type_uncategorized])
+        
+        self.assertIn('categorized_text_types', context)
+        self.assertEqual(context['categorized_text_types'], {self.text_type_category: [self.text_type]})
+
+        self.assertIn('taxon_text_sets', context)
+        self.assertEqual(list(context['taxon_text_sets']), [self.text_set])
+
+  
+class TestSetTaxonTextSetForTaxonProfile(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'set_taxon_text_set_for_taxon_profile'
+    view_class = SetTaxonTextSetForTaxonProfile
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+            'taxon_profile_id': self.taxon_profile.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_set_instances(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        self.assertEqual(view.taxon_profile, self.taxon_profile)
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_instances(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertEqual(context['taxon_profile'], self.taxon_profile)
+        self.assertEqual(context['success'], False)
+        
+    
+    @test_settings
+    def test_get_initial(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        initial = view.get_initial()
+        
+        self.assertEqual(initial['text_set'], None)
+        
+        text_set = TaxonTextSet(
+            taxon_profiles=self.generic_content,
+            name='Test Text Set',
+        )
+        text_set.save()
+        
+        self.taxon_profile.taxon_text_set = text_set
+        self.taxon_profile.save()
+
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        initial = view.get_initial()
+
+        self.assertEqual(initial['text_set'], text_set)
+
+    @test_settings
+    def test_get_form(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        form = view.get_form()
+        
+        self.assertEqual(form.__class__, view.form_class)
+        
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_instances(**view.kwargs)
+        
+        text_set = TaxonTextSet(
+            taxon_profiles=self.generic_content,
+            name='Test Text Set',
+        )
+        text_set.save()
+        
+        post_data = {
+            'text_set': text_set.id,
+        }
+        
+        form = view.form_class(self.generic_content, data=post_data)
+        
+        form.is_valid()
+        
+        self.assertEqual(form.errors, {})
+        
+        response = view.form_valid(form)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        
+        self.taxon_profile.refresh_from_db()
+        
+        self.assertEqual(self.taxon_profile.taxon_text_set, text_set)

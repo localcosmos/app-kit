@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from app_kit.tests.common import test_settings
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
         TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa,
-        TaxonTextTypeCategory)
+        TaxonTextTypeCategory, TaxonTextSet)
         
 from app_kit.models import MetaAppGenericContent
 
@@ -215,6 +215,50 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         self.assertEqual(texts.count(), 1)
         self.assertEqual(texts[0], taxon_text)
         
+        
+    @test_settings
+    def test_texts_with_text_set(self):
+        
+        taxon_profiles = self.get_taxon_profiles()
+        
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
+        
+        text_type_name = 'Test Text Type'
+        
+        taxon_profile, text_type, taxon_text = self.create_taxon_profile_with_text(lacerta_agilis,
+                                            text_type_name, self.short_text_content, self.long_text_content)
+
+        text_type_2_name = 'Second Text Type'
+        text_type_2 = TaxonTextType(
+            taxon_profiles=taxon_profiles,
+            text_type=text_type_2_name
+        )
+        text_type_2.save()
+        
+        taxon_text_2 = TaxonText(
+            taxon_profile=taxon_profile,
+            taxon_text_type=text_type_2,
+            text='Second text',
+        )
+        taxon_text_2.save()
+
+        text_set = TaxonTextSet(
+            taxon_profiles=taxon_profiles,
+            name='Test text set',
+        )
+        text_set.save()
+        
+        text_set.text_types.add(text_type_2)
+        
+        taxon_profile.taxon_text_set = text_set
+        taxon_profile.save()
+        
+        texts = taxon_profile.texts()
+        self.assertEqual(texts.count(), 1)
+        self.assertEqual(texts[0], taxon_text_2)
+
     @test_settings
     def test_categorized_texts(self):
         
@@ -259,6 +303,38 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         
         self.assertIn(category_name, categorized_texts)
         self.assertEqual(list(categorized_texts[category_name]), [cat_taxon_text])
+        
+        # test text set
+        text_set = TaxonTextSet(
+            taxon_profiles=taxon_profiles,
+            name='Test text set',
+        )
+        text_set.save()
+        text_set.text_types.add(text_type)
+        
+        taxon_profile.taxon_text_set = text_set
+        taxon_profile.save()
+        
+        categorized_texts = taxon_profile.categorized_texts()
+        
+        self.assertIn('uncategorized', categorized_texts)
+        self.assertEqual(list(categorized_texts['uncategorized']), [taxon_text])
+        
+        self.assertIn(category_name, categorized_texts)
+        self.assertEqual(list(categorized_texts[category_name]), [])
+                
+        
+        text_set.text_types.remove(text_type)
+        text_set.text_types.add(cat_text_type)
+        
+        categorized_texts = taxon_profile.categorized_texts()
+        
+        self.assertIn('uncategorized', categorized_texts)
+        self.assertEqual(list(categorized_texts['uncategorized']), [])
+        
+        self.assertIn(category_name, categorized_texts)
+        self.assertEqual(list(categorized_texts[category_name]), [cat_taxon_text])
+        
         
 
     @test_settings
@@ -449,6 +525,7 @@ class TestTaxonProfilesNavigationEntry(WithTaxonProfilesNavigation, WithTaxonPro
             'description': None,
             'children': [],
             'images': [],
+            'publication_status': 'publish',
         }
         
         self.assertEqual(dic, expected_dic)
@@ -902,3 +979,44 @@ class TestTaxonTextTypeCategory(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         
         self.assertEqual(text_type.category, category)
 
+
+class TestTaxonTextSet(WithTaxonProfiles, WithMetaApp, TenantTestCase):
+    
+    @test_settings
+    def test_str(self):
+        
+        taxon_profiles = self.get_taxon_profiles()
+        
+        name = 'Test text set'
+        
+        text_set = TaxonTextSet(
+            taxon_profiles=taxon_profiles,
+            name=name,
+        )
+        
+        text_set.save()
+        
+        self.assertEqual(str(text_set), name)
+
+    @test_settings
+    def test_taxon_text_type(self):
+
+        taxon_profiles = self.get_taxon_profiles()
+
+        text_set = TaxonTextSet(
+            taxon_profiles=taxon_profiles,
+            name='Test text set',
+        )
+
+        text_set.save()
+
+        text_type = TaxonTextType(
+            taxon_profiles=taxon_profiles,
+            text_type='Test text type',
+        )
+        
+        text_type.save()
+
+        text_set.text_types.add(text_type)
+
+        self.assertIn(text_type, text_set.text_types.all())

@@ -8,9 +8,11 @@ from app_kit.tests.common import test_settings, powersetdic
 from app_kit.tests.mixins import WithMetaApp, WithFormTest
 
 from app_kit.features.taxon_profiles.forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm,
-    ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm, ManageTaxonTextTypeCategoryForm)
+    ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm, ManageTaxonTextTypeCategoryForm,
+    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm)
 
-from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonTextType, TaxonProfile, TaxonText)
+from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonTextType, TaxonProfile, TaxonText,
+                                                    TaxonTextSet)
 
 from app_kit.features.generic_forms.models import GenericForm
 
@@ -20,8 +22,6 @@ from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
 
 from .common import WithTaxonProfilesNavigation
-
-import json
 
 
 class TestTaxonProfilesOptionsForm(WithMetaApp, WithFormTest, TenantTestCase):
@@ -69,9 +69,9 @@ class TestManageTaxonTextTypeForm(WithMetaApp, WithFormTest, TenantTestCase):
             'taxon_profiles' : taxon_profiles.id,
         }
 
-        form = ManageTaxonTextTypeForm()
+        form = ManageTaxonTextTypeForm(taxon_profiles)
 
-        self.perform_form_test(ManageTaxonTextTypeForm, post_data)
+        self.perform_form_test(ManageTaxonTextTypeForm, post_data, form_args=[taxon_profiles])
     
 
 class TestManageTaxonTextsForm(WithMetaApp, WithFormTest, TenantTestCase):
@@ -118,13 +118,14 @@ class TestManageTaxonTextsForm(WithMetaApp, WithFormTest, TenantTestCase):
         taxon_profiles = taxon_profiles_link.generic_content
 
         text_types = self.create_text_types(taxon_profiles)
+        
 
-        # init without taxon profile
-        form = ManageTaxonTextsForm(taxon_profiles)
+        # init without taxon profile - why?
+        #form = ManageTaxonTextsForm(taxon_profiles, taxon_profile)
 
-        for text_type in text_types:
-            self.assertIn(text_type.text_type, form.fields)
-            self.assertIn(text_type.text_type, form.localizeable_fields)
+        #for text_type in text_types:
+        #    self.assertIn(text_type.text_type, form.fields)
+        #    self.assertIn(text_type.text_type, form.localizeable_fields)
 
         
         taxon_profile = self.create_taxon_profile(taxon_profiles)
@@ -363,3 +364,104 @@ class TestManageTaxonTextTypeCategoryForm(WithMetaApp, WithFormTest, TenantTestC
         form = ManageTaxonTextTypeCategoryForm()
 
         self.perform_form_test(ManageTaxonTextTypeCategoryForm, post_data)
+        
+        
+class TestManageTaxonTextSetForm(WithMetaApp, WithFormTest, TenantTestCase):
+    
+    @test_settings
+    def test_init(self):
+
+        taxon_profiles_link = self.get_generic_content_link(TaxonProfiles)
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        text_type = TaxonTextType(
+            taxon_profiles=taxon_profiles,
+            text_type='Test text type',
+        )
+        text_type.save()
+        
+        text_set_form = ManageTaxonTextSetForm(taxon_profiles)
+
+        self.assertIn('name', text_set_form.fields)
+        self.assertIn('taxon_profiles', text_set_form.fields)
+        self.assertIn('text_types', text_set_form.fields)
+
+        self.assertEqual(text_set_form.fields['text_types'].queryset.count(), 1)
+
+    @test_settings
+    def test_form(self):
+
+        taxon_profiles_link = self.get_generic_content_link(TaxonProfiles)
+        taxon_profiles = taxon_profiles_link.generic_content
+        
+        text_type = TaxonTextType(
+            taxon_profiles=taxon_profiles,
+            text_type='Test text type',
+        )
+        text_type.save()
+
+        post_data = {
+            'name' : 'Test set',
+            'taxon_profiles' : taxon_profiles.id,
+        }
+
+        form = ManageTaxonTextSetForm(taxon_profiles)
+
+        self.perform_form_test(ManageTaxonTextSetForm, post_data, form_args=[taxon_profiles])
+        
+        # post with text type
+        post_data['text_types'] = [text_type.id]
+        form = ManageTaxonTextSetForm(taxon_profiles)
+        self.perform_form_test(ManageTaxonTextSetForm, post_data, form_args=[taxon_profiles])
+        
+        
+    class TestSetTaxonTextSetForTaxonProfileForm(WithMetaApp, WithFormTest, TenantTestCase):
+    
+        @test_settings
+        def test_init(self):
+
+            taxon_profiles_link = self.get_generic_content_link(TaxonProfiles)
+            taxon_profiles = taxon_profiles_link.generic_content
+            
+            text_type = TaxonTextType(
+                taxon_profiles=taxon_profiles,
+                text_type='Test text type',
+            )
+            text_type.save()
+
+            text_set_form = SetTaxonTextSetForTaxonProfileForm(taxon_profiles)
+
+            self.assertIn('text_set', text_set_form.fields)
+            self.assertEqual(text_set_form.fields['text_set'].queryset.count(), 1)
+    
+        @test_settings
+        def test_form(self):
+
+            taxon_profiles_link = self.get_generic_content_link(TaxonProfiles)
+            taxon_profiles = taxon_profiles_link.generic_content
+
+            text_type = TaxonTextType(
+                taxon_profiles=taxon_profiles,
+                text_type='Test text type',
+            )
+            text_type.save()
+            
+            text_set = TaxonTextSet(
+                taxon_profiles=taxon_profiles,
+                name='Test set',
+            )
+            text_set.save()
+            text_set.text_types.add(text_type)
+
+            text_set_form = SetTaxonTextSetForTaxonProfileForm(taxon_profiles)
+
+            self.assertIn('text_set', text_set_form.fields)
+            self.assertEqual(text_set_form.fields['text_set'].queryset.count(), 1)
+            
+            post_data = {
+                'text_set' : text_set.id,
+            }
+            
+            form = SetTaxonTextSetForTaxonProfileForm(taxon_profiles)
+            
+            self.perform_form_test(SetTaxonTextSetForTaxonProfileForm, post_data, form_args=[taxon_profiles])

@@ -100,6 +100,9 @@ class TaxonProfiles(GenericContent):
             taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self, **taxon_query).first()
 
             if taxon_profile:
+                
+                if taxon_profile.morphotype:
+                    locale[taxon_profile.morphotype] = taxon_profile.morphotype
 
                 for text in taxon_profile.texts():
 
@@ -166,87 +169,6 @@ class TaxonProfiles(GenericContent):
 FeatureModel = TaxonProfiles
 
 
-'''
-    TaxonProfile
-'''
-class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
-
-    LazyTaxonClass = LazyTaxon
-
-    taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
-    
-    short_profile = models.TextField(null=True)
-
-    publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
-    
-    is_featured = models.BooleanField(default=False)
-
-    tags = TaggableManager()
-    
-    seo_parameters = GenericRelation(AppKitSeoParameters)
-    
-    external_media = GenericRelation(AppKitExternalMedia)
-    
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def texts(self):
-        return TaxonText.objects.filter(taxon_profile=self).order_by('taxon_text_type__position')
-    
-    def categorized_texts(self):
-        
-        categorized_texts = {
-            'uncategorized' : TaxonText.objects.filter(taxon_profile=self,
-                        taxon_text_type__category=None).order_by('taxon_text_type__position'),
-        }
-        
-        categories = TaxonTextTypeCategory.objects.filter(taxon_profiles=self.taxon_profiles)
-        
-        for category in categories:
-            query = TaxonText.objects.filter(taxon_profile=self,
-                        taxon_text_type__category=category).order_by('taxon_text_type__position')
-            
-
-            categorized_texts[category.name] = query
-        
-        return categorized_texts
-
-    '''
-    this checks taxon texts and vernacularnames[latter missing]
-    '''
-    def profile_complete(self):
-
-        text_types = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles)
-
-        for text_type in text_types:
-
-            taxon_text = TaxonText.objects.filter(taxon_profile=self, taxon_text_type=text_type).first()
-
-            if not taxon_text or len(taxon_text.text) == 0:
-                return False
-            
-        return True
-
-
-    def __str__(self):
-        return 'Taxon Profile of {0}'.format(self.taxon)
-    
-
-    class Meta:
-        # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
-        unique_together=('taxon_profiles', 'taxon_source', 'name_uuid')
-        verbose_name = _('Taxon Profile')
-        verbose_name_plural = _('Taxon Profiles')
-        
-        
-# Signal to clean up SeoParameters
-@receiver(post_delete, sender=TaxonProfile)
-def delete_seo_parameters(sender, instance, **kwargs):
-    content_type = ContentType.objects.get_for_model(instance)
-    AppKitSeoParameters.objects.filter(
-        content_type=content_type,
-        object_id=instance.id
-    ).delete()
-
 
 class TaxonTextTypeCategory(models.Model):
     
@@ -275,6 +197,149 @@ class TaxonTextType(models.Model):
     class Meta:
         unique_together = ('taxon_profiles', 'text_type')
         ordering = ['category', 'position']
+        
+        
+class TaxonTextSet(models.Model):
+    taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
+    name = models.CharField(max_length=355)
+    text_types = models.ManyToManyField(TaxonTextType, through='TaxonTextSetTaxonTextType')
+    
+    def __str__(self):
+        return '{0}'.format(self.name)
+
+    class Meta:
+        unique_together = ('taxon_profiles', 'name')
+        
+        
+class TaxonTextSetTaxonTextType(models.Model):
+    taxon_text_set = models.ForeignKey(TaxonTextSet, on_delete=models.CASCADE)
+    taxon_text_type = models.ForeignKey(TaxonTextType, on_delete=models.CASCADE)
+    
+    position = models.IntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('taxon_text_set', 'taxon_text_type')
+
+'''
+    TaxonProfile
+'''
+class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
+
+    LazyTaxonClass = LazyTaxon
+
+    taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
+    morphotype = models.CharField(max_length=255, null=True) 
+    short_profile = models.TextField(null=True)
+    publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
+    is_featured = models.BooleanField(default=False)
+
+    tags = TaggableManager()
+    
+    seo_parameters = GenericRelation(AppKitSeoParameters)
+    external_media = GenericRelation(AppKitExternalMedia)
+    
+    taxon_text_set = models.ForeignKey(TaxonTextSet, null=True, blank=True, on_delete=models.SET_NULL)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    
+    @property
+    def morphotype_profiles(self):
+
+        if not self.morphotype:
+            morphotypes = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                                               taxon_source=self.taxon_source,
+                                               name_uuid=self.name_uuid).exclude(morphotype__isnull=True)
+            return morphotypes
+        return None
+    
+    @property
+    def parent_profile(self):
+        
+        if self.morphotype:
+            return TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                                               taxon_source=self.taxon_source,
+                                               name_uuid=self.name_uuid,
+                                               morphotype__isnull=True).first()
+        return None
+
+    def texts(self):
+        if self.taxon_text_set:
+            text_types = self.taxon_text_set.text_types.all().order_by('position')
+            # this query needs to be ordered by the position defined in the text set
+            return TaxonText.objects.filter(taxon_profile=self, taxon_text_type__in=text_types).order_by('taxon_text_type__position')
+
+        return TaxonText.objects.filter(taxon_profile=self).order_by('taxon_text_type__position')
+    
+    def categorized_texts(self):
+        
+        allowed_text_types = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles)
+        
+        if self.taxon_text_set:
+            allowed_text_types = self.taxon_text_set.text_types.all()
+        
+        categorized_texts = {
+            'uncategorized' : TaxonText.objects.filter(taxon_profile=self,
+                        taxon_text_type__category=None, taxon_text_type__in=allowed_text_types).order_by('taxon_text_type__position'),
+        }
+        
+        categories = TaxonTextTypeCategory.objects.filter(taxon_profiles=self.taxon_profiles)
+        
+        for category in categories:
+            
+            if self.taxon_text_set:
+                query = TaxonText.objects.filter(taxon_profile=self, taxon_text_type__in=allowed_text_types,
+                    taxon_text_type__category=category).order_by('taxon_text_type__position')
+            else:
+                query = TaxonText.objects.filter(taxon_profile=self,
+                    taxon_text_type__category=category).order_by('taxon_text_type__position')
+                
+
+            categorized_texts[category.name] = query
+            
+        # remove empty categories
+        #categorized_texts = {key: value for key, value in categorized_texts.items() if value.exists()}
+        
+        return categorized_texts
+
+    '''
+    this checks taxon texts and vernacularnames[latter missing]
+    '''
+    def profile_complete(self):
+
+        text_types = TaxonTextType.objects.filter(taxon_profiles=self.taxon_profiles)
+
+        for text_type in text_types:
+
+            taxon_text = TaxonText.objects.filter(taxon_profile=self, taxon_text_type=text_type).first()
+
+            if not taxon_text or len(taxon_text.text) == 0:
+                return False
+            
+        return True
+
+
+    def __str__(self):
+        return 'Taxon Profile of {0}'.format(self.taxon)
+    
+
+    class Meta:
+        # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
+        unique_together=('taxon_profiles', 'taxon_source', 'name_uuid', 'morphotype')
+        verbose_name = _('Taxon Profile')
+        verbose_name_plural = _('Taxon Profiles')
+        
+        
+# Signal to clean up SeoParameters
+@receiver(post_delete, sender=TaxonProfile)
+def delete_seo_parameters(sender, instance, **kwargs):
+    content_type = ContentType.objects.get_for_model(instance)
+    AppKitSeoParameters.objects.filter(
+        content_type=content_type,
+        object_id=instance.id
+    ).delete()
+
+
+
 
 
 class TaxonText(ContentImageMixin, models.Model):

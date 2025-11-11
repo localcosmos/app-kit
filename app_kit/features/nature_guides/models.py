@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Q
 from django.contrib.contenttypes.models import ContentType
 
 from app_kit.generic import GenericContentManager, GenericContent
@@ -13,18 +12,26 @@ from app_kit.models import ContentImage, ContentImageMixin, UpdateContentImageTa
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
 
+from taxonomy.models import TaxonTree, TaxonSynonym, TaxonNamesView, TaxonLocale
+
 from .definitions import TEXT_LENGTH_RESTRICTIONS
 
-import uuid, shutil, os, json
+import uuid, json, re
 
-IDENTIFICATION_MODE_FLUID = 'fluid'
+
+IDENTIFICATION_MODE_FLUID = 'fluid' # deprecated
 IDENTIFICATION_MODE_STRICT = 'strict'
+IDENTIFICATION_MODE_POLYTOMOUS = 'polytomous'
 
 '''
     Universal identification key system:
     dichotomous keys and polytomus keys/matrix keys or a combination of both
     Nature Guides can be identification keys or just a list of taxa
 '''
+
+def strip_html_tags(text):
+    """Remove HTML tags from a string using regex."""
+    return re.sub(r'<[^>]+>', '', text)
 
 class NatureGuideManager(GenericContentManager):
     
@@ -550,7 +557,7 @@ class ChildrenCacheManager:
     MetaNodes
     - contain children_cache, which includes crosslink children
     - necessary for clean crosslink data
-    - contain information independant of the parent node like name and image
+    - contain information independent of the parent node like name and image
     - MetaNode is also necessary for assigning a taxon to the node, because the node itself is a taxon
       in the NatureGuidesTaxonTree
 '''
@@ -599,6 +606,12 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
             self.settings = {}
             
         self.settings[key] = value
+        
+    def get_setting(self, key, default=None):
+        if self.settings and key in self.settings:
+            return self.settings[key]
+        return default
+        
 
     def rebuild_cache(self):
         cache_manager = ChildrenCacheManager(self)
@@ -613,6 +626,10 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
         if self.settings:
             return self.settings.get('identification_mode', IDENTIFICATION_MODE_STRICT)
         return IDENTIFICATION_MODE_STRICT
+    
+    @property
+    def tree_node(self):
+        return NatureGuidesTaxonTree.objects.filter(meta_node=self).first()
 
     def __str__(self):
         if self.name:
@@ -659,7 +676,7 @@ class NatureGuidesTaxonTreeManager(models.Manager):
         return self.filter(taxon_nuid=next_nuid).first()
         
     
-from taxonomy.models import TaxonTree, TaxonSynonym, TaxonNamesView, TaxonLocale
+
 class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
 
     taxon_source = 'app_kit.features.nature_guides'
@@ -1501,9 +1518,36 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
         
         return restrictions
     
+    @property
+    def nature_guide_node(self):
+        if self.matrix_filter.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS:
+            possible_node_links = NodeFilterSpace.objects.filter(
+                matrix_filter=self.matrix_filter)
+            
+            for node_link in possible_node_links:
+                if node_link.values.filter(
+                    pk=self.pk).exists():
+                    return node_link.node
+        return None
+    
+
+    def _clean_html_from_json(self, data):
+        """Recursively clean HTML tags from JSON data."""
+        if isinstance(data, str):
+            return strip_html_tags(data)
+        elif isinstance(data, list):
+            return [self._clean_html_from_json(item) for item in data]
+        elif isinstance(data, dict):
+            return {key: self._clean_html_from_json(value) for key, value in data.items()}
+        else:
+            return data
 
     def __str__(self):
         if self.pk:
+            if self.encoded_space:
+                # Strip HTML tags from encoded_space before JSON dumping
+                cleaned_space = self._clean_html_from_json(self.encoded_space)
+                return '{0}: {1}'.format(self.matrix_filter.name, json.dumps(cleaned_space))
             return '{0}'.format(self.matrix_filter.matrix_filter_type.verbose_space_name)
         return self.__class__.__name__
 

@@ -1,0 +1,20 @@
+{% load i18n localcosmos_tags %}
+<form action="{% url 'manage_node_settings' meta_app.id meta_node.id %}" class="xhr" method="POST">
+    {% csrf_token %}
+    {% render_bootstrap_form form %}
+    <div class="my-3">
+        <button type="submit" class="btn btn-outline-primary">{% trans "Save settings" %}</button>
+    </div>
+    {% if success %}
+        <div class="alert alert-success">
+            {% trans "Settings saved successfully." %}
+        </div>
+    {% endif %}
+</form>
+{% if success %}
+<script>
+    setTimeout(function() {
+        window.location.reload();
+    }, 300);
+</script>
+{% endif %}

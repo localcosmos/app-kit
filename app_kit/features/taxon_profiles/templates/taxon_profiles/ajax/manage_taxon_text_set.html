@@ -1,0 +1,40 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+
+{% load i18n static localcosmos_tags %}
+
+{% block action %}
+	{% if taxon_text_set %}{% url 'manage_taxon_text_set' meta_app.id taxon_profiles.id taxon_text_set.id %}{% else %}{% url 'create_taxon_text_set' meta_app.id taxon_profiles.id %}{% endif %}
+{% endblock %}
+
+{% block title %}
+    {% if taxon_text_set %}
+	    {% blocktrans %}Manage Taxon Text Set{% endblocktrans %}
+    {% else %}
+        {% blocktrans %}Create Taxon Text Set{% endblocktrans %}
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+    {% if success %}
+        {% include 'localcosmos_server/modals/footers/close.html' %}
+    {% else %}
+	    {% include 'localcosmos_server/modals/footers/save.html' %}
+    {% endif %}
+{% endblock %}
+
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			// reload navigation
+            $.get("{% url 'get_taxon_texts_management' meta_app.id taxon_profiles.id %}", (html) => {
+                $("#taxon-texts-management").html(html);
+                ajaxify('taxon-texts-management');
+
+            });
+
+            $("#Modal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}

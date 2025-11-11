@@ -41,12 +41,12 @@ import json, matplotlib
 '''
 
 MATRIX_FILTER_TYPES = (
-    ('ColorFilter', _('Color filter')),
-    ('RangeFilter', _('Range filter')),
-    ('NumberFilter', _('Numbers filter')),
-    ('DescriptiveTextAndImagesFilter', _('Descriptive text and images')),
+    ('ColorFilter', _('Color')),
+    ('RangeFilter', _('Range of numbers')),
+    ('NumberFilter', _('Numbers')),
+    ('DescriptiveTextAndImagesFilter', _('Text and images')),
     ('TaxonFilter', _('Taxonomic filter')),
-    ('TextOnlyFilter', _('Text only filter')),
+    ('TextOnlyFilter', _('Text only')),
 )
 
 
@@ -56,6 +56,8 @@ class MatrixFilterType:
 
     # in the interface for creating matrix filters, an add space button is shown for multispace
     is_multispace = False
+    
+    supports_polytomous_mode = True
 
     # the form field class rendered for the end-user input
     MatrixSingleChoiceFormFieldClass = None
@@ -337,6 +339,8 @@ class MultiSpaceFilterMixin:
     - encoded: [0,10]
 '''
 class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
+    
+    supports_polytomous_mode = False
 
     verbose_name = _('Range filter')
     definition_parameters = ['identification_means', 'step', 'unit', 'unit_verbose', 'tolerance']
@@ -1217,6 +1221,8 @@ PREDEFINED_FILTER_LATNAMES = [predefined[0] for predefined in PREDEFINED_TAXONOM
 class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = False
+    
+    supports_polytomous_mode = False
 
     definition_parameters = ['identification_means']
 

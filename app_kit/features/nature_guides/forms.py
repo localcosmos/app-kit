@@ -8,7 +8,8 @@ from localcosmos_server.forms import LocalizeableForm
 from localcosmos_server.taxonomy.fields import TaxonField
 
 from .models import (MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction,
-    NatureGuideCrosslinks)
+    NatureGuideCrosslinks, IDENTIFICATION_MODE_STRICT, IDENTIFICATION_MODE_POLYTOMOUS)
+
 
 from app_kit.utils import get_appkit_taxon_search_url
 
@@ -259,6 +260,32 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
             self.add_error('name', _('You have to enter at least a name or a decision rule.'))
         '''
         
+        if self.submitted_parent_node.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS:
+            meta_node = self.submitted_parent_node.meta_node
+            matrix_filter = MatrixFilter.objects.filter(meta_node=meta_node).first()
+            if matrix_filter:
+                field_uuid = str(matrix_filter.uuid)
+                selected_values = cleaned_data.get(field_uuid, None)
+                if len(selected_values) > 1:
+                    self.add_error(field_uuid,
+                        _('In polytomous identification mode, only one value can be selected for each filter.'))
+                    
+                elif len(selected_values) == 1:
+                    # 1 to 1 mapping required
+                    value = selected_values[0]
+                    # check if another node already has this value
+                    existing_space = NodeFilterSpace.objects.filter(
+                        matrix_filter=matrix_filter,
+                        values__in=[value]
+                    )
+                    
+                    if self.node:
+                        existing_space = existing_space.exclude(node=self.node)
+                    
+                    if existing_space.exists():
+                        self.add_error(field_uuid,
+                            _('The value "{0}" is already assigned to another identification result. In polytomous identification mode, each value can only be assigned to one result.'.format(value)))
+        
         return cleaned_data
 
 
@@ -382,3 +409,46 @@ class CopyTreeBranchForm(forms.Form):
 
     prevent_crosslinks = forms.BooleanField(required=False,
         help_text=_('Creates a copy of each identification result instead of a crosslink. This results in 2 separate entities for each result. Only use this function if you know what you are doing.'))
+
+
+IDENTIFICATION_MODE_CHOICES = (
+    (IDENTIFICATION_MODE_STRICT, _('Matrix')),
+    (IDENTIFICATION_MODE_POLYTOMOUS, _('Dichotomous or Polytomous')),
+)
+
+class IdentificationNodeSettingsForm(forms.Form):
+    
+    def __init__(self, meta_node, *args, **kwargs):
+        self.meta_node = meta_node
+        super().__init__(*args, **kwargs)
+
+    identification_mode = forms.ChoiceField(choices=IDENTIFICATION_MODE_CHOICES, label=_('Identification Mode'))
+    
+    def clean_identification_mode(self):
+        identification_mode = self.cleaned_data.get('identification_mode', None)
+        if identification_mode == IDENTIFICATION_MODE_POLYTOMOUS:
+            # only one matrix filter is allowed
+            matrix_filters = MatrixFilter.objects.filter(meta_node=self.meta_node)
+            if matrix_filters.count() > 1:
+                raise forms.ValidationError(
+                    _('Polytomous identification mode only allows one matrix filter. Please remove extra filters before changing the mode.'))
+                
+            if matrix_filters.count() == 1:
+                matrix_filter = matrix_filters.first()
+                filter_type = matrix_filter.matrix_filter_type
+                if not filter_type.supports_polytomous_mode:
+                    raise forms.ValidationError(
+                        _('The matrix filter "{0}" does not support polytomous identification mode. Please change or remove the filter before changing the mode.'.format(
+                            matrix_filter.name)))
+                    
+                # check for 1:1 mappinh
+                spaces = NodeFilterSpace.objects.filter(matrix_filter=matrix_filter)
+                assigned_values = []
+                for space in spaces:
+                    for value in space.values.all():
+                        if value in assigned_values:
+                            raise forms.ValidationError(
+                                _('The matrix filter "{0}" does not have a 1:1 mapping of values to identification results. Please adjust the assignments before changing the mode.'.format(
+                                    matrix_filter.name)))
+                        assigned_values.append(value)
+        return identification_mode

@@ -13,10 +13,20 @@
 				<br>
 
 				{% if vernacular_name_from_nature_guides %}
-					<h3>{{ vernacular_name_from_nature_guides }}</h3>
+					<h3>
+						{{ vernacular_name_from_nature_guides }}
+						{% if taxon_profile.morphotype %}
+							({{ taxon_profile.morphotype }})
+						{% endif %}
+					</h3>
 					<i>{{ taxon }}</i>
 				{% elif taxon.vernacular %}
-					<h3>{{ taxon.vernacular }}</h3>
+					<h3>
+						{{ taxon.vernacular }}
+						{% if taxon_profile.morphotype %}
+							({{ taxon_profile.morphotype }})
+						{% endif %}
+					</h3>
 					<i>{{ taxon }}</i>
 				{% else %}
 					<h3><i>{{ taxon }}</i></h3>
@@ -66,127 +76,152 @@
 				
 			</div>
 		</div>
-		<div class="row">
-			
-			{% if possible_duplicates %}
-				<div class="col-12">
-					<div class="alert alert-warning">
-						<div>
-							{% trans 'This profile has possible duplicates' %}:
+		{% if taxon_profile.morphotype %}
+		{% else %}
+			<div class="row">
+				{% if possible_duplicates %}
+					<div class="col-12">
+						<div class="alert alert-warning">
+							<div>
+								{% trans 'This profile has possible duplicates' %}:
+							</div>
+							{% for duplicate in possible_duplicates %}
+								<i>
+									<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id duplicate.taxon_source duplicate.name_uuid %}">{{ duplicate.taxon_latname }} {{ duplicate.taxon_author }}</a>
+								</i>
+							{% endfor %}
 						</div>
-						{% for duplicate in possible_duplicates %}
-							<i>
-								<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id duplicate.taxon_source duplicate.name_uuid %}">{{ duplicate.taxon_latname }} {{ duplicate.taxon_author }}</a>
-							</i>
-						{% endfor %}
 					</div>
+				{% endif %}
+				<div class="col-12 mt-3">
+					<div>
+						{% with content_object=taxon_profile %}
+							{% include 'app_kit/ajax/tags.html' %}
+						{% endwith %}
+					</div>
+					<div class="mt-3">
+						<button type="button" class="btn btn-sm btn-outline-primary xhr" data-url="{% url 'tag_any_element' content_type.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'manage tags' %}</button>
+					</div>
+					<hr>
 				</div>
-			{% endif %}
-			<div class="col-12 mt-3">
-				<div>
-					{% with content_object=taxon_profile %}
-						{% include 'app_kit/ajax/tags.html' %}
-					{% endwith %}
-				</div>
-				<div class="mt-3">
-					<button type="button" class="btn btn-sm btn-outline-primary xhr" data-url="{% url 'tag_any_element' content_type.id taxon_profile.id %}" ajax-target="ModalContent">{% trans 'manage tags' %}</button>
-				</div>
-				<hr>
 			</div>
-		</div>
-		<div class="row">
-			<div class="col-12">
-				<div class="card">
-					<div class="card-header">
-						{% trans 'Classification' %}
-					</div>
-					<div class="card-body">
-						<div>
-							<h5>{{ taxon_tree_model }}</h5>
-							{% if taxonomic_branch %}
-								<div>
-									<small>
-										{% for node in taxonomic_branch %}
-											<span>{{ node }}</span> &rarr;
-										{% endfor %}
-										<span>{{ taxon }}</span>
-									</small>
-								</div>
-							{% endif %}
-							{% if navigation_branches %}
-								<div class="mt-4">
-									<h5>{% trans 'Taxonomic Navigation' %}</h5>
-									{% for branch in navigation_branches %}
+		{% endif %}
+		{% if taxon_profile.morphotype %}
+			<div class="row">
+				<div class="col-12">
+					{% trans 'This is a morphotype of:' %} <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">
+						{{ taxon }}
+					</a>
+				</div>
+			</div>
+		{% else %}
+			<div class="row mb-5">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-header">
+							{% trans 'Morphotypes' %}
+						</div>
+						<div class="card-body">
+							<div class="mb-3">
+								{% if taxon_profile.morphotype_profiles %}
+									{% for morphotype in taxon_profile.morphotype_profiles %}
 										<div>
-											<small>
-												{% for node in branch %}
-													<span>{{ node }}</span> &rarr;
-												{% endfor %}
-												<span>{{ taxon }}</span>
-											</small>
+											<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon.taxon_source taxon_profile.taxon.name_uuid morphotype.morphotype %}">
+												{{ morphotype.morphotype }}
+											</a>
 										</div>
 									{% endfor %}
-								</div>
-							{% endif %}
+								{% else %}
+									<div class="text-muted">
+										{% trans 'No morphotypes available.' %}
+									</div>
+								{% endif %}
+							</div>
+							<div>
+								<button type="button" class="btn btn-outline-primary xhr" data-url="{% url 'manage_taxon_profile_morphotype' meta_app.id taxon_profiles.id taxon_profile.id %}" ajax-target="ModalContent">
+									{% trans 'Add morphotype' %}
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<div class="row mt-5">
-			<div class="col-12">
-				<div class="card">
-					<div class="card-header">
-						{% trans 'Vernacular names' %}
-					</div>
-					<div class="card-body">
-						<div id="collected-vernacular-names"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="row mt-5">
-			<div class="col-12">
-				<div class="card">
-					<div class="card-header">
-						{% trans 'Taxon Relationships' %}
-					</div>
-					<div class="card-body">
-						<div>
-							{% render_taxon_relationships meta_app taxon %}
+		{% endif %}
+		{% if taxon_profile.morphotype %}
+		{% else %}
+			<div class="row">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-header">
+							{% trans 'Classification' %}
+						</div>
+						<div class="card-body">
+							<div>
+								<h5>{{ taxon_tree_model }}</h5>
+								{% if taxonomic_branch %}
+									<div>
+										<small>
+											{% for node in taxonomic_branch %}
+												<span>{{ node }}</span> &rarr;
+											{% endfor %}
+											<span>{{ taxon }}</span>
+										</small>
+									</div>
+								{% endif %}
+								{% if navigation_branches %}
+									<div class="mt-4">
+										<h5>{% trans 'Taxonomic Navigation' %}</h5>
+										{% for branch in navigation_branches %}
+											<div>
+												<small>
+													{% for node in branch %}
+														<span>{{ node }}</span> &rarr;
+													{% endfor %}
+													<span>{{ taxon }}</span>
+												</small>
+											</div>
+										{% endfor %}
+									</div>
+								{% endif %}
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<hr>
-		<div class="row">
-			<div class="col-12">
-				{% get_generic_content_options generic_content as options %}
-				{% if options.enable_wikipedia_button %}
-					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a wikipedia page.' %}" class="xhr" ajax-target="ModalContent">
-						<img class="appbutton" src="{% static 'app_kit/buttons/wikipedia_button.svg' %}" />
-					</a>
-				{% endif %}
-				{% if options.enable_observation_button %}
-					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens an observation form for this taxon.' %}" class="xhr" ajax-target="ModalContent">
-						<img class="appbutton" src="{% static 'app_kit/buttons/observation.svg' %}" />
-					</a>
-				{% endif %}
-				{% if options.enable_gbif_occurrence_map_button %}
-					<a data-url="{% url 'mockbutton' %}?message={% trans 'In your app this button opens a GBIF occurrence map for this taxon.' %}" class="xhr" ajax-target="ModalContent">
-						<img class="appbutton" src="{% static 'app_kit/buttons/occurrence.svg' %}" />
-					</a>
-				{% endif %}
+			<div class="row mt-5">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-header">
+							{% trans 'Vernacular names' %}
+						</div>
+						<div class="card-body">
+							<div id="collected-vernacular-names"></div>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
-		<hr>
-		<div class="row">
-			<div class="col-12">
-				<h4>{% trans 'Traits' %}</h4>
-				<div id="taxon-traits"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+			<div class="row mt-5">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-header">
+							{% trans 'Taxon Relationships' %}
+						</div>
+						<div class="card-body">
+							<div>
+								{% render_taxon_relationships meta_app taxon %}
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
+			<hr>
+			<div class="row">
+				<div class="col-12">
+					<h4>{% trans 'Traits' %}</h4>
+					<div id="taxon-traits"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
+				</div>
+			</div>
+		{% endif %}
 		<hr>
 		<div class="row">
 			<div class="col-12">
@@ -223,16 +258,23 @@
 		</div>
 		<hr>
 		<div class="row mt-5">
+			<div class="col-12">
+				<div class="card mb-5">
+					<div class="card-header">
+						{% trans 'Text Set' %}
+					</div>
+					<div class="card-body">
+						<div class="text-muted my-3">
+							{% trans 'The selected Text Set defines which text fields are used for this taxon profile. If no Text Set is selected, all fields will be used.' %}
+						</div>
+						<div id="set-taxon-text-set">
+
+						</div>
+					</div>
+				</div>
+			</div>
 			<div id="taxontexts" class="col-12">
 				{% include 'taxon_profiles/ajax/manage_taxon_profile_form.html' %}
-			</div>
-		</div>
-		<hr>
-		<div class="row my-3">
-			<div class="col-12">
-				<a href data-url="{% url 'create_taxon_text_type' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text type' %}</a>
-				<a href data-url="{% url 'create_taxon_text_type_category' meta_app.id taxon_profiles.id taxon_profile.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Add new text category' %}</a>
-				<a href data-url="{% url 'manage_taxon_text_type_category_order' category_content_type.id taxon_profiles.id %}" ajax-target="ModalContent" class="btn btn-outline-primary xhr">{% trans 'Manage category order' %}</a>
 			</div>
 		</div>
 		<hr>
@@ -269,6 +311,12 @@
 				</div>
 			</div>
 		</div>
+		<hr>
+		<div class="row my-3">
+			<div class="col-12 text-center">
+				<a href="{% url taxon_profiles.manage_url meta_app.id taxon_profiles|ctype_id taxon_profiles.id %}" class="btn btn-primary">{% blocktrans with name=taxon_profiles %}Back to {{ name }}{% endblocktrans  %}</a>
+			</div>
+		</div>
 	</div>
 {% endblock %}
 
@@ -276,13 +324,26 @@
 
 	<script>
 
-		$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
-			$("#taxon-images").html(html);
-			ajaxify('taxon-images');
-		});
+
+		{% if taxon_profile.morphotype %}
+			$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid taxon_profile.morphotype %}", function(html){
+				$("#taxon-images").html(html);
+				ajaxify('taxon-images');
+			});
+		{% else %}
+			$.get("{% url 'collect_taxon_images' meta_app.id taxon_profile.id taxon.taxon_source taxon.name_uuid %}", function(html){
+				$("#taxon-images").html(html);
+				ajaxify('taxon-images');
+			});
+		{% endif %}
 
 		$.get("{% url 'collect_taxon_traits' meta_app.id taxon.taxon_source taxon.name_uuid %}", function(html){
 			$("#taxon-traits").html(html);
+		});
+
+		$.get("{% url 'set_taxon_text_set_for_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.id %}", function(html){
+			$("#set-taxon-text-set").html(html);
+			ajaxify('set-taxon-text-set');
 		});
 
 		{% include 'backbonetaxonomy/ajax/reload_collected_vernacular_names_js.html' %}

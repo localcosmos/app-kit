@@ -424,13 +424,17 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             if taxon_latname:
                 taxon_author = self.get_stripped_cell_value(row[1].value)
                 taxon_source = self.get_stripped_cell_value(row[2].value)
+                morphotype = self.get_stripped_cell_value(row[3].value)
+                if not morphotype:
+                    morphotype = None
 
                 lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
                 
                 # taxa might be renamed. The reference is always the source tree, the name_uuid is constant across renames
                 taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
                                                             taxon_source=lazy_taxon.taxon_source,
-                                                            name_uuid=lazy_taxon.name_uuid).first()
+                                                            name_uuid=lazy_taxon.name_uuid,
+                                                            morphotype=morphotype).first()
 
                 if taxon_profile:
                     if taxon_profile.taxon_latname != lazy_taxon.taxon_latname or taxon_profile.taxon_author != lazy_taxon.taxon_author:
@@ -446,12 +450,14 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                         taxon_source=lazy_taxon.taxon_source,
                         taxon_latname=lazy_taxon.taxon_latname,
                         taxon_author=lazy_taxon.taxon_author,
+                        morphotype=morphotype,
                     ).first()
                     
                     if not taxon_profile:
                         taxon_profile = TaxonProfile(
                             taxon_profiles=self.generic_content,
                             taxon=lazy_taxon,
+                            morphotype=morphotype,
                         )
 
                         taxon_profile.save()

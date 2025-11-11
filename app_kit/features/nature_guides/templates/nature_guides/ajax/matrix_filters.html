@@ -50,7 +50,10 @@
 								</button>
 								<div class="dropdown-menu">
 									<a data-url="{% url 'manage_matrix_filter' meta_app.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.label %}Edit {{ name }}{% endblocktrans %}</a>
-									<a data-url="{% url 'manage_matrix_filter_restrictions' meta_app.id meta_node.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Manage visibility{% endblocktrans %}</a>
+									{% if field.field.matrix_filter.meta_node.identification_mode == 'polytomous' %}
+									{% else %}
+										<a data-url="{% url 'manage_matrix_filter_restrictions' meta_app.id meta_node.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{% blocktrans %}Manage visibility{% endblocktrans %}</a>
+									{% endif %}
 									<a data-url="{% url 'delete_matrix_filter' meta_app.id field.field.matrix_filter.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% blocktrans with name=field.label %}Remove {{ name }}{% endblocktrans %}</a>
 		
 									<div class="dropdown-divider"></div>
@@ -59,7 +62,7 @@
 									<a class="dropdown-item text-center movebackbutton" data-targetid="matrix_filter_{{ field.field.matrix_filter.id }}">&#9660; {% trans 'Move down' %}</a>
 								</div>
 								{% if field.field.matrix_filter.matrix_filter_type.is_multispace %}
-									&nbsp;<a href="#" data-url="{% url 'create_matrix_filter_space' meta_app.id field.field.matrix_filter.id %}" class="btn btn-outline-primary btn-xs xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.field.matrix_filter.matrix_filter_type.verbose_space_name %}Add {{ name }}{% endblocktrans %}</a>
+									&nbsp;<a href="#" data-url="{% url 'create_matrix_filter_space' meta_app.id field.field.matrix_filter.id %}" class="btn btn-outline-primary btn-xs xhr" ajax-target="LargeModalContent">{% blocktrans with name=field.field.matrix_filter.matrix_filter_type.verbose_space_name %}Add trait expression{% endblocktrans %}</a>
 								{% endif %}
 							</div>
 						</div>
