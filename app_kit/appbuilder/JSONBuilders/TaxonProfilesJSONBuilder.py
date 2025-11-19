@@ -99,7 +99,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
     def get_vernacular_name_from_nature_guides(self, lazy_taxon):
         if lazy_taxon.name_uuid in self.vernacular_names_from_nature_guide_cache:
-            return self.vernacular_names_from_nature_guide_cache[lazy_taxon.name_uuid]
+            return self.vernacular_names_from_nature_guide_cache[str(lazy_taxon.name_uuid)]
         
         return lazy_taxon.get_primary_locale_vernacular_name_from_nature_guides(self.meta_app)
     
@@ -158,7 +158,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'metaDescription': None,
             },
             'externalMedia': [],
-            'templateContents': [],
             'morphotypeProfiles': [],
             'isFeatured': is_featured,
         })
@@ -433,7 +432,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                     if vernacular_start_letter not in start_letters['vernacular'][language_code]:
                         start_letters['vernacular'][language_code].append(vernacular_start_letter)
 
-            included_taxa.append(lazy_taxon.name_uuid)
+            included_taxa.append(str(lazy_taxon.name_uuid))
 
         # sort the localited registries
         for language_code, localized_registry in localized_registries.items():

@@ -177,6 +177,9 @@ class LazyTaxon(LazyTaxonBase):
             self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid,
                 language=language).first()
             
+        if not locale:
+            locale = self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid).first()
+            
         if locale:
             vernacular_name = locale.name
             
@@ -236,7 +239,10 @@ class LazyTaxon(LazyTaxonBase):
                 return None
 
         if language == None:
-            language = translation.get_language()[:2].lower()
+            if meta_app:
+                language = meta_app.primary_language
+            else:
+                language = translation.get_language()[:2].lower()
 
         # first use the MetaVernacularNames
         preferred_vernacular_name = self.get_preferred_vernacular_name(language, meta_app)

@@ -319,8 +319,12 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
 
     def __str__(self):
-        return 'Taxon Profile of {0}'.format(self.taxon)
+        text = 'Taxon Profile of {0}'.format(self.taxon)
+        
+        if self.morphotype:
+            text = text + ' ({0})'.format(self.morphotype)
     
+        return text
 
     class Meta:
         # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')

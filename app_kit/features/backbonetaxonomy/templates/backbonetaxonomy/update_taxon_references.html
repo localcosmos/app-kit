@@ -40,6 +40,13 @@
                 </div>
             {% endfor %}
         <div>
+        {% if updated %}
+            <div class="col-12">
+                <div class="alert alert-success">
+                    {% trans 'Taxon references have been updated successfully.' %}
+                </div>
+            </div>
+        {% endif %}
         <div class="col-12">
             <form id="update-taxa-form" method="POST" action="{% url 'update_taxon_references' meta_app.id %}">
                 {% csrf_token %}

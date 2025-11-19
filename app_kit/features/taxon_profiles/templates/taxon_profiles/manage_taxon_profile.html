@@ -29,7 +29,12 @@
 					</h3>
 					<i>{{ taxon }}</i>
 				{% else %}
-					<h3><i>{{ taxon }}</i></h3>
+					<h3>
+						<i>{{ taxon }}</i>
+						{% if taxon_profile.morphotype %}
+							({{ taxon_profile.morphotype }})
+						{% endif %}
+					</h3>
 				{% endif %}
 			</div>
 			<div class="col-auto">

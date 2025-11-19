@@ -130,6 +130,8 @@ def get_content_instance_meta_app(instance):
         
     elif instance.__class__.__name__ == 'BackboneTaxa':
         return get_generic_content_meta_app(instance.backbonetaxonomy)
+    elif instance.__class__.__name__ == 'TaxonRelationship':
+        return get_generic_content_meta_app(instance.backbonetaxonomy)
     elif instance.__class__.__name__ == 'FilterTaxon':
         return get_generic_content_meta_app(instance.taxonomic_filter.map)
     elif instance.__class__.__name__ == 'TaxonProfile':
@@ -165,6 +167,11 @@ def get_content_instance_meta_app(instance):
             return meta_app
         else:
             return None
+    elif instance.__class__.__name__ == 'TaxonomicRestriction':
+        if instance.content.__class__.__name__ == 'LocalizedTemplateContent':
+            app = instance.content.template_content.app
+            meta_app = MetaApp.objects.get(app__uuid=app.uuid)
+            return meta_app
     else:
         # raise error
         raise NotImplementedError(f'get_generic_content_meta_app not implemented for {instance.__class__.__name__}')

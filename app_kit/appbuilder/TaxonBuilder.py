@@ -111,19 +111,19 @@ class TaxonSerializer:
     
     def serialize(self):
         
-        if self.lazy_taxon.name_uuid in self.taxa_builder.cache['simple']:
-            taxon_json = self.taxa_builder.cache['simple'][self.lazy_taxon.name_uuid]
+        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['simple']:
+            taxon_json = self.taxa_builder.cache['simple'][str(self.lazy_taxon.name_uuid)]
         
         else:
             taxon_json = {
                 'taxonLatname' : self.lazy_taxon.taxon_latname,
                 'taxonAuthor' : self.lazy_taxon.taxon_author,
                 'taxonSource' : self.lazy_taxon.taxon_source,
-                'nameUuid' : self.lazy_taxon.name_uuid,
+                'nameUuid' : str(self.lazy_taxon.name_uuid),
                 'taxonNuid' : self.lazy_taxon.taxon_nuid,
             }
             
-            self.taxa_builder.cache['simple'][self.lazy_taxon.name_uuid] = taxon_json
+            self.taxa_builder.cache['simple'][str(self.lazy_taxon.name_uuid)] = taxon_json
         
         taxon_json_copy = copy.deepcopy(taxon_json)
         
@@ -173,8 +173,8 @@ class TaxonSerializer:
 
     def serialize_extended(self):
         
-        if self.lazy_taxon.name_uuid in self.taxa_builder.cache['extended']:
-            taxon_json = self.taxa_builder.cache['extended'][self.lazy_taxon.name_uuid]
+        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['extended']:
+            taxon_json = self.taxa_builder.cache['extended'][str(self.lazy_taxon.name_uuid)]
             
         else:
         
@@ -201,7 +201,7 @@ class TaxonSerializer:
                 taxon_json['shortProfile'] = taxon_profile.short_profile
             
             
-            self.taxa_builder.cache['extended'][self.lazy_taxon.name_uuid] = taxon_json
+            self.taxa_builder.cache['extended'][str(self.lazy_taxon.name_uuid)] = taxon_json
 
         taxon_json_copy = copy.deepcopy(taxon_json)
         
@@ -222,8 +222,8 @@ class TaxonSerializer:
     
     def serialize_images(self):
         
-        if self.lazy_taxon.name_uuid in self.taxa_builder.cache['images']:
-            taxon_images = self.taxa_builder.cache['images'][self.lazy_taxon.name_uuid]
+        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['images']:
+            taxon_images = self.taxa_builder.cache['images'][str(self.lazy_taxon.name_uuid)]
         
         else:
                 
@@ -314,7 +314,7 @@ class TaxonSerializer:
                     collected_content_image_ids.add(taxon_image.id)
                     collected_image_store_ids.add(taxon_image.image_store.id)
     
-            self.taxa_builder.cache['images'][self.lazy_taxon.name_uuid] = taxon_images
+            self.taxa_builder.cache['images'][str(self.lazy_taxon.name_uuid)] = taxon_images
             
         taxon_images_copy = copy.deepcopy(taxon_images)
         
@@ -333,6 +333,9 @@ class TaxonSerializer:
         
             if not accepted_name_uuid:
                 accepted_name_uuid = self.lazy_taxon.name_uuid
+                
+            if accepted_name_uuid:
+                accepted_name_uuid = str(accepted_name_uuid)
                 
             has_taxon_profile = False
             taxon_profile = self.get_taxon_profile()
@@ -358,7 +361,7 @@ class TaxonSerializer:
     
     def serialize_as_registry_taxon(self, languages, name_type, name, is_preferred_name, accepted_name_uuid=None):
         
-        if self.lazy_taxon.name_uuid in self.taxa_builder.cache['registry']:
+        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['registry']:
             registry_taxon_json = self.taxa_builder.cache['registry']
             
         else:
@@ -376,7 +379,7 @@ class TaxonSerializer:
                 if preferred_vernacular_name:
                     registry_taxon_json['vernacularNames'][language_code] = preferred_vernacular_name
                     
-            self.taxa_builder.cache['registry'][self.lazy_taxon.name_uuid] = registry_taxon_json
+            self.taxa_builder.cache['registry'][str(self.lazy_taxon.name_uuid)] = registry_taxon_json
             
         registry_taxon_json_copy = copy.deepcopy(registry_taxon_json)
         

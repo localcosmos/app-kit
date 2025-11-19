@@ -276,6 +276,7 @@ class ManageTaxonProfileMorphotype(CreateTaxonProfileMixin, MetaAppFormLanguageM
             self.taxon_profile.morphotype = morphotype
             self.taxon_profile.save()
         
+        context['taxon_profile'] = self.taxon_profile
         context['success'] = True
         return self.render_to_response(context)
     

@@ -1,28 +1,44 @@
 ####################################################################################################################
 #
-#   IMPORT Algaebase.org
+#   IMPORT Algaebase
 #
 ####################################################################################################################
 
+# A: id
+# B: genus
+# C: species
+# D: subspecies
+# E: variety
+# F: forma
+# G: taxon authority (nomenclatural_authorities)
+# H: year (year_of_publication)
+# I: accepted_name_id (id_current_name)
+# J: current_flag
+# K: record_status
+# L: phylum
+# M: subphylum
+# N: class
+# O: order
+# P: family
+# Q: subfamiy
+# R: tribe
+# S: habitat
+# T: Link
 from taxonomy.sources.TaxonSourceManager import (TaxonSourceManager, SourceTreeTaxon, d2n, n2d,
                                     SourceSynonymTaxon, VernacularName, TreeCache)
 
 from taxonomy.sources.algaebase.models import AlgaebaseTaxonTree, AlgaebaseTaxonSynonym, AlgaebaseTaxonLocale
 
-import psycopg2, psycopg2.extras, os, csv
+import psycopg2, psycopg2.extras, os
 
-from html.parser import HTMLParser
+import logging, csv
 
-
-
-# the CoL2019 uses language names like "English" -> use langcodes
-import langcodes, logging
+from django.db import transaction, connection, connections
 
 DEBUG = False
 
-
 # db interface for algaebase 2020 postgres db
-algaebaseCon = psycopg2.connect(dbname="algaebase_2020", user="localcosmos", password="localcosmos",
+algaebaseCon = psycopg2.connect(dbname="algaebase_2025", user="localcosmos", password="localcosmos",
                           host="localhost", port="5432")
 
 algaebaseCursor = algaebaseCon.cursor(cursor_factory = psycopg2.extras.DictCursor)
@@ -45,7 +61,7 @@ RANK_MAP = {
     'F' : 'forma',
 }
 
-SOURCE_NAME = 'algaebase2020'
+SOURCE_NAME = 'algaebase2025'
 
 HIGHER_TAXA_PARENT_MAP = {}
 
@@ -70,19 +86,9 @@ INFRASPECIFIC_ABBREVIATIONS = {
     'forma' : 'f.',
 }
 
-DEBUG = True
-
 class AlgaebaseSourceTreeTaxon(SourceTreeTaxon):
 
     TreeModel = AlgaebaseTaxonTree
-
-
-    def __init__(self, latname, author, rank, source, source_id, parent_name, parent_rank, **kwargs):
-
-        super().__init__(latname, author, rank, source, source_id, **kwargs)
-
-        self.parent_rank = parent_rank        
-        self.parent_name = parent_name
 
     # higher taxa are not db entries in algaebase
     # genus Chaetopia occurs in Heteropediaceae AND Radiococcaceae
@@ -101,7 +107,7 @@ class AlgaebaseSourceTreeTaxon(SourceTreeTaxon):
             sql = '''SELECT DISTINCT("{0}") {3} FROM taxa
                                     WHERE "{0}" = '{1}'
                                     {2}
-                                    AND id_current_name = 0
+                                    AND id_current_name IS NULL
                                     '''.format(self.rank, self.latname, parent_sql, parent_rank_sql)
 
             if DEBUG == True:
@@ -152,8 +158,8 @@ class AlgaebaseSourceTreeTaxon(SourceTreeTaxon):
                     for key, value in db_taxon.items():
                         cleaned_taxon[key] = value
 
-                    synonym_rank = RANK_MAP[db_taxon['level']]
-
+                    synonym_rank = RANK_MAP[db_taxon['record_status']]
+                    
                     taxon_name = self.get_scientific_name(db_taxon, synonym_rank)
 
                     author = AlgaebaseManager._get_author(cleaned_taxon, synonym_rank)
@@ -172,14 +178,14 @@ class AlgaebaseSourceTreeTaxon(SourceTreeTaxon):
 
                 ids_str = ','.join(synonym_ids)
                 sql = '''SELECT * FROM taxa WHERE id_current_name IN ({0}) '''.format(ids_str)
+                
                 algaebaseCursor.execute(sql)
-
                 db_synonyms = algaebaseCursor.fetchall()
             
         return synonyms
 
-
     # respect, subgenus, subspecies, variety, form, and their abbreviations
+    # scientific name without author
     @classmethod
     def get_scientific_name(cls, db_taxon, taxon_rank):
 
@@ -188,43 +194,45 @@ class AlgaebaseSourceTreeTaxon(SourceTreeTaxon):
 
         # go from current rank upwards up to genus
         if taxon_rank in LOWER_RANKS:
-
-            start_rank = taxon_rank
-            start_rank_index = RANKS.index(start_rank)
-            genus_index = RANKS.index('genus')
-
-            abbreviation = INFRASPECIFIC_ABBREVIATIONS.get(taxon_rank, '')
-
-            scientific_name = ''
-
-            if db_taxon[start_rank]:
-                scientific_name = '{0} {1}'.format(abbreviation, db_taxon[start_rank])
-                scientific_name = scientific_name.replace('  ', ' ').strip()
             
-            one_rank_up_index = start_rank_index - 1
-
-            while one_rank_up_index >= genus_index:
-
-                one_rank_up = RANKS[one_rank_up_index]
+            if taxon_rank == 'species':
+                scientific_name = '{0} {1}'.format(db_taxon['genus'], db_taxon['species'])
+            
+            
+            else:
+                abbreviation = INFRASPECIFIC_ABBREVIATIONS[taxon_rank]
+            
+                if taxon_rank == 'subspecies':
+                    
+                    scientific_name = '{0} {1} {2} {3}'.format(db_taxon['genus'], db_taxon['species'],
+                                                            abbreviation, db_taxon['subspecies'])
                 
-                name_part = db_taxon[one_rank_up]
-
-                if name_part:
-
-                    abbreviation = INFRASPECIFIC_ABBREVIATIONS.get(one_rank_up, '')
-                    name_part = '{0} {1}'.format(abbreviation, name_part)
-
-                    name_part = name_part.replace('  ', ' ').strip()
+                elif taxon_rank == 'variety':
+                    
+                    scientific_name = '{0} {1}'.format(db_taxon['genus'], db_taxon['species'])
+                    
+                    if db_taxon['subspecies']:
+                        scientific_name = '{0} subsp. {1}'.format(scientific_name, db_taxon['subspecies'])
+                        
+                    scientific_name = '{0} {1} {2}'.format(scientific_name, abbreviation, db_taxon['variety'])
                 
-                    scientific_name = '{0} {1}'.format(name_part, scientific_name)
-
-                scientific_name = scientific_name.replace('  ', ' ').strip()
-
-                one_rank_up_index = one_rank_up_index - 1
+                elif taxon_rank == 'forma':
+                    scientific_name = '{0} {1}'.format(db_taxon['genus'], db_taxon['species'])
+                    
+                    if db_taxon['subspecies']:
+                        scientific_name = '{0} subsp. {1}'.format(scientific_name, db_taxon['subspecies'])
+                        
+                    if db_taxon['variety']:
+                        scientific_name = '{0} var. {1}'.format(scientific_name, db_taxon['variety'])
+                        
+                    scientific_name = '{0} {1} {2}'.format(scientific_name, abbreviation, db_taxon['forma'])
+                
+                else:
+                    raise ValueError('invalid taxon_rank for scientific name: {0}'.format(taxon_rank))
 
         else:
             scientific_name = db_taxon[taxon_rank]
-
+            
         return scientific_name
 
 
@@ -236,6 +244,22 @@ class AlgaebaseTreeCache(TreeCache):
 
     SourceTreeTaxonClass = AlgaebaseSourceTreeTaxon
     TaxonTreeModel = AlgaebaseTaxonTree
+    
+    def _make_source_taxon(self, db_taxon):
+
+        parent_taxon = db_taxon.parent
+        parent_name = None
+        parent_rank = None
+        
+        if parent_taxon:
+            parent_name = parent_taxon.taxon_latname
+            parent_rank = parent_taxon.rank
+        
+        return AlgaebaseSourceTreeTaxon(
+            db_taxon.taxon_latname, db_taxon.taxon_author, db_taxon.rank, 'Algaebase', db_taxon.source_id,
+            parent_name, parent_rank,
+            nuid = db_taxon.taxon_nuid
+        )
     
 
 class AlgaebaseManager(TaxonSourceManager):
@@ -253,7 +277,6 @@ class AlgaebaseManager(TaxonSourceManager):
 
     # higher taxa might not have an id
     # parent_name is required because eg
-    # genus Neofragilaria occurs in two different families: Fragilariaceae, Plagiogrammaceae
     def _sourcetaxon_from_db_taxon(self, db_taxon, taxon_rank, parent_name, parent_rank):
 
         taxon_name = AlgaebaseSourceTreeTaxon.get_scientific_name(db_taxon, taxon_rank)
@@ -280,6 +303,34 @@ class AlgaebaseManager(TaxonSourceManager):
         )
 
         return source_taxon
+    
+    @classmethod
+    def _taxa_are_duplicates(cls, id_list):
+        
+        reference_taxon_id = id_list[0]
+        
+        refetence_taxon_sql = '''SELECT * FROM taxa WHERE "id" = {0}'''.format(reference_taxon_id)
+        
+        algaebaseCursor.execute(refetence_taxon_sql)
+        reference_taxon = algaebaseCursor.fetchone()
+        
+        fields_to_compare = ['genus', 'species', 'nomenclatural_authorities']
+
+        for taxon_id in id_list[1:]:
+            
+            taxon_sql = '''SELECT * FROM taxa WHERE "id" = {0}'''.format(taxon_id)
+            
+            algaebaseCursor.execute(taxon_sql)
+            taxon = algaebaseCursor.fetchone()
+            
+            # compare genus, species, nomenclatural_authorities, year_of_publication
+            # accept different years for the same author as "same"
+            
+            for field in fields_to_compare:
+                if reference_taxon[field] != taxon[field]:
+                    return False
+            
+        return True
 
     # author, id impossible for taxon higher than genus
     @classmethod
@@ -290,10 +341,17 @@ class AlgaebaseManager(TaxonSourceManager):
         if taxon_rank in LOWER_RANKS:
 
             ids = list(db_taxon['ids'])
+            
+            # these are possibly just duplicates
             if len(ids) > 1:
                 
-                ids_str = ','.join([str(taxon_id) for taxon_id in ids])
-                raise ValueError('Multiple ids found: {0}'.format(ids_str))
+                taxa_are_duplicates = cls._taxa_are_duplicates(ids)
+                if not taxa_are_duplicates:
+                    ids_str = ','.join([str(taxon_id) for taxon_id in ids])
+                    raise ValueError('Multiple ids found for taxon {0} of rank {1}: {2}. Checked and found that they are not duplicates.'.format(
+                        db_taxon, taxon_rank, ids_str))
+                #ids_str = ','.join([str(taxon_id) for taxon_id in ids])
+                #raise ValueError('Multiple ids found: {0}'.format(ids_str))
 
             taxon_id = ids[0]
 
@@ -320,7 +378,7 @@ class AlgaebaseManager(TaxonSourceManager):
         
         algaebaseCursor.execute('''SELECT DISTINCT(phylum) FROM taxa
                                     WHERE "phylum" IS NOT NULL
-                                    AND id_current_name = 0
+                                    AND id_current_name IS NULL
                                     ORDER BY "phylum"''')
 
         phylums = algaebaseCursor.fetchall()
@@ -407,7 +465,7 @@ class AlgaebaseManager(TaxonSourceManager):
                             AND "subspecies" IS NULL
                             AND "variety" IS NULL
                             AND "forma" IS NULL
-                            AND id_current_name = 0
+                            AND id_current_name IS NULL
                             '''.format(genus_name, parent_rank, parent_name)
         if DEBUG == True:
             print(sql)
@@ -496,20 +554,84 @@ class AlgaebaseManager(TaxonSourceManager):
 
         return children
     
+
+    # grandparent rank might not exist
+    # grandparent might skip a few ranks upwards:
+    # case: genus is present, grandparent is family. that means subfamily and tribe have to be null
+    def _get_grandparent_query(self, parent):
+
+        if DEBUG == True:
+            print ('_get_grandparent_query. parent: {0}'.format(parent.latname))
+
+        sql = ''
+        
+        grandparent_rank = parent.parent_rank
+        grandparent_name = parent.parent_name
+
+        if grandparent_rank and grandparent_name:
+            sql = ''' AND "{0}" = '{1}' '''.format(grandparent_rank, grandparent_name)
+            
+        parent_rank_index = RANKS.index(parent.rank)
+        grandparent_rank_index = RANKS.index(grandparent_rank)
+        
+        # skipable ranks between parent and grandparent have to be NULL
+        if grandparent_rank_index < parent_rank_index - 1:
+
+            null_ranks = RANKS[grandparent_rank_index + 1 : parent_rank_index]
+
+            sql = self._append_is_null_clauses(sql, null_ranks)
+
+        return sql
+            
     
-    def _get_higher_children_simple(self, source_taxon, parent_rank, parent_name):
+        
+    def _get_select_ranks(self, rank):
+        select_ranks = RANKS[:RANKS.index(rank)]
+        return select_ranks
+
+    ###
+    # getting children in algaebase depends on the higher taxon, as higher taxa are not listed
+    # in the tree as taxa, but only as higher taxa of species
+    # make one method per rank
+    ###
+    def _get_children(self, source_taxon):
+
+        if DEBUG == True:
+            print('_get_children for {0} {1}'.format(source_taxon.latname, source_taxon.author))
+
+
+        children_method_str = '_get_children_{0}'.format(source_taxon.rank)
+        children_method = getattr(self, children_method_str)
+        
+        db_children = children_method(source_taxon)
+        
+        if DEBUG == True:
+            print('found {0} children for {1}'.format(len(db_children), source_taxon.latname))
+        
+        children = []
+        for child_db in db_children:
+            child = self._sourcetaxon_from_db_taxon(
+                child_db, child_db['rank'], source_taxon.latname, source_taxon.rank)
+            children.append(child)
+        
+        return children 
+    
+    # this will query only one taxonomic level down, for example query all classes of a subphylum
+    def _get_children_next_rank_only(self, source_taxon):
+        
+        parent_rank = source_taxon.rank
+        parent_name = source_taxon.latname
 
         children_rank = self._get_children_rank(parent_rank)
-        children_rank_index = RANKS.index(children_rank)
 
         select_ranks_str, group_by_ranks_str = self._get_select_ranks_str_and_group_by_ranks_str(children_rank)
-        null_ranks_str = self._get_null_ranks_str(children_rank)
+        null_ranks_str = '' #self._get_null_ranks_str(children_rank)
         grandparent_query = self._get_grandparent_query(source_taxon)
 
         sql = '''SELECT DISTINCT("{0}"), {1}, ARRAY_AGG("id") AS ids FROM taxa
                     WHERE "{2}" = '{3}'
                     AND "{0}" IS NOT NULL
-                    AND id_current_name = 0
+                    AND id_current_name IS NULL
                     {4}
                     {5}
                     GROUP BY {6}
@@ -529,20 +651,27 @@ class AlgaebaseManager(TaxonSourceManager):
         children = self._children_dict_to_children_list(children_db)
 
         return children
-
-    # subphylum can be skipped
-    def _get_higher_children_phylum(self, source_taxon, parent_rank, parent_name):
-
+    
+    
+    def _get_children_phylum(self, source_taxon):
+        # subphylum might be empty
+        # so it can be subphylum or class
+        # "parent" means parent of the children we want to fetch
+        parent_rank = source_taxon.rank
+        parent_name = source_taxon.latname
+        
+        # this will return subphylum
         children_rank = self._get_children_rank(parent_rank)
 
         select_ranks_str, group_by_ranks_str = self._get_select_ranks_str_and_group_by_ranks_str(children_rank)
-        grandparent_query = self._get_grandparent_query(source_taxon)
+        # phyla do not have parents
+        grandparent_query = '' #self._get_grandparent_query(source_taxon)
 
         # get all subphylums
         sql_subphylum = '''SELECT DISTINCT("subphylum"), {0}, ARRAY_AGG("id") AS ids FROM taxa
                     WHERE "phylum" = '{1}'
                     AND "subphylum" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "subphylum"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -562,7 +691,7 @@ class AlgaebaseManager(TaxonSourceManager):
                     WHERE "phylum" = '{1}'
                     AND "subphylum" IS NULL
                     AND "class" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "class"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -584,9 +713,30 @@ class AlgaebaseManager(TaxonSourceManager):
 
         return children
     
+    # only class is a valid subrank of subphylum
+    # class is given for all taxa
+    def _get_children_subphylum(self, source_taxon):
+        return self._get_children_next_rank_only(source_taxon)
+    
+    # only order is a valid subclass of class
+    # order is given for all taxa
+    def _get_children_class(self, source_taxon):
+        return self._get_children_next_rank_only(source_taxon)
+    
+    # only family is a valid subclass of order
+    # family is given for all taxa
+    def _get_children_order(self, source_taxon):
+        return self._get_children_next_rank_only(source_taxon)
+    
+    # can be subfamily, but subfamily can be empty
+    # can be tribe, but tribe can be empty
+    # so it can be subfamily, tribe or genus
+    # genus cannot be empty
+    def _get_children_family(self, source_taxon):
 
-    # subfamily and / or tribe can be skipped
-    def _get_higher_children_family(self, source_taxon, parent_rank, parent_name):
+        # "parent" means parent of the children we want to fetch
+        parent_rank = source_taxon.rank
+        parent_name = source_taxon.latname
 
         children_rank = self._get_children_rank(parent_rank)
 
@@ -597,7 +747,7 @@ class AlgaebaseManager(TaxonSourceManager):
         sql_subfamily = '''SELECT DISTINCT("subfamily"), {0}, ARRAY_AGG("id") AS ids FROM taxa
                     WHERE "family" = '{1}'
                     AND "subfamily" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "subfamily"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -616,7 +766,7 @@ class AlgaebaseManager(TaxonSourceManager):
                     WHERE "family" = '{1}'
                     AND "subfamily" IS NULL
                     AND "tribe" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "tribe"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -636,7 +786,7 @@ class AlgaebaseManager(TaxonSourceManager):
                     AND "subfamily" IS NULL
                     AND "tribe" IS NULL
                     AND "genus" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "genus"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -660,8 +810,14 @@ class AlgaebaseManager(TaxonSourceManager):
 
         return children
 
-    # tribe can be skipped
-    def _get_higher_children_subfamily(self, source_taxon, parent_rank, parent_name):
+    
+    # tribe can be empty
+    # so it can be tribe or genus
+    def _get_children_subfamily(self, source_taxon):
+        
+        # "parent" means parent of the children we want to fetch
+        parent_rank = source_taxon.rank
+        parent_name = source_taxon.latname
         
         children_rank = self._get_children_rank(parent_rank)
 
@@ -672,7 +828,7 @@ class AlgaebaseManager(TaxonSourceManager):
         sql_tribe = '''SELECT DISTINCT("tribe"), {0}, ARRAY_AGG("id") AS ids FROM taxa
                     WHERE "subfamily" = '{1}'
                     AND "tribe" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "tribe"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -691,7 +847,7 @@ class AlgaebaseManager(TaxonSourceManager):
                     WHERE "subfamily" = '{1}'
                     AND "tribe" IS NULL
                     AND "genus" IS NOT NULL
-                    AND id_current_name = 0
+                    AND "id_current_name" IS NULL
                     {2}
                     GROUP BY {3}
                     ORDER BY "genus"'''.format(select_ranks_str, parent_name, grandparent_query,
@@ -713,354 +869,299 @@ class AlgaebaseManager(TaxonSourceManager):
         children = self._children_dict_to_children_list(children_db)
 
         return children
-
     
-    def _get_higher_children(self, source_taxon, parent_rank, parent_name):
-
-        if DEBUG == True:
-            print('_get_higher_children: parent_rank: {0}, parent_name: {1}'.format(parent_rank, parent_name))
-
-
-        if parent_rank == 'phylum':
-            children_db = self._get_higher_children_phylum(source_taxon, parent_rank, parent_name)
-
-        elif parent_rank == 'family':
-            children_db = self._get_higher_children_family(source_taxon, parent_rank, parent_name)
-        
-        elif parent_rank == 'subfamily':
-            children_db = self._get_higher_children_subfamily(source_taxon, parent_rank, parent_name)
-
-        else:
-            children_db = self._get_higher_children_simple(source_taxon, parent_rank, parent_name)
-
-
-        children = []
-        
-        # children rank might differ within children
-        for child in children_db:
-
-            children_rank = child['rank']
-
-            # there might be different authors for the same name
-            if children_rank in LOWER_RANKS and len(child['ids']) > 1:
-
-                if children_rank != 'species':
-                    raise ValueError('invalid children rank for _get_higher_children: {0}'.format(
-                        children_rank))
-
-                for child_id in child['ids']:
-                    unique_child = self._get_db_taxon_by_id(child_id)
-                    rank_is_valid = self._verify_lower_taxon_rank(unique_child, children_rank)
-
-                    if rank_is_valid == True:
-                        source_taxon = self._sourcetaxon_from_db_taxon(unique_child, children_rank,
-                                                                       parent_name, parent_rank)
-                        children.append(source_taxon)
-
-            elif children_rank == 'genus':
-                has_species = self._verify_genus_has_species(child, parent_rank, parent_name)
-                if has_species == True:
-                    source_taxon = self._sourcetaxon_from_db_taxon(child, children_rank, parent_name,
-                                                                   parent_rank)
-                    children.append(source_taxon)
-
-            else:
-
-                source_taxon = self._sourcetaxon_from_db_taxon(child, children_rank, parent_name,
-                                                               parent_rank)
-                children.append(source_taxon)
-
-        return children
+    # has to be genus
+    # tribe is given, not empty
+    def _get_children_tribe(self, source_taxon):
+        return self._get_children_next_rank_only(source_taxon)
     
+    # species column has to be present
+    # subspecies has to be empy
+    # variety has to be empty
+    # forma has to be empty
+    def _get_children_genus(self, source_taxon):
+        # "parent" means parent of the children we want to fetch
+        parent_rank = source_taxon.rank
+        parent_name = source_taxon.latname
+        
+        # subspecies
+        children_rank = self._get_children_rank(parent_rank)
 
-    # only for species and below
-    def _child_already_exists_in_tree(self, source_taxon):
-
-        exists = self.TaxonTreeModel.objects.filter(source_id=str(source_taxon.source_id)).first()
-
-        if exists:
-            print('Child already exists: {0}'.format(source_taxon.source_id))
-            # make a check if the existence is a valid one, which means the parent has the correct
-            # name and rank
-            db_taxon = source_taxon._get_source_object()
-            scientific_name = source_taxon.get_scientific_name(db_taxon, source_taxon.rank)
-
-            existing_parent = exists.parent
-
-            parent_rank = RANKS[RANKS.index(source_taxon.rank)-1]
-            # passing the child, but the parent rank
-            parent_taxon_latname = source_taxon.get_scientific_name(db_taxon, parent_rank)
-
-            if existing_parent.taxon_latname == parent_taxon_latname:
-                return True
-            else:
-                raise ValueError('Inconsistent tree: {0} ||| {1}'.format(existing_parent.taxon_latname,
-                                                                     parent_taxon_latname))
-            
-        return False
-
-    # grandparent rank might nor exist
-    def _get_grandparent_query(self, parent):
-
-        if DEBUG == True:
-            print ('_get_grandparent_query. parent: {0}'.format(parent.latname))
-
-        sql = ''
-
-        parent_rank = parent.rank
-        parent_rank_index = RANKS.index(parent_rank)
-        grandparent_rank_index = parent_rank_index -1
-
-        if grandparent_rank_index >= 0:
-
-            grandparent_rank = RANKS[grandparent_rank_index]
-            
-            parent_rank_index = RANKS.index(parent.rank)
-            
-            if parent_rank_index > 0:
-
-                cache_level_index = self.cache._find_level(parent)
-
-                #if cache_level_index:
-
-                grandparent = self.cache._get_parent(parent)
-
-                #grandparent_rank_index = RANKS.index(grandparent.rank)
-                
-                #if grandparent_rank_index < parent_rank_index:
-                sql = ''' AND "{0}" = '{1}' '''.format(grandparent.rank, grandparent.latname)
-
-                #else:
-                #    # error log
-                #    print('failed to get grandparent_query: {0} :::: {1}'.format(self.cache, parent))
-
-        return sql
-            
-
-    # get children of species, subspecies, variety and forma
-    # case: Denticulopsis praedimorpha exists twice in db, with different authors
-    # problem: fetching children of Denticulopsis praedimorpha occurs twice
-    # problem: a FORMA does not need a VARIETY
-    #          if a species has a varieta and a forma without variety, the forma is skipped
-    #          solution: search all infraspecies that have NULL columns between species and infraspecifi epithet
-    def _get_children_sql(self, source_taxon, children_rank, select_ranks, parent_rank, parent_name,
-                          null_ranks_str):
-
-        # psql requires quoted "order", not order
-        select_ranks_fixed = ['"{0}"'.format(rank) for rank in select_ranks]
-        select_ranks_str = ','.join(select_ranks_fixed)
-
-        group_by_ranks_str = '{0}'.format(children_rank)
-        group_by_ranks_str = '"{0}", {1}'.format(group_by_ranks_str, select_ranks_str)
-
+        select_ranks_str, group_by_ranks_str = self._get_select_ranks_str_and_group_by_ranks_str(children_rank)
         grandparent_query = self._get_grandparent_query(source_taxon)
 
-        parent_name = parent_name.replace("'", "''")
+        # get all tribes
+        sql_species = '''SELECT "species", "nomenclatural_authorities", {0}, ARRAY_AGG("id") AS ids FROM taxa
+                    WHERE "genus" = '{1}'
+                    AND "subspecies" IS NULL
+                    AND "variety" IS NULL
+                    AND "forma" IS NULL
+                    AND "id_current_name" IS NULL
+                    {2}
+                    GROUP BY "species", "nomenclatural_authorities", {3}
+                    ORDER BY "species"'''.format(select_ranks_str, parent_name,
+                                               grandparent_query, group_by_ranks_str)
 
-        sql = '''SELECT DISTINCT("{0}"), {1}, ARRAY_AGG("id") AS ids FROM taxa
-                    WHERE "{2}" = '{3}'
-                    AND "{0}" IS NOT NULL
-                    AND id_current_name = 0
-                    AND id != {4}
-                    {5}
-                    {6}
-                    GROUP BY {7}
-                    ORDER BY "{0}"'''.format(children_rank, select_ranks_str, parent_rank, parent_name,
-                                    source_taxon.source_id, grandparent_query,
-                                    null_ranks_str, group_by_ranks_str)
+        if DEBUG == True:
+            print(sql_species)
 
-        return sql
+        algaebaseCursor.execute(sql_species)
 
+        children_species_db = algaebaseCursor.fetchall()
         
-    def _get_select_ranks(self, rank):
-        select_ranks = RANKS[:RANKS.index(rank)]
-        return select_ranks
-    
-    
-    def _get_all_subspecies(self, source_taxon):        
-        # min rank: species
-        # max rank: species
-        # variety and forma are NULL
-
-        subspecies_db = []
-
-        source_object = source_taxon._get_source_object()
+        if DEBUG == True:
+            print('found {0} db_species for genus {1}'.format(len(children_species_db), parent_name))
         
-        if source_taxon.rank == 'species':
+        children_db = {}
+        children_db[children_rank] = children_species_db
 
-            children_rank = 'subspecies'
-            
-            select_ranks = self._get_select_ranks(children_rank)
+        children = self._children_dict_to_children_list(children_db)
 
-            parent_rank = source_taxon.rank
-            parent_name = source_object[parent_rank]
-            
-            null_ranks_str = self._get_null_ranks_str(children_rank)
-
-            sql = self._get_children_sql(source_taxon, children_rank, select_ranks, parent_rank, parent_name,
-                                         null_ranks_str)
-
-            if DEBUG == True:
-                print(sql)
-
-            algaebaseCursor.execute(sql)
-
-            subspecies_db = algaebaseCursor.fetchall()
-            
-        return subspecies_db
+        return children
     
-    # a variety can be attached to a species or subspecies. The subspecies is optional
-    def _get_all_varieties(self, source_taxon):
-        # min rank: species
-        # max rank: subspecies
-        # forma IS NULL
-        # if species: subspecies is NULL
-
-        varieties_db = []
-
-        source_object = source_taxon._get_source_object()
-
-        if source_taxon.rank in ['species', 'subspecies']:
-
-            children_rank = 'variety'
-            parent_rank = source_taxon.rank
-            parent_name = source_object[parent_rank]
-            select_ranks = self._get_select_ranks(children_rank)
-
-            if source_taxon.rank == 'species':
-                null_ranks_str = self._get_null_ranks_str(children_rank)
-                null_ranks_str = ''' {0} AND "subspecies" IS NULL '''.format(null_ranks_str)
-
-            elif source_taxon.rank == 'subspecies':
-                null_ranks_str = self._get_null_ranks_str(children_rank)
-
-
-            sql = self._get_children_sql(source_taxon, children_rank, select_ranks, parent_rank, parent_name,
-                                         null_ranks_str)
-
-            if DEBUG == True:
-                print(sql)
-
-            algaebaseCursor.execute(sql)
-
-            varieties_db = algaebaseCursor.fetchall()
-
-        return varieties_db
     
-
-    def _get_all_formas(self, source_taxon):
-        # min rank: species
-        # max rank: variety
-        # if species: subspecies IS NULL AND variety IS NULL
-        # if subspecies: variety IS NULL
-
-        formas_db = []
-
-        source_object = source_taxon._get_source_object()
-
-        if source_taxon.rank in ['species', 'subspecies', 'variety']:
-
-            children_rank = 'forma'
-            parent_rank = source_taxon.rank
-            parent_name = source_object[parent_rank]
-            select_ranks = self._get_select_ranks(children_rank)
-            
-            # forma attached to a species
-            if source_taxon.rank == 'species':
-                null_ranks_str = self._get_null_ranks_str(children_rank)
-                null_ranks_str = ''' {0} AND "subspecies" IS NULL
-                                            AND "variety" IS NULL '''.format(null_ranks_str)
-
-            # forma attached to subspecies
-            elif source_taxon.rank == 'subspecies':
-                null_ranks_str = self._get_null_ranks_str(children_rank)
-                null_ranks_str = ''' {0} AND "variety" IS NULL '''.format(null_ranks_str)
-
-            # forma attached to variety
-            elif source_taxon.rank == 'variety':
-                null_ranks_str = self._get_null_ranks_str(children_rank)
-
-            sql = self._get_children_sql(source_taxon, children_rank, select_ranks, parent_rank, parent_name,
-                                         null_ranks_str)
-
-            if DEBUG == True:
-                print(sql)
-
-            algaebaseCursor.execute(sql)
-
-            formas_db = algaebaseCursor.fetchall()
-
-        return formas_db
+    # sometimes, two species with different authors exist in algabease
+    # we can append infrascpecies only to one of those species
+    def _check_if_infrascpecies_exists(self, db_taxon):
+        
+        ids = list(db_taxon['ids'])
+        if len(ids) > 1:
+            print('multiple ids found for taxon {0}: {1}'.format(
+                db_taxon, ids))
+        
+        source_id = ids[0]
+        
+        exists = AlgaebaseTaxonTree.objects.filter(
+            source_id = source_id,
+        ).exists()
+        
+        return exists
     
-
-
-    def _get_lower_children(self, source_taxon):
-
-        children = []
-
-        source_object = source_taxon._get_source_object()
-        parent_rank = source_taxon.rank
-        parent_name = source_object[parent_rank]
-
-        ranked_children = {
-            'subspecies' : self._get_all_subspecies(source_taxon),
-            'variety' : self._get_all_varieties(source_taxon),
-            'forma' : self._get_all_formas(source_taxon),
-        }
-
-        children_db = self._children_dict_to_children_list(ranked_children)
-
-        ##################################################################################
-        # Check if the children already have been assigned to a different parent with the
-        # same name
-        ##################################################################################
-
-        # there might be different authors for the same name
-
+    
+    def _clean_children(self, children_db):
+        cleaned_children = []
+        
         for child in children_db:
-
-            children_rank = child['rank']
-
-            for child_id in child['ids']:
-                unique_child = self._get_db_taxon_by_id(child_id)
-
-                source_taxon = self._sourcetaxon_from_db_taxon(unique_child, children_rank,
-                                                               parent_name, parent_rank)
-
-                exists = self._child_already_exists_in_tree(source_taxon)
-                if not exists:
-                    children.append(source_taxon)
-
-        return children
-
-
-    ###
-    # getting children in algaebase depends on the higher taxon, as higher taxa are not listed
-    # in the tree as taxa, but only as higher taxa of species
-    ###
-    def _get_children(self, source_taxon):
-
-        if DEBUG == True:
-            print('_get_children for {0} {1}'.format(source_taxon.latname, source_taxon.author))
-
-
-        if source_taxon.rank in LOWER_RANKS:
-            children = self._get_lower_children(source_taxon)
-
-        else:
             
-            parent_rank = source_taxon.rank
-            source_object = source_taxon._get_source_object()
-            parent_name = source_object[parent_rank]
+            taxa_are_duplicates = self._taxa_are_duplicates(list(child['ids']))
+            if not taxa_are_duplicates:
+                ids_str = ','.join([str(taxon_id) for taxon_id in child['ids']])
+                raise ValueError('Multiple ids found for taxon {0}: {1}. Checked and found that they are not duplicates.'.format(
+                    child, ids_str))
+            
+            if not self._check_if_infrascpecies_exists(child):
+                cleaned_children.append(child)
+        
+        return cleaned_children
 
-            # this does not work for subspecies, variety and form - for those, more WHERE clauses are required
-            children = self._get_higher_children(source_taxon, parent_rank, parent_name)
+    
+    # species can have subspecies
+    # species can have a variety without subspecies
+    # species can have a forma without subspecies and variety
+    def _get_children_species(self, source_taxon):
+        
+        db_species = source_taxon._get_source_object()
+        genus_name = db_species['genus']
+        species_epithet = db_species['species']
+        
+        grandparent_query = self._get_grandparent_query(source_taxon)
 
-        if DEBUG == True:
-            print('found {0} children for {1}'.format(len(children), source_taxon.latname))
+        # subspecies
+        sel_sub, _ = self._get_select_ranks_str_and_group_by_ranks_str('subspecies')
+        grp_sub = f'"subspecies", "nomenclatural_authorities", {sel_sub}'
+        sql_subspecies = f'''SELECT DISTINCT("subspecies"), "nomenclatural_authorities", {sel_sub},
+                                    ARRAY_AGG("id") AS ids
+                             FROM taxa
+                             WHERE "genus" = '{genus_name}'
+                               AND "species" = '{species_epithet}'
+                               AND "subspecies" IS NOT NULL
+                               AND "variety" IS NULL
+                               AND "forma" IS NULL
+                               AND "id_current_name" IS NULL
+                               {grandparent_query}
+                             GROUP BY {grp_sub}
+                             ORDER BY "subspecies"'''
+        if DEBUG:
+            print(sql_subspecies)
+        algaebaseCursor.execute(sql_subspecies)
+        children_subspecies_db = algaebaseCursor.fetchall()
+        
+        children_subspecies_db = self._clean_children(children_subspecies_db)
 
+        # varieties directly under species
+        sel_var, _ = self._get_select_ranks_str_and_group_by_ranks_str('variety')
+        grp_var = f'"variety", "nomenclatural_authorities", {sel_var}'
+        sql_varieties = f'''SELECT DISTINCT("variety"), "nomenclatural_authorities", {sel_var},
+                                   ARRAY_AGG("id") AS ids
+                            FROM taxa
+                            WHERE "genus" = '{genus_name}'
+                              AND "species" = '{species_epithet}'
+                              AND "subspecies" IS NULL
+                              AND "variety" IS NOT NULL
+                              AND "forma" IS NULL
+                              AND "id_current_name" IS NULL
+                              {grandparent_query}
+                            GROUP BY {grp_var}
+                            ORDER BY "variety"'''
+        if DEBUG:
+            print(sql_varieties)
+        algaebaseCursor.execute(sql_varieties)
+        children_varieties_db = algaebaseCursor.fetchall()
+        
+        children_varieties_db = self._clean_children(children_varieties_db)
+
+        # forma directly under species
+        sel_for, _ = self._get_select_ranks_str_and_group_by_ranks_str('forma')
+        grp_for = f'"forma", "nomenclatural_authorities", {sel_for}'
+        sql_forma = f'''SELECT DISTINCT("forma"), "nomenclatural_authorities", {sel_for},
+                               ARRAY_AGG("id") AS ids
+                        FROM taxa
+                        WHERE "genus" = '{genus_name}'
+                          AND "species" = '{species_epithet}'
+                          AND "subspecies" IS NULL
+                          AND "variety" IS NULL
+                          AND "forma" IS NOT NULL
+                          AND "id_current_name" IS NULL
+                          {grandparent_query}
+                        GROUP BY {grp_for}
+                        ORDER BY "forma"'''
+        if DEBUG:
+            print(sql_forma)
+        algaebaseCursor.execute(sql_forma)
+        children_forma_db = algaebaseCursor.fetchall()
+        
+        children_forma_db = self._clean_children(children_forma_db)
+        
+        children_db = {
+            'subspecies' : children_subspecies_db,
+            'variety'    : children_varieties_db,
+            'forma'      : children_forma_db,
+        }
+        children = self._children_dict_to_children_list(children_db)
+        if children:
+            print('found {0} children for species {1}'.format(len(children), source_taxon.latname))
         return children
+    
+    # can be variety (forma None)
+    # can be forma (variety None)
+    # we always nee genus amd species in the query
+    def _get_children_subspecies(self, source_taxon):
+        subspecies_source = source_taxon._get_source_object()
 
+        # varieties under subspecies
+        sel_var, _ = self._get_select_ranks_str_and_group_by_ranks_str('variety')
+        grp_var = f'"variety", "nomenclatural_authorities", {sel_var}'
+        sql_varieties = '''SELECT DISTINCT("variety"), "nomenclatural_authorities", {0},
+                                  ARRAY_AGG("id") AS ids
+                           FROM taxa
+                           WHERE "genus" = '{1}'
+                             AND "species" = '{2}'
+                             AND "subspecies" = '{3}'
+                             AND "variety" IS NOT NULL
+                             AND "forma" IS NULL
+                             AND "id_current_name" IS NULL
+                           GROUP BY {4}
+                           ORDER BY "variety"'''.format(
+                               sel_var, subspecies_source['genus'], subspecies_source['species'],
+                               subspecies_source['subspecies'], grp_var)
+        if DEBUG:
+            print(sql_varieties)
+        algaebaseCursor.execute(sql_varieties)
+        children_varieties_db = algaebaseCursor.fetchall()
+        
+        # clean
+        children_varieties_db = self._clean_children(children_varieties_db)
+
+        # forma under subspecies (no variety)
+        sel_for, _ = self._get_select_ranks_str_and_group_by_ranks_str('forma')
+        grp_for = f'"forma", "nomenclatural_authorities", {sel_for}'
+        sql_forma = '''SELECT DISTINCT("forma"), "nomenclatural_authorities", {0},
+                              ARRAY_AGG("id") AS ids
+                       FROM taxa
+                       WHERE "genus" = '{1}'
+                         AND "species" = '{2}'
+                         AND "subspecies" = '{3}'
+                         AND "variety" IS NULL
+                         AND "forma" IS NOT NULL
+                         AND "id_current_name" IS NULL
+                       GROUP BY {4}
+                       ORDER BY "forma"'''.format(
+                           sel_for, subspecies_source['genus'], subspecies_source['species'],
+                           subspecies_source['subspecies'], grp_for)
+        if DEBUG:
+            print(sql_forma)
+        algaebaseCursor.execute(sql_forma)
+        children_forma_db = algaebaseCursor.fetchall()
+        
+        # clean
+        children_forma_db = self._clean_children(children_forma_db)
+
+        children_db = {
+            'variety' : children_varieties_db,
+            'forma'   : children_forma_db,
+        }
+        return self._children_dict_to_children_list(children_db)
+    
+    def clean_search_sting(self, search_string):
+        if search_string and "'" in search_string:
+            cleaned_string = search_string.replace("'", "''")
+            return cleaned_string
+        
+        return search_string
+    
+    # this can only be forma
+    def _get_children_variety(self, source_taxon):
+        variety_source = source_taxon._get_source_object()
+
+        sel_for, _ = self._get_select_ranks_str_and_group_by_ranks_str('forma')
+        grp_for = f'"forma", "nomenclatural_authorities", {sel_for}'
+        
+        variety = self.clean_search_sting(variety_source['variety'])
+
+        if variety_source['subspecies'] is None:
+            sql_forma = '''SELECT DISTINCT("forma"), "nomenclatural_authorities", {0},
+                                  ARRAY_AGG("id") AS ids
+                           FROM taxa
+                           WHERE "genus" = '{1}'
+                             AND "species" = '{2}'
+                             AND "subspecies" IS NULL
+                             AND "variety" = '{3}'
+                             AND "forma" IS NOT NULL
+                             AND "id_current_name" IS NULL
+                           GROUP BY {4}
+                           ORDER BY "forma"'''.format(
+                               sel_for, variety_source['genus'], variety_source['species'],
+                               variety, grp_for)
+        else:
+            sql_forma = '''SELECT DISTINCT("forma"), "nomenclatural_authorities", {0},
+                                  ARRAY_AGG("id") AS ids
+                           FROM taxa
+                           WHERE "genus" = '{1}'
+                             AND "species" = '{2}'
+                             AND "subspecies" = '{3}'
+                             AND "variety" = '{4}'
+                             AND "forma" IS NOT NULL
+                             AND "id_current_name" IS NULL
+                           GROUP BY {5}
+                           ORDER BY "forma"'''.format(
+                               sel_for, variety_source['genus'], variety_source['species'],
+                               variety_source['subspecies'], variety, grp_for)
+
+        if DEBUG:
+            print(sql_forma)
+        algaebaseCursor.execute(sql_forma)
+        children_forma_db = algaebaseCursor.fetchall()
+        
+        # clean
+        children_forma_db = self._clean_children(children_forma_db)
+
+        children_db = { 'forma' : children_forma_db }
+        return self._children_dict_to_children_list(children_db)
+    
+    # there are no children for forma
+    def _get_children_forma(self, source_taxon):
+        return []
+    
 
     # integrate special cases:
     # iterate over all taxa, check if it has been integrated.
@@ -1080,38 +1181,42 @@ class AlgaebaseManager(TaxonSourceManager):
         while taxa:
 
             for taxon in taxa:
-        
-                if taxon['id_current_name'] == 0:
+                # the taxon is not a synonym, but its parent taxon is
+                if taxon['id_current_name'] == None:
+                    
+                    # the taxon should not yet exist in the tree
+                    if not AlgaebaseTaxonTree.objects.filter(source_id=str(taxon['id'])).exists():
 
-                    if not AlgaebaseTaxonTree.objects.filter(source_id=taxon['id']).exists():
+                        if taxon['record_status'] in ['F', 'V', 'S']:  # forma, variety, subspecies
+                            
+                            infraspecies = taxon
 
-                        if taxon['level'] == 'F':
-
-                            # get the species of this form
+                            # get the species of this form, which has to be a synonym
                             sql = '''SELECT * FROM taxa
                                 WHERE "genus" = '{0}'
                                 AND "family" = '{1}'
                                 AND "species" = '{2}'
+                                AND id_current_name IS NOT NULL
                                 AND "subspecies" IS NULL
                                 AND "variety" IS NULL
-                                AND "forma" IS NULL'''.format(taxon['genus'], taxon['family'],
-                                                                    taxon['species'])
+                                AND "forma" IS NULL'''.format(infraspecies['genus'], infraspecies['family'],
+                                                                    infraspecies['species'])
 
                             algaebaseCursor.execute(sql)
 
-                            species = algaebaseCursor.fetchall()
-                            if len(species) == 0:
-                                self._integrate_forma_without_species(taxon)
+                            possible_synonyms = algaebaseCursor.fetchall()
+                            if len(possible_synonyms) == 0:
+                                self._integrate_infraspecies_without_species(infraspecies)
 
-                            elif len(species) == 1:
-                                self._integrate_forma_of_synonym(taxon, species[0])
+                            elif len(possible_synonyms) == 1:
+                                self._integrate_infraspecies_of_synonym(infraspecies, possible_synonyms[0])
 
                             else:
-                                self.logger.info('Multiple species found for forma {0}: {1}'.format(taxon,
-                                                                                                    species))        
-
+                                self.logger.info('Multiple species found for infraspecies {0}: {1}'.format(infraspecies,
+                                                                                                    possible_synonyms))      
+                            
                         else:
-                            self.logger.info('Failed to integrate taxon, not a forma: {0}'.format(taxon))
+                            self.logger.info('Failed to integrate taxon, not a infraspecies: {0}'.format(taxon))
 
                 else:
                     # it is a synonym
@@ -1120,11 +1225,14 @@ class AlgaebaseManager(TaxonSourceManager):
 
             offset += limit
             source_query = '''SELECT * FROM taxa ORDER BY id LIMIT {0} OFFSET {1}'''.format(limit, offset)
+            
+            print(offset)
+            
             algaebaseCursor.execute(source_query)
             taxa = algaebaseCursor.fetchall()
             
 
-    def _integrate_forma_without_species(self, taxon):
+    def _integrate_infraspecies_without_species(self, taxon):
 
         genus_name = taxon['genus']
 
@@ -1141,7 +1249,6 @@ class AlgaebaseManager(TaxonSourceManager):
             print(sql)
 
         algaebaseCursor.execute(sql)
-
         genus = algaebaseCursor.fetchall()
 
         if len(genus) == 1:
@@ -1159,70 +1266,189 @@ class AlgaebaseManager(TaxonSourceManager):
                                                                                                 genus))
 
     
-    def _integrate_forma_of_synonym(self, taxon, species):
-
-        if species['id_current_name'] != 0:
-
-            synonym = AlgaebaseTaxonSynonym.objects.get(source_id=str(species['id']))
-            primary_taxon = synonym.taxon
-
-            sql = '''SELECT * from taxa where id = {0}'''.format(primary_taxon.source_id)
-
+    def get_accepted_name(self, synonym):
+        
+        visited_ids = set()
+        id_current_name = synonym['id_current_name']
+        
+        while id_current_name is not None:
+            
+            if id_current_name in visited_ids:
+                return None
+            
+            visited_ids.add(id_current_name)
+            
+            sql = '''SELECT * FROM taxa WHERE id = {0}'''.format(id_current_name)
+            
             if DEBUG == True:
                 print(sql)
-
+            
             algaebaseCursor.execute(sql)
-
-            current_species = algaebaseCursor.fetchone()
-
-            parent_name = current_species['species']
-
-            taxon_clean = {}
-            taxon_clean['ids'] = [taxon['id']]
+            accepted_taxon_candidate = algaebaseCursor.fetchone()
             
-            for key, value in taxon.items():
-                taxon_clean[key] = value
-                
-            source_taxon = self._sourcetaxon_from_db_taxon(taxon_clean, 'forma', parent_name, 'species')
-
-            # add forma as a child
-            print('current name id: {0}'.format(species['id_current_name']))
-            parent = AlgaebaseTaxonTree.objects.get(source_id='{0}'.format(species['id_current_name']))
-
-            # get the nuid
-            children = AlgaebaseTaxonTree.objects.filter(parent=parent).order_by('-taxon_nuid')
-
-            if children:
-                highest_nuid = children[0].taxon_nuid
-                new_suffix = d2n(n2d(highest_nuid[-3:]) + 1)
+            if accepted_taxon_candidate is None:
+                print('accepted taxon candidate not found for id_current_name: {0}'.format(id_current_name))
+                return None
+            
+            print('found accepted taxon candidate: {0}'.format(accepted_taxon_candidate))
+            
+            if accepted_taxon_candidate['id_current_name'] is None:
+                return accepted_taxon_candidate
             else:
-                new_suffix = '001'
+                id_current_name = accepted_taxon_candidate['id_current_name']
+        
+        # If id_current_name was initially None, but synonym should have it
+        return None
 
-            print('integrating {0}'.format(taxon))
-            print('parent: {0}, nuid: {1}'.format(parent, parent.taxon_nuid))
+    def _integrate_infraspecies_of_synonym(self, infraspecies, synonym):
+        
+        rank = RANK_MAP[infraspecies['record_status']]
 
-            nuid_prefix = parent.taxon_nuid
-            taxon_nuid = '{0}{1}'.format(nuid_prefix, new_suffix)
+        if synonym['id_current_name'] != None:
             
-            taxon = self.TaxonTreeModel(
-                parent = parent,
-                taxon_nuid = taxon_nuid,
-                taxon_latname = source_taxon.latname,
-                taxon_author = source_taxon.author,
-                source_id = source_taxon.source_id,
-                rank = source_taxon.rank,
-                is_root_taxon = False,
-            )
+            print('integrating {0} of synonym {1}'.format(rank, synonym))
+            
+            accepted_species_algaebase = self.get_accepted_name(synonym)
+            
+            if accepted_species_algaebase:
 
-            taxon.save()
+                primary_parent_taxon = AlgaebaseTaxonTree.objects.filter(
+                    source_id = str(accepted_species_algaebase['id'])
+                ).first()
+                
+                if primary_parent_taxon:
+
+                    parent_name = '{0} {1}'.format(synonym['genus'], synonym['species'])
+
+                    infraspecies_clean = {}
+                    infraspecies_clean['ids'] = [infraspecies['id']]
+                    
+                    for key, value in infraspecies.items():
+                        infraspecies_clean[key] = value
+                        
+                    source_taxon = self._sourcetaxon_from_db_taxon(infraspecies_clean, rank, parent_name, 'species')
+                    
+                    children = AlgaebaseTaxonTree.objects.filter(parent=primary_parent_taxon).order_by('-taxon_nuid')
+
+                    if children:
+                        highest_nuid = children[0].taxon_nuid
+                        new_suffix = d2n(n2d(highest_nuid[-3:]) + 1)
+                    else:
+                        new_suffix = '001'
+
+                    print('integrating {0}'.format(source_taxon.latname))
+                    print('parent: {0}, nuid: {1}'.format(primary_parent_taxon, primary_parent_taxon.taxon_nuid))
+
+                    nuid_prefix = primary_parent_taxon.taxon_nuid
+                    taxon_nuid = '{0}{1}'.format(nuid_prefix, new_suffix)
+                    
+                    
+                    taxon = self.TaxonTreeModel(
+                        parent = primary_parent_taxon,
+                        taxon_nuid = taxon_nuid,
+                        taxon_latname = source_taxon.latname,
+                        taxon_author = source_taxon.author,
+                        source_id = source_taxon.source_id,
+                        rank = source_taxon.rank,
+                        is_root_taxon = False,
+                    )
+
+                    taxon.save()
+                
+                else:
+                    print('Failed to integrate {0}: {1}, because primary parent taxon not found in tree: {2}'.format(
+                        rank, infraspecies, accepted_species_algaebase))
+                
+            else:
+                print('Failed to integrate {0}: {1}, because accepted name could not be found for synonym: {2}'.format(
+                    rank, infraspecies, synonym))
 
         else:
-            self.logger.info('Failed to integrate forma: {0}, because parent is not a synonym: {1}'.format(
-                taxon, species))
+            print('Failed to integrate {0}: {1}, because parent is not a synonym: {2}'.format(
+                rank, infraspecies, synonym))
 
     # some species do not have a phylum assigned
     def _integrate_orphans(self):
         pass
+    
+
+    def update_name_uuids(self, path_to_csv_file):
+        with open(path_to_csv_file, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter='|')
+            rows = list(reader)
+
+        # name_uuid, taxon_latname, taxon_author
+        for row in rows:
+            name_uuid = row['name_uuid']
+            taxon_latname = row['taxon_latname']
+            taxon_author = row['taxon_author']
+            
+            
+            taxa = AlgaebaseTaxonTree.objects.filter(
+                taxon_latname=taxon_latname,
+                taxon_author=taxon_author
+            )
+            
+            if len(taxa) == 0:
+                
+                synonyms = AlgaebaseTaxonSynonym.objects.filter(
+                    taxon_latname=taxon_latname,
+                    taxon_author=taxon_author
+                )
+                
+                if len(synonyms) == 1:
+                    synonym = synonyms[0]
+                    
+                    if str(synonym.name_uuid) == str(name_uuid):
+                        continue
+                    
+                    synonym.name_uuid = name_uuid
+                    synonym.save()
+                    
+                    print(f'Updated name_uuid for synonym {taxon_latname} {taxon_author} to {name_uuid}.')
+                
+                elif len(synonyms) > 1:
+                    self.logger.info(f'Multiple synonyms found for {taxon_latname} {taxon_author}, skipping.')
+                    
+                else:
+                    self.logger.info(f'No taxon or synonym found for {taxon_latname} {taxon_author}, skipping.')
+                
+            elif len(taxa) > 1:
+                self.logger.info(f'Multiple taxa found for {taxon_latname} {taxon_author}, skipping.')
+                
+            else:
+                taxon = taxa[0]
+                
+                if str(taxon.name_uuid) == str(name_uuid):
+                    continue
+                
+                taxon.name_uuid = name_uuid
+                
+                # this requires ON UPDATE CASCADE set for the foreign key on the database level
+                # django orm does not support on update cascade
+                taxon.save()
+                
+                print(f'Updated name_uuid for {taxon_latname} {taxon_author} to {name_uuid}.')
+               
+                
+    def drop_duplicate_synonyms(self):
+        
+        taxa = AlgaebaseTaxonTree.objects.all()
+        
+        for taxon in taxa:
+            
+            synonyms = AlgaebaseTaxonSynonym.objects.filter(
+                taxon_latname=taxon.taxon_latname,
+                taxon_author=taxon.taxon_author
+            )
+            
+            # these synonyms are exact name duplicates of a real taxon
+            if len(synonyms) > 0:
+                print(f'Checking {taxon.taxon_latname} {taxon.taxon_author}, found {len(synonyms)} duplicates in synonyms.')
+                
+                synonyms.delete()
+                print(f'Deleted duplicate synonyms for {taxon.taxon_latname} {taxon.taxon_author}.')
+            
 
 
 class AlgaebaseAnalyzer:
@@ -1251,7 +1477,7 @@ class AlgaebaseAnalyzer:
                         AND "subspecies" IS NULL
                         AND "variety" IS NULL
                         AND "forma" IS NULL
-                        AND "id_current_name" = 0'''.format(genus, family, species)
+                        AND "id_current_name" IS NULL'''.format(genus, family, species)
 
         algaebaseCursor.execute(sql)
 
@@ -1288,7 +1514,7 @@ class AlgaebaseAnalyzer:
     def validate_parent(self, taxon):
 
         # S = species, U=subspecies, V= Variety, F= forma
-        level = taxon['level']
+        level = taxon['record_status']
 
         if level == 'S':
 
@@ -1297,7 +1523,7 @@ class AlgaebaseAnalyzer:
                 rank = RANK_MAP[l]
 
                 if taxon[rank] != None:
-                    self.logger.info('Level is species, but infraspecific epithet is present: {0}:{1}'.format(
+                    self.logger.info('Record status is species, but infraspecific epithet is present: {0}:{1}'.format(
                         rank, taxon[rank]))
 
         # S may not be null, taxon with S only has to be presend, V and F have to be null
@@ -1308,7 +1534,7 @@ class AlgaebaseAnalyzer:
                 rank = RANK_MAP[l]
 
                 if taxon[rank] != None:
-                    self.logger.info('Level is subspecies, but lower infraspecific epithet is present: {0}:{1}'.format(
+                    self.logger.info('Record status is subspecies, but lower infraspecific epithet is present: {0}:{1}'.format(
                         rank, taxon[rank]))
 
             # check if species exists
@@ -1322,7 +1548,7 @@ class AlgaebaseAnalyzer:
                 rank = RANK_MAP[l]
 
                 if taxon[rank] != None:
-                    self.logger.info('Level is subspecies, but lower infraspecific epithet is present: {0}:{1}'.format(
+                    self.logger.info('Record status is subspecies, but lower infraspecific epithet is present: {0}:{1}'.format(
                         rank, taxon[rank]))
 
             # check if species exists
@@ -1344,7 +1570,7 @@ class AlgaebaseAnalyzer:
 
     def check_synonym_existence_in_lc(self, synonym):
 
-        if not AlgaebaseTaxonSynonym.objects.filter(source_id=taxon['id']).exists():
+        if not AlgaebaseTaxonSynonym.objects.filter(source_id=synonym['id']).exists():
             message = 'missing synonym: {0}'.format(synonym)
             self.logger.info(message)
         
@@ -1356,7 +1582,9 @@ class AlgaebaseAnalyzer:
         for rank in RANKS:
 
             if taxon[rank]:
-                qry = ''' AND "{0}" = '{1}' '''.format(rank, taxon[rank])
+                taxon_name = taxon[rank]
+                taxon_name = taxon_name.replace("'", "''")
+                qry = ''' AND "{0}" = '{1}' '''.format(rank, taxon_name)
             else:
                 qry = ''' AND "{0}" IS NULL '''.format(rank)
 
@@ -1367,10 +1595,13 @@ class AlgaebaseAnalyzer:
         author = author.replace("'","''")
         author_sql = ''' AND "nomenclatural_authorities" = '{0}' '''.format(author)
 
-        year_sql = ''' AND "year_of_publication" = '{0}' '''.format(taxon['year_of_publication'])
+        year = taxon['year_of_publication']
+        if year:
+            year = year.replace("'","''")
+        year_sql = ''' AND "year_of_publication" = '{0}' '''.format(year)
 
         sql = '{0} {1} {2}'.format(sql, author_sql, year_sql)
-
+        
         algaebaseCursor.execute(sql)
 
         results = algaebaseCursor.fetchall()
@@ -1390,7 +1621,7 @@ class AlgaebaseAnalyzer:
         limit = 10000
         offset = 0
 
-        source_query = '''SELECT * FROM taxa WHERE id_current_name = 0 LIMIT %s OFFSET %s''' %(limit, offset)
+        source_query = '''SELECT * FROM taxa WHERE id_current_name IS NULL LIMIT %s OFFSET %s''' %(limit, offset)
         algaebaseCursor.execute(source_query)
         taxa = algaebaseCursor.fetchall()
 
@@ -1403,7 +1634,7 @@ class AlgaebaseAnalyzer:
                 self.check_taxon_unique(taxon)
 
             offset += limit
-            source_query = '''SELECT * FROM taxa WHERE id_current_name = 0 LIMIT %s OFFSET %s''' %(limit, offset)
+            source_query = '''SELECT * FROM taxa WHERE id_current_name IS NULL LIMIT %s OFFSET %s''' %(limit, offset)
             algaebaseCursor.execute(source_query)
             taxa = algaebaseCursor.fetchall()
         
@@ -1413,7 +1644,7 @@ class AlgaebaseAnalyzer:
         limit = 10000
         offset = 0
 
-        source_query = '''SELECT * FROM taxa WHERE id_current_name != 0 LIMIT %s OFFSET %s''' %(limit, offset)
+        source_query = '''SELECT * FROM taxa WHERE id_current_name IS NOT NULL LIMIT %s OFFSET %s''' %(limit, offset)
         algaebaseCursor.execute(source_query)
         synonyms = algaebaseCursor.fetchall()
 
@@ -1426,12 +1657,104 @@ class AlgaebaseAnalyzer:
                 self.check_taxon_unique(taxon)
 
             offset += limit
-            source_query = '''SELECT * FROM taxa WHERE id_current_name != 0 LIMIT %s OFFSET %s''' %(limit, offset)
+            source_query = '''SELECT * FROM taxa WHERE id_current_name IS NOT NULL LIMIT %s OFFSET %s''' %(limit, offset)
             algaebaseCursor.execute(source_query)
             synonyms = algaebaseCursor.fetchall()
+    
+    def check_higher_taxa(self):
         
+        for rank in HIGHER_RANKS:
+            
+            if HIGHER_RANKS.index(rank) == 0:
+                continue
+            
+            # Quote the column name to handle reserved words like 'order'
+            quoted_rank = f'"{rank}"'
+            
+            # Get all distinct ranks from algaebase db
+            sql = f'''SELECT DISTINCT({quoted_rank}) FROM taxa
+                                    WHERE "phylum" IS NOT NULL
+                                    ORDER BY {quoted_rank}'''
+                                    
+            algaebaseCursor.execute(sql)
+            
+            higher_taxa = algaebaseCursor.fetchall()
+            
+            for higher_taxon in higher_taxa:
+                
+                # Select all rows for this higher taxon
+                taxon_name = higher_taxon[rank]
+                
+                sql = f'''SELECT * FROM taxa
+                                WHERE {quoted_rank} = '{taxon_name}'
+                                '''
+                                
+                algaebaseCursor.execute(sql)
+                
+                taxa = algaebaseCursor.fetchall()
+                                
+                parent_names = set()
+                for taxon in taxa:
+                    # Travel up the ranks to find the first non-null higher rank
+                    current_index = HIGHER_RANKS.index(rank) - 1
+                    parent_name = None
+                    while current_index >= 0:
+                        potential_parent_rank = HIGHER_RANKS[current_index]
+                        if taxon[potential_parent_rank]:
+                            parent_name = taxon[potential_parent_rank]
+                            break
+                        current_index -= 1
+                    
+                    if parent_name:
+                        parent_name_with_rank = f'{parent_name}({potential_parent_rank})'
+                        parent_names.add(parent_name_with_rank)
+                    
+                if len(parent_names) > 1:
+                    print(f'Multiple parents found for {rank} {taxon_name}: {parent_names}')
+    
+    
+    def analyze_name_uuids(self, path_to_csv_file):
+        # open the csv file
+        # the columns of the csv are: name_uuid, taxon_latname and taxon_author
+        import csv
+        
+        with open(path_to_csv_file, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile, delimiter='|')
+            for row in reader:
+                name_uuid = row['name_uuid']
+                taxon_latname = row['taxon_latname']
+                taxon_author = row['taxon_author']
+                
+                # find the taxon in the AlgaebaseTaxonTree
+                tree_entries = AlgaebaseTaxonTree.objects.filter(name_uuid=name_uuid)
+                
+                tree_entry_exists = tree_entries.exists()
+                
+                if tree_entry_exists:
+                    tree_entry = tree_entries.first()
+                    if tree_entry.taxon_latname != taxon_latname or tree_entry.taxon_author != taxon_author:
+                        message = f'Inconsistent taxon for name_uuid {name_uuid}: {taxon_latname} {taxon_author} vs {tree_entry.taxon_latname} {tree_entry.taxon_author}'
+                        self.logger.info(message)
+                
+                synonym_entry_exists = False
+                
+                if not tree_entry_exists:
+                    synonym_entries = AlgaebaseTaxonSynonym.objects.filter(name_uuid=name_uuid)
+                    synonym_entry_exists = synonym_entries.exists()
+                    
+                    if synonym_entry_exists:
+                        synonym_entry = synonym_entries.first()
+                        if synonym_entry.taxon_latname != taxon_latname or synonym_entry.taxon_author != taxon_author:
+                            message = f'Inconsistent synonym for name_uuid {name_uuid}: {taxon_latname} {taxon_author} vs {synonym_entry.taxon_latname} {synonym_entry.taxon_author}'
+                            self.logger.info(message)
+                
+                if not tree_entry_exists and not synonym_entry_exists:
+                    message = f'Taxon with name_uuid not found: {taxon_latname} {taxon_author} {name_uuid}'
+                    self.logger.info(message)
+                
 
-
+            
+'''
 import xlrd
 import os 
 
@@ -1461,3 +1784,4 @@ def check_seatax():
                 print('Taxon does not exist: {0}'.format(latname))
         else:
             print('Multiple entries found for {0}'.format(latname))
+'''

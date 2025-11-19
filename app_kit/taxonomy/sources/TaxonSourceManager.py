@@ -22,6 +22,8 @@ from django.db import transaction
 # Python 3
 import logging, html
 
+DEBUG = False
+
 
 '''
     base
@@ -189,6 +191,12 @@ class SourceTreeTaxon(SourceTaxon):
     is_synonym = False
     is_tree_taxon = True
     nuid = None
+    
+    def __init__(self, latname, author, rank, source, source_id, parent_name, parent_rank, **kwargs):
+        super().__init__(latname, author, rank, source, source_id, **kwargs)
+        
+        self.parent_name = parent_name
+        self.parent_rank = parent_rank
 
     '''
     nuid management
@@ -202,7 +210,7 @@ class SourceTreeTaxon(SourceTaxon):
     def set_nuid_from_db(self):
 
         if self.nuid is None:
-            print('setting nuid from db')
+            #print('setting nuid from db')
             db_entry = self.TreeModel.objects.filter(source_id=self.source_id).first()
             if db_entry:
                 self.nuid = db_entry.taxon_nuid
@@ -227,6 +235,15 @@ class SourceTreeTaxon(SourceTaxon):
             return parent
 
         return None
+    
+    def to_dict(self):
+
+        dic = super().to_dict()
+
+        dic['parent_name'] = self.parent_name
+        dic['parent_rank'] = self.parent_rank
+
+        return dic
 
     
 '''
@@ -260,6 +277,8 @@ class TreeClimberState:
             dic['rank'],
             dic['source'],
             dic['source_id'],
+            dic['parent_name'],
+            dic['parent_rank'],
             **dic['kwargs']
         )
 
@@ -747,7 +766,9 @@ class TaxonSourceManager:
             last_child = self._climb_down(start_taxon)
 
             message = 'last_child: {0}, nuid: {1}'.format(last_child.latname, last_child.get_nuid())
-            print(message)
+            
+            if DEBUG == True:
+                print(message)
             # self.logger.info(message)
 
             # search siblings of this childless taxon, or parent siblings if no siblings available
@@ -765,8 +786,10 @@ class TaxonSourceManager:
             if next_parent:
                 start_taxon = next_parent
                 message = 'starting nuid (next_parent): {0}'.format(start_taxon.get_nuid())
-                print(message)
-                # self.logger.info(message)
+                
+                if DEBUG == True:
+                    print(message)
+                    # self.logger.info(message)
                 
             else:
                 continue_climbing = False
@@ -913,9 +936,17 @@ class TaxonSourceManager:
                 self._check_existing_taxon_synonyms(existing_taxon, child)
                 self._check_existing_taxon_vernacular_names(existing_taxon, child)
 
+                # AlgaebaseSourceTreeTaxon requires parent_rank and parent_name
+                parent_name = None
+                parent_rank = None
+                if parent_taxon:
+                    parent_name = parent_taxon.latname
+                    parent_rank = parent_taxon.rank
+
                 existing_taxon_source_taxon = self.SourceTreeTaxonClass(
                     existing_taxon.taxon_latname, existing_taxon.taxon_author, existing_taxon.rank,
-                    self.TaxonTreeModel.__class__.__name__, existing_taxon.source_id, nuid=existing_taxon.taxon_nuid
+                    self.TaxonTreeModel.__class__.__name__, existing_taxon.source_id, nuid=existing_taxon.taxon_nuid,
+                    parent_name=parent_name, parent_rank=parent_rank
                 )
                 cache_children.append(existing_taxon_source_taxon)
                 
@@ -1038,8 +1069,10 @@ class TaxonSourceManager:
     def _climb_down(self, parent_taxon):
 
         message = 'climb down: {0}'.format(parent_taxon.latname)
-        print(message)
-        # self.logger.info(message)
+        
+        if DEBUG == True:
+            print(message)
+            # self.logger.info(message)
 
         # if no nuid is found, it might be a duplicate
         is_duplicate = self._check_taxon_duplicate(parent_taxon)
