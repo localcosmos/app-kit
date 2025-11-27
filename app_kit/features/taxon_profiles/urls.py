@@ -115,5 +115,8 @@ urlpatterns = [
      path('get-taxon-texts-management/<int:meta_app_id>/<int:taxon_profiles_id>/',
            views.GetTaxonTextsManagement.as_view(), name='get_taxon_texts_management'),
      path('set-taxon-text-set-for-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<int:taxon_profile_id>/',
-         views.SetTaxonTextSetForTaxonProfile.as_view(), name='set_taxon_text_set_for_taxon_profile'),     
+         views.SetTaxonTextSetForTaxonProfile.as_view(), name='set_taxon_text_set_for_taxon_profile'),
+     # move images
+     path('move-taxon-profile-image-to-section/<int:meta_app_id>/<int:taxon_profile_id>/<int:content_image_id>/',
+           views.MoveImageToSection.as_view(), name='move_taxon_profile_image_to_section'),
 ]

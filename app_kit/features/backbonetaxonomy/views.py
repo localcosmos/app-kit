@@ -18,7 +18,7 @@ from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 from localcosmos_server.generic_views import AjaxDeleteView
 
 from .forms import (AddMultipleTaxaForm, ManageFulltreeForm, SearchTaxonomicBackboneForm, SwapTaxonForm,
-                    TaxonRelationshipTypeForm, TaxonRelationshipForm)
+                    TaxonRelationshipTypeForm, TaxonRelationshipForm, FixedSwapTaxonForm)
 
 from .models import TaxonRelationshipType, TaxonRelationship
 
@@ -489,40 +489,119 @@ class AnalyzeTaxon(AnalyzeSwapCommon, MetaAppMixin, FormView):
     def form_valid(self, form):        
         context = self.get_form_valid_context_data(form)
         return self.render_to_response(context)
+
+
+class RequestAnalyzeTaxon(AnalyzeTaxon):
+    
+    template_name = 'backbonetaxonomy/ajax/swap_taxon_form.html'
+    form_class = FixedSwapTaxonForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+    
+    
+class RequestSwapTaxon(SwapTaxon):
+    
+    template_name = 'backbonetaxonomy/ajax/swap_taxon_form.html'
+    form_class = FixedSwapTaxonForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+    
     
     
 class UpdateTaxonReferences(MetaAppMixin, TemplateView):
     
     template_name = 'backbonetaxonomy/update_taxon_references.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['updated'] = False
+        return context
     
-    def analyze(self):
+    # only update taxon_nuid and name_nnuid only taxa
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
         updater = TaxonReferencesUpdater(self.meta_app)
-        result = updater.check_taxa()
-        return result
+        updater.update_all_taxon_nuid_and_name_uuid_only()
+        context['updated'] = True
+        return self.render_to_response(context)
+    
+
+
+class GetTaxonReferencesChanges(MetaAppMixin, TemplateView):
+    
+    template_name = 'backbonetaxonomy/ajax/taxon_references_changes.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['analyzed'] = False
-        context['updated'] = False
-        context['result'] = None
-        
-        if self.request.method == 'GET':
-            context['result'] = self.analyze()
-            context['analyzed'] = True
-        
-        return context
-    
-    def post(self, request, *args, **kwargs):
-        
         updater = TaxonReferencesUpdater(self.meta_app)
-        result = updater.check_taxa(update=True)
+        result = updater.check_taxa()
         
-        context = self.get_context_data(**kwargs)
-        context['result'] = result
-        context['updated'] = True
+        # provide usable forms for new author taxa
+        processed_new_author_taxa = []
+        processed_synonym_taxa = []
         
-        return self.render_to_response(context)
-    
+        for lazy_taxon in result['taxa_new_author']:
+            
+            new_author_taxa = []
+            
+            for similar_taxon in lazy_taxon.reference_taxa_with_similar_taxon_latname:
+                
+                similar_lazy_taxon = LazyTaxon(instance=similar_taxon)
+                
+                initial = {
+                    'from_taxon': lazy_taxon,
+                    'to_taxon': similar_lazy_taxon,
+                }
+                
+                form = FixedSwapTaxonForm(initial=initial)
+                
+                new_author_taxa.append({
+                    'similar_taxon': similar_lazy_taxon,
+                    'form': form,
+                })
+            
+            entry = {
+                'taxon': lazy_taxon,
+                'new_author_taxa': new_author_taxa,
+            }
+            processed_new_author_taxa.append(entry)
+            
+        
+        for lazy_taxon in result['taxa_in_synonyms']:    
+            
+            initial = {
+                'from_taxon': lazy_taxon,
+                'to_taxon': lazy_taxon.reference_accepted_name,
+            }
+            
+            form = FixedSwapTaxonForm(initial=initial)
+            
+            entry = {
+                'taxon': lazy_taxon,
+                'form': form,
+            }
+            processed_synonym_taxa.append(entry)
+        
+        # provide forms for processing
+        processed_result = {
+            'total_taxa_checked': result['total_taxa_checked'],
+            'taxa_with_errors': result['taxa_with_errors'],
+            'position_or_name_uuid_changed': result['position_or_name_uuid_changed'],
+            'taxa_missing': result['taxa_missing'],
+            'taxa_new_author': processed_new_author_taxa,
+            'taxa_in_synonyms': processed_synonym_taxa,
+        }        
+        
+        context['result'] = processed_result
+        return context
 
 
 class TaxonRelationships(MetaAppMixin, TemplateView):

@@ -111,8 +111,10 @@ class TaxonSerializer:
     
     def serialize(self):
         
-        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['simple']:
-            taxon_json = self.taxa_builder.cache['simple'][str(self.lazy_taxon.name_uuid)]
+        name_uuid_str = str(self.lazy_taxon.name_uuid)
+        
+        if name_uuid_str in self.taxa_builder.cache['simple']:
+            taxon_json = self.taxa_builder.cache['simple'][name_uuid_str]
         
         else:
             taxon_json = {
@@ -123,7 +125,7 @@ class TaxonSerializer:
                 'taxonNuid' : self.lazy_taxon.taxon_nuid,
             }
             
-            self.taxa_builder.cache['simple'][str(self.lazy_taxon.name_uuid)] = taxon_json
+            self.taxa_builder.cache['simple'][name_uuid_str] = taxon_json
         
         taxon_json_copy = copy.deepcopy(taxon_json)
         
@@ -173,8 +175,10 @@ class TaxonSerializer:
 
     def serialize_extended(self):
         
-        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['extended']:
-            taxon_json = self.taxa_builder.cache['extended'][str(self.lazy_taxon.name_uuid)]
+        name_uuid_str = str(self.lazy_taxon.name_uuid)
+        
+        if name_uuid_str in self.taxa_builder.cache['extended']:
+            taxon_json = self.taxa_builder.cache['extended'][name_uuid_str]
             
         else:
         
@@ -201,7 +205,7 @@ class TaxonSerializer:
                 taxon_json['shortProfile'] = taxon_profile.short_profile
             
             
-            self.taxa_builder.cache['extended'][str(self.lazy_taxon.name_uuid)] = taxon_json
+            self.taxa_builder.cache['extended'][name_uuid_str] = taxon_json
 
         taxon_json_copy = copy.deepcopy(taxon_json)
         
@@ -222,8 +226,10 @@ class TaxonSerializer:
     
     def serialize_images(self):
         
-        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['images']:
-            taxon_images = self.taxa_builder.cache['images'][str(self.lazy_taxon.name_uuid)]
+        name_uuid_str = str(self.lazy_taxon.name_uuid)
+        
+        if name_uuid_str in self.taxa_builder.cache['images']:
+            taxon_images = self.taxa_builder.cache['images'][name_uuid_str]
         
         else:
                 
@@ -314,7 +320,7 @@ class TaxonSerializer:
                     collected_content_image_ids.add(taxon_image.id)
                     collected_image_store_ids.add(taxon_image.image_store.id)
     
-            self.taxa_builder.cache['images'][str(self.lazy_taxon.name_uuid)] = taxon_images
+            self.taxa_builder.cache['images'][name_uuid_str] = taxon_images
             
         taxon_images_copy = copy.deepcopy(taxon_images)
         
@@ -361,8 +367,10 @@ class TaxonSerializer:
     
     def serialize_as_registry_taxon(self, languages, name_type, name, is_preferred_name, accepted_name_uuid=None):
         
-        if str(self.lazy_taxon.name_uuid) in self.taxa_builder.cache['registry']:
-            registry_taxon_json = self.taxa_builder.cache['registry']
+        name_uuid_str = str(self.lazy_taxon.name_uuid)
+        
+        if name_uuid_str in self.taxa_builder.cache['registry']:
+            registry_taxon_json = self.taxa_builder.cache['registry'][name_uuid_str]
             
         else:
         

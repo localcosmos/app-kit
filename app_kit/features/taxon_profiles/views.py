@@ -11,7 +11,8 @@ from django.http import JsonResponse
 from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTaxonTextsForm,
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
                     TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm,
-                    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, TaxonProfileMorphotypeForm)
+                    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, TaxonProfileMorphotypeForm,
+                    MoveImageToSectionForm)
 
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                      TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory,
@@ -1518,3 +1519,65 @@ class SetTaxonTextSetForTaxonProfile(MetaAppMixin, FormView):
         context['success'] = True
 
         return self.render_to_response(context)
+    
+    
+class MoveImageToSection(MetaAppMixin, FormView):
+    
+    template_name = 'taxon_profiles/ajax/move_image_to_section.html'
+    form_class = MoveImageToSectionForm
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instances(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instances(self, **kwargs):
+        self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+        self.taxon_profiles = self.taxon_profile.taxon_profiles
+        self.content_image = ContentImage.objects.get(pk=kwargs['content_image_id'])
+        
+        
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+
+        return form_class(self.taxon_profile, **self.get_form_kwargs())
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_profile'] = self.taxon_profile
+        context['content_image'] = self.content_image
+        context['success'] = False
+        return context
+    
+    def form_valid(self, form):
+        
+        text_type = form.cleaned_data.get('target_text_type', None)
+        
+        if text_type:
+            
+            taxon_text = TaxonText.objects.filter(
+                taxon_profile=self.taxon_profile,
+                taxon_text_type=text_type
+            ).first()
+            
+            if taxon_text:
+                content_type = ContentType.objects.get_for_model(taxon_text)
+                self.content_image.content_type = content_type
+                self.content_image.object_id = taxon_text.id
+                self.content_image.save()
+                
+        else:
+            # Move to taxon profile level
+            taxon_profile_ctype = ContentType.objects.get_for_model(self.taxon_profile)
+            self.content_image.content_type = taxon_profile_ctype
+            self.content_image.object_id = self.taxon_profile.id
+            self.content_image.save()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+
+        return self.render_to_response(context)
+    

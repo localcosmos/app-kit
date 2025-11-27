@@ -390,3 +390,26 @@ class TaxonProfileMorphotypeForm(LocalizeableForm):
             if morphotype_profile_exists.exists():
                 self.add_error('morphotype', _('A morphotype profile with this morphotype already exists for this taxon.'))
         return cleaned_data
+    
+    
+class MoveImageToSectionForm(forms.Form):
+    
+    # modelchoicefield for selecting the target taxon text type
+    target_text_type = forms.ModelChoiceField(
+        queryset=TaxonTextType.objects.none(),
+        required=False,
+        label=_('Select Target Section'),
+        help_text=_('Select the section to which you want to move the image.')
+    )
+    
+    def __init__(self, taxon_profile, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        taxon_profile_texts = TaxonText.objects.filter(taxon_profile=taxon_profile)
+        
+        text_types_in_profile = TaxonTextType.objects.filter(
+            pk__in=taxon_profile_texts.values_list('taxon_text_type', flat=True)
+        ).order_by('category__name', 'position')
+        
+        self.fields['target_text_type'].queryset = text_types_in_profile
+    

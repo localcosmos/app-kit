@@ -1,0 +1,28 @@
+{% extends "localcosmos_server/modals/modal_form.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans 'Move Image' %}
+{% endblock %}
+
+
+{% block action %}
+    {% url 'move_taxon_profile_image_to_section' meta_app.id taxon_profile.id content_image.id %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+<script>
+    (function() {
+        {% if success %}
+            $("#Modal").modal("hide");
+            window.location.reload();
+        {% endif %}
+
+       
+    })();
+</script>
+{% endblock %}

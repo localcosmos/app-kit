@@ -15,6 +15,8 @@
                     <a class="dropdown-item text-center tti-moveleftbutton" data-targetid="content_images_{{ image.id }}">&#9664; {% trans 'Move left' %}</a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item text-center tti-moverightbutton" data-targetid="content_images_{{ image.id }}">{% trans 'Move right' %} &#9654;</a>
+                    <div class="dropdown-divider"></div>
+                    <a data-url="{% url 'move_taxon_profile_image_to_section' meta_app.id content_instance.taxon_profile.id image.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Move to section' %}</a>
                 </div>
             </div>
             
@@ -31,6 +33,15 @@
         });
 	    $("#content-images-{{ content_instance|ctype_id }}-{{ content_instance.id }} .tti-moverightbutton").on("click", function (event) {
             positionmanager.onMoveBack.call(this, event);
+        });
+
+        // enable drag and drop
+        var container = document.getElementById('content-images-{{ content_instance|ctype_id }}-{{ content_instance.id }}');
+        var sortable = Sortable.create(container, {
+            onEnd: function (evt) {
+                var itemEl = evt.item;  // dragged HTMLElement
+                positionmanager.store_positions($(itemEl));
+            }
         });
     })();
 </script>

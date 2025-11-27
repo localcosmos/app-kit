@@ -16,6 +16,14 @@ for source in settings.TAXONOMY_DATABASES:
 from localcosmos_server.taxonomy.lazy import LazyTaxonBase
 
 
+REFERENCE_ERROR_TYPES = {
+    'not_found': 'not_found',
+    'multiple_found': 'multiple_found',
+    'position_changed': 'position_changed',
+    'identifier_changed': 'identifier_changed',
+}
+
+
 class LazyTaxon(LazyTaxonBase):
 
     def __init__(self, *args, **kwargs):
@@ -25,6 +33,8 @@ class LazyTaxon(LazyTaxonBase):
         # set the correct model classes from self.source
         if self.taxon_source in TAXON_SOURCES:
             self.models = TaxonomyModelRouter(self.taxon_source)
+            
+        self.checked_with_reference = False
 
 
     def exists_in_tree(self):
@@ -69,53 +79,73 @@ class LazyTaxon(LazyTaxonBase):
     # TaxonTreeModel or TaxonSynonymModel    
     def check_with_reference(self):
         
-        errors = []
+        # these should be available only after checking with reference
+        self.checked_with_reference = True
+        
         self.reference_taxon = None
+        self.reference_synonym = None
+        self.reference_accepted_name = None
+        
+        self.reference_errors = []
+        
+        self.exists_as_synonym_in_reference = False
+        self.exists_as_taxon_in_reference = False
+        
+        self.changed_taxon_nuid_in_reference = False
+        self.changed_name_uuid_in_reference = False
+        
+        self.reference_taxa_with_similar_taxon_latname = []
+        self.taxon_source_is_available = True
         
         if self.taxon_source not in TAXON_SOURCES:
-            errors.append(_('Taxon source %s is not installed') % self.taxon_source)
-            
-            return errors
+            self.taxon_source_is_available = False
+            self.reference_errors.append(_('Taxon source %s is not installed') % self.taxon_source)
         
-        verbose_taxon_source = TAXON_SOURCES[self.taxon_source]
-        
-        tree_model = self.models.TaxonTreeModel
+        else:
+            verbose_taxon_source = TAXON_SOURCES[self.taxon_source]
+            tree_model = self.models.TaxonTreeModel
 
-        query = self._get_lookup_query(tree_model)
+            tree_query = self._get_lookup_query(tree_model)
             
-        if not query.exists():
-            
-            synonyms_model = self.models.TaxonSynonymModel
-            query = self._get_lookup_query(synonyms_model)
-            
-            if not query.exists():
-                errors.append(_('Taxon %s not found in %s') % (self, verbose_taxon_source))
-                return errors
-            
-            else:
-                synonym = query.first()
-                accepted_name = synonym.taxon
-                errors.append(_('Taxon %s not found as accepted name, but as synonym of %s') % (self,
-                        accepted_name))        
-                return errors
+            if tree_query.exists():
+                self.exists_as_taxon_in_reference = True
+                taxon = tree_query.first()
+                db_lazy_taxon = LazyTaxon(instance=taxon)
+                self.reference_taxon = db_lazy_taxon
                 
-        if query.count() > 1:
-            errors.append(_('Taxon %s  found multiple times in %s') % (self, verbose_taxon_source))
-            return errors
+                if db_lazy_taxon.taxon_nuid != self.taxon_nuid:
+                    self.changed_taxon_nuid_in_reference = True
+                    self.reference_errors.append(_('Taxon %s has changed its position in %s') % (self, verbose_taxon_source))
         
-        taxon = query.first()
+                if str(taxon.name_uuid) != str(self.name_uuid):
+                    self.changed_name_uuid_in_reference = True
+                    self.reference_errors.append(_('Taxon %s has changed its identifier in %s') % (self, verbose_taxon_source))
+                    
+                if tree_query.count() > 1:
+                    self.reference_errors.append(_('Taxon %s  found multiple times in %s') % (self, verbose_taxon_source))
+                    
+            else:
+                synonyms_model = self.models.TaxonSynonymModel
+                synonyms_query = self._get_lookup_query(synonyms_model)
+                
+                if synonyms_query.exists():
+                    self.exists_as_synonym_in_reference = True
+                    synonym = synonyms_query.first()
+                    
+                    self.reference_synonym = synonym
+                    accepted_name = synonym.taxon
+                    self.reference_accepted_name = LazyTaxon(instance=accepted_name)
+                    self.reference_errors.append(_('Taxon %s not found as accepted name, but as synonym of %s') % (self,
+                            accepted_name))
+                    
+                else:
+                    self.reference_errors.append(_('Taxon %s not found in %s') % (self, verbose_taxon_source))
+                    
+                
+                taxon_latnames_query = self.models.TaxonTreeModel.objects.filter(
+                    taxon_latname__iexact=self.taxon_latname)
+                self.reference_taxa_with_similar_taxon_latname = taxon_latnames_query.all()
         
-        db_lazy_taxon = LazyTaxon(instance=taxon)
-        self.reference_taxon = db_lazy_taxon
-        
-        if db_lazy_taxon.taxon_nuid != self.taxon_nuid:
-                errors.append(_('Taxon %s has changed its position in %s') % (self, verbose_taxon_source))
-        
-        if str(taxon.name_uuid) != str(self.name_uuid):
-            errors.append(_('Taxon %s has changed its identifier in %s') % (self, verbose_taxon_source))
-        
-        return errors
-            
 
     def synonyms(self):
         tree_instance = self.tree_instance()

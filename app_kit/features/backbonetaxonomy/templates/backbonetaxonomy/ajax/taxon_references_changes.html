@@ -1,0 +1,153 @@
+{% load i18n static %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="mt-5">
+            <h2>{% trans 'Taxa with changes only in organizational data (e.g. position in tree)' %}</h2>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                {% if result.position_or_name_uuid_changed %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                {% blocktrans %}These taxa had changes only in organizational data like their position in the taxonomic tree. You can safely update these taxa without changing their scientific name or author.{% endblocktrans %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-text">
+                        {% for taxon in result.position_or_name_uuid_changed %}
+                            <div>
+                                <i>{{ taxon.taxon_latname }}</i> {{ taxon.taxon_author }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <form method="post" action="{% url 'update_taxon_references' meta_app.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary mt-3">
+                                {% trans 'Update these taxa' %}
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                     <div class="text-muted">
+                        {% trans 'No taxa with changes in organizational data found.' %}
+                    </div>
+                {% endif %}
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div>
+            <h2>{% trans 'Taxa with potentially new author' %}</h2>
+        </div>
+
+
+        {% if result.taxa_new_author %}
+                    
+            {% for entry in result.taxa_new_author %}
+                <div id="{{ entry.taxon.name_uuid }}" class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i>{{ entry.taxon.taxon_latname }}</i> {{ entry.taxon.taxon_author }}
+                        </h5>
+                        <div class="card-text">
+                            <strong>{% trans 'New author names:' %}</strong>
+                            <div class="my-3">
+                                {% for similar_entry in entry.new_author_taxa %}
+                                    <div class="d-flex align-items-center">
+                                        <div class="pr-3">
+                                            <i>{{ similar_entry.similar_taxon.taxon_latname }}</i> {{ similar_entry.similar_taxon.taxon_author }} 
+                                        </div>
+                                        <div>
+                                            <form action="{% url 'request_analyze_taxon' meta_app.id %}" class="xhr" ajax-target="ModalContent" method="POST">
+                                                {{ similar_entry.form }}
+                                                <button type="submit" class="btn btn-xs btn-success nodisable">{% trans 'accept' %}</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            
+        {% else %}
+            <div class="text-muted">
+                {% trans 'No taxa with new author found.' %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div>
+<div class="row mt-5">
+    <div class="col-12">
+        <div>
+            <h2>{% trans 'Taxa now found as a synonym' %}</h2>
+        </div>
+        {% if result.taxa_in_synonyms %}
+            {% for entry in result.taxa_in_synonyms %}
+                <div id="{{ entry.taxon.name_uuid }}" class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i>{{ entry.taxon.taxon_latname }}</i> {{ entry.taxon.taxon_author }}
+                        </h5>
+                        
+                        <div class="card-text">
+                            <div class="d-flex align-items-center">
+                                <div class="pr-2">
+                                    <strong>{% trans 'accepted name:' %}</strong>
+                                </div>
+                                <div class="pr-3">
+                                    <i>{{ entry.taxon.reference_accepted_name.taxon_latname }}</i> {{ entry.taxon.reference_accepted_name.taxon_author }}
+                                </div>
+                                <div>
+                                    <form action="{% url 'request_analyze_taxon' meta_app.id %}" class="xhr" ajax-target="ModalContent" method="POST">
+                                        {{ entry.form }}
+                                        <button type="submit" class="btn btn-xs btn-success nodisable">{% trans 'accept' %}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted">
+                {% trans 'No taxa found as synonyms.' %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+<div class="row my-5">
+    <div class="col-12">
+        <div>
+            <h2>{% trans 'Taxa not found in the taxonomic database anymore' %}</h2>
+        </div>
+        {% if result.taxa_missing %}
+            <div class="card">
+                <div class="card-body">
+                    
+                    <div class="card-text">
+                        {% for taxon in result.taxa_missing %}
+                            <div>
+                                {{ taxon }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-muted">
+                {% trans 'No missing taxa found.' %}
+            </div>
+        {% endif %}
+    </div>
+</div>

@@ -1,6 +1,8 @@
 import os
 import zipfile
 import tempfile
+import shutil
+import json  # Add this import
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django_tenants.utils import schema_context
@@ -21,10 +23,17 @@ class Command(BaseCommand):
             type=str,
             help='Path to the ZIP file to import (optional, defaults to the export path).',
         )
+        parser.add_argument(
+            '--source-schema',
+            type=str,
+            default='treesofbavaria',
+            help='The source schema name in the ZIP (defaults to "treesofbavaria").',
+        )
 
     def handle(self, *args, **options):
         schema_name = options['schema_name']
         zip_path = options.get('zip_path')
+        source_schema = options['source_schema']
         
         if not zip_path:
             export_path = os.path.join(settings.MEDIA_ROOT, 'nature_guides_exports', schema_name)
@@ -41,24 +50,45 @@ class Command(BaseCommand):
                 with zipfile.ZipFile(zip_path, 'r') as zipf:
                     zipf.extractall(temp_dir)
                 
-                # Find the data JSON file
+                # Modify and load the data JSON file
                 data_filename = os.path.join(temp_dir, 'nature_guides_data.json')
                 if not os.path.exists(data_filename):
                     raise CommandError('nature_guides_data.json not found in ZIP')
                 
-                # Load the data using loaddata
+                # Load, modify, and save the JSON
+                with open(data_filename, 'r') as f:
+                    data = json.load(f)
+                
+                # Replace source_schema with schema_name in string fields (e.g., image paths)
+                def replace_schema(obj):
+                    if isinstance(obj, str):
+                        return obj.replace(source_schema, schema_name)
+                    elif isinstance(obj, dict):
+                        return {k: replace_schema(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [replace_schema(item) for item in obj]
+                    return obj
+                
+                modified_data = replace_schema(data)
+                
+                with open(data_filename, 'w') as f:
+                    json.dump(modified_data, f)
+                
+                # Load the modified data using loaddata
                 call_command('loaddata', data_filename, verbosity=1)
                 
-                # Extract images to MEDIA_ROOT
+                # Extract and move images to MEDIA_ROOT, replacing schema in paths
                 for root, dirs, files in os.walk(temp_dir):
                     for file in files:
-                        if file.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff')):  # Add more extensions if needed
+                        if file.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff')):
                             src_path = os.path.join(root, file)
                             # Calculate the relative path from temp_dir
                             rel_path = os.path.relpath(src_path, temp_dir)
+                            # Replace source_schema with schema_name in rel_path
+                            rel_path = rel_path.replace(source_schema, schema_name, 1)  # Replace only the first occurrence
                             dest_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-                            # Move or copy the file
-                            os.rename(src_path, dest_path)  # Use shutil.move if needed
+                            # Move the file
+                            shutil.move(src_path, dest_path)
             
             self.stdout.write(f'All Nature Guides imported successfully for schema: {schema_name}')

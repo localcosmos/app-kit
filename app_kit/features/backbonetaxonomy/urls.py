@@ -23,9 +23,15 @@ urlpatterns = [
     # taxon swap
     path('swap-taxon/<int:meta_app_id>/', views.SwapTaxon.as_view(), name='swap_taxon'),
     path('analyze-taxon/<int:meta_app_id>/', views.AnalyzeTaxon.as_view(), name='analyze_taxon'),
+    path('request-analyze-taxon/<int:meta_app_id>/', views.RequestAnalyzeTaxon.as_view(),
+         name='request_analyze_taxon'),
+    path('request-swap-taxon/<int:meta_app_id>/', views.RequestSwapTaxon.as_view(),
+         name='request_swap_taxon'),
     # taxon update
     path('update-taxon-references/<int:meta_app_id>/', views.UpdateTaxonReferences.as_view(),
          name='update_taxon_references'),
+    path('get-taxon-references-changes/<int:meta_app_id>/', views.GetTaxonReferencesChanges.as_view(),
+         name='get_taxon_references_changes'),
     # taxon relationships
     path('taxon-relationships/<int:meta_app_id>/<int:backbone_id>/', views.TaxonRelationships.as_view(),
          name='taxon_relationships'),

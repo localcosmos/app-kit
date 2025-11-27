@@ -1,0 +1,146 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+    {% url 'request_swap_taxon' meta_app.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Update taxon{% endblocktrans %}
+{% endblock %}
+
+{% block body %}
+	{% if swapped %}
+		<div class="alert alert-success">
+			{% blocktrans with to_name=to_taxon from_name=from_taxon %}{{ from_name }} has been replaced with {{ to_name }} where possible.{% endblocktrans %}
+		</div>
+	{% else %}
+		<p>
+			{% blocktrans %}You want to swap{% endblocktrans %}
+		</p>
+		<div>
+			<div>
+				<i>{{ from_taxon.taxon_latname }}</i> {{ from_taxon.taxon_author }}
+			</div>
+		</div>
+		<div>
+			<strong>{% trans 'to:' %}</strong>
+			<div>
+				<i>{{ to_taxon.taxon_latname }}</i> {{ to_taxon.taxon_author }}
+			</div>
+		</div>
+		<div>
+			{{ form }}
+		</div>
+		<div>
+			{% if analyzed %}
+				<hr>
+				<div>
+					<div class="mt-3 mb-3">
+						<strong>{% trans 'Analyzation Result:' %}</strong>
+						{% if not verbose_to_taxon_occurrences %}
+							<span class="text-success">
+								<strong>{% trans 'swappable' %}</strong>
+							</span>
+						{% else %}
+							<span class="text-danger">
+								<strong>{% trans 'not swappable' %}</strong>
+							</span>
+						{% endif %}
+					</div>
+							
+					<div>
+
+						<i>{{ from_taxon.taxon_latname }}</i> {{ from_taxon.taxon_author }} {% trans 'occurs in' %}:
+
+						<div class="ml-4">
+							{% if verbose_from_taxon_occurrences %}
+								{% for occurrences in verbose_from_taxon_occurrences %}
+									<div>
+										<div class="my-3">
+											<strong>{{ occurrences.verbose_model_name }}</strong>
+											{% if occurrences.is_swappable %}
+												<span class="badge badge-success">
+													{% trans 'swappable' %}
+												</span>
+											{% else %}
+												<span class="badge badge-danger">
+													{% trans 'not swappable' %}
+												</span>
+											{% endif %}
+										</div>
+										<ul>
+											{% for verbose_occurrence in occurrences.verbose_occurrences %}
+												<li>
+													{{ verbose_occurrence }}
+												</li>
+											{% endfor %}
+										</ul>
+									</div>
+								{% endfor %}
+							{% else %}
+								{% if swapped %}
+									<div class="alert alert-success">
+										{% blocktrans with to_name=to_taxon from_name=from_taxon %}{{ from_name }} has been replaced with {{ to_name }} where possible.{% endblocktrans %}
+									</div>
+								{% else %}
+									<div class="alert alert-danger">
+										{% blocktrans with name=from_taxon %}{{ name }} does not occur in your app and can't be swapped.{% endblocktrans %}
+									</div>
+								{% endif %}
+							{% endif %}
+						</div>
+					</div>
+					<div class="mt-4">
+
+						<i>{{ to_taxon.taxon_latname }}</i> {{ to_taxon.taxon_author }} {% trans 'occurs in' %}:
+
+						<div class="ml-4">
+							{% if verbose_to_taxon_occurrences %}
+								{% for to_occurrences in verbose_to_taxon_occurrences %}
+									<div>
+										<div class="my-3">
+											<strong>{{ to_occurrences.verbose_model_name }}</strong>
+										</div>
+										<ul>
+											{% for to_verbose_occurrence in to_occurrences.verbose_occurrences %}
+												<li>
+													{{ to_verbose_occurrence }}
+												</li>
+											{% endfor %}
+										</ul>
+									</div>
+								{% endfor %}
+							{% else %}
+									
+								<div class="text-muted">
+									{% blocktrans %}No occurrences found.{% endblocktrans %}
+								</div>
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+	{% if not verbose_to_taxon_occurrences %}
+		<button type="submit" class="btn btn-outline-primary">{% trans 'Swap' %}</button>
+	{% endif %}
+{% endblock %}
+
+{% block script %}
+	{% if swapped %}
+	
+		<script>
+			let element = document.getElementById("{{ from_taxon.name_uuid }}");
+			if (element) {
+				element.remove();
+			}
+			$("#Modal").modal("hide");
+		</script>
+	{% endif %}
+{% endblock %}

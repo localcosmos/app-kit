@@ -5,6 +5,7 @@ from django.db.models.fields import BLANK_CHOICE_DASH
 
 
 from taxonomy.lazy import LazyTaxon
+from taxonomy.fields import HiddenTaxonField
 
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy, BackboneTaxa
 
@@ -89,6 +90,12 @@ class SwapTaxonForm(forms.Form):
             raise forms.ValidationError(_('You cannot select the same taxon twice.'))
         
         return cleaned_data
+
+
+class FixedSwapTaxonForm(forms.Form):
+    
+    from_taxon = HiddenTaxonField()
+    to_taxon = HiddenTaxonField()
     
     
 class TaxonRelationshipTypeForm(LocalizeableModelForm):

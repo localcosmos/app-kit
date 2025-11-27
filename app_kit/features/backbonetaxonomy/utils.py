@@ -274,9 +274,107 @@ class TaxonReferencesUpdater:
     def __init__(self, meta_app):
         self.meta_app = meta_app
         self.taxon_manager = TaxonManager(meta_app)
+        
+        
+    def update_all_taxon_nuid_and_name_uuid_only(self):
+        
+        result = self.check_taxa()
+        
+        for lazy_taxon in result['position_or_name_uuid_changed']:
+            
+            if lazy_taxon.exists_as_taxon_in_reference == True and lazy_taxon.reference_taxon:
+            
+                models_with_taxon = self.taxon_manager.get_taxon_models()
+                
+                for model in models_with_taxon:
+                
+                    instances = model.objects.filter(taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author)
+                    
+                    for instance_with_taxon in instances:
+                        
+                        meta_app = get_content_instance_meta_app(instance_with_taxon)
+                        
+                        if meta_app == self.meta_app:
+                            
+                            # update the taxon, use both .taxon_nuid and .taxon.taxon_nuid
+                            # to ensure its update
+                            
+                            # reference_taxon can be a synonym, a synonym has no taxon_nuid
+                            if hasattr(lazy_taxon.reference_taxon, 'taxon'):
+                                taxon_nuid = lazy_taxon.reference_taxon.taxon.taxon_nuid
+                            else:
+                                taxon_nuid = lazy_taxon.reference_taxon.taxon_nuid
+                                
+                            instance_with_taxon.name_uuid = lazy_taxon.reference_taxon.name_uuid
+                            instance_with_taxon.taxon_nuid = taxon_nuid
+                            instance_with_taxon.taxon.name_uuid = lazy_taxon.reference_taxon.name_uuid
+                            instance_with_taxon.taxon.taxon_nuid = taxon_nuid
+                            instance_with_taxon.save()
+                
+        
+    def check_taxa(self):
+        
+        models_with_taxon = self.taxon_manager.get_taxon_models()
+        
+        result = {
+            'total_taxa_checked': 0,
+            'taxa_with_errors': 0,
+            'position_or_name_uuid_changed': [],
+            'taxa_missing': [],
+            'taxa_new_author': [],
+            'taxa_in_synonyms': [],
+        }
+        
+        for model in models_with_taxon:
+            
+            instances = model.objects.filter(taxon_latname__isnull=False)
+            
+            for instance_with_taxon in instances:
+                
+                meta_app = get_content_instance_meta_app(instance_with_taxon)
+                
+                if meta_app == self.meta_app:
+                
+                    lazy_taxon = LazyTaxon(instance=instance_with_taxon)
+                    
+                    lazy_taxon.check_with_reference()
+                    
+                    result['total_taxa_checked'] += 1
+                    
+                    if len(lazy_taxon.reference_errors) > 0:
+                        result['taxa_with_errors'] += 1
+                    
+                    if lazy_taxon.exists_as_taxon_in_reference:
+                        
+                        if lazy_taxon.changed_taxon_nuid_in_reference or lazy_taxon.changed_name_uuid_in_reference:
+                            
+                            if lazy_taxon not in result['position_or_name_uuid_changed']:
+                                result['position_or_name_uuid_changed'].append(lazy_taxon)                        
+                    
+                    else:
+                        
+                        if len(lazy_taxon.reference_taxa_with_similar_taxon_latname) > 0:
+                            
+                            if lazy_taxon not in result['taxa_new_author']:
+                                result['taxa_new_author'].append(lazy_taxon)
+                            
+                        
+                        elif lazy_taxon.exists_as_synonym_in_reference:
+                            
+                            if lazy_taxon not in result['taxa_in_synonyms']:
+                                result['taxa_in_synonyms'].append(lazy_taxon)
+                            
+                        else:
+                            
+                            if lazy_taxon not in result['taxa_missing']:
+                                result['taxa_missing'].append(lazy_taxon)
+                            
+        return result
+                
+                    
     
     # check all taxa, but only add one error per taxon
-    def check_taxa(self, update=False):
+    def check_taxa_old(self, update=False):
         
         models_with_taxon = self.taxon_manager.get_taxon_models()
         

@@ -13,7 +13,7 @@ from app_kit.features.backbonetaxonomy.views import (ManageBackboneTaxonomy, Bac
             AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy,
             ManageBackboneTaxon, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences,
             TaxonRelationships, ManageTaxonRelationshipType, DeleteTaxonRelationshipType,
-            ManageTaxonRelationship, DeleteTaxonRelationship)
+            ManageTaxonRelationship, DeleteTaxonRelationship, GetTaxonReferencesChanges)
 
 from app_kit.features.backbonetaxonomy.forms import (AddSingleTaxonForm, AddMultipleTaxaForm,
     ManageFulltreeForm, SearchTaxonomicBackboneForm, TaxonRelationshipForm)
@@ -781,8 +781,50 @@ class TestAnalyzeTaxon(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser,
 class TestUpdateTaxonReferences(ViewTestMixin, WithAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
                            WithMetaApp, WithTenantClient, TenantTestCase):
 
-    url_name = 'analyze_taxon'
+    url_name = 'update_taxon_references'
     view_class = UpdateTaxonReferences
+        
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        
+        context_data = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context_data['updated'], False)
+        
+    
+    @test_settings
+    def test_post(self):
+        
+        view = self.get_view()
+        
+        view.request.method = 'POST'
+        
+        response = view.post(view.request, **view.kwargs)
+        
+        self.assertEqual(response.status_code, 200)
+        
+        self.assertEqual(response.context_data['updated'], True)
+        
+
+class TestGetTaxonReferencesChanges(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithBackboneTaxonomy,
+                           WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'get_taxon_references_changes'
+    view_class = GetTaxonReferencesChanges
     
     def setUp(self):
         super().setUp()
@@ -792,6 +834,9 @@ class TestUpdateTaxonReferences(ViewTestMixin, WithAdminOnly, WithLoggedInUser, 
         
         picea_abies = models.TaxonTreeModel.objects.get(taxon_latname='Picea abies')
         self.picea_abies = LazyTaxon(instance=picea_abies)
+        
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lacerta_agilis = LazyTaxon(instance=lacerta_agilis)
         
         taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
         taxon_profiles = taxon_profiles_link.generic_content
@@ -818,80 +863,80 @@ class TestUpdateTaxonReferences(ViewTestMixin, WithAdminOnly, WithLoggedInUser, 
         self.taxon_profile.set_taxon(self.outdated_lazy_taxon)
         self.taxon_profile.save()
         
+        # create a backbone taxon with new author
+        
+        old_author_taxon_kwargs = {
+            'taxon_source': self.lacerta_agilis.taxon_source,
+            'taxon_latname': self.lacerta_agilis.taxon_latname,
+            'taxon_author': 'Old Author',
+            'taxon_nuid': self.lacerta_agilis.taxon_nuid,
+            'name_uuid': self.lacerta_agilis.name_uuid,
+        }
+        
+        self.old_author_lazy_taxon = LazyTaxon(**old_author_taxon_kwargs)
+        
+        backbone_taxon = BackboneTaxa(
+            backbonetaxonomy = self.generic_content,
+            taxon = self.old_author_lazy_taxon,
+        )
+        backbone_taxon.save()
+        
+    
     def get_url_kwargs(self):
         url_kwargs = {
             'meta_app_id' : self.meta_app.id,
         }
         return url_kwargs
     
-    def get_view(self):
-        view = super().get_view()
-        view.meta_app = self.meta_app
-        return view
-    
-    @test_settings
-    def test_analyze(self):
-        view = self.get_view()
-        result = view.analyze()
-        
-        expected_result = [
-            {
-                'instance': self.taxon_profile,
-                'taxon': self.outdated_lazy_taxon,
-                'errors': [
-                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2019',
-                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2019'
-                ],
-                'updated': False
-            }
-        ]
-        
-        self.assertEqual(result, expected_result)
-    
-    
     @test_settings
     def test_get_context_data(self):
         
         view = self.get_view()
-        result = view.analyze()
-        
+        view.meta_app = self.meta_app
         context_data = view.get_context_data(**view.kwargs)
         
-        self.assertEqual(context_data['analyzed'], True)
-        self.assertEqual(context_data['updated'], False)
-        self.assertEqual(context_data['result'], result)
         
-    
-    @test_settings
-    def test_post(self):
+        #{
+        # 'total_taxa_checked': 1,
+        # 'taxa_with_errors': 1,
+        # 'position_or_name_uuid_changed': [<taxonomy.lazy.LazyTaxon object at 0x7f4faf637d40>],
+        # 'taxa_missing': [],
+        # 'taxa_new_author': [(...)],
+        # 'taxa_in_synonyms': []
+        # }
+        result = context_data['result']
         
-        view = self.get_view()
+        self.assertEqual(result['total_taxa_checked'], 2)
+        self.assertEqual(result['taxa_with_errors'], 2)
         
-        view.request.method = 'POST'
+        self.assertEqual(len(result['position_or_name_uuid_changed']), 1)
         
-        response = view.post(view.request, **view.kwargs)
+        old_taxon = result['position_or_name_uuid_changed'][0]
         
-        self.assertEqual(response.status_code, 200)
+        self.assertNotEqual(old_taxon.name_uuid, old_taxon.reference_taxon.name_uuid)
+        self.assertEqual(old_taxon.taxon_latname, old_taxon.reference_taxon.taxon_latname)
+        self.assertEqual(old_taxon.taxon_author, old_taxon.reference_taxon.taxon_author)
+        self.assertNotEqual(old_taxon.taxon_nuid, old_taxon.reference_taxon.taxon_nuid)
         
-        self.assertEqual(response.context_data['analyzed'], False)
-        self.assertEqual(response.context_data['updated'], True)
+        self.assertEqual(result['taxa_missing'], [])
+        self.assertEqual(result['taxa_in_synonyms'], [])
         
+        self.assertEqual(len(result['taxa_new_author']), 1)
         
-        expected_result = [
-            {
-                'instance': self.taxon_profile,
-                'taxon': self.reference_lazy_taxon,
-                'errors': [
-                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2019',
-                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2019'
-                ],
-                'updated': True
-            }
-        ]
+        entry = result['taxa_new_author'][0]
         
-        self.assertEqual(response.context_data['result'], expected_result)
+        entry_taxon = entry['taxon']
+        new_author_taxa = entry['new_author_taxa']
+        self.assertEqual(len(new_author_taxa), 1)
         
+        new_author_entry = new_author_taxa[0]
+        similar_taxon = new_author_entry['similar_taxon']
+        self.assertEqual(similar_taxon.taxon_author, self.lacerta_agilis.taxon_author)
+        self.assertNotEqual(similar_taxon.taxon_author, entry_taxon.taxon_author)
         
+        self.assertIn('form', new_author_entry)
+        
+        self.assertEqual(entry_taxon, self.lacerta_agilis)
 
 
 class WithTaxonRelationship:

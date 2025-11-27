@@ -3,8 +3,8 @@ import zipfile
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django_tenants.utils import schema_context  # Assuming django-tenants for multi-tenancy
-from django.core import serializers
+from django_tenants.utils import schema_context
+from django.core.management import call_command  # Add this import
 
 from app_kit.features.nature_guides.models import (NatureGuide, MetaNode, NatureGuidesTaxonTree, NatureGuideCrosslinks, MatrixFilterSpace,
                                                    NatureGuidesTaxonSynonym, NatureGuidesTaxonLocale, MatrixFilter, NodeFilterSpace,
@@ -43,36 +43,31 @@ class Command(BaseCommand):
                 content_type__in=image_content_types
             )
             
-            # get all full filepaths of those images
+            # Get all full filepaths of those images
             image_filepaths = []
             for ci in content_images:
                 if ci.image_store and ci.image_store.source_image:
                     image_filepaths.append(ci.image_store.source_image.path)
             
-            # zip all those images into a single zip file
+            # Zip all those images into a single zip file
             zip_filename = os.path.join(export_path, f'nature_guides_images_{schema_name}.zip')
             with zipfile.ZipFile(zip_filename, 'w') as zipf:
                 for filepath in image_filepaths:
                     arcname = os.path.relpath(filepath, settings.MEDIA_ROOT)
                     zipf.write(filepath, arcname)
             
-            # Collect all objects to export
-            all_objects = []
-            nature_guide_models = [NatureGuide, MetaNode, NatureGuidesTaxonTree, NatureGuideCrosslinks, MatrixFilterSpace,
-                                   NatureGuidesTaxonSynonym, NatureGuidesTaxonLocale, MatrixFilter, NodeFilterSpace,
-                                   MatrixFilterRestriction]
-            for model in nature_guide_models:
-                all_objects.extend(model.objects.all())
-            all_objects.extend(content_images)  # The filtered ContentImage instances
+            # Collect app labels and model names for dumpdata
+            models_to_export = [
+                'app_kit.ContentImage', 'app_kit.ImageStore',
+                'nature_guides.NatureGuide', 'nature_guides.MetaNode', 'nature_guides.NatureGuidesTaxonTree',
+                'nature_guides.NatureGuideCrosslinks', 'nature_guides.MatrixFilterSpace',
+                'nature_guides.NatureGuidesTaxonSynonym', 'nature_guides.NatureGuidesTaxonLocale',
+                'nature_guides.MatrixFilter', 'nature_guides.NodeFilterSpace', 'nature_guides.MatrixFilterRestriction'
+            ]
             
-            # Collect related ImageStore instances
-            image_stores = [ci.image_store for ci in content_images if ci.image_store]
-            all_objects.extend(image_stores)
-            
-            # Serialize to JSON
+            # Serialize to JSON using dumpdata with natural keys
             data_filename = os.path.join(export_path, 'nature_guides_data.json')
-            with open(data_filename, 'w') as f:
-                serializers.serialize('json', all_objects, stream=f)
+            call_command('dumpdata', *models_to_export, '--natural-foreign', '--natural-primary', '-o', data_filename, verbosity=1)
             
             # Add the data file to the ZIP
             with zipfile.ZipFile(zip_filename, 'a') as zipf:
