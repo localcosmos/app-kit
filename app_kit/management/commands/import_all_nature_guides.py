@@ -78,17 +78,26 @@ class Command(BaseCommand):
                 call_command('loaddata', data_filename, verbosity=1)
                 
                 # Extract and move images to MEDIA_ROOT, replacing schema in paths
+                moved_count = 0
+                skipped_count = 0
                 for root, dirs, files in os.walk(temp_dir):
                     for file in files:
-                        if file.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff')):
-                            src_path = os.path.join(root, file)
-                            # Calculate the relative path from temp_dir
-                            rel_path = os.path.relpath(src_path, temp_dir)
+                        src_path = os.path.join(root, file)
+                        rel_path = os.path.relpath(src_path, temp_dir)
+                        # Only process files under the source schema's imagestore (to avoid copying unrelated files)
+                        if rel_path.startswith(f'{source_schema}/imagestore/'):
                             # Replace source_schema with schema_name in rel_path
-                            rel_path = rel_path.replace(source_schema, schema_name, 1)  # Replace only the first occurrence
+                            rel_path = rel_path.replace(source_schema, schema_name, 1)
                             dest_path = os.path.join(settings.MEDIA_ROOT, rel_path)
                             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-                            # Move the file
+                            # Move the file regardless of extension (since ImageStore may have various files)
                             shutil.move(src_path, dest_path)
-            
+                            moved_count += 1
+                            self.stdout.write(f'Moved: {src_path} -> {dest_path}')
+                        else:
+                            skipped_count += 1
+                            self.stdout.write(f'Skipped (not in imagestore): {rel_path}')
+
+                self.stdout.write(f'Moved {moved_count} files, skipped {skipped_count} files.')
+
             self.stdout.write(f'All Nature Guides imported successfully for schema: {schema_name}')

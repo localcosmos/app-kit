@@ -44,17 +44,26 @@ class Command(BaseCommand):
             )
             
             # Get all full filepaths of those images
-            image_filepaths = []
+            image_filepaths = set()  # Use set to avoid duplicates
             for ci in content_images:
                 if ci.image_store and ci.image_store.source_image:
-                    image_filepaths.append(ci.image_store.source_image.path)
-            
+                    image_filepaths.add(ci.image_store.source_image.path)
+
+            # Also collect all ImageStore source_image paths
+            all_image_stores = ImageStore.objects.all()
+            for istore in all_image_stores:
+                if istore.source_image:
+                    image_filepaths.add(istore.source_image.path)
+
             # Zip all those images into a single zip file
             zip_filename = os.path.join(export_path, f'nature_guides_images_{schema_name}.zip')
             with zipfile.ZipFile(zip_filename, 'w') as zipf:
                 for filepath in image_filepaths:
-                    arcname = os.path.relpath(filepath, settings.MEDIA_ROOT)
-                    zipf.write(filepath, arcname)
+                    if os.path.exists(filepath):  # Add check to skip missing files
+                        arcname = os.path.relpath(filepath, settings.MEDIA_ROOT)
+                        zipf.write(filepath, arcname)
+                    else:
+                        self.stdout.write(f'Warning: Image file not found: {filepath}')
             
             # Collect app labels and model names for dumpdata
             models_to_export = [

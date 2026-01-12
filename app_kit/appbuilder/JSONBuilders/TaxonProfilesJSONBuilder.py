@@ -566,6 +566,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(relationship.taxon)
                 related_taxon_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(relationship.related_taxon)
                 
+                if relationship.relationship_type.taxon_role == None and relationship.relationship_type.related_taxon_role == None:
+                    # make 'taxon' the profile taxon
+                    if relationship.taxon.taxon_nuid == profile_taxon.taxon_nuid:
+                        pass
+                    else:
+                        # swap
+                        temp = taxon_json
+                        taxon_json = related_taxon_json
+                        related_taxon_json = temp
+                
                 relationship_json = {
                     'taxon': taxon_json,
                     'relatedTaxon': related_taxon_json,
