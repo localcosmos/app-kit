@@ -5,7 +5,7 @@ from django import forms
 
 from localcosmos_server.forms import LocalizeableForm
 
-from .models import MatrixFilter
+from .models import MatrixFilter, IDENTIFICATION_MODE_POLYTOMOUS
 from .matrix_filters import MATRIX_FILTER_TYPES
 
 from .forms import is_active_field
@@ -63,6 +63,22 @@ class MatrixFilterManagementForm(LocalizeableForm):
                 raise forms.ValidationError(_('A matrix filter with this name already exists.'))
 
         return name
+    
+    
+    def clean(self):
+        cleaned_data = super().clean()
+
+        identification_mode = self.meta_node.identification_mode
+        
+        if identification_mode == IDENTIFICATION_MODE_POLYTOMOUS and not self.matrix_filter:
+            
+            filter_exists = MatrixFilter.objects.filter(meta_node=self.meta_node).exists()
+            
+            if filter_exists:
+                raise forms.ValidationError(_('In polytomous identification mode, only one matrix filter is allowed.'))
+            
+        
+        return cleaned_data
 
 
 class MatrixFilterManagementFormWithUnit(MatrixFilterManagementForm):

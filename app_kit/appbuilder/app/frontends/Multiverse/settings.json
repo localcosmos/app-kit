@@ -69,8 +69,8 @@
   },
   "cordova" : {
     "platforms" : {
-      "android" : "android@13.0.0",
-      "ios" : "ios@7.1.0",
+      "android" : "android@14.0.1",
+      "ios" : "ios@8.0.0",
       "browser" : "browser@7.0.0"
     },
     "plugins" : [

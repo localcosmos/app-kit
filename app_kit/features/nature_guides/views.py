@@ -819,6 +819,14 @@ class ManageMatrixFilter(FormLanguageMixin, MetaAppMixin, FormView):
         context['meta_node'] = self.meta_node
         context['filter_type'] = self.filter_type
         context['matrix_filter'] = self.matrix_filter
+        
+        adding_allowed = True
+        if self.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS:
+            existing_filters_count = MatrixFilter.objects.filter(meta_node=self.meta_node).count()
+            if existing_filters_count >= 1:
+                adding_allowed = False
+                
+        context['adding_allowed'] = adding_allowed
 
         # fallback
         verbose_filter_name = self.filter_type

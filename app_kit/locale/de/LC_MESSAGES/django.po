@@ -2091,7 +2091,7 @@ msgstr "Matrix"
 
 #: features/nature_guides/forms.py:416
 msgid "Dichotomous or Polytomous"
-msgstr ""
+msgstr "dichotom oder polytom"
 
 #: features/nature_guides/forms.py:425
 msgid "Identification Mode"
@@ -2269,11 +2269,11 @@ msgstr "Farbe"
 
 #: features/nature_guides/matrix_filters.py:45
 msgid "Range of numbers"
-msgstr "Zahlenintervall-Filter"
+msgstr "Zahlenintervall"
 
 #: features/nature_guides/matrix_filters.py:46
 msgid "Numbers"
-msgstr "Zahlenfilter"
+msgstr "Zahlen"
 
 #: features/nature_guides/matrix_filters.py:47
 msgid "Text and images"
@@ -2285,11 +2285,11 @@ msgstr "Taxonomischer Filter"
 
 #: features/nature_guides/matrix_filters.py:49
 msgid "Text only"
-msgstr "Textbasierter Filter"
+msgstr "Textbasiertes Merkmal"
 
 #: features/nature_guides/matrix_filters.py:345
 msgid "Range filter"
-msgstr "Zahlenintervall-Filter"
+msgstr "Zahlenintervall"
 
 #: features/nature_guides/matrix_filters.py:348
 msgid "What is described by this trait, e.g. 'length of nose'"
@@ -2297,7 +2297,7 @@ msgstr "Was von diesem Merkmal beschrieben wird, z.B. 'Länge der Nase'"
 
 #: features/nature_guides/matrix_filters.py:485
 msgid "Number filter"
-msgstr "Zahlenfilter"
+msgstr "Zahlen"
 
 #: features/nature_guides/matrix_filters.py:488
 msgid "What is described by this trait, e.g. 'number of legs'"
@@ -2305,7 +2305,7 @@ msgstr "Was von diesem Merkmal beschrieben wird, z.B. 'Anzahl der Beine'"
 
 #: features/nature_guides/matrix_filters.py:602
 msgid "Color filter"
-msgstr "Farbfilter"
+msgstr "Farben"
 
 #: features/nature_guides/matrix_filters.py:603
 msgid "color"

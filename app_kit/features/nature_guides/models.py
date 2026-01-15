@@ -1130,6 +1130,7 @@ class CrosslinkManager:
 
         is_circular = False
 
+        # you may not link a node to one of its parents
         if crosslink[0].startswith(crosslink[1]):
             is_circular = True
 
@@ -1156,17 +1157,17 @@ class CrosslinkManager:
 
         if is_circular == False:
 
-            found_connection = True
-
             for crosslink in crosslinks:
 
                 # start a new chain
                 chain = [crosslink]
+                found_connection = True
             
                 while found_connection == True and is_circular == False:
                     
                     for crosslink_2 in crosslinks:
 
+                        # get the last nuid in the chain, which is a list of 2-tuples
                         chain_end = chain[-1][1]
 
                         found_connection = False
@@ -1212,6 +1213,8 @@ class NatureGuideCrosslinks(models.Model):
             
             all_crosslinks.append(crosslink_tuple)
 
+        print('Checking crosslinks for circularity:')
+        print(all_crosslinks)
         crosslink_manager =  CrosslinkManager()
         is_circular = crosslink_manager.check_circularity(all_crosslinks)
 

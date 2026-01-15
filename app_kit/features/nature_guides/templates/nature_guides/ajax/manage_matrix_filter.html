@@ -10,15 +10,22 @@
 {% endblock %}
 
 {% block body %}
-	<p>
-		<div>
-			{% render_bootstrap_form form %}
+
+	{% if adding_allowed == False and not matrix_filter %}
+		<div class="alert alert-warning">
+			{% trans "In dichotomous or polytomous identification mode, only one matrix filter is allowed." %}
 		</div>
-	</p>
-	{% if success is True %}
-		<div class="alert alert-success">
-			{% trans 'Successfully saved matrix filter.' %}
-		</div>
+	{% else %}
+		<p>
+			<div>
+				{% render_bootstrap_form form %}
+			</div>
+		</p>
+		{% if success is True %}
+			<div class="alert alert-success">
+				{% trans 'Successfully saved matrix filter.' %}
+			</div>
+		{% endif %}
 	{% endif %}
 {% endblock %}
 

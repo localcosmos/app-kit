@@ -260,6 +260,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
 
 
     def validate_external_media(self, url, col_letter, row_index):
+        
         validator = URLValidator()
         
         is_valid = True
@@ -566,6 +567,9 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             elif column_type == ColumnType.EXTERNAL_MEDIA.value:
                                 
                                 external_media_url = cell_value
+                                
+                                if not external_media_url:
+                                    continue
 
                                 external_media_data = self.get_external_media_data_from_external_media_sheet(external_media_url)
 

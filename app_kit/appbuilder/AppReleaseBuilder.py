@@ -916,10 +916,10 @@ class AppReleaseBuilder(AppBuilderBase):
 
         # detect duplicates by name
         all_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles)
-        for taxon_profile in all_taxon_profiles:
+        for taxon_profile in all_taxon_profiles:            
             duplicates = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
                 taxon_source=taxon_profile.taxon_source, taxon_latname=taxon_profile.taxon_latname,
-                taxon_author=taxon_profile.taxon_author).exclude(pk=taxon_profile.pk)
+                taxon_author=taxon_profile.taxon_author, morphotype=taxon_profile.morphotype).exclude(pk=taxon_profile.pk)
             if duplicates.exists():
                 warning_message = _('The taxon profile of %(taxon_latname)s has duplicates.') % {
                     'taxon_latname':taxon_profile.taxon_latname}
