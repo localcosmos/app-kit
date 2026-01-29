@@ -60,7 +60,16 @@
 
 
 {% block generic_content_specific %}
-	
+	<div>
+		<div class="card">
+		<div class="card-body">
+			<h5 class="card-title">{% trans 'Images and Licences' %}</h5>
+			<div>
+				<a href="{% url 'list_images_and_licences' meta_app.id %}" class="btn btn-outline-primary">{% trans 'Manage Images and Licences' %}</a>
+			</div>
+		</div>
+	</div>
+	</div>
 {% endblock %}
 
 {% block extra_script %}

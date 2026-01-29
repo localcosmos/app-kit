@@ -1581,3 +1581,40 @@ class MoveImageToSection(MetaAppMixin, FormView):
 
         return self.render_to_response(context)
     
+    
+class DeleteAllManuallyAddedTaxonProfileImages(MetaAppMixin, TemplateView):
+    
+    template_name = 'taxon_profiles/ajax/delete_all_manually_added_images.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profiles(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_taxon_profiles(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['success'] = False
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        
+        taxon_profile_ctype = ContentType.objects.get_for_model(TaxonProfile)
+        all_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles)
+        
+        images_to_delete = ContentImage.objects.filter(
+            content_type=taxon_profile_ctype,
+            object_id__in=all_taxon_profiles.values_list('id', flat=True)
+        )
+        
+        deleted_count = images_to_delete.count()
+        images_to_delete.delete()
+        
+        context = self.get_context_data(**self.kwargs)
+        context['deleted_count'] = deleted_count
+        context['success'] = True
+        
+        return self.render_to_response(context)

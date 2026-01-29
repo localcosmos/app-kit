@@ -119,4 +119,7 @@ urlpatterns = [
      # move images
      path('move-taxon-profile-image-to-section/<int:meta_app_id>/<int:taxon_profile_id>/<int:content_image_id>/',
            views.MoveImageToSection.as_view(), name='move_taxon_profile_image_to_section'),
+     # delete all manually added images
+     path('delete-all-manually-added-taxon-profile-images/<int:meta_app_id>/<int:taxon_profiles_id>/',
+           views.DeleteAllManuallyAddedTaxonProfileImages.as_view(), name='delete_all_manually_added_taxon_profile_images'),
 ]

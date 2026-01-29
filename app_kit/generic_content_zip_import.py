@@ -570,6 +570,172 @@ class GenericContentZipImporter:
                 'valid_media_types': ', '.join(AVAILABLE_EXTERNAL_MEDIA_TYPES),
             }
             self.add_cell_error(self.workbook_filename, sheet_name, 'B', row_index, message)
+            
+        if external_media_data['media_type']:
+            # call specific validator method for each media type
+            validator_method_name = 'validate_external_media_type_{0}'.format(
+                external_media_data['media_type'].lower()
+            )
+            validator_method = getattr(self, validator_method_name, None)
+            if validator_method:
+                validator_method(external_media_data, sheet_name, row_index)
+            
+    
+    
+    '''
+        image, youTube, vimeo, mp3, wav, pdf, website, file
+    '''
+    def validate_external_media_type_image(self, external_media_data, sheet_name, row_index):
+        # check that the url ends with a valid image extension
+        image_extension = os.path.splitext(external_media_data['url'])[1].lower()
+        if image_extension not in VALID_IMAGE_FORMATS:
+            message = _('Invalid image format in URL: %(cell_value)s. Valid formats are: %(valid_formats)s') % {
+                'cell_value': image_extension,
+                'valid_formats': ', '.join(VALID_IMAGE_FORMATS),
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+        
+        
+    
+    def validate_external_media_type_youtube(self, external_media_data, sheet_name, row_index):
+        url = (external_media_data.get('url') or '').strip()
+        if not url:
+            message = _('Invalid YouTube URL: empty value')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        try:
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(url)
+            netloc = (parsed.netloc or '').lower()
+            path = parsed.path or ''
+            query = parse_qs(parsed.query or '')
+        except Exception:
+            message = _('Invalid YouTube URL: %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        if parsed.scheme not in ('http', 'https'):
+            message = _('Invalid YouTube URL (scheme must be http/https): %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        video_id = None
+
+        # youtu.be/<id>
+        if netloc.endswith('youtu.be'):
+            candidate = path.lstrip('/')
+            m = re.match(r'^([A-Za-z0-9_-]{11})(?:$|[/?#])', candidate)
+            if m:
+                video_id = m.group(1)
+
+        # *.youtube.com/... variants
+        if not video_id and netloc.endswith('youtube.com'):
+            # watch?v=<id>
+            vvals = query.get('v')
+            if vvals:
+                v = vvals[0]
+                if re.fullmatch(r'[A-Za-z0-9_-]{11}', v or ''):
+                    video_id = v
+            # /embed/<id>, /v/<id>, /shorts/<id>
+            if not video_id:
+                m = re.search(r'/(?:embed|v|shorts)/([A-Za-z0-9_-]{11})(?:$|[/?#])', path)
+                if m:
+                    video_id = m.group(1)
+
+        if not video_id:
+            message = _('Invalid YouTube URL or video id not found: %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        # Optionally: could normalize/store the ID if needed
+        # external_media_data['video_id'] = video_id
+    
+    def validate_external_media_type_vimeo(self, external_media_data, sheet_name, row_index):
+        url = (external_media_data.get('url') or '').strip()
+        if not url:
+            message = _('Invalid Vimeo URL: empty value')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            netloc = (parsed.netloc or '').lower()
+            path = parsed.path or ''
+        except Exception:
+            message = _('Invalid Vimeo URL: %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        if parsed.scheme not in ('http', 'https'):
+            message = _('Invalid Vimeo URL (scheme must be http/https): %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        video_id = None
+
+        if netloc.endswith('vimeo.com'):
+            # player.vimeo.com/video/<id>
+            m = re.search(r'/video/(\d+)(?:$|[/?#])', path)
+            if m:
+                video_id = m.group(1)
+            # vimeo.com/<id> or any path ending with /<digits>
+            if not video_id:
+                m = re.search(r'/(\d+)(?:$|[/?#])', path)
+                if m:
+                    video_id = m.group(1)
+
+        if not video_id:
+            message = _('Invalid Vimeo URL or video id not found: %(cell_value)s') % {'cell_value': url}
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        # Optionally: could normalize/store the ID if needed
+        # external_media_data['video_id'] = video_id
+    
+    
+    def validate_external_media_type_mp3(self, external_media_data, sheet_name, row_index):
+        # has to end with .mp3
+        if not external_media_data['url'].lower().endswith('.mp3'):
+            message = _('Invalid mp3 format in URL: %(cell_value)s. URL has to end with .mp3') % {
+                'cell_value': external_media_data['url'],
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+    
+    def validate_external_media_type_wav(self, external_media_data, sheet_name, row_index):
+        # has to end with .wav
+        if not external_media_data['url'].lower().endswith('.wav'):
+            message = _('Invalid wav format in URL: %(cell_value)s. URL has to end with .wav') % {
+                'cell_value': external_media_data['url'],
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+    
+    def validate_external_media_type_pdf(self, external_media_data, sheet_name, row_index):
+        # has to end with .pdf
+        if not external_media_data['url'].lower().endswith('.pdf'):
+            message = _('Invalid pdf format in URL: %(cell_value)s. URL has to end with .pdf') % {
+                'cell_value': external_media_data['url'],
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+    
+    
+    def validate_external_media_type_website(self, external_media_data, sheet_name, row_index):
+        # check that it is not a file link
+        if re.search(r'\.[a-zA-Z0-9]{2,5}($|\?)', external_media_data['url']):
+            message = _('Invalid website format in URL: %(cell_value)s. URL should not end with a file extension.') % {
+                'cell_value': external_media_data['url'],
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+    
+    
+    def validate_external_media_type_file(self, external_media_data, sheet_name, row_index):
+        # file endings: check if the url has a file extension
+        if not re.search(r'\.[a-zA-Z0-9]{2,5}($|\?)', external_media_data['url']):
+            message = _('Invalid file format in URL: %(cell_value)s. URL has to end with a file extension.') % {
+                'cell_value': external_media_data['url'],
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
     
     
     def add_cell_error(self, filename, sheet_name, column, row, message):

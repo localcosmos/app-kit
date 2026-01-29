@@ -13,6 +13,7 @@ TAXON_RANK_CHOICES = (
     ('', '-----'),
     ('kingdom', _('Kingdom')),
     ('phylum', _('Phylum')),
+    ('subphylum', _('Subphylum')),
     ('class', _('Class')),
     ('order', _('Order')),
     ('family', _('Family')),

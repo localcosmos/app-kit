@@ -1,0 +1,44 @@
+{% load i18n el_pagination_tags app_tags %}
+
+{% paginate 28 registry_entries %}
+
+{% show_pages %}
+
+<div class="row">
+    {% for entry in registry_entries %}
+        <div class="col-12 col-md-6 col-lg-3">
+            {% get_object_from_licence entry as licenced_object %}
+            {% if licenced_object.is_imagestore %}
+                <div class="row mb-2">
+                    <div class="col-6">
+                        {% if licenced_object.object %}
+                            <img src="{{ licenced_object.object.source_image.url }}" class="img-thumbnail img-fluid" alt="Content Image">
+                        {% else %}
+                            deleted image
+                        {% endif %}
+                    </div>
+                    <div class="col-6 p-1">
+                        <small>
+                            {% trans 'Author' %}: {{ entry.creator_name}}<br>
+                            {% trans 'Licence' %}: {{ entry.licence }} {{ entry.licence_version }}
+                            {% if entry.creator_link %}
+                                <br>(<a href="{{ entry.creator_link }}" target="_blank" rel="noopener noreferrer">{% trans 'Link to author' %}</a>)
+                            {% endif %}
+                            {% if entry.source_link %}
+                                <br>(<a href="{{ entry.source_link }}" target="_blank" rel="noopener noreferrer">{% trans 'Link to source' %}</a>)
+                            {% endif %}
+                            <br>
+                            {% if licenced_object.object %}
+                                <a class="btn btn-xs btn-outline-primary mt-2 xhr" ajax-target="ModalContent" href="{% url 'manage_content_licence' meta_app.id entry.id %}">{% trans 'Edit licence' %}</a>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            {% else %}
+
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+{% show_pages %}

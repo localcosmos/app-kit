@@ -1,0 +1,37 @@
+{% extends "localcosmos_server/modals/modal_form.html" %}
+{% load i18n %}
+
+{% block title %}
+    {% trans 'Delete All Manually Added Images' %}
+{% endblock %}
+
+
+{% block action %}
+    {% url 'delete_all_manually_added_taxon_profile_images' meta_app.id taxon_profiles.id %}
+{% endblock %}
+
+{% block body %}
+    <p>
+        {% if success %}
+            <div class="alert alert-success">
+                {% trans 'All manually added images have been successfully deleted.' %}
+            </div>
+        {% else %}
+            <div class="alert alert-danger">
+                {% trans 'Are you sure you want to delete all manually added images across all taxon profiles? This action cannot be undone.' %}
+            </div>
+        {% endif %}
+    </p>
+{% endblock %}
+
+{% block footer %}
+    {% if success %}
+        {% include 'localcosmos_server/modals/footers/close.html' %}
+    {% else %}
+    	{% include 'localcosmos_server/modals/footers/delete.html' %}
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+
+{% endblock %}

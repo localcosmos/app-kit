@@ -168,6 +168,22 @@
 			</div>
 		</div>
 	</div>
+
+	<div class="mt-5">
+		<h3 class="text-danger">
+			{% trans 'Danger Zone' %}
+		</h3>
+	</div>
+	<div class="card mt-3">
+		<div class="card-body">
+			<div>
+				<button type="button" class="btn btn-outline-danger xhr" ajax-target="ModalContent" data-url="{% url 'delete_all_manually_added_taxon_profile_images' meta_app.id generic_content.id %}">{% trans 'Delete all Taxon Profile images that have been added manually' %}</button>
+			</div>
+			<div class="mt-3">
+				{% trans 'This will delete all manually added images across all taxon profiles.' %}
+			</div>
+		</div>
+	</div>
 {% endblock %}
 
 {% block extra_script %}

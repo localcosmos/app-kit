@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-12 11:19+0100\n"
+"POT-Creation-Date: 2026-01-22 10:51+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,23 +46,23 @@ msgstr "Erfolg"
 msgid "Failed"
 msgstr "Fehler"
 
-#: app_kit_api/serializers.py:133 forms.py:41
+#: app_kit_api/serializers.py:133 forms.py:43
 msgid "Use only [a-z] and [0-9] for the subdomain."
 msgstr "Nur [a-z] und [0-9] sind für die Subdomain erlaubt."
 
-#: app_kit_api/serializers.py:136 forms.py:44
+#: app_kit_api/serializers.py:136 forms.py:46
 msgid "This subdomain is forbidden."
 msgstr "Diese Subdomain ist nicht erlaubt."
 
-#: app_kit_api/serializers.py:139 forms.py:47
+#: app_kit_api/serializers.py:139 forms.py:49
 msgid "The subdomain has to start with a letter."
 msgstr "Die Subdomain muss mit einem Buchstaben beginnen."
 
-#: app_kit_api/serializers.py:142 forms.py:50
+#: app_kit_api/serializers.py:142 forms.py:52
 msgid "The subdomain has to be alphanumeric."
 msgstr "Die Subdomain muss alphanumerisch sein."
 
-#: app_kit_api/serializers.py:145 forms.py:53
+#: app_kit_api/serializers.py:145 forms.py:55
 msgid "This subdomain already exists."
 msgstr "Diese Subdomain ist bereits vergeben."
 
@@ -77,7 +77,7 @@ msgid ""
 msgstr ""
 "Deine App benötigt mindestens einen Naturführer, ein Beobachtungsformular "
 "oder einen Artensteckbrief."
-"%(observation_form_name)s als Standard gesetzt, aber das Formular ist ein "
+
 #: appbuilder/AppReleaseBuilder.py:497
 #, python-brace-format
 msgid "Local Cosmos Private API HTTP Error: {0}."
@@ -143,7 +143,7 @@ msgid ""
 "is not linked to this meta_app."
 msgstr ""
 "Auf das Objekt %(object_name)s wird von der Option %(option_name)s "
-"verwiesen, aberes ist nicht mit dieser meta_app verlinkt."
+"verwiesen, aber es ist nicht mit dieser meta_app verlinkt."
 
 #: appbuilder/AppReleaseBuilder.py:752
 msgid "This app has no taxa."
@@ -210,7 +210,9 @@ msgstr ""
 msgid ""
 "The taxon profile of %(taxon_latname)s is not covered by the taxonomic "
 "navigation."
-msgstr "Der Artensteckbrief von %(taxon_latname)s ist in der taxonomischen Navigation nicht abgedeckt."
+msgstr ""
+"Der Artensteckbrief von %(taxon_latname)s ist in der taxonomischen "
+"Navigation nicht abgedeckt."
 
 #: appbuilder/AppReleaseBuilder.py:1000
 #, python-format
@@ -242,7 +244,9 @@ msgstr "%(taxonomic_filter_name)s hat keine Taxa"
 msgid ""
 "The page \"%(name)s\" is not supported by your frontend. You have to remove "
 "it first."
-msgstr "Die Seite „%(name)s“ wird von deinem Frontend nicht unterstützt. Du musst sie zuerst entfernen."
+msgstr ""
+"Die Seite „%(name)s“ wird von deinem Frontend nicht unterstützt. Du musst "
+"sie zuerst entfernen."
 
 #: features/backbonetaxonomy/forms.py:32
 msgid "Search app taxa"
@@ -273,13 +277,17 @@ msgstr "Du kannst nicht zweimal dasselbe Taxon auswählen."
 msgid ""
 "If a role for the main taxon is provided, a role for the related taxon must "
 "also be provided."
-msgstr "Wenn eine Rolle für das Haupttaxon angegeben ist, muss auch eine Rolle für das Bezugstaxon angegeben werden."
+msgstr ""
+"Wenn eine Rolle für das Haupttaxon angegeben ist, muss auch eine Rolle für "
+"das Bezugstaxon angegeben werden."
 
 #: features/backbonetaxonomy/forms.py:115
 msgid ""
 "If a role for the related taxon is provided, a role for the main taxon must "
 "also be provided."
-msgstr "Wenn eine Rolle für das Bezugstaxon angegeben ist, muss auch eine Rolle für das Haupttaxon angegeben werden."
+msgstr ""
+"Wenn eine Rolle für das Bezugstaxon angegeben ist, muss auch eine Rolle für "
+"das Haupttaxon angegeben werden."
 
 #: features/backbonetaxonomy/forms.py:123
 msgid "Abstract name like \"predation\", \"competition\", etc."
@@ -424,6 +432,7 @@ msgid "add vernacular name"
 msgstr ""
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/ajax/manage_taxon_relationship.html:9
+#, python-format
 msgid "Manage %(relationship_type)s"
 msgstr "%(relationship_type)s bearbeiten"
 
@@ -475,7 +484,8 @@ msgstr "kommt vor in"
 #: features/backbonetaxonomy/templates/backbonetaxonomy/swap_taxon.html:66
 #, python-format
 msgid "%(name)s does not occur in your app and can't be swapped."
-msgstr "%(name)s kommt in deiner App nicht vor und kann nicht getauscht werden."
+msgstr ""
+"%(name)s kommt in deiner App nicht vor und kann nicht getauscht werden."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/ajax/swap_taxon_form.html:117
 msgid "No occurrences found."
@@ -502,14 +512,18 @@ msgstr ""
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/ajax/taxon_references_changes.html:6
 msgid "Taxa with changes only in organizational data (e.g. position in tree)"
-msgstr "Taxa mit Änderungen nur in organisatorischen Daten (z. B. Position im Baum)"
+msgstr ""
+"Taxa mit Änderungen nur in organisatorischen Daten (z. B. Position im Baum)"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/ajax/taxon_references_changes.html:14
 msgid ""
 "These taxa had changes only in organizational data like their position in "
 "the taxonomic tree. You can safely update these taxa without changing their "
 "scientific name or author."
-msgstr "Diese Taxa hatten nur Änderungen in organisatorischen Daten wie ihrer Position im taxonomischen Baum. Du kannst diese Taxa gefahrlos aktualisieren, ohne wissenschaftlichen Namen oder Autor zu ändern."
+msgstr ""
+"Diese Taxa hatten nur Änderungen in organisatorischen Daten wie ihrer "
+"Position im taxonomischen Baum. Du kannst diese Taxa gefahrlos "
+"aktualisieren, ohne wissenschaftlichen Namen oder Autor zu ändern."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/ajax/taxon_references_changes.html:29
 msgid "Update these taxa"
@@ -770,7 +784,8 @@ msgstr "Analyseergebnis"
 #: features/backbonetaxonomy/templates/backbonetaxonomy/swap_taxon.html:97
 #, python-format
 msgid "%(to_name)s does not occur in your app and can replace %(from_taxon)s."
-msgstr "%(to_name)s kommt nicht in dieser App vor und kann %(from_taxon)s ersetzen."
+msgstr ""
+"%(to_name)s kommt nicht in dieser App vor und kann %(from_taxon)s ersetzen."
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/swap_taxon.html:107
 msgid "Analyze"
@@ -833,6 +848,7 @@ msgstr "Taxonomische Beziehung hinzufügen"
 
 #: features/backbonetaxonomy/templates/backbonetaxonomy/taxon_relationships.html:80
 #: templates/app_kit/ajax/taxon_relationships.html:14
+#, python-format
 msgid "Add %(relationship_type)s"
 msgstr "%(relationship_type)s hinzufügen"
 
@@ -882,6 +898,7 @@ msgid "exists as a Taxon Profile"
 msgstr "existiert als Artensteckbrief"
 
 #: features/backbonetaxonomy/utils.py:179
+#, python-format
 msgid "occurs in %(count)s navigation entries"
 msgstr "kommt in %(count)s Einträgen der Navigation vor"
 
@@ -895,6 +912,7 @@ msgid "is used in %(count)s taxon relationship(s)"
 msgstr "kommt in %(count)s taxonomischen Beziehungen vor"
 
 #: features/backbonetaxonomy/utils.py:222
+#, python-format
 msgid "occurs in Nature Guide %(nature_guide)s"
 msgstr "kommt im Naturführer %(nature_guide)s vor"
 
@@ -904,60 +922,73 @@ msgid "appears as an image of %(content)s (%(model)s)"
 msgstr "kommt als ein Bild von %(content)s (%(model)s) vor"
 
 #: features/backbonetaxonomy/zip_import.py:36
+#, python-format
 msgid "Cell content has to be \"Relationship Name\", not %(value)s"
 msgstr "Zellinhalt muss \"Relationship Name\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:43
+#, python-format
 msgid "Cell content has to be \"Taxon Role (optional)\", not %(value)s"
 msgstr "Zellinhalt muss \"Taxon Role (optional)\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:50
+#, python-format
 msgid "Cell content has to be \"Related Taxon Role (optional)\", not %(value)s"
-msgstr "Zellinhalt muss \"Related Taxon Role (optional)\" sein, nicht %(value)s"
+msgstr ""
+"Zellinhalt muss \"Related Taxon Role (optional)\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:70
 #: features/backbonetaxonomy/zip_import.py:114
+#, python-format
 msgid "Cell has to be empty, not %(value)s"
 msgstr "Zelle muss leer sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:77
 #: features/backbonetaxonomy/zip_import.py:84
 #: features/backbonetaxonomy/zip_import.py:90
+#, python-format
 msgid "Cell content has to be \"Taxon\", not %(value)s"
 msgstr "Zellinhalt muss \"Taxon\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:96
 #: features/backbonetaxonomy/zip_import.py:102
 #: features/backbonetaxonomy/zip_import.py:108
+#, python-format
 msgid "Cell content has to be \"Related Taxon\", not %(value)s"
 msgstr "Zellinhalt muss \"Related Taxon\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:132
+#, python-format
 msgid "Cell content has to be \"Relationship\", not %(value)s"
 msgstr "Zellinhalt muss \"Relationship\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:138
 #: features/backbonetaxonomy/zip_import.py:157
+#, python-format
 msgid "Cell content has to be \"Scientific Name\", not %(value)s"
 msgstr "Zellinhalt muss \"Scientific Name\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:144
 #: features/backbonetaxonomy/zip_import.py:163
+#, python-format
 msgid "Cell content has to be \"Author (optional)\", not %(value)s"
 msgstr "Zellinhalt muss \"Author (optional)\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:151
 #: features/backbonetaxonomy/zip_import.py:169
+#, python-format
 msgid "Cell content has to be \"Taxonomic Source\", not %(value)s"
 msgstr "Zellinhalt muss \"Taxonomic Source\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:175
+#, python-format
 msgid "Cell content has to be \"Description (optional)\", not %(value)s"
 msgstr "Zellinhalt muss \"Description (optional)\" sein, nicht %(value)s"
 
 #: features/backbonetaxonomy/zip_import.py:186
 #: features/backbonetaxonomy/zip_import.py:266
 #: features/glossary/zip_import.py:117 features/taxon_profiles/zip_import.py:56
+#, python-format
 msgid "Sheet \"%(sheet_name)s\" not found in the spreadsheet"
 msgstr "Blatt \"%(sheet_name)s\" wurde nicht gefunden"
 
@@ -1027,8 +1058,8 @@ msgid ""
 "Observation forms for button matrices need a point field as geographic "
 "reference field"
 msgstr ""
-"Beobachtungsformulare für Button Matrizen benötigen ein Punkt-Feld "
-"als geographisches Referenz-Feld"
+"Beobachtungsformulare für Button Matrizen benötigen ein Punkt-Feld als "
+"geographisches Referenz-Feld"
 
 #: features/buttonmatrix/models.py:57
 msgid "The value 0 is entered for rows or columns."
@@ -1290,7 +1321,8 @@ msgstr "Frontend aktualisieren"
 #: features/frontend/templates/frontend/ajax/update_used_frontend.html:15
 #, python-format
 msgid "This will update the Frontend %(frontend_name)s to version %(version)s."
-msgstr "Das Frontend %(frontend_name)s wird auf Version %(version)s aktualisiert."
+msgstr ""
+"Das Frontend %(frontend_name)s wird auf Version %(version)s aktualisiert."
 
 #: features/frontend/templates/frontend/ajax/update_used_frontend.html:18
 msgid "Do you want to update your frontend now?"
@@ -1748,7 +1780,7 @@ msgstr "Definition"
 
 #: features/glossary/templates/glossary/ajax/glossary_entries.html:12
 #: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter_space.html:29
-#: forms.py:309 templates/app_kit/ajax/form_extended_with_content_image.html:7
+#: forms.py:317 templates/app_kit/ajax/form_extended_with_content_image.html:7
 msgid "Image"
 msgstr "Bild"
 
@@ -1772,14 +1804,17 @@ msgid "Edit glossary entry"
 msgstr "Glossareintrag bearbeiten"
 
 #: features/glossary/zip_import.py:33
+#, python-format
 msgid "Cell content has to be \"Term\", not %(value)s"
 msgstr "Zellinhalt muss \"Term\" sein, nicht %(value)s"
 
 #: features/glossary/zip_import.py:40
+#, python-format
 msgid "Cell content has to be \"Synonyms (optional)\", not %(value)s"
 msgstr "Zellinhalt muss \"Synonyms (optional)\" sein, nicht %(value)s"
 
 #: features/glossary/zip_import.py:47
+#, python-format
 msgid "Cell content has to be \"Definition\", not %(value)s"
 msgstr "Zellinhalt muss \"Definition\" sein, nicht %(value)s"
 
@@ -1789,16 +1824,21 @@ msgid "Term %(term)s is not unique."
 msgstr ""
 
 #: features/glossary/zip_import.py:93
+#, python-format
 msgid ""
 "Unambiguous synonym: %(synonym)s is mapped to %(term)s and %(found_synonym)s"
-msgstr "Uneindeutiges Synonym:  %(synonym)s is %(term)s and %(found_synonym)s zugewiesen"
+msgstr ""
+"Uneindeutiges Synonym:  %(synonym)s is %(term)s and %(found_synonym)s "
+"zugewiesen"
 
 #: features/glossary/zip_import.py:104
+#, python-format
 msgid ""
 "[%(filename)s][Sheet:%(sheet_name)s] Term %(term)s is also listed as a "
 "synonym."
-msgstr "[%(filename)s][Blatt:%(sheet_name)s] Begriff %(term)s ist auch als "
-"Synonym vorhanden."
+msgstr ""
+"[%(filename)s][Blatt:%(sheet_name)s] Begriff %(term)s ist auch als Synonym "
+"vorhanden."
 
 #: features/glossary/zip_import.py:130
 msgid "No term found."
@@ -2174,27 +2214,32 @@ msgstr ""
 msgid "A matrix filter with this name already exists."
 msgstr "Ein Matrix Filter mit diesem Namen existiert bereits"
 
-#: features/nature_guides/matrix_filter_forms.py:69
+#: features/nature_guides/matrix_filter_forms.py:78
+msgid "In polytomous identification mode, only one matrix filter is allowed."
+msgstr ""
+"Im polytomen Modus ist nur ein Matrix Filter erlaubt."
+
+#: features/nature_guides/matrix_filter_forms.py:85
 msgid "Unit (abbreviated)"
 msgstr "Einheit (Kurzform)"
 
-#: features/nature_guides/matrix_filter_forms.py:70
+#: features/nature_guides/matrix_filter_forms.py:86
 msgid "Short text for unit, like m or cm, independent of language."
 msgstr "Kurztext der Einheit, wie z.B. m oder cm, sprachunabhängig"
 
-#: features/nature_guides/matrix_filter_forms.py:71
+#: features/nature_guides/matrix_filter_forms.py:87
 msgid "Name of unit"
 msgstr "Name der Einheit"
 
-#: features/nature_guides/matrix_filter_forms.py:72
+#: features/nature_guides/matrix_filter_forms.py:88
 msgid "Full name of the unit, like meters or centimeters."
 msgstr "Vollständiger name der Einheit, wie Meter oder Zentimeter"
 
-#: features/nature_guides/matrix_filter_forms.py:80
+#: features/nature_guides/matrix_filter_forms.py:96
 msgid "allow the selection of multiple values (AND logic)"
 msgstr "Auswahl mehrerer Werte erlauben (UND Logik)"
 
-#: features/nature_guides/matrix_filter_forms.py:81
+#: features/nature_guides/matrix_filter_forms.py:97
 msgid ""
 "The end user will be able to select more than one value. The selected values "
 "will be treated as \"OR\"."
@@ -2202,38 +2247,38 @@ msgstr ""
 "Der Endnutzer kann mehr als nur einen Wert auswählen. Die gewählten Werte "
 "werden als \"UND\" Verknüpfung verstanden."
 
-#: features/nature_guides/matrix_filter_forms.py:87
+#: features/nature_guides/matrix_filter_forms.py:103
 msgid "Tolerance (percentage)"
 msgstr "Toleranz (in Prozent)"
 
-#: features/nature_guides/matrix_filter_forms.py:106
+#: features/nature_guides/matrix_filter_forms.py:122
 msgid "Min"
 msgstr "Min"
 
-#: features/nature_guides/matrix_filter_forms.py:107
+#: features/nature_guides/matrix_filter_forms.py:123
 msgid "Max"
 msgstr "Max"
 
-#: features/nature_guides/matrix_filter_forms.py:108
+#: features/nature_guides/matrix_filter_forms.py:124
 msgid ""
 "Range will be rendered as a slider. Step defines the step of this slider."
 msgstr ""
 "Intervall wird als Slider dargestellt. Schrittweite definiert die "
 "Schrittweite dieses Sliders."
 
-#: features/nature_guides/matrix_filter_forms.py:121
+#: features/nature_guides/matrix_filter_forms.py:137
 msgid "Max needs to be higher than min."
 msgstr "max muss höher als min sein"
 
-#: features/nature_guides/matrix_filter_forms.py:134
+#: features/nature_guides/matrix_filter_forms.py:150
 msgid "Selectable Numbers"
 msgstr "Wählbare Zahlen"
 
-#: features/nature_guides/matrix_filter_forms.py:134
+#: features/nature_guides/matrix_filter_forms.py:150
 msgid "Comma-separated list, e.g. 1,2,3.1,5"
 msgstr "Kommagetrennte Liste, z.B. 1,2,3.1,5"
 
-#: features/nature_guides/matrix_filter_forms.py:153
+#: features/nature_guides/matrix_filter_forms.py:169
 #, python-format
 msgid "Only comma separated numbers are allowed. Incorrect character: %s"
 msgstr "Nur kommagetrennte Zahlen sind erlaubt. Falsches Zeichen: %s"
@@ -2512,7 +2557,14 @@ msgstr "%(matrix_filter)s bearbeiten"
 msgid "Create new %(verbose_filter_name)s"
 msgstr "Neuen %(verbose_filter_name)s erstellen"
 
-#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter.html:20
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter.html:16
+msgid ""
+"In dichotomous or polytomous identification mode, only one matrix filter is "
+"allowed."
+msgstr ""
+"Im polytomen Modus ist nur ein Matrix Filter erlaubt."
+
+#: features/nature_guides/templates/nature_guides/ajax/manage_matrix_filter.html:26
 msgid "Successfully saved matrix filter."
 msgstr "Matrix Filter erfolgreich gespeichert."
 
@@ -2699,6 +2751,7 @@ msgstr ""
 "Einträge unten hinzufügen."
 
 #: features/nature_guides/templates/nature_guides/manage_nature_guide.html:38
+#, python-format
 msgid "Settings of %(meta_node)s"
 msgstr "Einstellungen von %(meta_node)s"
 
@@ -2779,7 +2832,7 @@ msgstr "Zusätzliches Bild"
 msgid "Do you really want to remove the crosslink to {0}?"
 msgstr "Willst du die Querverbindung zu {0} wirklich entfernen?"
 
-#: features/nature_guides/views.py:445 views.py:1159
+#: features/nature_guides/views.py:445 views.py:1161
 #, python-brace-format
 msgid "Do you really want to remove {0}?"
 msgstr "Willst du {0} wirklich entfernen?"
@@ -2823,8 +2876,8 @@ msgid "Invalid taxonomic source: %(taxon_source)s"
 msgstr "Ungültige Taxonomische Quelle: %(taxon_source)s"
 
 #: features/nature_guides/zip_import.py:245
-msgid "Taxon %(taxon_latname) not found in %(taxon_sources)s"
-msgstr "Taxon %(taxon_latname) nicht in %(taxon_source)s gefunden"
+msgid "Taxon %(taxon_latname)s not found in %(taxon_sources)s"
+msgstr "Taxon %(taxon_latname)s nicht in %(taxon_sources)s gefunden"
 
 #: features/nature_guides/zip_import.py:293
 #, python-format
@@ -2991,8 +3044,7 @@ msgstr ""
 #: features/taxon_profiles/forms.py:391
 msgid ""
 "A morphotype profile with this morphotype already exists for this taxon."
-msgstr ""
-"Ein Morphotypen-Steckbrief existiert bereits für diesen Morphotypen"
+msgstr "Ein Morphotypen-Steckbrief existiert bereits für diesen Morphotypen"
 
 #: features/taxon_profiles/forms.py:401
 msgid "Select Target Section"
@@ -3027,6 +3079,7 @@ msgid "Change publication status of all taxon profiles of %(name)s"
 msgstr "Veröffentlichung aller Artensteckbriefe von %(name)s ändern"
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/change_navigation_entry_publication_status.html:9
+#, python-format
 msgid "Change publication status of %(navigation_entry)s"
 msgstr "Veröffentlichung von %(navigation_entry)s ändern"
 
@@ -3080,6 +3133,20 @@ msgstr ""
 #: features/taxon_profiles/templates/taxon_profiles/ajax/create_taxon_profile.html:21
 msgid "Create taxon profile"
 msgstr "Artensteckbrief erstellen"
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/delete_all_manually_added_images.html:5
+msgid "Delete All Manually Added Images"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/delete_all_manually_added_images.html:17
+msgid "All manually added images have been successfully deleted."
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/ajax/delete_all_manually_added_images.html:21
+msgid ""
+"Are you sure you want to delete all manually added images across all taxon "
+"profiles? This action cannot be undone."
+msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/delete_taxon_profile.html:12
 #: features/taxon_profiles/templates/taxon_profiles/ajax/delete_taxon_text_type.html:6
@@ -3170,6 +3237,7 @@ msgid "Move %(navigation_entry)s to a different parent"
 msgstr ""
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/move_navigation_entry.html:18
+#, python-format
 msgid "%(navigation_entry)s has been moved to %(new_parent)s."
 msgstr "%(navigation_entry)s wurde nach %(new_parent)s verschoben"
 
@@ -3211,6 +3279,7 @@ msgid "add taxon"
 msgstr "Taxon hinzufügen"
 
 #: features/taxon_profiles/templates/taxon_profiles/ajax/navigation_entry_taxon_profiles.html:6
+#, python-format
 msgid "Attached Taxon Profiles of %(name)s"
 msgstr "Zu %(name)s zugehörige Artensteckbriefe"
 
@@ -3420,30 +3489,47 @@ msgstr "nicht in der App enthalten"
 msgid "Backbone taxa without profile"
 msgstr "Backbone Taxa ohne Steckbrief"
 
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:174
+msgid "Danger Zone"
+msgstr "Danger Zone"
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:180
+msgid "Delete all Taxon Profile images that have been added manually"
+msgstr ""
+
+#: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:183
+msgid "This will delete all manually added images across all taxon profiles."
+msgstr ""
+
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_texts.html:21
 msgid "Add text"
 msgstr "Text hinzufügen"
 
 #: features/taxon_profiles/zip_import.py:93
+#, python-format
 msgid "Cell content has to be \"Scientific name\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Scientific name\" sein, nicht %(cell_value)s"
 
 #: features/taxon_profiles/zip_import.py:100 generic_content_zip_import.py:506
+#, python-format
 msgid "Cell content has to be \"Author (optional)\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Author (optional)\" sein, nicht %(cell_value)s"
 
 #: features/taxon_profiles/zip_import.py:107
+#, python-format
 msgid "Cell content has to be \"Taxonomic source\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Taxonomic source\" sein, nicht %(cell_value)s"
 
 #: features/taxon_profiles/zip_import.py:114
+#, python-format
 msgid "Cell content has to be \"Morphotype (optional)\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Morphotype (optional)\" sein, nicht %(cell_value)s"
 
 #: features/taxon_profiles/zip_import.py:127
 msgid ""
 "Cell content has to be one of %(column_types)s. Found %(cell_value)s instead"
-msgstr "Der Zellinhalt muss eines von %(column_type)s sein, nicht %(cell_value)s"
+msgstr ""
+"Der Zellinhalt muss eines von %(column_types)s sein, nicht %(cell_value)s"
 
 #: features/taxon_profiles/zip_import.py:140
 #, python-format
@@ -3468,6 +3554,7 @@ msgstr ""
 
 #: features/taxon_profiles/zip_import.py:168
 #: features/taxon_profiles/zip_import.py:186
+#, python-format
 msgid ""
 "Cell content has to be one of %(valid_choices)s. Found %(cell_value)s instead"
 msgstr ""
@@ -3475,34 +3562,36 @@ msgstr ""
 
 #: features/taxon_profiles/zip_import.py:212
 msgid "Cell content has to be a taxonomic source, found empty cell instead"
-msgstr "Der Zellinhalt muss eine taxonomische Quelle sein; stattdessen wurde eine leere Zelle gefunden."
+msgstr ""
+"Der Zellinhalt muss eine taxonomische Quelle sein; stattdessen wurde eine "
+"leere Zelle gefunden."
 
-#: features/taxon_profiles/zip_import.py:271
+#: features/taxon_profiles/zip_import.py:272
 #, python-format
 msgid "Invalid URL format: %(url)s"
 msgstr ""
 
-#: features/taxon_profiles/zip_import.py:278
+#: features/taxon_profiles/zip_import.py:279
 #, python-format
 msgid ""
 "External media URL has to start with \"https://\", found %(url)s instead"
 msgstr ""
 
-#: forms.py:68
+#: forms.py:70
 msgid "Name of your app"
 msgstr "Name deiner App"
 
-#: forms.py:69
+#: forms.py:71
 msgid "In the primary language"
 msgstr "In der Primärsprache"
 
-#: forms.py:72
+#: forms.py:74
 msgid "The language the app is created in. Translations can be made later."
 msgstr ""
 "Die Sprache in der deiner App erstellt wird. Übersetzungen können später "
 "angefertigt werden."
 
-#: forms.py:77
+#: forms.py:79
 msgid ""
 "Your app will be available at subdomain.localcosmos.org, where \"subdomain\" "
 "is the name you configured here."
@@ -3510,60 +3599,60 @@ msgstr ""
 "Deine App wird unter subdomain.localcosmos.org erreichbar sein, wobei "
 "\"subdomain\" der Name ist, den du hier einstellst."
 
-#: forms.py:108
+#: forms.py:110
 msgid "An app with this name already exists."
 msgstr "Eine App mit diesem Namen existiert bereits."
 
-#: forms.py:122
+#: forms.py:124
 msgid "Select language"
 msgstr "Sprache wählen"
 
-#: forms.py:214
+#: forms.py:222
 msgid "Allow unregistered users to report observations"
 msgstr "Erlaube das anonyme Melden von Beobachtungen"
 
-#: forms.py:215
+#: forms.py:223
 msgid "Only applies if your app contains observation forms."
 msgstr ""
 "Dies hat nur Auswirkungen, wenn deine App ein Beobachtungsformular enthält."
 
-#: forms.py:218
+#: forms.py:226
 msgid "Local Cosmos Private"
 msgstr "Local Cosmos Private"
 
-#: forms.py:219
+#: forms.py:227
 msgid "I run my own Local Cosmos Server"
 msgstr "Ich betreibe meinen eigenen Local Cosmos Server"
 
-#: forms.py:220
+#: forms.py:228
 msgid "API URL of your private Local Cosmos Server"
 msgstr "URL der API deines privaten Local Cosmos Servers"
 
-#: forms.py:221
+#: forms.py:229
 msgid "Only applies if you run your own Local Cosmos Server."
 msgstr "Nur notwendig, wenn du eigenen Local Cosmos Server betreibst."
 
-#: forms.py:224
+#: forms.py:232
 msgid "Manually set the version of your app."
 msgstr ""
 
-#: forms.py:391
+#: forms.py:399
 msgid "ad-hoc"
 msgstr "ad-hoc"
 
-#: forms.py:392
+#: forms.py:400
 msgid "App Stores"
 msgstr "App Stores"
 
-#: forms.py:396
+#: forms.py:404
 msgid "Platforms"
 msgstr "Platformen"
 
-#: forms.py:415
+#: forms.py:423
 msgid "Ignore non-existent images"
 msgstr ""
 
-#: forms.py:416
+#: forms.py:424
 msgid "If checked, the import will ignore images that are not in the zip file."
 msgstr ""
 
@@ -3594,18 +3683,22 @@ msgid ""
 msgstr ""
 
 #: generic_content_zip_import.py:270
+#, python-format
 msgid ""
 "Image file \"%(image_filename)s\" not found in the \"%(images_sheet_name)s\" "
 "sheet."
 msgstr ""
-"Die Bilddatei \"%(image_filename)s\" wurde in \"%(images_sheet_name)s\" nicht gefunden"
+"Die Bilddatei \"%(image_filename)s\" wurde in \"%(images_sheet_name)s\" "
+"nicht gefunden"
 
 #: generic_content_zip_import.py:305
+#, python-format
 msgid ""
 "Expected media type \"%(expected_media_type)s\", found "
 "\"%(actual_media_type)s\""
 msgstr ""
-"Es wurde \"%(expected_media_type)s\" erwartet, \"%(actual_media_type)s\" wurde gefunden"
+"Es wurde \"%(expected_media_type)s\" erwartet, \"%(actual_media_type)s\" "
+"wurde gefunden"
 
 #: generic_content_zip_import.py:311
 #, python-format
@@ -3616,7 +3709,9 @@ msgstr ""
 
 #: generic_content_zip_import.py:347
 msgid "Cell content has to be an author, found empty cell instead"
-msgstr "Der Zellinhalt muss ein Autor sein. Stattdessen wurde eine leere Zelle gefunden."
+msgstr ""
+"Der Zellinhalt muss ein Autor sein. Stattdessen wurde eine leere Zelle "
+"gefunden."
 
 #: generic_content_zip_import.py:351
 #, python-format
@@ -3645,70 +3740,91 @@ msgid ""
 msgstr ""
 
 #: generic_content_zip_import.py:403
+#, python-format
 msgid "Cell content has to be \"Identifier\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Identifier\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:409
+#, python-format
 msgid "Cell content has to be \"Author\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Author\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:414
+#, python-format
 msgid "Cell content has to be \"Licence\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Licence\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:419
+#, python-format
 msgid "Cell content has to be \"Licence version\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Licence version\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:424
+#, python-format
 msgid ""
 "Cell content has to be \"Link to source image (optional)\", not "
 "%(cell_value)s"
-msgstr "Zellinhalt muss \"Link to source image (optional)\" sein, nicht %(cell_value)s"
+msgstr ""
+"Zellinhalt muss \"Link to source image (optional)\" sein, nicht "
+"%(cell_value)s"
 
 #: generic_content_zip_import.py:429
+#, python-format
 msgid "Cell content has to be \"Title (optional)\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Title (optional)\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:434 generic_content_zip_import.py:516
 msgid "Cell content has to be \"Caption (optional)\", not %(cell_value)s"
-msgstr "Zellinhalt muss \"Caption (optional)\" sein, nicht %(cell_value)"
+msgstr "Zellinhalt muss \"Caption (optional)\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:439 generic_content_zip_import.py:521
+#, python-format
 msgid "Cell content has to be \"Alt text (optional)\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Alt text (optional)\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:444
+#, python-format
 msgid "Cell content has to be \"Primary image (optional)\", not %(cell_value)s"
-msgstr "Zellinhalt muss \"Primary image (optional)\" sein, nicht %(cell_value)s"
+msgstr ""
+"Zellinhalt muss \"Primary image (optional)\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:490
+#, python-format
 msgid "Cell content has to be \"URL\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"URL\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:496
+#, python-format
 msgid "Cell content has to be \"Media type\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Media type\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:501
+#, python-format
 msgid "Cell content has to be \"Title\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Title\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:511
+#, python-format
 msgid "Cell content has to be \"Licence (optional)\", not %(cell_value)s"
 msgstr "Zellinhalt muss \"Licence (optional)\" sein, nicht %(cell_value)s"
 
 #: generic_content_zip_import.py:555
 msgid "Cell content has to be a URL, found empty cell instead"
-msgstr "Der Zellinhalt muss eine URL sein. Stattdessen wurde eine leere Zelle gefunden."
+msgstr ""
+"Der Zellinhalt muss eine URL sein. Stattdessen wurde eine leere Zelle "
+"gefunden."
 
 #: generic_content_zip_import.py:559
 msgid "Cell content has to be a Media type, found empty cell instead"
-msgstr "Der Zellinhalt muss ein Medientyp sein. Stattdessen wurde eine leere Zelle gefunden"
+msgstr ""
+"Der Zellinhalt muss ein Medientyp sein. Stattdessen wurde eine leere Zelle "
+"gefunden"
 
 #: generic_content_zip_import.py:563
 msgid "Cell content has to be a Title, found empty cell instead"
-msgstr "Der Zellinhalt muss ein Titel sein. Stattdessen wurde eine leere Zelle gefunden"
+msgstr ""
+"Der Zellinhalt muss ein Titel sein. Stattdessen wurde eine leere Zelle "
+"gefunden"
 
 #: generic_content_zip_import.py:568
 #, python-format
@@ -3725,17 +3841,21 @@ msgstr ""
 "[%(filename)s][Blatt:%(sheet_name)s][Zelle:%(column)s%(row)s] %(message)s"
 
 #: generic_content_zip_import.py:593
+#, python-format
 msgid "[%(filename)s][Sheet:%(sheet_name)s][row:%(row)s] %(message)s"
 msgstr "[%(filename)s][Blatt:%(sheet_name)s][Zeile: %(row)s] %(message)s"
 
 #: generic_content_zip_import.py:786
+#, python-format
 msgid ""
 "%(taxon_latname)s %(taxon_author)s not found in %(taxon_source)s. Tolerance "
 "of two space characters was applied."
-msgstr "%(taxon_latname)s %(taxon_author)s nicht in %(taxon_source)s gefunden. "
-"Einer Toleranz von 2 Leerzeichen wurde angewendet."
+msgstr ""
+"%(taxon_latname)s %(taxon_author)s nicht in %(taxon_source)s gefunden. Einer "
+"Toleranz von 2 Leerzeichen wurde angewendet."
 
 #: generic_content_zip_import.py:795
+#, python-format
 msgid ""
 "Multiple results found for %(taxon_latname)s %(taxon_author)s in "
 "%(taxon_source)s. Tolerance of two space characters was applied."
@@ -3758,11 +3878,13 @@ msgstr ""
 "%(taxon_source)s gefunden"
 
 #: generic_content_zip_import.py:823
+#, python-format
 msgid ""
 "Multiple results found for %(taxon_latname)s in %(taxon_source)s. You have "
 "to specify an author."
-msgstr "Mehrere Ergebnisse für %(taxon_latname)s in %(taxon_source)s gefunden. "
-"Du musst einen Autor angeben."
+msgstr ""
+"Mehrere Ergebnisse für %(taxon_latname)s in %(taxon_source)s gefunden. Du "
+"musst einen Autor angeben."
 
 #: generic_content_zip_import.py:883
 #, python-format
@@ -3770,12 +3892,14 @@ msgid "Image is not square: %(filename)s"
 msgstr "Bild nicht quadratisch: %(filename)s"
 
 #: generic_content_zip_import.py:890
+#, python-format
 msgid ""
 "Image height is too large: %(filename)s. Maximum allowed height is "
 "%(max_height)s"
 msgstr ""
 
 #: generic_content_zip_import.py:899
+#, python-format
 msgid ""
 "Image width is too large: %(filename)s. Maximum allowed width is "
 "%(max_width)s"
@@ -3985,29 +4109,28 @@ msgid "Taxon source %s is not installed"
 msgstr ""
 
 #: taxonomy/lazy.py:118
-#, python-format
-msgid "Taxon %s has changed its position in %s"
-msgstr ""
+msgid "Taxon %(taxon)s has changed its position in %(tree)s"
+msgstr "Taxon %(taxon)s hat seine Position in %(tree)s geändert"
 
 #: taxonomy/lazy.py:122
 #, python-format
-msgid "Taxon %s has changed its identifier in %s"
+msgid "Taxon %(taxon)s has changed its identifier in %(tree)s"
 msgstr ""
 
 #: taxonomy/lazy.py:125
-#, python-format
-msgid "Taxon %s  found multiple times in %s"
-msgstr ""
+msgid "Taxon %(taxon)s  found multiple times in %(tree)s"
+msgstr "Taxon %(taxon)s wurde %(tree)s mehrfach gefunden"
 
 #: taxonomy/lazy.py:138
-#, python-format
-msgid "Taxon %s not found as accepted name, but as synonym of %s"
-msgstr ""
+msgid ""
+"Taxon %(taxon)s not found as accepted name, but as synonym of "
+"%(accepted_name)s"
+msgstr "Taxon %(taxon)s wurde nicht als akzeptierter Name, sondern als "
+"Synonym von %(accepted_name)s gefunden"
 
 #: taxonomy/lazy.py:142
-#, python-format
-msgid "Taxon %s not found in %s"
-msgstr ""
+msgid "Taxon %(taxon)s not found in %(tree)s"
+msgstr "Taxon %(taxon)s nicht in %(tree)s gefunden"
 
 #: taxonomy/lazy.py:295
 msgid "manually added"
@@ -4058,6 +4181,7 @@ msgid "e.g. the Latin name"
 msgstr ""
 
 #: taxonomy/sources/custom/forms.py:29
+#: templates/app_kit/ajax/list_images_and_licences_content.html:22
 msgid "Author"
 msgstr ""
 
@@ -4103,6 +4227,7 @@ msgid "move"
 msgstr "verschieben"
 
 #: taxonomy/sources/custom/templates/custom_taxonomy/move_custom_taxon.html:5
+#, python-format
 msgid "Move %(name)s"
 msgstr "%(name)s verschieben"
 
@@ -4267,6 +4392,22 @@ msgid "The translation could not be fetched. Please try again later."
 msgstr ""
 "Die Übersetzung konnt enicht geladen werden. Versuche es später erneut."
 
+#: templates/app_kit/ajax/list_images_and_licences_content.html:23
+msgid "Licence"
+msgstr ""
+
+#: templates/app_kit/ajax/list_images_and_licences_content.html:25
+msgid "Link to author"
+msgstr ""
+
+#: templates/app_kit/ajax/list_images_and_licences_content.html:28
+msgid "Link to source"
+msgstr ""
+
+#: templates/app_kit/ajax/list_images_and_licences_content.html:32
+msgid "Edit licence"
+msgstr "Lizenz ändern"
+
 #: templates/app_kit/ajax/manage_app_languages.html:12
 #: templates/app_kit/build_app.html:112
 msgid "primary"
@@ -4280,6 +4421,10 @@ msgstr "Sprache entfernen"
 #: templates/app_kit/ajax/manage_app_languages.html:35
 msgid "Add language"
 msgstr "Sprache hinzufügen"
+
+#: templates/app_kit/ajax/manage_content_licence.html:9
+msgid "Manage Licence"
+msgstr "Lizenz bearbeiten"
 
 #: templates/app_kit/ajax/manage_external_media.html:8
 msgid "Manage External Media"
@@ -4657,6 +4802,11 @@ msgstr ""
 msgid "Contact"
 msgstr "Kontakt"
 
+#: templates/app_kit/list_images_and_licences.html:11
+#: templates/app_kit/manage_app.html:66
+msgid "Images and Licences"
+msgstr ""
+
 #: templates/app_kit/list_manage_apps.html:11
 msgid "Your apps"
 msgstr "Deine Apps"
@@ -4701,6 +4851,10 @@ msgstr "Konfiguration"
 #: templates/app_kit/manage_app.html:50
 msgid "Languages"
 msgstr "Sprachen"
+
+#: templates/app_kit/manage_app.html:68
+msgid "Manage Images and Licences"
+msgstr ""
 
 #: templates/app_kit/manage_app_design.html:8
 msgid "Design and texts"
@@ -4809,7 +4963,7 @@ msgstr "Datei zu groß. Die Größe sollte %(size)s MiB nicht überschreiten."
 msgid "You text contains invalid characters."
 msgstr "Dein Text enthält ungültige Zeichen."
 
-#: views.py:260
+#: views.py:262
 #, python-format
 msgid "Do you really want to delete %s?"
 msgstr "Willst distributed %s wirklich löschen?"

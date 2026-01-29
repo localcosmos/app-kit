@@ -1,0 +1,25 @@
+{% extends 'app_kit/base.html' %}
+{% load i18n static app_tags localcosmos_tags %}
+
+{% block content %}
+<br>
+<div class="container">
+	<div class="row">
+		<div class="col-12">
+            <br>
+            <h3>
+                {% trans 'Images and Licences' %}
+            </h3>
+
+            <hr>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div id="images-and-licences-content">
+                {% include 'app_kit/ajax/list_images_and_licences_content.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

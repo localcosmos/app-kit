@@ -136,4 +136,9 @@ urlpatterns = [
          views.ManageAppKitExternalMedia.as_view(), name='update_app_kit_external_media'),
     path('delete-external-media/<int:meta_app_id>/<int:pk>/',
          views.DeleteAppKitExternalMedia.as_view(), name='delete_app_kit_external_media'),
+    # licences
+    path('list-images-and-licences/<int:meta_app_id>/',
+         views.ListImagesAndLicences.as_view(), name='list_images_and_licences'),
+    path('manage-content-licence/<int:meta_app_id>/<int:registry_entry_id>/',
+         views.ManageContentLicence.as_view(), name='manage_content_licence'),
 ]

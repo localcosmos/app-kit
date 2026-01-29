@@ -18,6 +18,8 @@ from app_kit.appbuilder.AppBuilderBase import AppBuilderBase
 from taxonomy.models import MetaVernacularNames
 from taxonomy.lazy import LazyTaxon
 
+from content_licencing.mixins import LicencingFormMixin
+
 import base64, math, uuid
 
 from .definitions import TEXT_LENGTH_RESTRICTIONS
@@ -130,7 +132,13 @@ class AddLanguageForm(forms.Form):
 '''
 from localcosmos_server.forms import (ManageContentImageForm, ManageContentImageWithTextForm,
     ManageLocalizedContentImageForm, OptionalContentImageForm)
+
+class ManageContentLicenceForm(LicencingFormMixin):
+    content_field = None
     
+    def __init__(self, content_field, *args, **kwargs):
+        self.content_field = content_field
+        super().__init__(*args, **kwargs)
 
 class GenericContentOptionsForm(forms.Form):
 

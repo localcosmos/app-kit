@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from app_kit.tests.common import test_settings
 
-from app_kit.models import MetaAppGenericContent, ContentImage
+from app_kit.models import MetaAppGenericContent, ContentImage, MetaApp
 
 from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithLoggedInUser, WithAjaxAdminOnly,
                                   WithAdminOnly, ViewTestMixin, WithImageStore, WithMedia, WithFormTest)
@@ -20,7 +20,8 @@ from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTa
                 DeleteTaxonProfilesNavigationEntry, GetTaxonProfilesNavigation, ManageNavigationImage,
                 DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon, DeleteTaxonTextTypeCategory,
                 ChangeNavigationEntryPublicationStatus, ManageTaxonTextTypeCategory, ManageTaxonTextSet,
-                DeleteTaxonTextSet, GetTaxonTextsManagement, SetTaxonTextSetForTaxonProfile)
+                DeleteTaxonTextSet, GetTaxonTextsManagement, SetTaxonTextSetForTaxonProfile,
+                DeleteAllManuallyAddedTaxonProfileImages)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
                 TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry,
@@ -2591,3 +2592,99 @@ class TestSetTaxonTextSetForTaxonProfile(WithTaxonProfile, WithTaxonProfiles, Vi
         self.taxon_profile.refresh_from_db()
         
         self.assertEqual(self.taxon_profile.taxon_text_set, text_set)
+
+
+class TestDeleteAllManuallyAddedTaxonProfileImages(WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+                WithImageStore, WithMedia, WithAjaxAdminOnly, WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+    
+    url_name = 'delete_all_manually_added_taxon_profile_images'
+    view_class = DeleteAllManuallyAddedTaxonProfileImages
+    
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+        }
+        return url_kwargs
+    
+    def create_content_images(self):
+
+        # taxon image
+        self.taxon_image_store = self.create_image_store()
+
+        # add image to nature guide meta node
+        self.meta_node_image = self.create_content_image(self.meta_app, self.user)
+
+        # add image to taxon profile
+        self.taxon_profile_image = self.create_content_image(self.taxon_profile, self.user)
+        
+
+    
+    @test_settings
+    def test_set_taxon_profiles(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profiles(**view.kwargs)
+        
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+        
+    @test_settings
+    def test_get_context_data(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profiles(**view.kwargs)
+        
+        context = view.get_context_data(**view.kwargs)
+        
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertFalse(context['success'])
+        
+    @test_settings
+    def test_post(self):
+        
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profiles(**view.kwargs)
+        
+        self.create_content_images()
+        
+        taxon_profile_ctype = ContentType.objects.get_for_model(TaxonProfile)
+        meta_app_ctype = ContentType.objects.get_for_model(MetaApp)
+        
+        # verify image exists
+        images_qry = ContentImage.objects.filter(
+            content_type=taxon_profile_ctype,
+            object_id=self.taxon_profile.id,
+        )
+        self.assertTrue(images_qry.exists())
+        
+        meta_app_images_qry = ContentImage.objects.filter(
+            content_type=meta_app_ctype,
+            object_id=self.meta_app.id,
+        )
+        
+        self.assertTrue(meta_app_images_qry.exists())
+        
+        # perform post to delete images
+        response = view.post(view.request, **view.kwargs)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        
+        # verify images deleted
+        images_qry = ContentImage.objects.filter(
+            content_type=taxon_profile_ctype,
+            object_id=self.taxon_profile.id,
+        )
+        self.assertFalse(images_qry.exists())
+        
+        # verify meta app image still exists
+        meta_app_images_qry = ContentImage.objects.filter(
+            content_type=meta_app_ctype,
+            object_id=self.meta_app.id,
+        )
+        self.assertTrue(meta_app_images_qry.exists())
+        
+        

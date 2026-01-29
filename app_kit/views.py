@@ -22,7 +22,7 @@ from .forms import (AddLanguageForm, MetaAppOptionsForm, TagAnyElementForm, Gene
                     CreateGenericContentForm, AddExistingGenericContentForm, TranslateAppForm,
                     EditGenericContentNameForm, ManageContentImageWithTextForm,
                     ZipImportForm, BuildAppForm, CreateAppForm, ManageLocalizedContentImageForm,
-                    TranslateVernacularNamesForm)
+                    TranslateVernacularNamesForm, ManageContentLicenceForm)
 
 from django_tenants.utils import get_tenant_domain_model
 Domain = get_tenant_domain_model()
@@ -52,6 +52,8 @@ from django.db import connection
 
 # activate permission rules
 from .permission_rules import *
+
+from content_licencing.models import ContentLicenceRegistry
 
 LOCALCOSMOS_COMMERCIAL_BUILDER = getattr(settings, 'LOCALCOSMOS_COMMERCIAL_BUILDER', True)
 
@@ -1732,6 +1734,62 @@ class DeleteAppKitExternalMedia(MetaAppMixin, AjaxDeleteView):
         context = super().get_context_data(**kwargs)
         context['external_media_object'] = self.object.content_object
         return context
+
+
+class ListImagesAndLicences(MetaAppMixin, TemplateView):
+    
+    template_name = 'app_kit/list_images_and_licences.html'
+    ajax_template_name = 'app_kit/ajax/list_images_and_licences_content.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        registry_entries = ContentLicenceRegistry.objects.all().order_by('creator_name', 'pk')
+        context['registry_entries'] = registry_entries
+        return context
+
+
+class ManageContentLicence(MetaAppMixin, LicencingFormViewMixin, FormView):
+
+    form_class = ManageContentLicenceForm
+    
+    template_name = 'app_kit/ajax/manage_content_licence.html'
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_instance(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_instance(self, **kwargs):
+        self.licence_registry_entry = ContentLicenceRegistry.objects.get(pk=kwargs['registry_entry_id'])
+    
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.licence_registry_entry.model_field, **self.get_form_kwargs())
+        
+    def get_initial(self):
+        initial = super().get_initial()
+
+        licencing_initial = self.get_licencing_initial()
+        initial.update(licencing_initial)
+        
+        return initial
+    
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['registry_entry'] = self.licence_registry_entry
+        return context
+    
+    def form_valid(self, form):
+        if self.licence_registry_entry.content:   
+            self.register_content_licence(form, self.licence_registry_entry.content, self.licence_registry_entry.model_field)
+        
+        context = self.get_context_data(**self.kwargs)
+        context['form'] = form
+        context['success'] = True
+        return self.render_to_response(context)
+    
     
 # LEGAL
 class IdentityMixin:
@@ -1760,3 +1818,4 @@ class PrivacyStatement(IdentityMixin, TemplateView):
     @method_decorator(requires_csrf_token)
     def dispatch(self, request, *args, **kwargs):
         return super().dispatch(request, *args, **kwargs)
+    

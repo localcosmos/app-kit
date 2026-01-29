@@ -79,7 +79,7 @@ class TaxonTreeView(TemplateView):
         if self.taxon:
             children_nuid_length = len(self.taxon.taxon_nuid) + 3
             taxa = self.models.TaxonTreeModel.objects.annotate(nuid_len=Length('taxon_nuid')).filter(
-                taxon_nuid__startswith=self.taxon.taxon_nuid, nuid_len=children_nuid_length)
+                taxon_nuid__startswith=self.taxon.taxon_nuid, nuid_len=children_nuid_length).order_by('taxon_latname')
             
         else:
             taxa = self.get_root_taxa()

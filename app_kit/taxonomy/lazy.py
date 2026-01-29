@@ -115,14 +115,14 @@ class LazyTaxon(LazyTaxonBase):
                 
                 if db_lazy_taxon.taxon_nuid != self.taxon_nuid:
                     self.changed_taxon_nuid_in_reference = True
-                    self.reference_errors.append(_('Taxon %s has changed its position in %s') % (self, verbose_taxon_source))
+                    self.reference_errors.append(_('Taxon %(taxon)s has changed its position in %(tree)s') % {'taxon': self, 'tree': verbose_taxon_source})
         
                 if str(taxon.name_uuid) != str(self.name_uuid):
                     self.changed_name_uuid_in_reference = True
-                    self.reference_errors.append(_('Taxon %s has changed its identifier in %s') % (self, verbose_taxon_source))
+                    self.reference_errors.append(_('Taxon %(taxon)s has changed its identifier in %(tree)s') % {'taxon': self, 'tree': verbose_taxon_source})
                     
                 if tree_query.count() > 1:
-                    self.reference_errors.append(_('Taxon %s  found multiple times in %s') % (self, verbose_taxon_source))
+                    self.reference_errors.append(_('Taxon %(taxon)s  found multiple times in %(tree)s') % {'taxon': self, 'tree': verbose_taxon_source})
                     
             else:
                 synonyms_model = self.models.TaxonSynonymModel
@@ -135,11 +135,11 @@ class LazyTaxon(LazyTaxonBase):
                     self.reference_synonym = synonym
                     accepted_name = synonym.taxon
                     self.reference_accepted_name = LazyTaxon(instance=accepted_name)
-                    self.reference_errors.append(_('Taxon %s not found as accepted name, but as synonym of %s') % (self,
-                            accepted_name))
+                    self.reference_errors.append(_('Taxon %(taxon)s not found as accepted name, but as synonym of %(accepted_name)s') % {'taxon': self,
+                            'accepted_name': accepted_name})
                     
                 else:
-                    self.reference_errors.append(_('Taxon %s not found in %s') % (self, verbose_taxon_source))
+                    self.reference_errors.append(_('Taxon %(taxon)s not found in %(tree)s') % {'taxon': self, 'tree': verbose_taxon_source})
                     
                 
                 taxon_latnames_query = self.models.TaxonTreeModel.objects.filter(

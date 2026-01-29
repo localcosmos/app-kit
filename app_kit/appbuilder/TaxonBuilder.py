@@ -332,33 +332,41 @@ class TaxonSerializer:
         if name_type not in self.taxa_builder.cache['search']:
             self.taxa_builder.cache['search'][name_type] = {}
             
+        if name not in self.taxa_builder.cache['search'][name_type]:
+             # the same name might occur in different taxonomies
+            self.taxa_builder.cache['search'][name_type][name] = {}
+            
         if name in self.taxa_builder.cache['search'][name_type]:
-            search_taxon_json = self.taxa_builder.cache['search'][name_type][name]
+            # the same name might occur in different taxonomies
+            taxon_source = self.lazy_taxon.taxon_source
             
-        else:
-        
-            if not accepted_name_uuid:
-                accepted_name_uuid = self.lazy_taxon.name_uuid
+            if taxon_source in self.taxa_builder.cache['search'][name_type][name]:
+                search_taxon_json = self.taxa_builder.cache['search'][name_type][name][taxon_source]
+            
+            else:
+            
+                if not accepted_name_uuid:
+                    accepted_name_uuid = self.lazy_taxon.name_uuid
+                    
+                if accepted_name_uuid:
+                    accepted_name_uuid = str(accepted_name_uuid)
+                    
+                has_taxon_profile = False
+                taxon_profile = self.get_taxon_profile()
+                if taxon_profile:
+                    has_taxon_profile = True
                 
-            if accepted_name_uuid:
-                accepted_name_uuid = str(accepted_name_uuid)
+                search_taxon_json = self.serialize_extended()
                 
-            has_taxon_profile = False
-            taxon_profile = self.get_taxon_profile()
-            if taxon_profile:
-                has_taxon_profile = True
-            
-            search_taxon_json = self.serialize_extended()
-            
-            search_taxon_json.update({
-                'nameType': name_type,
-                'name': name,
-                'isPreferredName': is_preferred_name,
-                'acceptedNameUuid': accepted_name_uuid,
-                'hasTaxonProfile': has_taxon_profile,
-            })
-            
-            self.taxa_builder.cache['search'][name_type][name] = search_taxon_json
+                search_taxon_json.update({
+                    'nameType': name_type,
+                    'name': name,
+                    'isPreferredName': is_preferred_name,
+                    'acceptedNameUuid': accepted_name_uuid,
+                    'hasTaxonProfile': has_taxon_profile,
+                })
+                
+                self.taxa_builder.cache['search'][name_type][name][taxon_source] = search_taxon_json
         
         search_taxon_json_copy = copy.deepcopy(search_taxon_json)
         

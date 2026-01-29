@@ -9,7 +9,7 @@ from django.contrib.staticfiles import finders
 from django.db.models import Q
 
 from app_kit.models import MetaApp, AppKitExternalMedia
-from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
+from localcosmos_server.models import EXTERNAL_MEDIA_TYPES, ServerImageStore
 
 from app_kit.features.backbonetaxonomy.models import TaxonRelationship, TaxonRelationshipType
 
@@ -28,7 +28,7 @@ def ranged(number):
     return range(1,int(number)+1)
 
 
-from app_kit.models import ContentImage
+from app_kit.models import ContentImage, ImageStore
 @register.simple_tag
 def content_image(instance, image_type=None):
 
@@ -311,3 +311,23 @@ def render_taxon_relationships(context, meta_app, lazy_taxon):
     }
 
     return tag_context
+
+
+@register.simple_tag()
+def get_object_from_licence(licence_registry_entry):
+
+    content = licence_registry_entry.content
+    content_type = licence_registry_entry.content_type
+    
+    image_store_content_type = ContentType.objects.get_for_model(ImageStore)
+    server_image_store_content_type = ContentType.objects.get_for_model(ServerImageStore)
+    
+    licenced_object = {
+        'is_imagestore': False,
+        'object': content,
+    }
+    
+    if content_type == image_store_content_type or content_type == server_image_store_content_type:
+        licenced_object['is_imagestore'] = True
+    
+    return licenced_object

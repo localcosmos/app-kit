@@ -1,0 +1,25 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+    {% url 'manage_content_licence' meta_app.id registry_entry.id %}
+{% endblock %}
+
+{% block title %}
+	{% blocktrans %}Manage Licence{% endblocktrans %}
+{% endblock %}
+	
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success %}
+	
+		<script>
+			$("#LargeModal").modal("hide");
+            window.location.reload();
+		</script>
+	{% endif %}
+{% endblock %}
