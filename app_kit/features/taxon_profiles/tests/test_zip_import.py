@@ -352,6 +352,10 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
                                                                   taxon_latname='Fraxinus excelsior', morphotype='leaf')
         self.assertEqual(fraxinus_excielior_leaf_profile.short_profile,'Fraxinus excelsior morphotype leaf short profile')
         
+        
+        
+    
+        
     @test_settings
     def test_partial_import(self):
         importer = self.get_zip_importer()

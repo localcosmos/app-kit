@@ -10,6 +10,9 @@ urlpatterns = [
          views.CreateTaxonProfile.as_view(), name='create_taxon_profile'),
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
+    # this should be the future wherever possible, as it is more robust (does not rely on taxon_source and name_uuid to be unchanged)
+    path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profile_id>/',
+         views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
     path('delete-taxon-profile/<int:meta_app_id>/<int:pk>/',
         views.DeleteTaxonProfile.as_view(), name='delete_taxon_profile'),
     # morphotypes

@@ -1,70 +1,51 @@
 {% load i18n static localcosmos_tags %}
 {% if text_types %}
-<form id="taxon-text-types-form" method="POST" action="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{% csrf_token %}
+<form id="taxon-text-types-form" method="POST" action="{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}"
+>{% csrf_token %}
 	<div id="text-types-form-fields">
 		{% for field in form %}
-			{% if field.field.is_category_field %}
-				{% if field.field.is_first_category %}
-					<div id="order-ctype-{{ field.field.category|ctype_id }}-container" class="object-order-flex mb-3">
-				{% endif %}
-				<div id="order-ctype-{{ text_type_content_type.id }}{% if field.field.category %}-{{ field.field.category.id }}{% endif %}-container" {% if field.field.category %}data-object-id="{{ field.field.category.id }}"{% endif %} class="text-type-category-container">
+			{% if field.field.category %}
+				<h2>
+					{{ field.field.category }}
+				</h2>
 			{% endif %}
-					<div {% if field.name in form.text_type_map %}id="ctype-{{ field.field.taxon_text_type|ctype_id }}-{{ field.field.taxon_text_type.id }}" data-object-id="{{ field.field.taxon_text_type.id }}" {% endif %} class="row">
-						<div class="col-12">
-							{% if field.is_hidden %}
-								{% if field.field.category %}
-									<h2>
-										{{ field.field.category }}
-									</h2>
+			<div class="row">
+				<div class="col-12">
 
-									{% if not field.field.text_type_count %}
-										{% if taxon_profile.taxon_text_set %}
-											<div class="alert alert-info">{% trans 'The selected Text Set does not include any text types for this category.' %}</div>
-										{% else %}
-											<div class="alert alert-info">{% trans 'No text types for this this category yet.' %}</div>
-										{% endif %}
-									{% endif %}
-								{% else %}
+					{% if field.is_hidden %}
+						{{ field }}
+					{% else %}
+						<div class="form-group {% if field.errors %}has-error{% endif %}">
+
+							<h4>
+								{{ field.label }}
+								{% if field.field.taxon_text_type %}
+									{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
 								{% endif %}
-								{{ field }}
-							{% else %}
-								<div class="form-group {% if field.errors %}has-error{% endif %}">
+							</h4>
 
-									<h4>
-										{{ field.label }}
-										{% if field.field.taxon_text_type %}
-											{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
-										{% endif %}
-									</h4>
+							{% if field.field.language %}
+								<img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" /> {{ field.field.language }}
+							{% endif %}
 
-									{% if field.field.language %}
-										<img src="{% static 'localcosmos_server/images/countries/' %}{{ field.field.language }}.gif" /> {{ field.field.language }}
-									{% endif %}
-
-									{{ field }}
-									{% if field.help_text %}
-										<small class="form-text text-muted">{{ field.help_text }}</small>
-									{% endif %}
-								</div>
-
-								{% if field.field.taxon_text and field.field.is_short_version %}
-									{% with content_instance=field.field.taxon_text %}
-										<div id="content-images-list-{{ content_instance|ctype_id }}-{{ content_instance.id }}" class="taxon-text-images-container">
-											{% include 'app_kit/ajax/content_images_list.html' %}
-										</div>
-									{% endwith %}
-								{% endif %}
-								<br><br>
-							{% endif %}	
+							{{ field }}
+							{% if field.help_text %}
+								<small class="form-text text-muted">{{ field.help_text }}</small>
+							{% endif %}
 						</div>
-					</div>
-			{% if field.field.is_last %}
+
+						{% if field.field.taxon_text and field.field.is_short_version %}
+							{% with content_instance=field.field.taxon_text %}
+								<div id="content-images-list-{{ content_instance|ctype_id }}-{{ content_instance.id }}" class="taxon-text-images-container">
+									{% include 'app_kit/ajax/content_images_list.html' %}
+								</div>
+							{% endwith %}
+						{% endif %}
+						<br><br>
+					{% endif %}
 				</div>
-			{% endif %}
+			</div>
 		{% endfor %}
-		{% if form.has_categories %}
-			<!--</div>-->
-		{% endif %}
 	</div>
 
 	<div class="row">

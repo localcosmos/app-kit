@@ -41,8 +41,7 @@ class TaxaBuilder(ContentImagesJSONBuilder):
         
     def serialize_taxon(self, lazy_taxon):
         taxon_serializer = TaxonSerializer(lazy_taxon, self)
-        return taxon_serializer.serialize()
-    
+        return taxon_serializer.serialize()    
     
     def serialize_taxon_extended(self, lazy_taxon):
         taxon_serializer = TaxonSerializer(lazy_taxon, self)
@@ -66,9 +65,9 @@ class TaxaBuilder(ContentImagesJSONBuilder):
                                   accepted_name_uuid)
     
     
-    def serialize_taxon_images(self, lazy_taxon):
+    def serialize_taxon_images(self, lazy_taxon, morphotype=None):
         taxon_serializer = TaxonSerializer(lazy_taxon, self)
-        return taxon_serializer.serialize_images()
+        return taxon_serializer.serialize_images(morphotype=morphotype)
     
     
     def get_nature_guide_ids(self):
@@ -80,7 +79,7 @@ class TaxaBuilder(ContentImagesJSONBuilder):
         return self.nature_guide_ids
     
     
-    def get_nature_guide_occurrences(self, lazy_taxon):
+    def get_nature_guide_occurrences(self, lazy_taxon, morphotype=None):
         nature_guide_ids = self.get_nature_guide_ids()
         
         if lazy_taxon.taxon_source in self.installed_taxonomic_sources:
@@ -88,6 +87,7 @@ class TaxaBuilder(ContentImagesJSONBuilder):
             meta_nodes = MetaNode.objects.filter(
                 nature_guide_id__in=nature_guide_ids,
                 node_type='result',
+                morphotype=morphotype,
                 name_uuid = lazy_taxon.name_uuid).values_list('pk', flat=True)
 
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
@@ -211,12 +211,13 @@ class TaxonSerializer:
         
         return taxon_json_copy
     
-    def get_taxon_profile(self):
+    def get_taxon_profile(self, morphotype=None):
         taxon_profile = None
         
         taxon_profile_qry = TaxonProfile.objects.filter(
             taxon_profiles=self.taxa_builder.taxon_profiles,
-            name_uuid=self.lazy_taxon.name_uuid).first()
+            name_uuid=self.lazy_taxon.name_uuid,
+            morphotype=morphotype).first()
         
         if taxon_profile_qry and taxon_profile_qry.publication_status != 'draft':
             taxon_profile = taxon_profile_qry
@@ -224,19 +225,23 @@ class TaxonSerializer:
         return taxon_profile
         
     
-    def serialize_images(self):
+    def serialize_images(self, morphotype=None):
         
         name_uuid_str = str(self.lazy_taxon.name_uuid)
+        cache_key=name_uuid_str
         
-        if name_uuid_str in self.taxa_builder.cache['images']:
-            taxon_images = self.taxa_builder.cache['images'][name_uuid_str]
+        if morphotype:
+            cache_key = name_uuid_str + '_' + morphotype
+        
+        if cache_key in self.taxa_builder.cache['images']:
+            taxon_images = self.taxa_builder.cache['images'][cache_key]
         
         else:
                 
             collected_content_image_ids = set([])
             collected_image_store_ids = set([])
             
-            taxon_profile = self.get_taxon_profile()
+            taxon_profile = self.get_taxon_profile(morphotype=morphotype)
             
             taxon_images = {
                 'primary': None,
@@ -272,8 +277,9 @@ class TaxonSerializer:
                     taxon_images['primary'] = image_entry
             
             
+
             # images from nature guides
-            node_occurrences = self.taxa_builder.get_nature_guide_occurrences(self.lazy_taxon)
+            node_occurrences = self.taxa_builder.get_nature_guide_occurrences(self.lazy_taxon, morphotype=morphotype)
             
             for node in node_occurrences:
             
@@ -297,30 +303,31 @@ class TaxonSerializer:
                         
                         if taxon_images['primary'] == None:
                             taxon_images['primary'] = image_entry
-            
+                
                     
             # get taxonomic images
-            content_images_taxon = ContentImage.objects.filter(image_store__taxon_source=self.lazy_taxon.taxon_source,
-                                        image_store__taxon_latname=self.lazy_taxon.taxon_latname,
-                                        image_store__taxon_author=self.lazy_taxon.taxon_author).exclude(
-                                        pk__in=list(collected_content_image_ids))
+            if not morphotype:
+                content_images_taxon = ContentImage.objects.filter(image_store__taxon_source=self.lazy_taxon.taxon_source,
+                                            image_store__taxon_latname=self.lazy_taxon.taxon_latname,
+                                            image_store__taxon_author=self.lazy_taxon.taxon_author).exclude(
+                                            pk__in=list(collected_content_image_ids))
 
-            #self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
+                #self.app_release_builder.logger.info('Found {0} images for {1}'.format(taxon_images.count(), profile_taxon.taxon_latname))
 
-            for taxon_image in content_images_taxon:
+                for taxon_image in content_images_taxon:
 
-                if taxon_image is not None and taxon_image.id not in collected_content_image_ids and taxon_image.image_store.id not in collected_image_store_ids:
+                    if taxon_image is not None and taxon_image.id not in collected_content_image_ids and taxon_image.image_store.id not in collected_image_store_ids:
 
-                    image_entry = self.taxa_builder.get_image_json(taxon_image)
-                    taxon_images['taxonImages'].append(image_entry)
-                    
-                    if taxon_images['primary'] == None:
-                        taxon_images['primary'] = image_entry
+                        image_entry = self.taxa_builder.get_image_json(taxon_image)
+                        taxon_images['taxonImages'].append(image_entry)
+                        
+                        if taxon_images['primary'] == None:
+                            taxon_images['primary'] = image_entry
 
-                    collected_content_image_ids.add(taxon_image.id)
-                    collected_image_store_ids.add(taxon_image.image_store.id)
+                        collected_content_image_ids.add(taxon_image.id)
+                        collected_image_store_ids.add(taxon_image.image_store.id)
     
-            self.taxa_builder.cache['images'][name_uuid_str] = taxon_images
+            self.taxa_builder.cache['images'][cache_key] = taxon_images
             
         taxon_images_copy = copy.deepcopy(taxon_images)
         

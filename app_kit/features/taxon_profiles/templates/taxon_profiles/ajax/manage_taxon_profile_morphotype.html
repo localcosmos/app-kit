@@ -23,7 +23,8 @@
 	{% if success %}
         <script>
             {% if created %}
-                window.location.href = "{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon.taxon_source taxon_profile.taxon.name_uuid taxon_profile.morphotype %}";
+                // taxon_profile is the created morphotype profile
+                window.location.href = "{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}";
             {% else %}
                 // Reload the page to show the updated morphotype
                 $('#Modal').modal('hide');

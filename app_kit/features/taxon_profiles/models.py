@@ -87,51 +87,44 @@ class TaxonProfiles(GenericContent):
     def get_primary_localization(self, meta_app=None):
         locale = super().get_primary_localization(meta_app)
 
-        taxon_query = TaxonProfile.objects.filter(taxon_profiles=self)
-        taxa = LazyTaxonList(queryset=taxon_query)
-        for lazy_taxon in taxa:
-
-            taxon_query = {
-                'taxon_source' : lazy_taxon.taxon_source,
-                'taxon_latname' : lazy_taxon.taxon_latname,
-                'taxon_author' : lazy_taxon.taxon_author,
-            }
-
-            taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self, **taxon_query).first()
-
-            if taxon_profile:
+        all_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self)
+        for taxon_profile in all_taxon_profiles:
+            
+            if taxon_profile.publication_status == 'draft':
+                continue
                 
-                if taxon_profile.morphotype:
-                    locale[taxon_profile.morphotype] = taxon_profile.morphotype
+            if taxon_profile.morphotype:
+                locale[taxon_profile.morphotype] = taxon_profile.morphotype
 
-                for text in taxon_profile.texts():
+            for text in taxon_profile.texts():
 
-                    # text_type_key = 'taxon_text_{0}'.format(text.taxon_text_type.id)
-                    # short: use name as key (-> no duplicates in translation matrix)
-                    text_type_key = text.taxon_text_type.text_type
-                    locale[text_type_key] = text.taxon_text_type.text_type
-                    
-                    # text.text is a bad key, because if text.text changes, the translation is gone
-                    # text.text are long texts, so use a different key which survives text changes
-                    # locale[text.text] = text.text
-
-                    short_text_key = self.get_short_text_key(text)
-
-                    if text.text:
-                        locale[short_text_key] = text.text
-
-                    long_text_key = self.get_long_text_key(text)
-
-                    if text.long_text:
-                        locale[long_text_key] = text.long_text
-
-                content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
-                locale.update(content_images_primary_localization)
+                # text_type_key = 'taxon_text_{0}'.format(text.taxon_text_type.id)
+                # short: use name as key (-> no duplicates in translation matrix)
+                text_type_key = text.taxon_text_type.text_type
+                locale[text_type_key] = text.taxon_text_type.text_type
                 
-                short_profile = taxon_profile.short_profile
-                if short_profile:
-                    locale[short_profile] = short_profile
-        
+                # text.text is a bad key, because if text.text changes, the translation is gone
+                # text.text are long texts, so use a different key which survives text changes
+                # locale[text.text] = text.text
+
+                short_text_key = self.get_short_text_key(text)
+
+                if text.text:
+                    locale[short_text_key] = text.text
+
+                long_text_key = self.get_long_text_key(text)
+
+                if text.long_text:
+                    locale[long_text_key] = text.long_text
+
+            content_images_primary_localization = taxon_profile.get_content_images_primary_localization()
+            locale.update(content_images_primary_localization)
+            
+            short_profile = taxon_profile.short_profile
+            if short_profile:
+                locale[short_profile] = short_profile
+                
+    
         navigation = TaxonProfilesNavigation.objects.filter(taxon_profiles=self).first()
         
         if navigation:

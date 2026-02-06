@@ -23,5 +23,6 @@ recursive-include app_kit/app_kit_api/tests *
 recursive-include app_kit/multi_tenancy/templates *
 recursive-include app_kit/taxonomy/templates *
 recursive-include app_kit/taxonomy/sources/custom/templates *
+recursive-include app_kit/taxonomy/sources/custom/management *
 
 

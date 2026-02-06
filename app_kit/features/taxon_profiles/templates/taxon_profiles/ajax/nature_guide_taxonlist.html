@@ -7,7 +7,7 @@
 				{% if meta_node.taxon %}
 					{% get_taxon_profile meta_app meta_node.taxon as profile %}
 					{% if profile %}
-						<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id profile.taxon_source profile.name_uuid %}">
+						<a href="{% url 'manage_taxon_profile' meta_app.id profile.id %}">
 							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
 						</a>
 						{% if profile.publication_status == 'draft' %}
@@ -23,7 +23,7 @@
 					{% get_nature_guide_taxon meta_node nature_guide as taxon %}
 					{% get_taxon_profile meta_app taxon as non_taxon_profile %}
 					{% if non_taxon_profile %}
-						<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id non_taxon_profile.taxon_source non_taxon_profile.name_uuid %}">
+						<a href="{% url 'manage_taxon_profile' meta_app.id non_taxon_profile.id %}">
 							{{ meta_node.name }}
 						</a>
 						{% if non_taxon_profile.publication_status == 'draft' %}

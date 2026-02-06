@@ -1959,6 +1959,63 @@ class AppReleaseBuilder(AppBuilderBase):
             localized_long_text = self.get_localized_taxonprofile_text(text_dict['longTextKey'], glossarized_locale, app_locale)
         
         return localized_short_text, localized_long_text
+    
+    def get_localized_taxon_profile(self, profile_json, language_code):
+        
+        glossarized_locale_filepath = self._app_glossarized_locale_filepath(language_code)
+                    
+        glossarized_locale = {}
+        
+        if os.path.isfile(glossarized_locale_filepath):
+            with open(glossarized_locale_filepath, 'r') as f:
+                glossarized_locale = json.loads(f.read())
+        
+        app_locale = self.meta_app.localizations[language_code]
+        
+        localized_profile_json = profile_json.copy()
+        
+        localized_short_profile = self.get_localized_taxonprofile_text(localized_profile_json['shortProfile'], glossarized_locale, app_locale)
+        localized_profile_json['shortProfile'] = localized_short_profile
+        
+        for index, text_dict in enumerate(profile_json['texts'], 0):
+            
+            localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
+                
+            localized_profile_json['texts'][index]['shortText'] = localized_short_text
+            localized_profile_json['texts'][index]['longText'] = localized_long_text
+            
+        
+        for c_index, category in enumerate(profile_json['categorizedTexts'], 0):
+            
+            localized_category = category.copy()
+            
+            localized_category_name = self.get_localized_taxonprofile_text(category['category'], glossarized_locale, app_locale)
+                
+            if localized_category:
+                localized_category['category'] = localized_category_name
+            
+            for index, text_dict in enumerate(category['texts'], 0):
+                localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
+                
+                localized_category['texts'][index]['shortText'] = localized_short_text
+                localized_category['texts'][index]['longText'] = localized_long_text
+                
+            localized_profile_json['categorizedTexts'][c_index] = localized_category
+            
+        # localize seo, no glossarized locale
+        localized_seo = localized_profile_json['seo'].copy()
+        title = localized_seo['title']
+        meta_description = localized_seo['metaDescription']
+        
+        if title and title in app_locale:
+            localized_seo = app_locale[title]
+            
+        if meta_description and meta_description in app_locale:
+            localized_seo['metaDescription'] = app_locale[meta_description]
+
+        localized_profile_json['seo'] = localized_seo
+        
+        return localized_profile_json
         
     def _build_TaxonProfiles(self, app_generic_content):
 
@@ -1993,6 +2050,11 @@ class AppReleaseBuilder(AppBuilderBase):
 
         if not os.path.isdir(app_absolute_taxonprofiles_path):
             os.makedirs(app_absolute_taxonprofiles_path)
+            
+        # morphotype paths
+        app_relative_morphotype_profiles_folder = os.path.join(app_relative_taxonprofiles_folder, 'morphotypes')
+        self.build_features[generic_content_type]['localizedMorphotypeFiles'] = {}
+        app_absolute_morphotype_profiles_path = os.path.join(app_absolute_taxonprofiles_path, 'morphotypes')
 
 
         collected_taxa = taxon_profiles.collected_taxa(published_only=True)
@@ -2081,8 +2143,10 @@ class AppReleaseBuilder(AppBuilderBase):
         self.build_features[generic_content_type]['localizedFiles'] = {}
         
         for profile_taxon in active_collected_taxa:
+            
+            morphotype = None
 
-            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, 
+            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype,
                                                            languages=self.meta_app.languages())
 
             if profile_json is not None:
@@ -2101,64 +2165,13 @@ class AppReleaseBuilder(AppBuilderBase):
                 # localized taxon profiles for faster language load
                 for language_code in self.meta_app.languages():
                     
-                    glossarized_locale_filepath = self._app_glossarized_locale_filepath(language_code)
-                    
-                    glossarized_locale = {}
-                    
-                    if os.path.isfile(glossarized_locale_filepath):
-                        with open(glossarized_locale_filepath, 'r') as f:
-                            glossarized_locale = json.loads(f.read())
+                    localized_profile_json = self.get_localized_taxon_profile(profile_json, language_code)
                     
                     relative_localized_taxonprofiles_folder = os.path.join(
                         app_relative_taxonprofiles_folder, language_code)
                     
                     if language_code not in self.build_features[generic_content_type]['localizedFiles']:
                         self.build_features[generic_content_type]['localizedFiles'][language_code] = '/{0}'.format(relative_localized_taxonprofiles_folder)
-        
-                    app_locale = self.meta_app.localizations[language_code]
-                    
-                    localized_profile_json = profile_json.copy()
-                    
-                    localized_short_profile = self.get_localized_taxonprofile_text(localized_profile_json['shortProfile'], glossarized_locale, app_locale)
-                    localized_profile_json['shortProfile'] = localized_short_profile
-                    
-                    for index, text_dict in enumerate(profile_json['texts'], 0):
-                        
-                        localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
-                            
-                        localized_profile_json['texts'][index]['shortText'] = localized_short_text
-                        localized_profile_json['texts'][index]['longText'] = localized_long_text
-                        
-                    
-                    for c_index, category in enumerate(profile_json['categorizedTexts'], 0):
-                        
-                        localized_category = category.copy()
-                        
-                        localized_category_name = self.get_localized_taxonprofile_text(category['category'], glossarized_locale, app_locale)
-                            
-                        if localized_category:
-                            localized_category['category'] = localized_category_name
-                        
-                        for index, text_dict in enumerate(category['texts'], 0):
-                            localized_short_text, localized_long_text = self.get_localized_taxonprofile_taxon_text(text_dict, glossarized_locale, app_locale)
-                            
-                            localized_category['texts'][index]['shortText'] = localized_short_text
-                            localized_category['texts'][index]['longText'] = localized_long_text
-                            
-                        localized_profile_json['categorizedTexts'][c_index] = localized_category
-                        
-                    # localize seo, no glossarized locale
-                    localized_seo = localized_profile_json['seo'].copy()
-                    title = localized_seo['title']
-                    meta_description = localized_seo['metaDescription']
-                    
-                    if title and title in app_locale:
-                        localized_seo = app_locale[title]
-                        
-                    if meta_description and meta_description in app_locale:
-                        localized_seo['metaDescription'] = app_locale[meta_description]
-
-                    localized_profile_json['seo'] = localized_seo
                     
                     absolute_localized_taxonprofiles_folder = os.path.join(
                         app_absolute_taxonprofiles_path, language_code)
@@ -2177,7 +2190,52 @@ class AppReleaseBuilder(AppBuilderBase):
 
                     with open(localized_profile_filepath, 'w', encoding='utf-8') as f:
                         json.dump(localized_profile_json, f, indent=4, ensure_ascii=False)
+                        
+            # build morphotype profiles
+            morphotypes = []
+            taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
+                taxon_source=profile_taxon.taxon_source, taxon_latname=profile_taxon.taxon_latname,
+                taxon_author=profile_taxon.taxon_author).first()
+
+            if taxon_profile and taxon_profile.morphotype_profiles:
+                morphotypes = taxon_profile.morphotype_profiles.values_list('morphotype', flat=True)
                 
+                
+            for morphotype in morphotypes:
+
+                morphotype_profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype,
+                                                           languages=self.meta_app.languages())
+
+                if morphotype_profile_json is not None:
+
+                    for language_code in self.meta_app.languages():
+                        
+                        localized_profile_json = self.get_localized_taxon_profile(morphotype_profile_json, language_code)
+                        
+                        relative_localized_morphotype_profiles_folder = os.path.join(
+                            app_relative_morphotype_profiles_folder, language_code)
+                        
+                        if language_code not in self.build_features[generic_content_type]['localizedMorphotypeFiles']:
+                            self.build_features[generic_content_type]['localizedMorphotypeFiles'][language_code] = '/{0}'.format(relative_localized_morphotype_profiles_folder)
+                            
+                        
+                        absolute_localized_morphotype_profiles_folder = os.path.join(
+                            app_absolute_morphotype_profiles_path, language_code)
+                        
+                        if not os.path.isdir(absolute_localized_morphotype_profiles_folder):
+                            os.makedirs(absolute_localized_morphotype_profiles_folder)
+                        
+                        localized_source_folder = os.path.join(absolute_localized_morphotype_profiles_folder,
+                                                           profile_taxon.taxon_source)
+                        
+                        if not os.path.isdir(localized_source_folder):
+                            os.makedirs(localized_source_folder)
+                            
+                        localized_morphotype_profile_filepath = os.path.join(localized_source_folder,
+                                                              '{0}_{1}.json'.format(profile_taxon.name_uuid, morphotype))
+                        
+                        with open(localized_morphotype_profile_filepath, 'w', encoding='utf-8') as f:
+                            json.dump(morphotype_profile_json, f, indent=4, ensure_ascii=False)
 
 
         # build search index and registry

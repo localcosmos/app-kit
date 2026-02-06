@@ -92,7 +92,7 @@
 							</div>
 							{% for duplicate in possible_duplicates %}
 								<i>
-									<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id duplicate.taxon_source duplicate.name_uuid %}">{{ duplicate.taxon_latname }} {{ duplicate.taxon_author }}</a>
+									<a href="{% url 'manage_taxon_profile' meta_app.id duplicate.id %}">{{ duplicate.taxon_latname }} {{ duplicate.taxon_author }}</a>
 								</i>
 							{% endfor %}
 						</div>
@@ -111,10 +111,10 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if taxon_profile.morphotype %}
+		{% if taxon_profile.morphotype and taxon_profile.parent_profile %}
 			<div class="row">
 				<div class="col-12">
-					{% trans 'This is a morphotype of:' %} <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">
+					{% trans 'This is a morphotype of:' %} <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profile.parent_profile.id %}">
 						{{ taxon }}
 					</a>
 				</div>
@@ -131,7 +131,7 @@
 								{% if taxon_profile.morphotype_profiles %}
 									{% for morphotype in taxon_profile.morphotype_profiles %}
 										<div>
-											<a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon_profile.taxon.taxon_source taxon_profile.taxon.name_uuid morphotype.morphotype %}">
+											<a href="{% url 'manage_taxon_profile' meta_app.id morphotype.id %}">
 												{{ morphotype.morphotype }}
 											</a>
 										</div>

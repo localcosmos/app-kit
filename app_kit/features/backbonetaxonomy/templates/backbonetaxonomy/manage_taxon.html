@@ -29,7 +29,7 @@
             <div class="mt-5">
                 <h3>{% trans 'Taxon Profile' %}</h3>
                 {% if taxon_profile %}
-                    <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profiles.id taxon.taxon_source taxon.name_uuid %}">{{ taxon }}</a>
+                    <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}">{{ taxon }}</a>
                 {% else %}
                     {% trans 'This taxon does not have a taxon profile' %}
                 {% endif %}

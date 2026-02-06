@@ -52,7 +52,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         installed_taxonomic_sources = [s[0] for s in settings.TAXONOMY_DATABASES]
         return installed_taxonomic_sources
 
-
+    '''
     def collect_node_traits(self, node):
 
         #self.app_release_builder.logger.info('collecting node traits for {0}'.format(node.meta_node.name))
@@ -95,6 +95,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         #self.app_release_builder.logger.info('finished collecting')
 
         return node_traits
+    '''
     
 
     def get_vernacular_name_from_nature_guides(self, lazy_taxon):
@@ -109,7 +110,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         return template_contents
 
     # languages is for the vernacular name only, the rest are keys for translation
-    def build_taxon_profile(self, profile_taxon, languages):
+    def build_taxon_profile(self, profile_taxon, morphotype, languages):
         
         lazy_taxon = LazyTaxon(instance=profile_taxon)
 
@@ -118,7 +119,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get the profile
         db_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
             taxon_source=profile_taxon.taxon_source, taxon_latname=profile_taxon.taxon_latname,
-            taxon_author=profile_taxon.taxon_author).first()
+            taxon_author=profile_taxon.taxon_author, morphotype=morphotype).first()
         
         
         taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
@@ -126,8 +127,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # if the taxonomic db got updated, still use the old taxon latname and author here
         taxon_profile_json['taxonLatname'] = lazy_taxon.taxon_latname
         taxon_profile_json['taxonAuthor'] = lazy_taxon.taxon_author
+        images = []
         
-        images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon)
+        images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon, morphotype=morphotype)
 
         is_featured = False
         if db_profile:
@@ -139,6 +141,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         taxon_profile_json.update({
             'taxonProfileId': db_profile.id if db_profile else None,
+            'morphotype': db_profile.morphotype if db_profile else None,
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
@@ -151,7 +154,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'synonyms' : [],
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
-            'taxonRelationships': self.collect_taxon_relationships(profile_taxon),
+            'taxonRelationships': self.collect_taxon_relationships(profile_taxon) if not morphotype else [],
             'tags' : [],
             'seo': {
                 'title': None,
@@ -162,14 +165,15 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'isFeatured': is_featured,
         })
 
-        synonyms = profile_taxon.synonyms()
-        for synonym in synonyms:
-            synonym_entry = {
-                'taxonLatname' : synonym.taxon_latname,
-                'taxonAuthor' : synonym.taxon_author,
-            }
+        if not morphotype:
+            synonyms = profile_taxon.synonyms()
+            for synonym in synonyms:
+                synonym_entry = {
+                    'taxonLatname' : synonym.taxon_latname,
+                    'taxonAuthor' : synonym.taxon_author,
+                }
 
-            taxon_profile_json['synonyms'].append(synonym_entry)
+                taxon_profile_json['synonyms'].append(synonym_entry)
 
         for language_code in languages:
 
@@ -186,6 +190,24 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             
             # template contents
             taxon_profile_json['templateContents'] = self.get_taxon_profile_template_content_links(profile_taxon, language_code)
+            
+        # respect additional languages for vernacular names as defined in taxon profiles options
+        include_vernacular_names_languages_option = self.generic_content.get_option(self.meta_app,
+                                                                                   'include_vernacular_names_languages')
+        if include_vernacular_names_languages_option:
+            additional_languages = [lang.strip() for lang in include_vernacular_names_languages_option.split(',') if lang.strip()]
+            for language_code in additional_languages:
+                if language_code not in languages:
+                    preferred_vernacular_name = lazy_taxon.get_preferred_vernacular_name(language_code,
+                                                                                        self.meta_app)
+
+                    taxon_profile_json['vernacular'][language_code] = preferred_vernacular_name
+
+                    all_vernacular_names = profile_taxon.all_vernacular_names(self.meta_app,
+                                                                              languages=[language_code])
+
+                    names_list = [name_reference['name'] for name_reference in all_vernacular_names]
+                    taxon_profile_json['allVernacularNames'][language_code] = names_list
 
         # get taxon_profile_images
         if db_profile:
@@ -207,7 +229,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get information (traits, node_names) from nature guides if possible
         # collect node images
         # only use occurrences in nature guides of this app
-        node_occurrences = self.app_release_builder.taxa_builder.get_nature_guide_occurrences(lazy_taxon)
+        node_occurrences = self.app_release_builder.taxa_builder.get_nature_guide_occurrences(lazy_taxon, morphotype=morphotype)
 
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])
@@ -287,7 +309,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         if db_profile:
             
-            taxon_profile_json['morphotypeProfiles'] = self.collect_morphotype_profiles(db_profile, languages)
+            if not morphotype:
+                taxon_profile_json['morphotypeProfiles'] = self.collect_morphotype_profiles(db_profile, languages)
             
             taxon_profile_json['shortProfile'] = db_profile.short_profile
             
@@ -469,7 +492,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 'taxonProfileId': morphotype.id,
                 'parentTaxonProfileId': taxon_profile.id,
                 'morphotype': morphotype.morphotype,
-                'taxon': self.app_release_builder.taxa_builder.serialize_taxon(lazy_taxon),
+                'taxon': self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon),
                 'vernacular' : {},
                 'image': image_entry,
             }

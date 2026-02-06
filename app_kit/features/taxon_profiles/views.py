@@ -298,16 +298,22 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
 
     def set_taxon(self, request, **kwargs):
         
-        self.taxon_profiles =  TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
-
-        taxon_source = kwargs['taxon_source']
-        name_uuid = kwargs['name_uuid']
+        if 'taxon_profile_id' in kwargs:
+            self.taxon_profile = TaxonProfile.objects.get(pk=kwargs['taxon_profile_id'])
+            self.taxon_profiles = self.taxon_profile.taxon_profiles
+            
+        else:
         
-        morphotype = kwargs.get('morphotype', None)
+            self.taxon_profiles =  TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
 
-        self.taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
-                                                taxon_source=taxon_source, name_uuid=name_uuid,
-                                                morphotype=morphotype)
+            taxon_source = kwargs['taxon_source']
+            name_uuid = kwargs['name_uuid']
+            
+            morphotype = kwargs.get('morphotype', None)
+
+            self.taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
+                                                    taxon_source=taxon_source, name_uuid=name_uuid,
+                                                    morphotype=morphotype)
 
         self.taxon = LazyTaxon(instance=self.taxon_profile)
 
@@ -744,44 +750,50 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
         return images
 
     def get_taxon_images(self, exclude=[]):
-        images = ContentImage.objects.filter(image_store__taxon_source=self.taxon.taxon_source,
-                            image_store__taxon_latname=self.taxon.taxon_latname).exclude(pk__in=exclude)
+        
+        images = []
+        
+        if not self.taxon_profile.morphotype:
+            images = ContentImage.objects.filter(image_store__taxon_source=self.taxon.taxon_source,
+                                image_store__taxon_latname=self.taxon.taxon_latname).exclude(pk__in=exclude)
 
         return images
     
     # images can be on MetNode or NatureGuidesTaxonTree
     def get_nature_guide_images(self, exclude=[]):
         
-        meta_nodes = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source, 
-            taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author, morphotype=self.morphotype)
-
         nature_guide_images = []
-
-        if meta_nodes:
-
-            meta_node_ids = meta_nodes.values_list('id', flat=True)
-
-            meta_node_content_type = ContentType.objects.get_for_model(MetaNode)
-            meta_node_images = ContentImage.objects.filter(content_type=meta_node_content_type,
-                                            object_id__in=meta_node_ids).exclude(pk__in=exclude)
-            
-            exclude += list(meta_node_images.values_list('id', flat=True))
-            nature_guide_images += list(meta_node_images)
-
         
-        nodes = NatureGuidesTaxonTree.objects.filter(meta_node__taxon_source=self.taxon.taxon_source,
-            meta_node__taxon_latname=self.taxon.taxon_latname,
-            meta_node__taxon_author=self.taxon.taxon_author)
+        if not self.taxon_profile.morphotype:
+        
+            meta_nodes = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source, 
+                taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author, morphotype=self.morphotype)
 
-        if nodes:
+            if meta_nodes:
 
-            node_ids = nodes.values_list('id', flat=True)
+                meta_node_ids = meta_nodes.values_list('id', flat=True)
 
-            node_content_type = ContentType.objects.get_for_model(NatureGuidesTaxonTree)
-            node_images = ContentImage.objects.filter(content_type=node_content_type,
-                                            object_id__in=node_ids).exclude(pk__in=exclude)
+                meta_node_content_type = ContentType.objects.get_for_model(MetaNode)
+                meta_node_images = ContentImage.objects.filter(content_type=meta_node_content_type,
+                                                object_id__in=meta_node_ids).exclude(pk__in=exclude)
+                
+                exclude += list(meta_node_images.values_list('id', flat=True))
+                nature_guide_images += list(meta_node_images)
+
             
-            nature_guide_images += list(node_images)
+            nodes = NatureGuidesTaxonTree.objects.filter(meta_node__taxon_source=self.taxon.taxon_source,
+                meta_node__taxon_latname=self.taxon.taxon_latname,
+                meta_node__taxon_author=self.taxon.taxon_author)
+
+            if nodes:
+
+                node_ids = nodes.values_list('id', flat=True)
+
+                node_content_type = ContentType.objects.get_for_model(NatureGuidesTaxonTree)
+                node_images = ContentImage.objects.filter(content_type=node_content_type,
+                                                object_id__in=node_ids).exclude(pk__in=exclude)
+                
+                nature_guide_images += list(node_images)
             
 
         return nature_guide_images

@@ -721,8 +721,16 @@ class GenericContentZipImporter:
     
     
     def validate_external_media_type_website(self, external_media_data, sheet_name, row_index):
-        # check that it is not a file link
-        if re.search(r'\.[a-zA-Z0-9]{2,5}($|\?)', external_media_data['url']):
+        # Only flag as invalid if the PATH (not the domain) ends with a file extension
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse((external_media_data.get('url') or '').strip())
+            path = parsed.path or ''
+        except Exception:
+            path = ''
+
+        # Detect file-like endings in path (e.g., /file.jpg, /index.html)
+        if re.search(r'/[^/]+\.[a-zA-Z0-9]{2,5}$', path):
             message = _('Invalid website format in URL: %(cell_value)s. URL should not end with a file extension.') % {
                 'cell_value': external_media_data['url'],
             }

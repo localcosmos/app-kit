@@ -320,7 +320,7 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         self.assertEqual(licence.licence, 'CC BY-NC')
         self.assertEqual(licence.licence_version, '4.0')
         self.assertEqual(licence.source_link, 'https://imageworld.com/lacerta-agilis.jpg')
-        self.assertEqual(licence.creator_name, 'Art Vandeley')
+        self.assertEqual(licence.creator_name, 'New Author')
         self.assertEqual(content_image.alt_text, 'A new alt text')
         self.assertEqual(content_image.text, 'A new caption')
         self.assertEqual(content_image.title, 'Lizard')
@@ -421,6 +421,146 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         # No match for wrong author
         matches = importer.get_taxa_with_taxon_author_tolerance(taxon_source, taxon_latname, 'Smith')
         self.assertEqual(len(matches), 0)
+
+    # External Media URL validation
+    @test_settings
+    def test_validate_external_media_type_youtube_valid_urls(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        valid_urls = [
+            'https://youtu.be/dQw4w9WgXcQ',
+            'http://youtu.be/dQw4w9WgXcQ',
+            'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'https://youtube.com/watch?v=dQw4w9WgXcQ',
+            'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            'https://www.youtube.com/v/dQw4w9WgXcQ',
+            'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+        ]
+
+        for url in valid_urls:
+            importer.validate_external_media_type_youtube({'url': url}, importer.external_media_sheet_name, 2)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_external_media_type_youtube_invalid_urls(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Empty URL
+        importer.validate_external_media_type_youtube({'url': ''}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid YouTube URL: empty value', importer.errors)
+
+        # Invalid scheme
+        bad_url = 'ftp://youtu.be/dQw4w9WgXcQ'
+        importer.validate_external_media_type_youtube({'url': bad_url}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid YouTube URL (scheme must be http/https): ftp://youtu.be/dQw4w9WgXcQ', importer.errors)
+
+        # No video id
+        bad_url = 'https://www.youtube.com/watch?v='
+        importer.validate_external_media_type_youtube({'url': bad_url}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid YouTube URL or video id not found: https://www.youtube.com/watch?v=', importer.errors)
+
+    @test_settings
+    def test_validate_external_media_type_vimeo_valid_urls(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        valid_urls = [
+            'https://vimeo.com/123456789',
+            'http://vimeo.com/123456789',
+            'https://player.vimeo.com/video/123456789',
+            'https://www.vimeo.com/123456789',
+        ]
+
+        for url in valid_urls:
+            importer.validate_external_media_type_vimeo({'url': url}, importer.external_media_sheet_name, 2)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_external_media_type_vimeo_invalid_urls(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Empty URL
+        importer.validate_external_media_type_vimeo({'url': ''}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid Vimeo URL: empty value', importer.errors)
+
+        # Invalid scheme
+        bad_url = 'ftp://vimeo.com/123456789'
+        importer.validate_external_media_type_vimeo({'url': bad_url}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid Vimeo URL (scheme must be http/https): ftp://vimeo.com/123456789', importer.errors)
+
+        # No video id
+        bad_url = 'https://vimeo.com/'
+        importer.validate_external_media_type_vimeo({'url': bad_url}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid Vimeo URL or video id not found: https://vimeo.com/', importer.errors)
+
+    @test_settings
+    def test_validate_external_media_type_image_url_extension(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Valid image URL
+        importer.validate_external_media_type_image({'url': 'https://example.com/pic.jpg'}, importer.external_media_sheet_name, 2)
+        # Invalid image URL extension
+        importer.validate_external_media_type_image({'url': 'https://example.com/pic.bmp'}, importer.external_media_sheet_name, 2)
+
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid image format in URL: .bmp. Valid formats are: .jpg, .jpeg, .png, .webp, .gif', importer.errors)
+
+    @test_settings
+    def test_validate_external_media_type_audio_pdf(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # mp3
+        importer.validate_external_media_type_mp3({'url': 'https://example.com/audio.txt'}, importer.external_media_sheet_name, 2)
+        importer.validate_external_media_type_mp3({'url': 'https://example.com/audio.mp3'}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid mp3 format in URL: https://example.com/audio.txt. URL has to end with .mp3', importer.errors)
+
+        # wav
+        importer.validate_external_media_type_wav({'url': 'https://example.com/audio.txt'}, importer.external_media_sheet_name, 2)
+        importer.validate_external_media_type_wav({'url': 'https://example.com/audio.wav'}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid wav format in URL: https://example.com/audio.txt. URL has to end with .wav', importer.errors)
+
+        # pdf
+        importer.validate_external_media_type_pdf({'url': 'https://example.com/doc.txt'}, importer.external_media_sheet_name, 2)
+        importer.validate_external_media_type_pdf({'url': 'https://example.com/doc.pdf'}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid pdf format in URL: https://example.com/doc.txt. URL has to end with .pdf', importer.errors)
+
+    @test_settings
+    def test_validate_external_media_type_website(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Invalid: ends with file extension
+        importer.validate_external_media_type_website({'url': 'https://example.com/image.jpg'}, importer.external_media_sheet_name, 2)
+        # Valid: no file extension
+        importer.validate_external_media_type_website({'url': 'https://example.com/some/path?query=x'}, importer.external_media_sheet_name, 2)
+        # Valid: domain-only with TLD
+        importer.validate_external_media_type_website({'url': 'https://example.com'}, importer.external_media_sheet_name, 2)
+
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid website format in URL: https://example.com/image.jpg. URL should not end with a file extension.', importer.errors)
+
+    @test_settings
+    def test_validate_external_media_type_file(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Invalid: no file extension
+        importer.validate_external_media_type_file({'url': 'https://example.com/download/'}, importer.external_media_sheet_name, 2)
+        # Valid: has file extension
+        importer.validate_external_media_type_file({'url': 'https://example.com/download.zip'}, importer.external_media_sheet_name, 2)
+
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid file format in URL: https://example.com/download/. URL has to end with a file extension.', importer.errors)
         
         # real world test
         # algaebase entry is : Desmarestia viridis (O.F.Müller) J.V.Lamouroux 1813
@@ -588,3 +728,6 @@ class TestGenericContentZipImporterInvalidData(WithUser, WithMetaApp, TenantTest
         ignorin_importer.errors = []
         ignorin_importer.validate_listing_in_images_sheet('unlisted.jpg', 'A', 2)
         self.assertEqual(ignorin_importer.errors, [])
+        
+        
+    

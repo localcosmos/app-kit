@@ -29,6 +29,9 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
     
     enable_taxonomic_navigation = forms.BooleanField(required=False, label=_('Enable Taxonomic Navigation'))
     
+    include_vernacular_names_languages = forms.CharField(required=False, label=_('Include Vernacular Names Languages'),
+        help_text=_('A comma-separated list of language codes (e.g. "en,de,fr") to include vernacular names from. Leave empty to include all available languages.'))
+    
     version = forms.CharField(help_text=_('You can manually set you own version here. This will not affect the automated versioning.'), required=False)
 
 
@@ -94,8 +97,6 @@ class ManageTaxonTextsForm(LocalizeableForm):
 
         self.layoutable_simple_fields = []
         
-        self.has_categories = False
-        
         super().__init__(*args, **kwargs)
         
         categories = [None] + list(TaxonTextTypeCategory.objects.filter(taxon_profiles=taxon_profiles))
@@ -105,34 +106,12 @@ class ManageTaxonTextsForm(LocalizeableForm):
         if taxon_profile.taxon_text_set:
             allowed_text_types = taxon_profile.taxon_text_set.text_types.values_list('pk', flat=True)
         
-        if len(categories) > 1:
-            self.has_categories = True
-        
-        for category_index, category in enumerate(categories, 1):
-
+        for category in categories:
+            
             types = TaxonTextType.objects.filter(taxon_profiles=taxon_profiles, category=category, pk__in=allowed_text_types).order_by('category', 'position')
-
-            category_label = 'uncategorized'
-            if category:
-                category_label = category.name
-                
-            category_helper_field = forms.CharField(widget=forms.HiddenInput(), label=category_label, required=False)
-            category_helper_field.category = category
-            category_helper_field.is_category_field = True
-            category_helper_field.text_type_count = types.count()
-            category_helper_field.is_first_category = False
-            category_helper_field.is_last = False
-            
-            if category_index == 2:
-                category_helper_field.is_first_category = True
-                
-            if not types:
-                category_helper_field.is_last = True
-            
-            self.fields[category_label] = category_helper_field
             
             for field_index, text_type in enumerate(types, 1):
-
+                
                 short_text_field_name = text_type.text_type
                 
                 self.text_type_map[short_text_field_name] = text_type
@@ -143,13 +122,16 @@ class ManageTaxonTextsForm(LocalizeableForm):
                                         required=False, label=short_text_field_label, validators=[json_compatible])
                 short_text_field.taxon_text_type = text_type
                 short_text_field.is_short_version = True
-                short_text_field.is_last = False
                 short_text_field.taxon_text = None
+                short_text_field.category = None
 
                 self.fields[short_text_field_name] = short_text_field
                 self.localizeable_fields.append(short_text_field_name)
                 self.fields[short_text_field_name].language = self.language
                 self.layoutable_simple_fields.append(short_text_field_name)
+                
+                if field_index == 1:
+                    short_text_field.category = category
                 
 
                 if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
@@ -162,19 +144,12 @@ class ManageTaxonTextsForm(LocalizeableForm):
                                             required=False, label=long_text_field_label, validators=[json_compatible])
                     long_text_field.taxon_text_type = text_type
                     long_text_field.is_short_version = False
-                    long_text_field.is_last = False
 
                     self.fields[long_text_field_name] = long_text_field
                     self.localizeable_fields.append(long_text_field_name)
                     self.fields[long_text_field_name].language = self.language
                     self.layoutable_simple_fields.append(long_text_field_name)
-                    
-                if field_index == len(types):
-                    if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
-                        long_text_field.is_last = True
-                    else:
-                        short_text_field.is_last = True
-
+                
                 if taxon_profile:
                     content = TaxonText.objects.filter(taxon_text_type=text_type,
                                     taxon_profile=taxon_profile).first()
@@ -185,7 +160,7 @@ class ManageTaxonTextsForm(LocalizeableForm):
                         if settings.APP_KIT_ENABLE_TAXON_PROFILES_LONG_TEXTS == True:
                             long_text_field.initial = content.long_text
                             long_text_field.taxon_text = content
-    
+            
     
     def get_long_text_form_field_name(self, text_type):
 
