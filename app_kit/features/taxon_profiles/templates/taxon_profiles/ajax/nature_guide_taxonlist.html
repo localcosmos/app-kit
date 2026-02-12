@@ -8,14 +8,14 @@
 					{% get_taxon_profile meta_app meta_node.taxon as profile %}
 					{% if profile %}
 						<a href="{% url 'manage_taxon_profile' meta_app.id profile.id %}">
-							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
+							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }}</i> {% if meta_node.taxon_author %}{{ meta_node.taxon_author }}{% endif %}
 						</a>
 						{% if profile.publication_status == 'draft' %}
 							<span class="badge badge-warning">{% trans 'draft' %}</span>
 						{% endif %}
 					{% else %}
 						<a href="{% url 'create_taxon_profile' meta_app.id generic_content.id meta_node.taxon.taxon_source meta_node.taxon.name_uuid %}" class="xhr" ajax-target="ModalContent">
-							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }} {{ meta_node.taxon_author }}</i>
+							{{ meta_node.name }} <i>{{ meta_node.taxon_latname }}</i> {% if meta_node.taxon_author %}{{ meta_node.taxon_author }}{% endif %}
 						</a>
 						<span class="badge badge-warning">{% trans 'no profile' %}</span>
 					{% endif %}

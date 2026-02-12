@@ -3479,7 +3479,7 @@ msgstr "Es wird empfohlen zuerst eine taxonomische Referenz hinzuzufügen"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:144
 msgid "Taxon Profiles with no occurrence in any nature guide"
-msgstr "Artensteckbriefe deren Arten nich in Naturführern vorkommen"
+msgstr "Artensteckbriefe deren Arten nicht in Naturführern vorkommen"
 
 #: features/taxon_profiles/templates/taxon_profiles/manage_taxon_profiles.html:148
 msgid "not included in app"

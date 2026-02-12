@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    'localcosmos-server==0.24.11',
+    'localcosmos-server==0.24.12',
     'localcosmos-cordova-builder==0.9.6',
     'django-tenants==3.7.0',
     'django-cleanup==9.0.0',
@@ -20,7 +20,7 @@ install_requires = [
 
 setup(
     name='localcosmos_app_kit',
-    version='0.9.18',
+    version='0.10.2',
     description='LocalCosmos App Kit. Web Portal to build Android and iOS apps',
     long_description=long_description,
     long_description_content_type="text/markdown",

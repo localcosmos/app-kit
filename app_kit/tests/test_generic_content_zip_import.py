@@ -511,7 +511,7 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         # Invalid image URL extension
         importer.validate_external_media_type_image({'url': 'https://example.com/pic.bmp'}, importer.external_media_sheet_name, 2)
 
-        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid image format in URL: .bmp. Valid formats are: .jpg, .jpeg, .png, .webp, .gif', importer.errors)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid image format in URL path: .bmp. Valid formats are: .jpg, .jpeg, .png, .webp, .gif', importer.errors)
 
     @test_settings
     def test_validate_external_media_type_audio_pdf(self):
@@ -546,8 +546,19 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         importer.validate_external_media_type_website({'url': 'https://example.com/some/path?query=x'}, importer.external_media_sheet_name, 2)
         # Valid: domain-only with TLD
         importer.validate_external_media_type_website({'url': 'https://example.com'}, importer.external_media_sheet_name, 2)
+        # Valid: dynamic page ending with .php
+        importer.validate_external_media_type_website({'url': 'https://www.scielo.cl/scielo.php?pid=S0718-58392023000200127&script=sci_arttext'}, importer.external_media_sheet_name, 2)
+        # Valid: markup page .html
+        importer.validate_external_media_type_website({'url': 'https://example.com/index.html'}, importer.external_media_sheet_name, 2)
+        # Valid: Microsoft stack page .aspx
+        importer.validate_external_media_type_website({'url': 'https://example.com/page.aspx?id=42'}, importer.external_media_sheet_name, 2)
 
         self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid website format in URL: https://example.com/image.jpg. URL should not end with a file extension.', importer.errors)
+        # Ensure the .php page was not flagged
+        self.assertFalse(any('scielo.php' in e for e in importer.errors))
+        # Ensure .html and .aspx were not flagged
+        self.assertFalse(any('index.html' in e for e in importer.errors))
+        self.assertFalse(any('page.aspx' in e for e in importer.errors))
 
     @test_settings
     def test_validate_external_media_type_file(self):
@@ -560,7 +571,46 @@ class TestGenericContentZipImporter(WithUser, WithMetaApp, TenantTestCase):
         # Valid: has file extension
         importer.validate_external_media_type_file({'url': 'https://example.com/download.zip'}, importer.external_media_sheet_name, 2)
 
-        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid file format in URL: https://example.com/download/. URL has to end with a file extension.', importer.errors)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid file format in URL: https://example.com/download/. URL path must end with a file extension.', importer.errors)
+
+    @test_settings
+    def test_external_media_fragment_detection(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        importer.errors = []
+
+        # Image with fragment (e.g., Wikimedia Commons viewer link)
+        img_url = 'https://commons.wikimedia.org/wiki/Category:Ascophyllum_nodosum#/media/File:Ascophyllum_nodosum_natural_range.jpg'
+        importer.validate_external_media_type_image({'url': img_url}, importer.external_media_sheet_name, 2)
+        # Expect fragment error and possibly path-format error (extension not in PATH)
+        self.assertTrue(any('fragment (#)' in e for e in importer.errors))
+        self.assertTrue(any('Invalid image format in URL path:' in e for e in importer.errors))
+
+        # Reset errors for each category
+        importer.errors = []
+
+        # File with fragment
+        file_url = 'https://example.com/docs/file.pdf#section1'
+        importer.validate_external_media_type_file({'url': file_url}, importer.external_media_sheet_name, 2)
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid file URL: contains a fragment (#). Link must point directly to the file.', importer.errors)
+
+        # mp3 with fragment
+        importer.errors = []
+        mp3_url = 'https://example.com/audio/song.mp3#t=10'
+        importer.validate_external_media_type_mp3({'url': mp3_url}, importer.external_media_sheet_name, 2)
+        # Fragment error
+        self.assertTrue(any('fragment (#)' in e for e in importer.errors))
+        # Endswith check fails due to fragment
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid mp3 format in URL: https://example.com/audio/song.mp3#t=10. URL has to end with .mp3', importer.errors)
+
+        # wav with fragment
+        importer.errors = []
+        wav_url = 'https://example.com/audio/clip.wav#t=10'
+        importer.validate_external_media_type_wav({'url': wav_url}, importer.external_media_sheet_name, 2)
+        # Fragment error
+        self.assertTrue(any('fragment (#)' in e for e in importer.errors))
+        # Endswith check fails due to fragment
+        self.assertIn('[Generic Content.xlsx][Sheet:External Media][cell:A3] Invalid wav format in URL: https://example.com/audio/clip.wav#t=10. URL has to end with .wav', importer.errors)
         
         # real world test
         # algaebase entry is : Desmarestia viridis (O.F.Müller) J.V.Lamouroux 1813

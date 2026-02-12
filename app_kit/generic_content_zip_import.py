@@ -236,6 +236,23 @@ class GenericContentZipImporter:
                 break
         
         return image_data
+
+    # --- URL fragment helpers ---
+    def url_has_fragment(self, url):
+        """Return True if the URL contains a fragment (#...). Safe fallback to string check on parse errors."""
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse((url or '').strip())
+            return bool(parsed.fragment)
+        except Exception:
+            return '#' in (url or '')
+
+    def report_fragment_error(self, sheet_name, row_index, resource='file'):
+        """Add a standardized error when a URL contains a fragment for a direct-link resource."""
+        message = _('Invalid %(resource)s URL: contains a fragment (#). Link must point directly to the %(resource)s.') % {
+            'resource': resource,
+        }
+        self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
     
     def validate_cell_value_content_types(self):
         sheet_names_to_validate = [self.generic_content.name, self.images_sheet_name, self.external_media_sheet_name] + self.required_sheet_names
@@ -586,14 +603,43 @@ class GenericContentZipImporter:
         image, youTube, vimeo, mp3, wav, pdf, website, file
     '''
     def validate_external_media_type_image(self, external_media_data, sheet_name, row_index):
-        # check that the url ends with a valid image extension
-        image_extension = os.path.splitext(external_media_data['url'])[1].lower()
+        # Require a direct image file URL without fragments
+        url = (external_media_data.get('url') or '').strip()
+        if not url:
+            message = _('Invalid image URL: empty value')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            path = parsed.path or ''
+        except Exception:
+            message = _('Invalid image URL: %(cell_value)s') % {
+                'cell_value': url,
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        if parsed.scheme not in ('http', 'https'):
+            message = _('Invalid image URL (scheme must be http/https): %(cell_value)s') % {
+                'cell_value': url,
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        # Only accept extensions present in the PATH (not in fragment)
+        image_extension = os.path.splitext(path)[1].lower() if path else ''
         if image_extension not in VALID_IMAGE_FORMATS:
-            message = _('Invalid image format in URL: %(cell_value)s. Valid formats are: %(valid_formats)s') % {
-                'cell_value': image_extension,
+            message = _('Invalid image format in URL path: %(cell_value)s. Valid formats are: %(valid_formats)s') % {
+                'cell_value': image_extension or 'none',
                 'valid_formats': ', '.join(VALID_IMAGE_FORMATS),
             }
             self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+
+        # Fragment indicates this is not a direct file link (e.g., Wikimedia viewer)
+        if self.url_has_fragment(url):
+            self.report_fragment_error(sheet_name, row_index, resource='image file')
         
         
     
@@ -697,17 +743,23 @@ class GenericContentZipImporter:
     
     def validate_external_media_type_mp3(self, external_media_data, sheet_name, row_index):
         # has to end with .mp3
-        if not external_media_data['url'].lower().endswith('.mp3'):
+        url = (external_media_data.get('url') or '').strip()
+        if self.url_has_fragment(url):
+            self.report_fragment_error(sheet_name, row_index, resource='audio file')
+        if not url.lower().endswith('.mp3'):
             message = _('Invalid mp3 format in URL: %(cell_value)s. URL has to end with .mp3') % {
-                'cell_value': external_media_data['url'],
+                'cell_value': url,
             }
             self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
     
     def validate_external_media_type_wav(self, external_media_data, sheet_name, row_index):
         # has to end with .wav
-        if not external_media_data['url'].lower().endswith('.wav'):
+        url = (external_media_data.get('url') or '').strip()
+        if self.url_has_fragment(url):
+            self.report_fragment_error(sheet_name, row_index, resource='audio file')
+        if not url.lower().endswith('.wav'):
             message = _('Invalid wav format in URL: %(cell_value)s. URL has to end with .wav') % {
-                'cell_value': external_media_data['url'],
+                'cell_value': url,
             }
             self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
     
@@ -721,7 +773,7 @@ class GenericContentZipImporter:
     
     
     def validate_external_media_type_website(self, external_media_data, sheet_name, row_index):
-        # Only flag as invalid if the PATH (not the domain) ends with a file extension
+        # Flag as invalid only when the PATH ends with known media/document/archive extensions
         try:
             from urllib.parse import urlparse
             parsed = urlparse((external_media_data.get('url') or '').strip())
@@ -729,21 +781,68 @@ class GenericContentZipImporter:
         except Exception:
             path = ''
 
-        # Detect file-like endings in path (e.g., /file.jpg, /index.html)
-        if re.search(r'/[^/]+\.[a-zA-Z0-9]{2,5}$', path):
-            message = _('Invalid website format in URL: %(cell_value)s. URL should not end with a file extension.') % {
-                'cell_value': external_media_data['url'],
+        ext = os.path.splitext(path)[1].lower() if path else ''
+        if ext:
+            # Whitelist of typical webpage script/markup extensions
+            whitelist_extensions = {
+                '.html', '.htm', '.php', '.asp', '.aspx', '.jsp', '.xhtml', '.cfm'
             }
-            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+
+            # Known non-webpage (download/media) extensions
+            banned_extensions = set(
+                VALID_IMAGE_FORMATS + ['.svg', '.tif', '.tiff', '.bmp']
+            ) | set([
+                # audio
+                '.mp3', '.wav', '.ogg', '.flac', '.m4a',
+                # video
+                '.mp4', '.webm', '.ogv', '.mov', '.avi', '.mkv', '.m4v',
+                # documents
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.csv', '.rtf',
+                # archives
+                '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz',
+            ])
+
+            # Allow whitelisted webpage extensions
+            if ext in whitelist_extensions:
+                return
+
+            # Reject known non-webpage extensions, and default-reject unknown extensions
+            if ext in banned_extensions or ext not in whitelist_extensions:
+                message = _('Invalid website format in URL: %(cell_value)s. URL should not end with a file extension.') % {
+                    'cell_value': external_media_data['url'],
+                }
+                self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
     
     
     def validate_external_media_type_file(self, external_media_data, sheet_name, row_index):
-        # file endings: check if the url has a file extension
-        if not re.search(r'\.[a-zA-Z0-9]{2,5}($|\?)', external_media_data['url']):
-            message = _('Invalid file format in URL: %(cell_value)s. URL has to end with a file extension.') % {
-                'cell_value': external_media_data['url'],
+        # Require a direct file URL with an extension in the PATH and no fragment
+        url = (external_media_data.get('url') or '').strip()
+        if not url:
+            message = _('Invalid file URL: empty value')
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            path = parsed.path or ''
+            fragment = parsed.fragment or ''
+        except Exception:
+            message = _('Invalid file URL: %(cell_value)s') % {
+                'cell_value': url,
             }
             self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+            return
+
+        file_extension = os.path.splitext(path)[1]
+        if not file_extension:
+            message = _('Invalid file format in URL: %(cell_value)s. URL path must end with a file extension.') % {
+                'cell_value': url,
+            }
+            self.add_cell_error(self.workbook_filename, sheet_name, 'A', row_index, message)
+
+        if fragment or self.url_has_fragment(url):
+            self.report_fragment_error(sheet_name, row_index, resource='file')
     
     
     def add_cell_error(self, filename, sheet_name, column, row, message):
