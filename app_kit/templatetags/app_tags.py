@@ -12,10 +12,11 @@ from app_kit.models import MetaApp, AppKitExternalMedia
 from localcosmos_server.models import EXTERNAL_MEDIA_TYPES, ServerImageStore
 
 from app_kit.features.backbonetaxonomy.models import TaxonRelationship, TaxonRelationshipType
-
+from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon, ModelWithTaxon
 
 from django.contrib.contenttypes.models import ContentType
 from taxonomy.lazy import LazyTaxon
+from taxonomy.utils import get_subclasses
 
 
 @register.filter
@@ -111,6 +112,34 @@ def clean_taxa(lazy_taxon_list):
     return cleaned
 
 
+
+def get_occurrence(occurrence):
+    occurrence_class_name = occurrence.__class__.__name__
+    if occurrence_class_name == 'MetaNode' or occurrence_class_name == 'NatureGuidesTaxonTree':
+        return str(occurrence.nature_guide)
+    else:
+        return str(occurrence.__class__.__name__)
+
+@register.simple_tag
+def get_taxon_occurrences(lazy_taxon):
+
+    occurrences = []
+    
+    for Subclass in get_subclasses(ModelWithRequiredTaxon):        
+        occurrence_candidate = Subclass.objects.filter(taxon_source=lazy_taxon.taxon_source, name_uuid=lazy_taxon.name_uuid).first()
+        if occurrence_candidate:
+            occurrence = get_occurrence(occurrence_candidate)
+            occurrences.append(occurrence)
+
+    for Subclass in get_subclasses(ModelWithTaxon):
+        occurrence_candidate = Subclass.objects.filter(taxon_source=lazy_taxon.taxon_source, name_uuid=lazy_taxon.name_uuid).first()
+        if occurrence_candidate:
+            occurrence = get_occurrence(occurrence_candidate)
+            occurrences.append(occurrence)
+
+    return list(set(occurrences))
+
+
 @register.filter
 def taxon_origin(lazy_taxon):
 
@@ -124,6 +153,14 @@ def taxon_origin(lazy_taxon):
 
     return origin
     
+
+@register.filter
+def taxon_is_backbone_removable(lazy_taxon):
+
+    occurrences = get_taxon_occurrences(lazy_taxon)
+    if 'BackboneTaxa' in occurrences:
+        return True
+    return False
 
 
 @register.filter

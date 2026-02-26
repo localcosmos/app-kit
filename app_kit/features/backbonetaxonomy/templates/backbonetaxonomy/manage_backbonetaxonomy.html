@@ -113,7 +113,10 @@
 		    onClick: function(context) {
 		        $("#taxonloader").show();
 				$("#taxonlist").hide();
-		    }
+		    },
+			onCompleted: function(context) {
+				ajaxify("taxonlist");
+			}
 		});
 
 		var baseURL = "{% url 'manage_backbonetaxonomy' meta_app.id content_type.id generic_content.id %}";
