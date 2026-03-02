@@ -1,9 +1,12 @@
 {
     "burgerMenu": {
-        "previewMessage": "App im preview modus. Navigationen werden deshalb nicht vollst\u00e4ndig angezeigt.",
+        "previewMessage": "App im preview modus. Navigationen werden deshalb nicht vollständig angezeigt.",
         "termsOfUse": "Nutzungsbedingungen",
         "legalNotice": "Impressum",
-        "privacyPolicy": "Datenschutzerkl\u00e4rung"
+        "privacyPolicy": "Datenschutzerklärung",
+        "login": "Login",
+        "myAccount": "Konto",
+        "privacySettings": "Datenschutz-Einstellungen"
     },
     "navigation": {
         "Home": "Start",
@@ -11,8 +14,10 @@
         "TaxonProfiles": "Arten",
         "Map": "Karte",
         "Glossary": "Glossar",
-        "TemplateContent": "Info",
+        "TemplateContent": "Lesen",
         "Observations": "Beobachtungen",
+        "MyObservations": "Meine Beobachtungen",
+        "NewObservation": "Neue Beobachtung",
         "More": "Mehr"
     },
     "pageTitles": {
@@ -20,8 +25,14 @@
         "TaxonProfiles": "Arten",
         "ObservationsList": "Beobachtungen",
         "Glossary": "Glossar",
-        "NatureGuidesList": "Bestimmungsschl\u00fcssel",
-        "NatureGuide": "Bestimmung"
+        "NatureGuidesList": "Bestimmungsschlüssel",
+        "NatureGuide": "Bestimmung",
+        "Register": "Registrieren",
+        "ObservationsHub": "Beobachtungen",
+        "MyObservations": "Meine Beobachtungen",
+        "EditObservation": "Beobachtung bearbeiten",
+        "ObservationDetail": "Beobachtung",
+        "PrivacySettings": "Datenschutzeinstellungen"
     },
     "taxonProfiles": {
         "Groups": "Gruppen",
@@ -32,10 +43,98 @@
         "Images": "Bilder",
         "Description": "Beschreibung",
         "Traits": "Merkmale",
-        "Similar": "\u00c4hnliche",
-        "SimilarSpecies": "\u00c4hnliche Arten",
+        "Similar": "Ähnliche",
+        "SimilarSpecies": "Ähnliche Arten",
         "Observations": "Beobachtungen",
-        "noDescription": "Keine Beschreibung vorhanden"
+        "noDescription": "Keine Beschreibung vorhanden",
+        "Profile": "Steckbrief",
+        "RelatedSpecies": "Beziehungen",
+        "RelatedSpeciesTitle": "Beziehungen zu anderen Arten",
+        "TemplateContents": "Storys",
+        "Morphotypes": "Morphotypen"
+    },
+    "natureGuide": {
+        "Evaluation": "Auswertung",
+        "NoResultYet": "Noch kein Ergebnis",
+        "rangeSlider": {
+            "off": "kein Wert gewählt",
+            "clear": "zurücksetzen"
+        }
+    },
+    "glossary": {
+        "Glossary": "Glossar",
+        "NoGlossaryAvailable": "Kein Glossar vorhanden.",
+        "Search": "Suche"
+    },
+    "auth": {
+        "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.",
+        "userFetchFailed": "Benutzerdaten konnten nicht abgerufen werden.",
+        "unexpectedLoginError": "Beim Anmelden ist ein unerwarteter Fehler aufgetreten.",
+        "clearAuthFailed": "Authentifizierungsdaten konnten nicht gelöscht werden.",
+        "refreshFailed": "Authentifizierung konnte nicht erneuert werden.",
+        "logoutFailed": "Abmeldung konnte nicht ordnungsgemäß durchgeführt werden."
+    },
+    "MyAccount": {
+        "accountDetails": "Konto Informationen",
+        "editSuccess": "Dein Konto wurde erfolgreich aktualisiert.",
+        "deleteAccountTitle": "Konto löschen",
+        "deleteAccount": "Konto löschen",
+        "confirmDelete": "Löschen bestätigen",
+        "deleteWarning": "Warnung: Das Löschen deines Kontos entfernt alle deine Daten dauerhaft.",
+        "changePasswordTitle": "Passwort ändern",
+        "changePassword": "Passwort ändern",
+        "deleteSuccess": "Dein Konto wurde erfolgreich gelöscht.",
+        "changePicture": "Profilbild ändern",
+        "editPicture": "Profilbild bearbeiten",
+        "addProfilePicture": "Profilbild hinzufügen",
+        "deleteProfilePicture": "Profilbild löschen",
+        "invalidPictureFile": "Ungültige Bilddatei. Bitte wähle eine gültige Bilddatei aus.",
+        "confirmDeletePicture": "Bist du sicher, dass du dein Profilbild löschen möchtest?",
+        "deletePictureWarning": "Das Löschen deines Profilbildes entfernt es dauerhaft. Du kannst später ein neues hinzufügen."
+    },
+    "passwordReset": {
+        "forgotPassword": "Hast du dein Passwort vergessen?",
+        "resetPassword": "Passwort zurücksetzen",
+        "title": "Passwort zurücksetzen",
+        "intro": "Passwort vergessen? Gib unten deine E-Mail-Adresse ein, und wir schicken dir Anweisungen, wie du ein neues Passwort setzen kannst.",
+        "emailSent": "Wir haben dir Anweisungen geschickt, wie du ein neues Passwort setzen kannst, falls ein Account für diese E-Mail-Adresse existiert. Die E-Mail sollte in Kürze ankommen."
+    },
+    "registration": {
+        "title": "Konto erstellen",
+        "NoAccountYet": "Noch kein Konto?",
+        "RegisterHere": "Registriere dich hier",
+        "register": "Registrieren",
+        "successTitle": "Registrierung erfolgreich",
+        "successText": "Dein Konto wurde erfolgreich erstellt und du wurdest angemeldet.",
+        "goToStart": "Zur Startseite",
+        "notLoggedIn": "Du bist nicht angemeldet."
+    },
+    "observationForm": {
+        "formLoadErrorMessage": "Fehler beim Laden des Beobachtungsformulars",
+        "formNotFound": "Beobachtungsformular nicht gefunden",
+        "submit": "Senden",
+        "selectLocation": "Ort auswählen",
+        "pictures": "Bilder",
+        "uploadingImages": "Lade Bilder hoch",
+        "waitForImageUpload" : "Bitte warte, bis alle Bilder hochgeladen worden sind.",
+        "removePicture": "Bild entfernen",
+        "reallyRemovePicture": "Möchtest du dieses Bild wirklich entfernen?",
+        "editSuccess": "Deine Änderungen wurden erfolgreich gespeichert",
+        "imageLicenceRemark": "Deine Fotos werden unter der Lizenz CC BY-NC-ND 4.0 veröffentlicht. Bildautor:in entspricht Melder:in.",
+        "changeObservationForm": "Formular wechseln",
+        "manualInput": "Manuelle Eingabe",
+        "setPosition": "Position setzen",
+        "NoObservationFormsAvailable": "Keine Beobachtungsformulare verfügbar",
+        "pictureLicenceRemark": "Deine Fotos werden unter der Lizenz CC BY-NC-ND 4.0 veröffentlicht. Bildautor:in entspricht Melder:in.",
+        "save": "speichern",
+        "saveSuccess": "Beobachtung erfolgreich gespeichert"
+    },
+    "observationDetail": {
+        "reportedBy": "gemeldet von",
+        "details": "ansehen"
+    },
+    "map": {
+        "clusterLoadError": "Fehler beim Laden der Cluster"
     },
     "legal" : {
         "loadingLicences": "Lade Lizenzen",
@@ -43,7 +142,105 @@
         "linkToSourceImage": "Quellbild",
         "noLicenceFound": "Keine Lizenz gefunden"
     },
+    "privacySettings" : {
+        "vimeoTitle": "Vimeo Videos",
+        "vimeoDescription": "Wir verwenden Videos des Anbieters Vimeo (Vimeo.com, Inc., 555 West 18th Street, New York, New York 10011, USA), um Videoinhalte bereitzustellen. Wenn du diese Option aktivierst, wird eine Verbindung zu den Servern von Vimeo hergestellt. Dabei wird dem Vimeo-Server mitgeteilt, welche unserer Seiten du besucht hast. Zudem kann Vimeo Cookies auf deinem Endgerät speichern und Daten (z. B. IP-Adresse, Geräteinformationen, Nutzungsverhalten) verarbeiten. Eine Datenübermittlung in die USA ist möglich. Weitere Informationen zur Datenverarbeitung durch Vimeo findest du in der <a href=\"https://vimeo.com/legal/privacy/policy\" target=\"_blank\">Datenschutzerklärung von Vimeo</a>.",
+        "vimeoDescriptionShort": "Dieses Video wird von Vimeo bereitgestellt. Beim Aktivieren wird eine Verbindung zu Vimeo hergestellt und dabei können personenbezogene Daten (z. B. IP-Adresse) übermittelt werden. Durch Aktivieren stimmst du der Datenverarbeitung durch Vimeo zu. <a href=\"https://vimeo.com/legal/privacy/policy\" target=\"_blank\">Datenschutzerklärung von Vimeo</a>.",
+        "vimeoToggleLabel": "Vimeo Videos aktivieren",
+        "youtubeToggleLabel": "YouTube Videos aktivieren",
+        "rejectText": "Du kannst deine Zustimmung jederzeit in den <a href=\"/privacy-settings\">Datenschutzeinstellungen</a> widerrufen.",
+        "youtubeTitle": "YouTube Videos",
+        "youtubeDescription": "Wir verwenden Videos des Anbieters YouTube (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland), um Videoinhalte bereitzustellen. Wenn du diese Option aktivierst, wird eine Verbindung zu den Servern von YouTube hergestellt. Dabei wird dem YouTube-Server mitgeteilt, welche unserer Seiten du besucht hast. Zudem kann YouTube Cookies auf deinem Endgerät speichern und Daten (z. B. IP-Adresse, Geräteinformationen, Nutzungsverhalten) verarbeiten. Eine Datenübermittlung in die USA ist möglich. Weitere Informationen zur Datenverarbeitung durch YouTube findest du in der <a href=\"https://policies.google.com/privacy\" target=\"_blank\">Datenschutzerklärung von Google</a>.",
+        "youtubeDescriptionShort": "Dieses Video wird von YouTube bereitgestellt. Beim Aktivieren wird eine Verbindung zu YouTube hergestellt und dabei können personenbezogene Daten (z. B. IP-Adresse) übermittelt werden. Durch Aktivieren stimmst du der Datenverarbeitung durch YouTube zu. <a href=\"https://policies.google.com/privacy\" target=\"_blank\">Datenschutzerklärung von Google</a>."
+    },
+    "templateContent" : {
+        "linkedTaxonProfiles": "Arten dieser Story"
+    },
+    "user": {
+        "username": "Benutzername",
+        "email": "E-Mail",
+        "email2": "E-Mail (wiederholen)",
+        "password": "Passwort",
+        "password2": "Passwort (wiederholen)",
+        "firstName": "Vorname",
+        "lastName": "Nachname"
+    },
+    "validation" : {
+        "invalid": "Der Wert ist ungültig",
+        "required": "Dieses Feld wird benötigt",
+        "email": "Ungültige Email",
+        "passwordMismatch": "Passwörter stimmen nicht überein",
+        "emailMismatch": "E-Mails stimmen nicht überein",
+        "min": "Es werden mindestens {{min}} Zeichen benötigt",
+        "max": "Es sind maximal {{max}} Zeichen erlaubt",
+        "namedMinNumber": "{{name}} muss mindestens {{min}} sein",
+        "namedMaxNumber": "{{name}} darf maximal {{max}} sein",
+        "requiredField": "Dieses Feld ist erforderlich",
+        "integer": "Eine ganze Zahl ist erforderlich",
+        "numberTypeError": "Eine Zahl ist erforderlich",
+        "invalidDateError": "Datum und Uhrzeit sind erforderlich",
+        "maxDateErrorMessage": "Zukünfitge Zeitpunkte sind nicht erlaubt",
+        "formHasErrors": "Die von dir eingegebenen Daten sind ungültig. Bitte überprüfe dein Formular.",
+	"formHasInputErrors": "Das Formular enthält Fehler. Bitte überprüfe deine Eingaben."
+    },
+    "geolocation": {
+        "off": "GPS ausgeschaltet",
+        "waitingForPosition": "Warte auf GPS",
+        "permissionDenied": "Manuelle Eingabe notwendig",
+        "setManually": "GPS-Fehler. Bitte gib die Position manuell ein.",
+        "selectLocationOnMap": "Bitte wähle den Standort auf der Karte",
+        "savePosition": "Position für 24h speichern"
+    },
+    "search": {
+        "noResults": "keine Ergebnisse",
+        "searchGeoname": "Ort suchen"
+    },
     "NoContent": "Kein Inhalt vorhanden.",
     "Observations": "Beobachtungen",
-    "Have you heard of it?": "Kennst du schon?"
+    "Today's Wonder": "Heutiges Wunder",
+    "Have you heard of it?": "Kennst du schon?",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "close": "Schließen",
+    "delete": "Löschen",
+    "remove": "Entfernen",
+    "Login": "Login",
+    "Logout": "Abmelden",
+    "logout": "Abmelden",
+    "common": {
+        "goHome": "Zurück zur Startseite",
+        "goBack": "Zurück"
+    },
+    "permissionDenied": {
+        "title": "Zugriff verweigert",
+        "message": "Du hast nicht die erforderlichen Berechtigungen, um auf diese Seite zuzugreifen.",
+        "description": "Bitte kontaktiere den Administrator, wenn du denkst, dass dies ein Fehler ist."
+    },
+    "myObservations": {
+        "unsyncedObservations": "Nicht synchronisierte Beobachtungen",
+        "reallyDeleteObservation": "Möchtest du diese Beobachtung wirklich löschen?",
+        "deleteWarning": "Warnung: Das Löschen einer Beobachtung entfernt sie dauerhaft",
+        "goToMyObservations": "zu meinen Beobachtungen",
+        "deleteSuccess": "Beobachtung erfolgreich gelöscht",
+        "serverObservations": "Meine Beobachtungen",
+        "noObservationsYet": "Noch keine Beobachtungen vorhanden."
+    },
+    "network" : {
+        "noNetworkMessage": "Keine Datenverbindung vorhanden"
+    },
+    "sync": {
+        "syncObservations": "Beobachtungen synchronisieren",
+        "foundObservations": "Beobachtungen: {{count}}",
+        "startSync": "Synchronisation starten",
+        "syncingObservations": "Synchronisiere Beobachtungen",
+        "currentTask": "Lade hoch: {{currentTask}}",
+        "syncSuccess": "✅ Synchronisation erfolgreich",
+        "syncPartialSuccess": "⚠️ Synchronisation teilweise erfolgreich",
+        "syncedCount": "Erfolgreich synchronisiert: {{count}}",
+        "syncErrorCount": "{{count}} Elemente konnten nicht synchronisiert werden",
+        "syncErrors": "Fehler bei der Synchronisation:",
+        "proceedWithSync": "Mit der Synchronisation fortfahren",
+        "networkWarningMessage": "Stelle sicher, dass du eine gute Internetverbindung hast, bevor du fortfährst. Die Synchronisation kann große Datenmengen übertragen.",
+        "noUnsyncedObservations": "Keine nicht synchronisierten Beobachtungen gefunden."
+    }
 }

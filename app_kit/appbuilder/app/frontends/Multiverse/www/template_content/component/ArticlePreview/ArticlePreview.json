@@ -1,0 +1,25 @@
+{
+    "templateName" : "ArticlePreview",
+    "type": "component",
+    "version" : 1,
+    "identifierContent": "article",
+    "contents": {
+      "image": {
+        "type": "image",
+        "helpText": "square image"
+      },
+      "abstract" : {
+        "type": "text"
+      },
+      "article": {
+        "type": "templateContentLink",
+        "required": true
+      },
+      "linkName": {
+        "type": "text",
+        "required": true,
+        "widget": "TextInput",
+        "helpText": "Name of the link to the article"
+      }
+    }
+  }

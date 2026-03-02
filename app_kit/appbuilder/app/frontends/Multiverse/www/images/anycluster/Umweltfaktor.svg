@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="7.3894458mm"
+   height="10.982319mm"
+   viewBox="0 0 26.183076 38.913728"
+   id="svg5278"
+   version="1.1"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   sodipodi:docname="Umweltfaktor.svg"
+   inkscape:export-filename="Umweltfaktor.png"
+   inkscape:export-xdpi="96.245377"
+   inkscape:export-ydpi="96.245377"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs5280" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="15.839192"
+     inkscape:cx="0.2841054"
+     inkscape:cy="30.967489"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     showborder="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="2560"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="32"
+     inkscape:window-maximized="1"
+     inkscape:showpageshadow="2"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1" />
+  <metadata
+     id="metadata5283">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-338.33703,-464.33391)">
+    <path
+       sodipodi:nodetypes="cccsc"
+       inkscape:connector-curvature="0"
+       id="path4902-9-6"
+       d="m 364.22002,477.42532 c 0.0581,8.894 -8.89417,19.7426 -12.7916,25.2925 -3.77013,-5.623 -12.69906,-16.4953 -12.79158,-25.2925 0,-7.0646 5.72699,-12.7916 12.79158,-12.7916 7.06461,0 12.7916,5.727 12.7916,12.7916 z"
+       style="display:inline;fill:#4b91b1;fill-opacity:1;stroke:#ffffff;stroke-width:0.599612;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       inkscape:export-filename="/home/tom/localcosmos_workspace/lclogo-text.png"
+       inkscape:export-xdpi="86"
+       inkscape:export-ydpi="86" />
+    <g
+       id="g2"
+       transform="matrix(0.21748837,0,0,0.21748837,269.08509,367.65228)"
+       style="stroke-width:7.39442;stroke-dasharray:none">
+      <path
+         style="fill:none;stroke:#ffffff;stroke-width:7.39442;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+         d="m 344.09946,491.95106 c 37.85483,-28.83279 34.16211,14.47059 70.26196,-2.07979"
+         id="path1"
+         sodipodi:nodetypes="cc" />
+      <path
+         style="fill:none;stroke:#ffffff;stroke-width:7.39442;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+         d="m 342.86046,509.26073 c 37.85483,-28.83279 34.16211,14.47058 70.26196,-2.07979"
+         id="path1-3"
+         sodipodi:nodetypes="cc" />
+      <path
+         style="fill:none;stroke:#ffffff;stroke-width:7.39442;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+         d="m 342.86046,526.57039 c 37.85483,-28.83279 34.16211,14.47059 70.26196,-2.07979"
+         id="path1-3-6"
+         sodipodi:nodetypes="cc" />
+    </g>
+  </g>
+</svg>

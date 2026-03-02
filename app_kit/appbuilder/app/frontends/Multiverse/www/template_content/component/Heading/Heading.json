@@ -1,0 +1,17 @@
+{
+  "templateName" : "Heading",
+  "type": "component",
+  "icon": "heading",
+  "version": 1,
+  "identifierContent": "heading",
+  "contents": {
+    "heading": {
+      "type": "text",
+      "widget": "TextInput",
+      "restrictions": {
+        "maxLength": 80
+      },
+      "required": true
+    }
+  }
+}

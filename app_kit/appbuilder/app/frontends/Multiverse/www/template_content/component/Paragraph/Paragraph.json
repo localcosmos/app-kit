@@ -1,0 +1,26 @@
+{
+  "templateName" : "Paragraph",
+  "type": "component",
+  "icon": "text",
+  "version" : 1,
+  "identifierContent": "heading",
+  "contents": {
+    "heading": {
+      "type": "text",
+      "widget": "TextInput",
+      "restrictions": {
+        "maxLength": 80
+      },
+      "required": false
+    },
+    "text": {
+      "type": "text",
+      "widget": "Textarea",
+      "format": "layoutable-full",
+      "required": false
+    },
+    "image": {
+      "type": "image"
+    }
+  }
+}

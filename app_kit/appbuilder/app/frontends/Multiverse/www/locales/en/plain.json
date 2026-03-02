@@ -3,7 +3,10 @@
         "previewMessage": "App in preview mode. Navigations are available in built apps only.",
         "termsOfUse": "Terms of use",
         "legalNotice": "Legal notice",
-        "privacyPolicy": "Privacy policy"
+        "privacyPolicy": "Privacy policy",
+        "login": "Login",
+        "myAccount": "My Account",
+        "privacySettings": "Privacy Settings"
     },
     "navigation": {
         "Home": "Start",
@@ -11,8 +14,10 @@
         "TaxonProfiles": "Species",
         "Map": "Map",
         "Glossary": "Glossary",
-        "TemplateContent": "Info",
+        "TemplateContent": "Read",
         "Observations": "Observations",
+        "MyObservations": "My Observations",
+        "NewObservation": "New Observation",
         "More": "More"
     },
     "pageTitles" : {
@@ -21,7 +26,13 @@
         "ObservationsList": "Observations",
         "Glossary": "Glossary",
         "NatureGuidesList": "Identification Keys",
-        "NatureGuide": "Identification"
+        "NatureGuide": "Identification",
+        "Register": "Register",
+	    "PrivacySettings": "Privacy Settings",
+        "ObservationsHub": "Observations",
+        "MyObservations": "My Observations",
+        "EditObservation": "Edit Observation",
+        "ObservationDetail": "Observation"
     },
     "taxonProfiles" : {
         "Groups": "Groups",
@@ -32,18 +43,204 @@
         "Images": "Images",
         "Description": "Description",
         "Traits": "Traits",
-        "Similar": "Simliar",
+        "Similar": "Similar",
         "SimilarSpecies": "Similar species",
         "Observations": "Observations",
-        "noDescription": "No description available."
+        "noDescription": "No description available.",
+        "Profile": "Profile",
+        "RelatedSpecies": "Relations",
+        "RelatedSpeciesTitle": "Related species",
+        "TemplateContents": "Stories",
+        "Morphotypes": "Morphotypes"
     },
-    "legal" : {
-        "loadingLicences": "loading licences",
-        "imageBy": "Image",
-        "linkToSourceImage": "Source image",
-        "noLicenceFound": "no licence found"
+    "natureGuide" : {
+        "Evaluation": "Evaluation",
+        "NoResultYet": "No result yet",
+        "rangeSlider" : {
+            "off": "no value selected",
+            "clear": "clear"
+        }
+    },
+    "glossary" : {
+        "Glossary": "Glossary",
+        "NoGlossaryAvailable": "No glossary available.",
+        "Search": "Search"
+    },
+    "auth": {
+        "loginFailed": "Login failed. Please check your credentials.",
+        "userFetchFailed": "Failed to fetch user data.",
+        "unexpectedLoginError": "An unexpected error occurred during login.",
+        "clearAuthFailed": "Failed to clear authentication data.",
+        "refreshFailed": "Failed to refresh authentication.",
+        "logoutFailed": "Failed to logout cleanly."
+    },
+    "MyAccount" : {
+        "accountDetails": "Account Details",
+        "editSuccess": "Your account has been updated successfully.",
+        "deleteAccountTitle": "Delete Account",
+        "deleteAccount": "Delete Account",
+        "confirmDelete": "Confirm Deletion",
+        "deleteWarning": "Warning: Deleting your account will remove all your data permanently.",
+        "changePasswordTitle": "Change Password",
+        "changePassword": "Change Password",
+        "deleteSuccess": "Your account has been deleted successfully.",
+        "changePicture": "Change Profile Picture",
+        "editPicture": "Edit Profile Picture",
+        "addProfilePicture": "Add Profile Picture",
+        "deleteProfilePicture": "Delete Profile Picture",
+        "invalidPictureFile": "Invalid image file. Please select a valid image file.",
+        "confirmDeletePicture": "Are you sure you want to delete your profile picture?",
+        "deletePictureWarning": "Deleting your profile picture will remove it permanently. You can add a new one later."
+    },
+    "passwordReset": {
+        "forgotPassword": "Have you forgotten your password?",
+        "resetPassword": "Reset Password",
+        "title": "Password Reset",
+        "intro": "Forgot your password? Enter your email address below, and we will send you instructions on how to set a new password.",
+        "emailSent": "We have sent you instructions on how to set a new password, if an account with this email address exists. The email should arrive shortly."
+    },
+    "registration" : {
+        "title": "Create Account",
+        "NoAccountYet": "No account yet?",
+        "RegisterHere": "Create your account here",
+        "register": "Register",
+        "successTitle": "Registration successful",
+        "successText": "Your account has been created successfully and you have been logged in.",
+        "goToStart": "Go to start",
+        "notLoggedIn": "You are not logged in."
+    },
+    "legal": {
+        "loadingLicences": "Loading licenses",
+        "imageBy": "Image by",
+        "linkToSourceImage": "Link to source image",
+        "noLicenceFound": "No license found"
+    },
+    "privacySettings" : {
+        "vimeoTitle": "Vimeo Videos",
+        "vimeoDescription": "We use videos from the provider Vimeo (Vimeo.com, Inc., 555 West 18th Street, New York, New York 10011, USA) to provide video content. When you enable this option, a connection to Vimeo's servers will be established. This will inform the Vimeo server which of our pages you have visited. Additionally, Vimeo may store cookies on your device and process data (e.g., IP address, device information, usage behavior). Data transmission to the USA is possible. For more information about data processing by Vimeo, please see <a href=\"https://vimeo.com/legal/privacy/policy\" target=\"_blank\">Vimeo's Privacy Policy</a>.",
+        "vimeoDescriptionShort": "This video is provided by Vimeo. When you enable it, a connection to Vimeo will be established and personal data (e.g., IP address) may be transmitted. By enabling, you consent to data processing by Vimeo. <a href=\"https://vimeo.com/legal/privacy/policy\" target=\"_blank\">Vimeo's Privacy Policy</a>.",
+        "vimeoToggleLabel": "Enable Vimeo videos",
+        "youtubeToggleLabel": "Enable YouTube videos",
+        "rejectText": "You can withdraw your consent at any time in the privacy settings.",
+        "youtubeTitle": "YouTube Videos",
+        "youtubeDescription": "We use videos from the provider YouTube (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland) to provide video content. When you enable this option, a connection to YouTube's servers will be established. This will inform the YouTube server which of our pages you have visited. Additionally, YouTube may store cookies on your device and process data (e.g., IP address, device information, usage behavior). Data transmission to the USA is possible. For more information about data processing by YouTube, please see <a href=\"https://policies.google.com/privacy\" target=\"_blank\">Google's Privacy Policy</a>.",
+        "youtubeDescriptionShort": "This video is provided by YouTube. When you enable it, a connection to YouTube will be established and personal data (e.g., IP address) may be transmitted. By enabling, you consent to data processing by YouTube. <a href=\"https://policies.google.com/privacy\" target=\"_blank\">Google's Privacy Policy</a>."
+    },
+    "templateContent" : {
+        "linkedTaxonProfiles": "Species of this Story"
+    },
+    "user" : {
+        "username": "Username",
+        "email": "e-mail",
+        "email2": "e-mail (again)",
+        "password": "Password",
+        "password2": "Password (again)",
+        "firstName": "First Name",
+        "lastName": "Last Name"
+    },
+"validation": {
+        "invalid": "Invalid value",
+        "required": "Required field",
+        "email": "Invalid email address",
+        "passwordMismatch": "Passwords do not match",
+        "emailMismatch": "Email addresses do not match",
+        "min": "At least {{min}} characters are required",
+        "max": "A maximum of {{max}} characters is allowed",
+        "namedMinNumber": "{{name}} must be at least {{min}}",
+        "namedMaxNumber": "{{name}} must be at most {{max}}",
+        "requiredField": "This field is required",
+        "integer": "An integer is required",
+        "numberTypeError": "A number is required",
+        "invalidDateError": "Date and time are required",
+        "maxDateErrorMessage": "Future dates are not allowed",
+        "formHasErrors": "The data you entered is invalid. Please check your form.",
+        "formHasInputErrors": "The form contains errors. Please check your inputs."
+    },
+    "geolocation": {
+        "off": "GPS off",
+        "waitingForPosition": "Waiting for GPS",
+        "permissionDenied": "Manual input required",
+        "setManually": "GPS error. Please enter the position manually.",
+        "selectLocationOnMap": "Please select the location on the map",
+        "savePosition": "Save position for 24h"
+    },
+    "observationForm": {
+        "formLoadErrorMessage": "Error loading observation form",
+        "formNotFound": "Observation form not found",
+        "submit": "Submit",
+        "selectLocation": "Select location",
+        "pictures": "Pictures",
+        "uploadingImages": "Uploading images",
+        "waitForImageUpload": "Please wait until all images have been uploaded.",
+        "removePicture": "Remove picture",
+        "reallyRemovePicture": "Do you really want to remove this picture?",
+        "editSuccess": "Your changes have been saved successfully",
+        "imageLicenceRemark": "Your photos will be published under the license CC BY-NC-ND 4.0. The image author is the reporter.",
+        "changeObservationForm": "Change form",
+        "manualInput": "Manual Input",
+        "setPosition": "Set Position",
+        "NoObservationFormsAvailable": "No observation forms available",
+        "pictureLicenceRemark": "Your photos will be published under the license CC BY-NC-ND 4.0. The image author is the reporter.",
+        "save": "Save",
+        "saveSuccess": "Observation saved successfully"
+    },
+    "observationDetail": {
+        "reportedBy": "Reported by",
+        "details": "View"
+    },
+    "map": {
+        "clusterLoadError": "Error loading clusters"
+    },
+    "search": {
+        "noResults": "No results found",
+        "searchGeoname": "Search for a place"
+    },
+    "common": {
+        "goHome": "Back to Home",
+        "goBack": "Back"
+    },
+    "permissionDenied": {
+        "title": "Access Denied",
+        "message": "You do not have permission to access this feature.",
+        "description": "Please contact the administrator if you think this is an error."
+    },
+    "myObservations": {
+        "unsyncedObservations": "Unsynced Observations",
+        "reallyDeleteObservation": "Do you really want to delete this observation?",
+        "deleteWarning": "Warning: Deleting an observation will remove it permanently.",
+        "goToMyObservations": "Go to My Observations",
+        "deleteSuccess": "Observation deleted successfully",
+        "serverObservations": "My Observations",
+        "noObservationsYet": "No observations yet."
+    },
+    "network" : {
+        "noNetworkMessage": "No data connection available"
+    },
+    "sync": {
+        "syncObservations": "Sync Observations",
+        "foundObservations": "Found {{count}} observations",
+        "startSync": "Start Sync",
+        "syncingObservations": "Syncing observations",
+        "currentTask": "Current task: {{currentTask}}",
+        "syncSuccess": "✅ Sync Completed Successfully!",
+        "syncPartialSuccess": "⚠️ Sync Completed with Issues",
+        "syncedCount": "Successfully synced: {{count}}",
+        "syncErrors": "Sync errors:",
+        "syncErrorCount": "{{count}} items failed to sync",
+        "proceedWithSync": "Proceed with Sync",
+        "networkWarningMessage": "This will sync your observations with the server. Please ensure you have a stable internet connection.",
+        "noUnsyncedObservations": "No unsynced observations found."
     },
     "NoContent": "No content available.",
     "Observations": "Observations",
-    "Have you heard of it?": "Have you heard of it?"
+    "Today's Wonder": "Today's Wonder",
+    "Have you heard of it?": "Have you heard of it?",
+    "Login": "Login",
+    "Logout": "Logout",
+    "logout": "Logout",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "remove": "Remove"
 }

@@ -1,0 +1,34 @@
+{
+  "templateName" : "Story",
+  "type": "page",
+  "templatePath" : "/template_content/page/text/text.html",
+  "version" : 1,
+  "contents": {
+    "previewImage": {
+      "type": "image",
+      "helpText": "16:9. This image will be used as a preview image (thumbnail) for example in lists of articles.",
+      "required": false
+    },
+    "featuredImage": {
+      "type": "image",
+      "helpText": "16:9. This image will be shown at the top of the article page.",
+      "required": false
+    },
+    "abstract": {
+      "type": "text",
+      "helpText": "A short summary of the article. This will be shown in article lists and previews.",
+      "required": true
+    },
+    "videos": {
+      "type": "component",
+      "templateName": "Video",
+      "required": false,
+      "allowMultiple": true
+    },
+    "paragraph": {
+      "type": "component",
+      "templateName": "Paragraph",
+      "allowMultiple": true
+    }
+  }
+}

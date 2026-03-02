@@ -1,0 +1,38 @@
+{
+  "templateName" : "Video",
+  "type": "component",
+  "icon": "video",
+  "version" : 1,
+  "identifierContent": "title",
+  "contents": {
+    "url": {
+      "type": "text",
+      "widget": "TextInput",
+      "restrictions": {
+        "maxLength": 2048
+      },
+      "required": true
+    },
+    "videoType": {
+      "type": "text",
+      "widget": "Select",
+      "choices": [ "YouTube", "Vimeo" ],
+      "required": true
+    },
+    "title": {
+      "type": "text",
+      "widget": "TextInput",
+      "required": true
+    },
+    "caption": {
+      "type": "text",
+      "widget": "Textarea",
+      "format": "layoutable-full",
+      "required": false
+    },
+    "altText": {
+      "type": "text",
+      "widget": "Textarea"
+    }
+  }
+}
