@@ -20,14 +20,14 @@
 {% endblock %}
 
 {% block footer %}
-	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+	<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
 	<button type="submit" class="btn btn-outline-primary">{% trans 'Update' %}</button>
 {% endblock %}
 
 {% block script %}
 	<script>
 		{% if updating == True %}
-			$("#Modal").modal("hide");
+			hideModal();
 			setTimeout(() => {
 				window.location.reload();
 			}, 500);

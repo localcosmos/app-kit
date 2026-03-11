@@ -10,9 +10,7 @@
 					{% blocktrans %}Add {{ name }}{% endblocktrans %}
 				{% endwith %}
 			</h5>
-		    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-		    	<span aria-hidden="true">&times;</span>
-		    </button>
+		    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 	{% endblock %}
 
@@ -47,7 +45,7 @@
 			
 		</div>
 		<div class="modal-footer">
-			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 			{% if created_content %}
 			{% else %}
 				

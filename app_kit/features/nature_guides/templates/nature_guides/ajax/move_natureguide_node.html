@@ -25,7 +25,7 @@
 
 {% block footer %}
 	{% if success is True %}
-		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 	{% else %}
 		{% include 'localcosmos_server/modals/footers/save.html' %}
 	{% endif %}
@@ -46,7 +46,13 @@
 					}
 				});
 			})();
-			$("#Modal").modal("show");
+			
+			let modalEl = document.getElementById("Modal");
+			if (modalEl){
+				let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+				modal.show();
+			}
+
 		{% endif %}
 	</script>
 {% endblock %}

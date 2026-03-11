@@ -1,6 +1,6 @@
 {% load i18n static app_tags %}
 
-<div id="matrix-filters" class="text-left">
+<div id="matrix-filters" class="text-start">
 	{% if meta_node_has_matrix_filters %}
 		<div class="row mb-4">
 			<div class="col-12">
@@ -36,16 +36,16 @@
 							{% endif %}
 							
 							{% if field.field.matrix_filter.is_restricted %}
-								<span id="{{ field.field.matrix_filter.uuid }}_restriction_indicator" class="badge badge-danger">{% trans 'visibility' %}</span>
-								<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon"  data-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-content="{% get_generic_content_help_text link.generic_content %}" data-placement="left" />
+								<span id="{{ field.field.matrix_filter.uuid }}_restriction_indicator" class="badge rounded-pill  bg-danger">{% trans 'visibility' %}</span>
+								<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon"  data-bs-toggle="popover" title="{% trans 'in your app, this filter will be initially invisible. It will become visible as soon as the conditions you defined are met.' %}" data-bs-content="{% get_generic_content_help_text link.generic_content %}" data-bs-placement="left" />
 							{% endif %}
 
 							{% if not field.field.matrix_filter.is_active %}
-								&nbsp; <span class="badge badge-xs badge-danger">{% trans 'inactive' %}</span>
+								&nbsp; <span class="badge rounded-pill  badge-xs bg-danger">{% trans 'inactive' %}</span>
 							{% endif %}
 							
 							<div class="btn-group dropup">
-								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									{% trans 'modify' %} <span class="caret"></span>
 								</button>
 								<div class="dropdown-menu">
@@ -181,15 +181,15 @@
 	identificationForm.addEventListener("activate-matrix-filter", function(event){
 		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
 				
-		restriction_indicator.classList.remove("badge-danger");
-		restriction_indicator.classList.add("badge-success");
+		restriction_indicator.classList.remove("bg-danger");
+		restriction_indicator.classList.add("bg-success");
 	});
 	
 	identificationForm.addEventListener("deactivate-matrix-filter", function(event){
 		var restriction_indicator = document.getElementById("" + event.detail.matrix_filter.uuid + "_restriction_indicator");
 				
-		restriction_indicator.classList.add("badge-danger");
-		restriction_indicator.classList.remove("badge-success");
+		restriction_indicator.classList.add("bg-danger");
+		restriction_indicator.classList.remove("bg-success");
 	});
 
 	

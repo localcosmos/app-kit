@@ -2,7 +2,8 @@
 
 {% block success_js %}
 	<script>
-		$("#Modal").modal("hide");
+		hideModal();
+		
 		$("#taxonprofiles-navigation-entry-{{ navigation_entry_id }}").remove();
 	</script>
 {% endblock %}

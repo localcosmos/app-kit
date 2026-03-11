@@ -1,21 +1,28 @@
 {% load i18n %}
 {% if deleted %}
 	<script>
+
+		let hideModalName = null;
+
 		{% if content_type == 'button' %}
 			$("#buttonlabel-{{ object_pk }}").remove();
-			$("#Modal").modal("hide");
+			hideModalName = "Modal";
 		{% else %}
 			$("#extension-{{ object_pk }}").remove();
-			$("#Modal2").modal("hide");
+			hideModalName = "Modal2";
 		{% endif %}
+
+		let modalEl = document.getElementById(hideModalName);
+		if (modalEl){
+			let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+			modal.hide();
+		}
 	</script>
 {% else %}
 	<form method="POST" action="{% url 'delete_buttonmatrix_element' content_type object_pk %}" class="xhr">{% csrf_token %}
 		<div class="modal-header">
 			<h5 class="modal-title">{% blocktrans %}Delete {{ content_type }}{% endblocktrans %}</h5>
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-				<span aria-hidden="true">&times;</span>
-			</button>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
 			<p>
@@ -27,10 +34,19 @@
 		</div>
 	</form>
 	<script>
+
+		let modalName = null;
+
 		{% if content_type == "button" %}
-			$("#Modal").modal("show");
+			modalName = "Modal";
 		{% else %}
-			$("#Modal2").modal("show");
+			modalName = "Modal2";
 		{% endif %}
+
+		let modalShowEl = document.getElementById(modalName);
+		if (modalShowEl){
+			let modal = bootstrap.Modal.getOrCreateInstance(modalShowEl);
+			modal.show();
+		}
 	</script>
 {% endif %}

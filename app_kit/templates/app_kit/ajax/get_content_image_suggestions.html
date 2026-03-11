@@ -2,7 +2,7 @@
 {% if image_suggestions %}
 	<div class="row">
 		{% for content_image in image_suggestions %}
-			<div id="suggested-content-image-{{ content_image.id }}" class="image-suggestion col-4 col-md-3 col-lg-2 text-center" data-content-image-id="{{ content_image.id }}">
+			<div id="suggested-content-image-{{ content_image.id }}" class="image-suggestion col-4 col-md-3 col-lg-2 text-center" data-bs-content-image-id="{{ content_image.id }}">
 				
 				<label for="suggested-content-image-{{ content_image.id }}-checkbox">
 					<img src="{{ content_image.image_url }}" class="img-fluid"/>
@@ -15,7 +15,7 @@
 	<script>
 		$(".image-suggestion").on("click", function(event){
 			var element = $(this);
-			var content_image_id = element.attr("data-content-image-id");
+			var content_image_id = element.attr("data-bs-content-image-id");
 			$("#content-image-formcontainer").hide();
 			$("#id_referred_content_image_id").val(content_image_id);
 			var exclude_id = element.attr("id");

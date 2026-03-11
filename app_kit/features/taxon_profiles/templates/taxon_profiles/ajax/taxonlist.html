@@ -12,7 +12,7 @@
 					<a href="{% url 'manage_taxon_profile' meta_app.id generic_content.id taxon.taxon_source taxon.name_uuid %}"><i>{{ taxon }}</i></a>
 					{% if profile %}
 					{% else %}
-						<span class="badge badge-warning">{% trans 'no profile' %}</span>
+						<span class="badge rounded-pill text-bg-warning">{% trans 'no profile' %}</span>
 					{% endif %}
 				</li>
 			{% endfor %}

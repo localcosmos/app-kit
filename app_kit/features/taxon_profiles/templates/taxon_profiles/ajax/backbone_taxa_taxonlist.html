@@ -6,7 +6,7 @@
             <a href="{% url 'create_taxon_profile' meta_app.id generic_content.id backbone_taxon.taxon_source backbone_taxon.name_uuid %}" class="xhr" ajax-target="ModalContent">
                 {{ backbone_taxon.name }} <i>{{ backbone_taxon.taxon_latname }} {{ backbone_taxon.taxon_author }}</i>
             </a>
-            <span class="badge badge-warning">{% trans 'no profile' %}</span>
+            <span class="badge rounded-pill text-bg-warning">{% trans 'no profile' %}</span>
         </li>
     {% endfor %}
 </ul>

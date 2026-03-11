@@ -18,8 +18,7 @@
 				ajaxify('taxon-images');
 			});
 
-			$("#LargeModal").modal("hide");
-			$("#LargeModalContent").empty();
+			hideLargeModal();
 		
 		{% else %}
 			{% include 'app_kit/snippets/ckeditor_js_snippet.html' %}

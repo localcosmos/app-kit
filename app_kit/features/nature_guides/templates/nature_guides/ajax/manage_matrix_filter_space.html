@@ -63,6 +63,7 @@
 
 {% block script %}
 {% if success is True %}
+	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
 	<script>
 		{% if from_url %}
 			$.get("{{ from_url }}", function(html){
@@ -70,10 +71,10 @@
 				ajaxify("LargeModalContent");
 			});
 		{% else %}
-			$("#LargeModal").modal('hide');
+			hideLargeModal();
 		{% endif %}
 	</script>
-	{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+	
 {% else %}
 	{% if from_url %}
 		<script>

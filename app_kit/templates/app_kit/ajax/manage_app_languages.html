@@ -2,17 +2,17 @@
 	
 <div class="clearfix">
 	{% for language in languages %}
-		<div id="language-{{ language }}" class="float-left padding">
+		<div id="language-{{ language }}" class="float-start padding">
 			<div class="text-center">
 				<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ language }}.png" /><br>
 				{{ language }}
 			</div>
 			<div>
 				{% if language == primary_language %}
-					<span class="badge badge-info">{% trans 'primary' %}</span>
+					<span class="badge rounded-pill  bg-info">{% trans 'primary' %}</span>
 				{% else %}
 					<div class="dropdown">
-						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="langdropdown-{{ language }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="langdropdown-{{ language }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 							{% trans 'Modify' %}
 							<span class="caret"></span>
 						</button>

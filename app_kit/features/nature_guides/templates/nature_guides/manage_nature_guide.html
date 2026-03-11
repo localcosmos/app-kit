@@ -81,10 +81,10 @@
 							</span>&nbsp;
 
 							<div class="btn-group dropdown">
-								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+								<button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 									{% trans 'Add trait' %} <span class="caret"></span>
 								</button>
-								<div class="dropdown-menu dropdown-menu-right">
+								<div class="dropdown-menu dropdown-menu-end">
 									{% for filter_type in matrix_filter_types %}
 										<a data-url="{% url 'create_matrix_filter' meta_app.id meta_node.id filter_type.0 %}" class="dropdown-item xhr" ajax-target="LargeModalContent">{{ filter_type.1 }}</a>
 									{% endfor %}
@@ -98,9 +98,9 @@
 				<div class="card-body">
 					<div id="matrix-filters-collapsible"></div>
 					
-					<div class="text-left">
+					<div class="text-start">
 						<div class="btn-group dropup">
-							<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								{% trans 'Add trait' %} <span class="caret"></span>
 							</button>
 							<div class="dropdown-menu">
@@ -125,12 +125,12 @@
 								{{ parent_node.nature_guide.name }}
 							{% else %}
 								{{ parent_node.meta_node }}
-								<small> <span id="children-count" class="badge badge-info">{{ parent_node.children_count }}</span> </small>
+								<small> <span id="children-count" class="badge rounded-pill  bg-info">{{ parent_node.children_count }}</span> </small>
 							{% endif %}
 						</span>
 						{% content_image parent_node.meta_node 'overview' as overview_image %}
 						
-						<span id="overview-image-indicator" class="badge badge-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
+						<span id="overview-image-indicator" class="badge rounded-pill  bg-info {% if overview_image %}{% else %}d-none{% endif %}">{% trans 'overview image' %}</span>
 
 						<div class="btn-group dropdown">
 							{% with menualign='alignright' %}
@@ -149,7 +149,7 @@
 						<div id="keynodes" class="row" data-store-positions-url="{% url 'store_node_order' parent_node.id %}"></div>
 						
 						<div>
-							<button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
+							<button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#sorted-out-container" aria-expanded="false" aria-controls="sorted-out-container">{% trans 'Show sorted out' %}</button>
 							
 							<div id="sorted-out-container" class="collapse mt-4">
 								<h5>{% trans 'Sorted out:' %}</h5>
@@ -183,8 +183,11 @@
 		});
 		
 		(function(){
-			$('[data-toggle="popover"]').popover({
-				trigger: 'hover'
+			const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+			[...popoverTriggerList].forEach(function(popoverTriggerEl){
+				new bootstrap.Popover(popoverTriggerEl, {
+					trigger: 'hover'
+				});
 			});
 		})();
 

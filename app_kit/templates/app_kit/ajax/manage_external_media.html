@@ -23,7 +23,8 @@
 				$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-forwardbutton").on("click", positionmanager.onMoveForward);
 				$("#external-media-{{ external_media_object|ctype_id }}-{{ external_media_object.id }} .move-em-backwardbutton").on("click", positionmanager.onMoveBack);
 			});
-			$("#LargeModal").modal("hide");
+			
+			hideLargeModal();
 		</script>
 	{% endif %}
 {% endblock %}

@@ -2,7 +2,9 @@
 
 {% block success_js %}
 	<script>
-		$("#Modal").modal("hide");
+		
+		hideModal();
+
 		$.get("{% url 'manage_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id navigation_entry.id %}", (html) => {
 			$("#LargeModalContent").html(html);
 			ajaxify('LargeModalContent');

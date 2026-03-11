@@ -1,7 +1,7 @@
 {% load i18n %}
 <div class="form-inline">
 	<div class="input-group">
-		<div class="input-group-prepend">
+		<div>
 			<span class="input-group-text">
 				{% trans 'min' %}
 				{% if unit %}
@@ -12,7 +12,7 @@
 		{% with widget=widget.subwidgets.0 %}{% include widget.template_name %}{% endwith %}
 	</div>&nbsp;
 	<div class="input-group">
-		<div class="input-group-prepend">
+		<div>
 			<span class="input-group-text">
 				{% trans 'max' %}
 				{% if unit %}

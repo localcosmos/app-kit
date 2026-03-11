@@ -27,7 +27,13 @@
             function onError(){
                 $.get("{% url 'get_translation' meta_app.id %}", function(html){
                     $("#ModalContent").html(html);
-                    $("#Modal").modal("show");
+                    
+                    let modalEl = document.getElementById("Modal");
+                    if (modalEl){
+                        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    }
+
                 });
             }
 

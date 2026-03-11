@@ -9,15 +9,13 @@
 
 		});
 		
-		$("#Modal").modal("hide");
+		hideModal();
 	</script>
 {% else %}
 	<form method="POST" action="{% if category %}{% url 'manage_taxon_text_type_category' meta_app.id taxon_profiles.id category.id %}{% else %}{% url 'create_taxon_text_type_category' meta_app.id taxon_profiles.id %}{% endif %}" class="xhr">{% csrf_token %}
 		<div class="modal-header">
 			<h5 class="modal-title">{% if category %}{% blocktrans with name=category %}Edit {{ name }}{% endblocktrans %}{% else %}{% trans 'Add new text category' %}{% endif %}</h5>
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-				<span aria-hidden="true">&times;</span>
-			</button>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
 			<p>
@@ -25,12 +23,12 @@
 			</p>
 		</div>
 		<div class="modal-footer">
-			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
 			<button type="submit" class="btn btn-outline-primary">{% if category %}{% trans 'Save' %}{% else %}{% trans 'Add' %}{% endif %}</button>
 		</div>
 	</form>
 
 	<script>
-		$("#Modal").modal("show");
+		showModal();
 	</script>
 {% endif %}

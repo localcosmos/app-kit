@@ -68,7 +68,7 @@
 	</form>
 	{% if generic_field.role == "regular" or generic_field.field_class == "TaxonField" or generic_field.field_class == "SelectTaxonField" %}
 		<div class="modal-body">
-			<a class="btn btn-outline-primary" role="button" data-toggle="collapse" href="#fieldtaxonomicrestriction" aria-expanded="false" aria-controls="collapseExample">
+			<a class="btn btn-outline-primary" role="button" data-bs-toggle="collapse" href="#fieldtaxonomicrestriction" aria-expanded="false" aria-controls="collapseExample">
 				{% trans 'Taxonomic restriction' %}
 			</a>
 			<div class="collapse mt-2" id="fieldtaxonomicrestriction">
@@ -110,13 +110,13 @@
 			{% if generic_field.field_class == 'MultipleChoiceField' or generic_field.field_class == 'ChoiceField' %}
 				{% if created %}
 				{% else %}
-					$("#Modal").modal("hide");
+					hideModal();
 				{% endif %}
 			{% else %}
-				$("#Modal").modal("hide");
+				hideModal();
 			{% endif %}
 		{% else %}
-			$("#Modal").modal("show");
+			showModal();
 		{% endif %}
 	</script>
 {% endblock %}

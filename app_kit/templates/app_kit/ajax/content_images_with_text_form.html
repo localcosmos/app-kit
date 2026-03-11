@@ -5,7 +5,7 @@
 
 
 {% block footer %}
-	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+	<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
 	{% if content_image %}
 		<a href="#" data-url="{% block delete_url %}{% url 'delete_content_images' meta_app.id content_image.pk %}{% endblock %}" ajax-target="ModalContent" class="btn btn-danger xhr">{% trans 'Delete' %}</a>
 	{% endif %}
@@ -29,8 +29,7 @@
                 ajaxify(container_id);
             });
 
-			$("#LargeModal").modal("hide");
-			$("#LargeModalContent").empty();
+			hideLargeModal();
 		{% else %}
 			{% include 'localcosmos_server/snippets/ckeditor_js_snippet.html' %}
 		{% endif %}

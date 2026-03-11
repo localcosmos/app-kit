@@ -27,7 +27,9 @@
                 window.location.href = "{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}";
             {% else %}
                 // Reload the page to show the updated morphotype
-                $('#Modal').modal('hide');
+
+                hideModal();
+
                 window.location.reload();
             {% endif %}
         </script>

@@ -9,7 +9,9 @@
 
 		{# in some cases, the image is a background #}
 		image_element.css("background-image", "url('{% static 'noimage.png' %}'");
-		$("#Modal").modal("hide");
+		
+		hideModal();
+		
 	</script>
 
 	{% block extra_success_js %}{% endblock %}

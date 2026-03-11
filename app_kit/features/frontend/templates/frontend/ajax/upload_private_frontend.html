@@ -38,7 +38,7 @@
 
 {% block footer %}
 	{% if success %}
-		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
 		<button type="submit" class="btn btn-outline-primary">{% trans 'Install' %}</button>
 	{% else %}
 	{% include 'localcosmos_server/modals/footers/save.html' %}

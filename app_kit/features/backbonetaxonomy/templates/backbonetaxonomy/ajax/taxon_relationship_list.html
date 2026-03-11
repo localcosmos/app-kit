@@ -9,7 +9,7 @@
         <strong>{{ relationship.relationship_type.relationship_name }}:</strong> 
         {{ relationship.taxon }} 
         {% if relationship.relationship_type.taxon_role %}
-            <span class="badge badge-sm badge-info">
+            <span class="badge rounded-pill  badge-sm bg-info">
                 {{ relationship.relationship_type.taxon_role }}
             </span>
         {% endif %}
@@ -19,13 +19,13 @@
         {{ relationship.related_taxon }}
 
         {% if relationship.relationship_type.related_taxon_role %}
-            <span class="badge badge-sm badge-info">
+            <span class="badge rounded-pill  badge-sm bg-info">
                 {{ relationship.relationship_type.related_taxon_role }}
             </span>
         {% endif %}
 
         <div class="btn-group dropup">
-            <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 {% trans 'Modify' %} <span class="caret"></span>
             </button>
             <div class="dropdown-menu">

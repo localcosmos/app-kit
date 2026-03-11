@@ -9,12 +9,12 @@
 	{% if uses_taxon_profiles_navigation %}
 		<div class="card mb-5">
 			<div class="card-header">
-				<div class="cursor-pointer" data-toggle="collapse" data-target="#collapseTaxonNav" role="button" aria-expanded="false" aria-controls="collapseTaxonNav">
+				<div class="cursor-pointer" data-bs-toggle="collapse" data-bs-target="#collapseTaxonNav" role="button" aria-expanded="false" aria-controls="collapseTaxonNav">
 					<div class="d-flex">
 						<div>
 							<h4 class="card-title">{% trans 'Taxonomic Navigation' %}</h4>
 						</div>
-						<div class="text-right flex-grow-1">
+						<div class="text-end flex-grow-1">
 							<img id="CTN-chevron-down" src="{% static 'phosphor-icons/caret-down.svg' %}" class="phicon" />
 							<img id="CTN-chevron-up" src="{% static 'phosphor-icons/caret-up.svg' %}" class="phicon" style="display: none;" />
 						</div>
@@ -40,12 +40,12 @@
 			<div class="col-12">
 				<div class="card">
 					<div class="card-header">
-						<div class="cursor-pointer" data-toggle="collapse" data-target="#collapseTextManagement" role="button" aria-expanded="false" aria-controls="collapseTextManagement">
+						<div class="cursor-pointer" data-bs-toggle="collapse" data-bs-target="#collapseTextManagement" role="button" aria-expanded="false" aria-controls="collapseTextManagement">
 							<div class="d-flex">
 								<div>
 									<h4 class="card-title">{% trans 'Text Management' %}</h4>
 								</div>
-								<div class="text-right flex-grow-1">
+								<div class="text-end flex-grow-1">
 									<img id="CTN-chevron-down" src="{% static 'phosphor-icons/caret-down.svg' %}" class="phicon" />
 									<img id="CTN-chevron-up" src="{% static 'phosphor-icons/caret-up.svg' %}" class="phicon" style="display: none;" />
 								</div>
@@ -82,7 +82,7 @@
 				<div class="card-header">
 					{{ entry.nature_guide }}
 					<div class="btn-group dropup">
-						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 							{% trans 'modify' %} <span class="caret"></span>
 						</button>
 						<div class="dropdown-menu">
@@ -213,7 +213,13 @@
 							$.get(data.url, function(html) {
 								$("#ModalContent").html(html);
 								ajaxify("ModalContent");
-								$("#Modal").modal("show");
+								
+								let modalEl = document.getElementById("Modal");
+								if (modalEl){
+									let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+									modal.show();
+								}
+
 							});
 						}
 					}

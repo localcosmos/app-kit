@@ -8,7 +8,7 @@
 						<div class="text-center"><strong>{{ node_space.matrix_filter.name }}</strong></div>
 						{% if node_space.matrix_filter.filter_type == 'DescriptiveTextAndImagesFilter' %}
 							{% for space in node_space.values.all %}
-								<div class="row no-gutters justify-content-center">
+								<div class="row g-0 justify-content-center">
 									<div class="col-12 col-md-10 col-lg-8">
 										<div class="w-50" style="margin: 0 auto;"><img src="{{ space.image_url }}" class="img-fluid" /></div>
 										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
@@ -17,7 +17,7 @@
 							{% endfor %}
 						{% elif node_space.matrix_filter.filter_type == 'TextOnlyFilter' %}
 							{% for space in node_space.values.all %}
-								<div class="row no-gutters justify-content-center">
+								<div class="row g-0 justify-content-center">
 									<div class="col-12 col-md-10 col-lg-8">
 										<div class="text-center text-small">{{ space.encoded_space|safe }}</div>
 									</div>
@@ -28,7 +28,7 @@
 								{{ node_space.encoded_space.0 }}{{ node_space.matrix_filter.definition.unit }} - {{ node_space.encoded_space.1 }}{{ node_space.matrix_filter.definition.unit }}
 							</div>
 						{% elif node_space.matrix_filter.filter_type == 'ColorFilter' %}
-							<div class="row no-gutters justify-content-center">
+							<div class="row g-0 justify-content-center">
 								{% for space in node_space.values.all %}
 									<div class="col-6 text-center">
 										<div class="trait-color" {% if space.additional_information.gradient %}style="background-image: {{ space.decode }};"{% else %}style="background-color: {{ space.decode }};"{% endif %}>&nbsp;</div>

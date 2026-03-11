@@ -22,7 +22,7 @@
 				
 				{% if option.modify %}
 					<div class="btn-group dropup">
-						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 							{% trans 'Modify' %} <span class="caret"></span>
 						</button>
 						<div class="dropdown-menu">
@@ -48,15 +48,28 @@
 	{% if allow_multiple_values %}
 	{% else %}
 		(function(){
-			var container = document.getElementById('{{ widget.attrs.id }}');
+			const container = document.getElementById('{{ widget.attrs.id }}');
+
+			// get the first space id to select it by default if no other value is selected
+			const first_space = container.firstElementChild;
+
+			let supports_sortable = true;
+			const first_id = first_space.getAttribute("id");
+
+			if (first_id != null && first_id.indexOf('numberspace') != -1) {
+				supports_sortable = false;
+			}
+
+			if (supports_sortable){
 			
-			// enable drag and drop
-			var sortable = Sortable.create(container, {
-				onEnd: function (evt) {
-					var itemEl = evt.item;  // dragged HTMLElement
-					positionmanager.store_positions($(itemEl));
-				}
-			});
+				// enable drag and drop
+				let sortable = Sortable.create(container, {
+					onEnd: function (evt) {
+						const itemEl = evt.item;  // dragged HTMLElement
+						positionmanager.store_positions(itemEl);
+					}
+				});
+			}
 		})()
 	{% endif %}
 	

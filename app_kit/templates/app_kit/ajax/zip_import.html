@@ -59,7 +59,7 @@
 {% block footer %}
 	{% if form_valid and zip_is_valid %}
 	{% else %}
-		<button id="spreadsheet-import-form-close-button" type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button id="spreadsheet-import-form-close-button" type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 		<button type="submit" class="btn btn-outline-primary">{% trans 'Import' %}</button>
 	{% endif %}
 {% endblock %}

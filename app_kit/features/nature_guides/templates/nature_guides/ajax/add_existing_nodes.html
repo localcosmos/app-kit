@@ -24,11 +24,7 @@
 
 			$("#key_nochildren").hide();
 			
-		</script>
-
-		
-		<script>
-			$("#Modal").modal("hide");
+			hideModal();
 		</script>
 
 
@@ -53,13 +49,13 @@
 {% block footer %}
 	{% if success is True %}
 		{% if circular_children %}
-			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Ok' %}</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Ok' %}</button>
 		{% endif %}
 	{% else %}
 		{% if nodes %}
 			{% include 'localcosmos_server/modals/footers/add_selected.html' %}
 		{% else %}
-			<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Ok' %}</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Ok' %}</button>
 		{% endif %}
 	{% endif %}
 {% endblock %}

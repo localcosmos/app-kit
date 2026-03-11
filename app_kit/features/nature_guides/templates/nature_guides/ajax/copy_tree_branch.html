@@ -46,15 +46,14 @@
 
 {% block footer %}
 	{% if success is True %}
-		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 	{% else %}
 		{% include 'localcosmos_server/modals/footers/save_close.html' %}
 	{% endif %}
 {% endblock %}
 
 {% block open_modal %}
-	<script>
-	
+	<script>	
 		var submit_button = $("#Modal").find("button[type=submit]");
 		
 		submit_button.on('click', function(event){
@@ -78,10 +77,10 @@
 			
 			ajaxify('{{ node_copy.name_uuid }}');
 			
-			$("#Modal").modal("hide");
+			hideModal();
 			
 		{% else %}
-			$("#Modal").modal("show");
+			showModal();
 		{% endif %}
 	</script>
 {% endblock %}

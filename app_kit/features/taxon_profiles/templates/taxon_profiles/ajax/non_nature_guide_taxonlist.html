@@ -7,7 +7,7 @@
                 <i>{{ profile.taxon_latname }}</i> {% if profile.taxon_author %}{{ profile.taxon_author }}{% endif %}
             </a>
             {% if profile.publication_status == 'draft' %}
-            <span class="badge badge-warning">{% trans 'draft' %}</span>
+            <span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>
             {% endif %}
         </li>
     {% endfor %}

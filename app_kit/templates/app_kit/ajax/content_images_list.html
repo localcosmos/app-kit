@@ -6,7 +6,7 @@
                 <img src="{{ image.image_url }}" class="content-image sm" />
             </div>
             <div class="btn-group dropup">
-                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {% trans 'modify' %}
                 </button>
                 <div class="dropdown-menu">
@@ -40,7 +40,7 @@
         var sortable = Sortable.create(container, {
             onEnd: function (evt) {
                 var itemEl = evt.item;  // dragged HTMLElement
-                positionmanager.store_positions($(itemEl));
+                positionmanager.store_positions(itemEl);
             }
         });
     })();

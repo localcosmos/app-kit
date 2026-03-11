@@ -5,15 +5,15 @@
 			$("#appfeatures").html(html);
 			ajaxify("appfeatures");
 		});
-		$("#Modal").modal("hide");
+		
+		hideModal();
+		
 	</script>
 {% else %}
 	<form id="addAppFeatureForm" method="POST" action="{% if feature %}{% url 'manage_app_feature' meta_app.id feature_content_type.id feature.id %}{% else %}{% url 'manage_app_feature' meta_app.id feature_content_type.id %}{% endif %}">{% csrf_token %}
 	<div class="modal-header">
 		<h5 class="modal-title">{{ feature_content_type }}</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-        	<span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
 		<p>
@@ -25,12 +25,13 @@
 		</p>
 	</div>
 	<div class="modal-footer">
-		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 		{% if feature and action == "add" %}{% else %}<button type="submit" class="btn btn-outline-primary">{% if action == 'add' %}{% trans 'Add' %}{% else %}{% trans 'Save' %}{% endif %}</button>{% endif %}
 	</div>
 	</form>
 	<script>
-		$("#Modal").modal("show");
+		
+		showModal();
 
 		var form = $("#addAppFeatureForm");
 		form.on("submit", function(ev){

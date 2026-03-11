@@ -1,5 +1,5 @@
 <div id="{{ content_type.id }}-{{ content_object.id }}-tags">
     {% for tag in content_object.tags.all %}
-        <div class="badge badge-secondary">{{ tag }}</div>
+        <div class="badge rounded-pill  bg-secondary">{{ tag }}</div>
     {% endfor %}
 </div>

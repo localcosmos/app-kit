@@ -7,7 +7,7 @@
 			<a href class="btn btn-xs btn-outline-primary xhr" data-url="{% url 'load_custom_taxon_children' taxon.name_uuid language %}" ajax-target="{{ taxon.name_uuid }}-children">{% trans 'Load children' %}</a>
 
 			<div class="btn-group dropup">
-				<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+				<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 					{% trans 'Modify' %}
 				</button>
 				<div class="dropdown-menu">

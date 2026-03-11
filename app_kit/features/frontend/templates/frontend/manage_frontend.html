@@ -13,7 +13,7 @@
 		{% else %}
 			<small>
 				<div class="btn-group">
-					<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 						{% trans 'Modify' %}
 					</button>
 					<div class="dropdown-menu">
@@ -21,7 +21,7 @@
 					</div>
 				</div>
 				{% block badges %}
-					<span class="badge badge-info">version {{ generic_content.current_version }}</span>
+					<span class="badge rounded-pill  bg-info">version {{ generic_content.current_version }}</span>
 				{% endblock %}
 			</small>
 		{% endif %}

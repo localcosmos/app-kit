@@ -3,8 +3,8 @@
     {% for name in collected_vernacular_names %}
         <div>
             {{ name.name }}
-            <span class="badge badge-secondary">{{ name.language }}</span>
-            <span class="badge badge-secondary">
+            <span class="badge rounded-pill  bg-secondary">{{ name.language }}</span>
+            <span class="badge rounded-pill  bg-secondary">
                 {% if name.instance.nature_guide %}
                     {{ name.instance.nature_guide }}
                 {% else %}
@@ -12,11 +12,11 @@
                 {% endif %}
             </span>
             {% if name.is_preferred_name %}
-                <span class="badge badge-primary">{% trans 'preferred name' %}</span>
+                <span class="badge rounded-pill  bg-primary">{% trans 'preferred name' %}</span>
             {% endif %}
             {% if name.origin == 'MetaVernacularNames' %}
                 <div class="btn-group dropup">
-                    <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {% trans 'modify' %} <span class="caret"></span>
                     </button>
                     <div class="dropdown-menu">

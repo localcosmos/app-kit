@@ -49,11 +49,11 @@
 				<div>
 					{% if image.is_primary %}
 						<div>
-							<span class="badge badge-info">{% trans 'primary image' %}</span>
+							<span class="badge rounded-pill  bg-info">{% trans 'primary image' %}</span>
 						</div>
 					{% endif %}
 					<div class="btn-group dropup">
-						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenu-{{ image.id }}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+						<button class="btn btn-xs btn-outline-primary dropdown-toggle" type="button" id="dropdownMenu-{{ image.id }}" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
 							{% trans 'Modify' %}
 						<span class="caret"></span>
 						</button>
@@ -92,7 +92,7 @@
 		var sortable = Sortable.create(container, {
 			onEnd: function (evt) {
 				var itemEl = evt.item;  // dragged HTMLElement
-				positionmanager.store_positions($(itemEl));
+				positionmanager.store_positions(itemEl);
 			}
 		});
 	})()

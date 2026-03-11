@@ -5,7 +5,9 @@
 			{% if generic_field_id %}
 				$("#li-{{ generic_field_id }}").remove();
 			{% endif %}
-			$("#Modal").modal("hide");
+
+			hideModal();
+
 		{% else %}
 			window.location.reload();
 		{% endif %}
@@ -14,9 +16,7 @@
 	<form method="POST" action="{% url 'delete_generic_field' meta_app.id generic_field_id %}" class="xhr">{% csrf_token %}
 		<div class="modal-header">
 			<h5 class="modal-title">{% trans 'Delete field' %}</h5>
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-				<span aria-hidden="true">&times;</span>
-			</button>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
 			<p>
@@ -28,6 +28,6 @@
 		</div>
 	</form>
 	<script>
-		$("#Modal").modal("show");
+		showModal();
 	</script>
 {% endif %}

@@ -2,8 +2,10 @@
 
 {% block success_js %}
 	<script>
-        $("#Modal").modal("hide");
         (function() {
+
+            hideModal();
+
     		let indicator = document.getElementById("overview-image-indicator");
             indicator.classList.add("d-none");
         })();

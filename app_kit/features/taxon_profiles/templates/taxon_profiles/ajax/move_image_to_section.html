@@ -18,7 +18,9 @@
 <script>
     (function() {
         {% if success %}
-            $("#Modal").modal("hide");
+        
+            hideModal();
+
             window.location.reload();
         {% endif %}
 

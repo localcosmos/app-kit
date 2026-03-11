@@ -5,7 +5,7 @@
 {% block base_url %}{% url 'manage_localized_content_image' content_image.id language_code %}{% endblock %}
 
 {% block footer %}
-	<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Cancel' %}</button>
+	<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
 	{% if localized_content_image %}
 		<a href="#" data-url="{% block delete_url %}{% url 'delete_localized_content_image' localized_content_image.pk %}{% endblock %}" ajax-target="ModalContent" class="btn btn-danger xhr">{% trans 'Delete' %}</a>
 	{% endif %}
@@ -33,8 +33,7 @@
 				console.log("Could not find image container for localized content image")
 			}
 
-			$("#LargeModal").modal("hide");
-			$("#LargeModalContent").empty();
+			hideLargeModal();
 		{% endif %}
 	</script>
 	

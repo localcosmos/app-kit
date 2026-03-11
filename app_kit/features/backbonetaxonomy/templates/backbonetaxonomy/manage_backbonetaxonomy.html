@@ -7,7 +7,7 @@
 		<div class="card-body">
 			<h4 class="card-title">
 				{% trans 'Taxa included in this app' %}
-				<small><span class="badge badge-info">{% trans 'Total:' %} {{ meta_app.taxon_count }}<span></small>
+				<small><span class="badge rounded-pill  bg-info">{% trans 'Total:' %} {{ meta_app.taxon_count }}<span></small>
 			</h4>
 
 			<form>
@@ -16,7 +16,7 @@
 					<div class="form-group">
 						<label for="taxonsourceselect">{% trans 'Show:' %}</label>&nbsp;
 	
-						<select id="taxonsourceselect" class="form-control form-control-sm">
+						<select id="taxonsourceselect" class="form-select form-select-sm">
 							<option value="all" selected>{% trans 'All' %}</option>
 							{% for source in meta_app.sorted_taxa %}
 								<option value="{{ source.content|ctype_id }}-{{ source.content.id }}">{{ source.content.name }}</option>

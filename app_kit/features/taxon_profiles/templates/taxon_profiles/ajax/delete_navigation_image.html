@@ -2,10 +2,11 @@
 
 {% block success_js %}
 	<script>
-		var image_element = $("#navigation_image_{{ deleted_object_id }}");
+		let image_element = $("#navigation_image_{{ deleted_object_id }}");
 
         image_element.remove();
-		$("#Modal").modal("hide");
+		
+		hideModal();
 	</script>
 
 	{% block extra_success_js %}{% endblock %}

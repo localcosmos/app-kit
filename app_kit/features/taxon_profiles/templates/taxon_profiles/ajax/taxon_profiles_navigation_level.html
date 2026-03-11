@@ -5,8 +5,8 @@
             <div class="d-flex flex-wrap align-items-center">
                 <div class="align-self-end">
                     <div class="btn-group dropup">
-                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {{ node.verbose_name }} {% if node.publication_status == 'draft' %}<span class="badge badge-warning">{% trans 'draft' %}</span>{% endif %}
+                        <button type="button" class="btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ node.verbose_name }} {% if node.publication_status == 'draft' %}<span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>{% endif %}
                             <span class="caret"></span>
                         </button>
                         <div class="dropdown-menu">
@@ -21,9 +21,9 @@
                             <div class="dropdown-divider"></div>
                             <a data-url="{% url 'delete_taxonprofiles_navigation_entry' meta_app.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Remove' %}</a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-left moveforwardbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25B2; {% trans 'Move up' %}</a>
+                            <a class="dropdown-item text-start moveforwardbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25B2; {% trans 'Move up' %}</a>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item text-left movebackbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25BC; {% trans 'Move down' %}</a>
+                            <a class="dropdown-item text-start movebackbutton" data-targetid="taxonprofiles-navigation-entry-{{ node.id }}">&#x25BC; {% trans 'Move down' %}</a>
                             <div class="dropdown-divider"></div>
                             <a href="{% url 'move_taxonprofiles_navigation_entry' meta_app.id taxon_profiles.id node.id %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Move to different parent' %}</a>
                         </div>
@@ -31,23 +31,23 @@
                 </div>
 
                 {% if node.taxa %}
-                    <div class="pl-2">
+                    <div class="ps-2">
                         {% for taxon in node.taxa %}
                             {% if taxon.taxon_source == 'taxonomy.sources.custom' %}
-                                <small><span class="font-weight-light font-italic text-primary">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                                <small><span class="fw-light fst-italic text-primary">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
                             {% else %}
-                                <small><span class="font-weight-light font-italic text-success">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
+                                <small><span class="fw-light fst-italic text-success">{{ taxon.taxon_latname }}{% if not forloop.last %},{% endif %}</span></small>
                             {% endif %}
                         {% endfor %}
                     </div>
                 {% endif %}
 
                 {% if node.images %}
-                    <div id="node-images-{{ node.id }}" class="d-flex flex-wrap ml-2" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
+                    <div id="node-images-{{ node.id }}" class="d-flex flex-wrap ms-2" data-store-positions-url="{% url 'store_app_kit_object_order' content_image_ctype.id %}">
                         {% for image in node.images %}
                             <div id="navigation_image_{{ image.id }}" data-object-id="{{ image.id }}">
                                 <div class="btn-group dropup">
-                                    <button type="button" class="btn image-btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button type="button" class="btn image-btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <img src="{{ image.url }}" class="taxon-profiles-navigation-image" />
                                     </button>
                                     <div class="dropdown-menu">
@@ -65,7 +65,7 @@
                 {% endif %}
             </div>
             {% if node.children %}
-                <div class="ml-3">
+                <div class="ms-3">
                     {% with nodes=node.children %}
                         {% include 'taxon_profiles/ajax/taxon_profiles_navigation_level.html' %}
                     {% endwith %}

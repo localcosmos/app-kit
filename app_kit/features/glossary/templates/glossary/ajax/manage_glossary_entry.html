@@ -26,7 +26,8 @@
 {% block script %}
 	{% if saved_glossary_entry is True %}
 		<script>
-			$("#LargeModal").modal('hide');
+			hideLargeModal();
+			
 			$.get("{% url 'get_glossary_entry' meta_app.id glossary_entry.id %}", function(html){
 				var target_id = "glossary-entry-{{ glossary_entry.id }}"
 				$("#" + target_id).html(html);

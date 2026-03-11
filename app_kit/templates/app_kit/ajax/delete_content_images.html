@@ -9,7 +9,9 @@
             $("#" + container_id).html(html);
             ajaxify(container_id);
         });
-		$("#Modal").modal("hide");
+		
+		hideModal();
+		
 	</script>
 
 	{% block extra_success_js %}{% endblock %}

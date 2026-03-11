@@ -22,18 +22,18 @@
 			<h3>
 				{{ meta_app }}
 				<small>
-					<span class="badge badge-info">version {{ meta_app.current_version }}</span>
+					<span class="badge rounded-pill  bg-info">version {{ meta_app.current_version }}</span>
 					{% if meta_app.global_build_status == "in_progress" %}
-						<span class="badge badge-info">{% trans 'BUILD IN PROGRESS' %}</span>
+						<span class="badge rounded-pill  bg-info">{% trans 'BUILD IN PROGRESS' %}</span>
 					{% elif meta_app.global_build_status == "passing" %}
-						<span class="badge badge-success">{% trans 'build passing' %}</span>
+						<span class="badge rounded-pill  bg-success">{% trans 'build passing' %}</span>
 					{% elif meta_app.global_build_status == "failing" %}
-						<span class="badge badge-danger">{% trans 'build failing' %}</span>
+						<span class="badge rounded-pill  bg-danger">{% trans 'build failing' %}</span>
 					{% else %}
 						{% if meta_app.current_version == meta_app.published_version %}
-							<span class="badge badge-success">{% trans 'published' %}</span>
+							<span class="badge rounded-pill  bg-success">{% trans 'published' %}</span>
 						{% else %}
-							<span class="badge badge-warning">{% trans 'draft' %}</span>
+							<span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>
 						{% endif %}
 					{% endif %}
 				</small>
@@ -61,14 +61,14 @@
 					<div>
 						{% trans 'result:' %}
 						{% if meta_app.last_validation_report.errors %}
-							<span class="badge badge-danger">{% blocktrans with error_count=meta_app.last_validation_report.errors|length %}{{ error_count }} errors{% endblocktrans %}</span>
+							<span class="badge rounded-pill  bg-danger">{% blocktrans with error_count=meta_app.last_validation_report.errors|length %}{{ error_count }} errors{% endblocktrans %}</span>
 						{% else %}
-							<span class="badge badge-success">{% trans 'no errors' %}</span>
+							<span class="badge rounded-pill  bg-success">{% trans 'no errors' %}</span>
 						{% endif %}
 						{% if meta_app.last_validation_report.warnings %}
-							<span class="badge badge-warning">{% blocktrans with warning_count=meta_app.last_validation_report.warnings|length %}{{ warning_count }} warnings{% endblocktrans %}</span>
+							<span class="badge rounded-pill text-bg-warning">{% blocktrans with warning_count=meta_app.last_validation_report.warnings|length %}{{ warning_count }} warnings{% endblocktrans %}</span>
 						{% else %}
-							<span class="badge badge-success">{% trans 'no warnings' %}</span>
+							<span class="badge rounded-pill  bg-success">{% trans 'no warnings' %}</span>
 						{% endif %}
 					</div>
 
@@ -103,17 +103,17 @@
 									<div class="row text-center">
 										<div class="col-12">
 											<div class="clearfix">
-												<div class="float-left padding">
+												<div class="float-start padding">
 													<div class="text-center">
 														<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ meta_app.primary_language }}.png" /><br>
 														{{ meta_app.primary_language }}
 													</div>
 													<div>
-														<span class="badge badge-info">{% trans 'primary' %}</span>
+														<span class="badge rounded-pill  bg-info">{% trans 'primary' %}</span>
 													</div>
 												</div>
 												{% for language in meta_app.secondary_languages %}
-													<div class="float-left padding">
+													<div class="float-start padding">
 														<div class="text-center">
 															<img src="{% static 'localcosmos_server/images/countries_big/' %}{{ language }}.png" /><br>
 															{{ language }}
@@ -177,11 +177,11 @@
 										</div>
 									</div>
 									<div class="col-12 text-center mt-3">
-										<h2><span class="badge badge-info">version {{ meta_app.current_version }}</span></h2>
+										<h2><span class="badge rounded-pill  bg-info">version {{ meta_app.current_version }}</span></h2>
 									</div>
 			
 									{% block release_app %}
-										<div class="col-12 text-left mt-3">
+										<div class="col-12 text-start mt-3">
 											<h4>{% trans 'App packages' %}</h4>
 											<div>
 												<strong>Android .aab:</strong> <a href="{{ aab_review_url }}" class="" download>{% trans 'Download' %}</a>
@@ -254,7 +254,7 @@
 									</div>
 								</div>
 								
-								<div class="row no-gutters mt-3">
+								<div class="row g-0 mt-3">
 								
 									{% if app_kit_mode == "sandbox" %}
 										<div class="col-12">

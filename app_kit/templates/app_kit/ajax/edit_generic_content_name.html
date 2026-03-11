@@ -22,7 +22,9 @@
 			{% else %}
 				$("#generic-content-name").text("{{ generic_content.name }}");
 			{% endif %}
-			$("#Modal").modal("hide");
+			
+			hideModal();
+
 			$("#generic-content-name").text("{{ generic_content.name }}");
 		</script>
 	{% endif %}

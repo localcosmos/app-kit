@@ -40,7 +40,7 @@
 			<div class="col-auto">
 				<small>
 					<div class="btn-group">
-						<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<button type="button" class="btn btn-xs btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 							{% trans 'Modify' %}
 						</button>
 						<div class="dropdown-menu">
@@ -53,28 +53,28 @@
 			</div>
 			<div class="col">
 				{% if taxon_profile.is_featured %}
-					<span class="badge badge-primary">{% trans 'featured' %}</span>
+					<span class="badge rounded-pill  bg-primary">{% trans 'featured' %}</span>
 				{% endif %}
 				{% if taxon_profile.publication_status == 'draft' %}
-					<span class="badge badge-warning">{% trans 'draft' %}</span>
+					<span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>
 				{% endif %}
 				{% if nature_guides %}
 					{% for nature_guide in nature_guides %}
-					<span class="badge badge-success">
+					<span class="badge rounded-pill  bg-success">
 						{{ nature_guide }}
 					</span>
 					{% endfor %}
 				{% else %}
-					<span class="badge badge-warning">
+					<span class="badge rounded-pill text-bg-warning">
 						{% trans 'does not occur in any nature guide' %}
 					</span>
 				{% endif %}
 				{% if taxon_profile.taxon.taxon_source == 'app_kit.features.nature_guides' %}
-					<span class="badge badge-warning">
+					<span class="badge rounded-pill text-bg-warning">
 						{% trans 'not linked to any taxonomic source' %}
 					</span>
 				{% else %}
-					<span class="badge badge-success">
+					<span class="badge rounded-pill  bg-success">
 						{{ taxon_tree_model }}
 					</span>
 				{% endif %}
@@ -300,9 +300,9 @@
 										<li>
 											<strong>
 												{% if ltc.template_content.is_published %}
-													{{ ltc.published_title }} <span class="badge badge-success">{% trans 'published' %}</span>
+													{{ ltc.published_title }} <span class="badge rounded-pill  bg-success">{% trans 'published' %}</span>
 												{% else %}
-													{{ ltc.draft_title }} <span class="badge badge-warning">{% trans 'draft' %}</span>
+													{{ ltc.draft_title }} <span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>
 												{% endif %}
 											</strong>
 										</li>

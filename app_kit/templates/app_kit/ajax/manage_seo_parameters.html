@@ -15,7 +15,9 @@
 {% block script %}
 	{% if success is True %}
 		<script>
-			$("#Modal").modal("hide");
+		
+			hideModal();
+
 		</script>
 	{% endif %}
 {% endblock %}

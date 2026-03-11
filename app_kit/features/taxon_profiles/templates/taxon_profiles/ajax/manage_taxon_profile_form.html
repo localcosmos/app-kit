@@ -20,7 +20,7 @@
 							<h4>
 								{{ field.label }}
 								{% if field.field.taxon_text_type %}
-									{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge badge-info">{% trans 'short version' %}</span>{% else %}<span class="badge badge-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
+									{% if show_text_length_badges %}{% if field.field.is_short_version %}<span class="badge rounded-pill  bg-info">{% trans 'short version' %}</span>{% else %}<span class="badge rounded-pill  bg-primary">{% trans 'long version' %}</span>{% endif %} {% endif %}
 								{% endif %}
 							</h4>
 

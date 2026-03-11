@@ -6,15 +6,14 @@
 			$("#taxa").html(html);
 			ajaxify("taxa");
 		});
-		$("#Modal").modal("hide");
+		
+		hideModal();
 	</script>
 {% else %}
 	<form method="POST" action="{% url 'remove_backbone_taxon' meta_app_id backbone.id name_uuid source %}" class="xhr">{% csrf_token %}
 		<div class="modal-header">
 			<h5 class="modal-title">{% blocktrans with name=taxon.taxon_latname %}Remove {{ name }}{% endblocktrans %}</h5>
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-				<span aria-hidden="true">&times;</span>
-			</button>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 		</div>
 		<div class="modal-body">
 			<p>
@@ -26,6 +25,6 @@
 		</div>
 	</form>
 	<script>
-		$("#Modal").modal("show");
+		showModal();
 	</script>
 {% endif %}

@@ -3,9 +3,7 @@
 <form method="POST" action="{% url 'move_custom_taxon' taxon.name_uuid %}" class="xhr">{% csrf_token %}
 	<div class="modal-header">
 		<h5 class="modal-title">{% blocktrans with name=taxon.taxon_latname %}Move {{ name }}{% endblocktrans %}</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-        	<span aria-hidden="true">&times;</span>
-        </button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
 		<div class="alert alert-info">
@@ -21,15 +19,17 @@
 		{% endif %}
 	</div>
 	<div class="modal-footer">
-		<button type="button" class="btn btn-outline-secondary" data-dismiss="modal">{% trans 'Close' %}</button>
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
 		<button type="submit" class="btn btn-outline-primary">{% trans 'Move' %}</button>
 	</div>
 </form>
 <script>
-	$("#Modal").modal("show");
 
+	showModal();
+	
 	{% if success is True %}
-		$("#Modal").modal("hide");
+
+		hideModal()
 
 		var new_parent_element_id = '#{{ new_parent_taxon.name_uuid }}-children';
 

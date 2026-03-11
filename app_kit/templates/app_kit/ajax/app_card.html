@@ -3,9 +3,9 @@
 	<div class="card">
 		<div class="card-header">
 
-			<div class="dropdown float-right d-inline-block">
-				<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-				<div class="dropdown-menu">
+			<div class="dropdown float-end d-inline-block">
+				<button class="btn btn-xs btn-outline-secondary dropdown-toggle" type="button"  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+				<div class="dropdown-menu dropdown-menu-end">
 					<a class="dropdown-item xhr" data-url="{% url 'delete_app' meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Delete {{ meta_app }}{% endblocktrans %}</a>
 					<a class="dropdown-item xhr" data-url="{% url 'edit_generic_content_name' meta_app|ctype_id meta_app.id %}" ajax-target="ModalContent">{% blocktrans %}Rename {{ meta_app }}{% endblocktrans %}</a>
 				</div>
@@ -16,7 +16,7 @@
 			<div style="position:relative;">
 				<h5 id="app-name-{{ meta_app.id }}" class="card-title">{{ meta_app }}</h5>
 				<p class="card-text">
-					<div class="text-right">
+					<div class="text-end">
 						<strong><a href="{% url 'manage_metaapp' meta_app.id content_type.id meta_app.id %}" class="stretched-link">{% trans 'Edit' %}</a></strong>
 					</div>
 				</p>
@@ -25,7 +25,7 @@
 				{% if meta_app.published_version %}
 					<hr>
 					<div class="mb-2">
-						{% trans 'status' %} : <span class="badge badge-success">{% trans 'live' %}</span>
+						{% trans 'status' %} : <span class="badge rounded-pill  bg-success">{% trans 'live' %}</span>
 					</div>
 			
 					{% if meta_app.is_localcosmos_private %}
@@ -60,12 +60,13 @@
 			
 		</div>
 		<div class="card-footer text-muted">
-			app uid: {{ meta_app.app.uid}} <br>
+			uid: {{ meta_app.app.uid}} <br>
 			{% if meta_app.published_version %}
 				{% trans 'published version' %}: {{ meta_app.published_version }}
 			{% else %}
 				{% trans 'draft' %}
 			{% endif %}
+			<br><small class="text-secondary d-none">uuid: {{ meta_app.app.uuid}}</small>
 		</div>
 	</div>				
 </div>

@@ -15,23 +15,23 @@
 					{% get_taxon_occurrences taxon as occurrences %}
 					{% if occurrences %}
 						{% for occurrence in occurrences %}
-							<span class="badge badge-pill badge-info">{{ occurrence }}</span>
+							<span class="badge rounded-pill  bg-info">{{ occurrence }}</span>
 						{% endfor %}
 					{% endif %}
 					<!--
 					{% if taxon.instance %}
 						{% if taxon.instance.content %}
-							<span class="badge badge-secondary">{{ taxon.instance.content }}</span>
+							<span class="badge rounded-pill  bg-secondary">{{ taxon.instance.content }}</span>
 						{% elif taxon.instance|class_name == "BackboneTaxa" %}
 						{% else %}
-							<span class="badge badge-secondary">{{ taxon.instance|taxon_origin }}</span>
+							<span class="badge rounded-pill  bg-secondary">{{ taxon.instance|taxon_origin }}</span>
 						{% endif %}
 					{% endif %}
-					{% if taxon.taxon_include_descendants %}<span class="badge badge-info">{% trans 'with descendants' %}</span>{% endif %}
+					{% if taxon.taxon_include_descendants %}<span class="badge rounded-pill  bg-info">{% trans 'with descendants' %}</span>{% endif %}
 				-->
 
 					<div class="btn-group dropup">
-						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+						<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 							{% trans 'Modify' %} <span class="caret"></span>
 						</button>
 						<div class="dropdown-menu pull-right">
@@ -47,7 +47,7 @@
 
 					{% if taxon.source == "CustomTaxonTree" %}
 						<div class="btn-group">
-							<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+							<button type="button" class="btn btn-outline-primary btn-xs dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								{% trans 'Modify' %} <span class="caret"></span>
 							</button>
 							<div class="dropdown-menu pull-right">

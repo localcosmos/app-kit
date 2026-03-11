@@ -23,7 +23,9 @@
 {% block open_modal %}
 	<script>
 		{% if success is True %}
-			$("#Modal").modal("hide");
+		
+			hideModal();
+
 			{% if parent_taxon %}
 				$.get("{% url 'load_custom_taxon_children' parent_taxon.name_uuid language %}", function(html){
 					var container_id = "{{ parent_taxon.name_uuid }}-children";
@@ -34,7 +36,7 @@
 				window.location.reload()
 			{% endif %}
 		{% else %}
-			$("#Modal").modal("show");
+			showModal();
 		{% endif %}
 	</script>
 {% endblock %}

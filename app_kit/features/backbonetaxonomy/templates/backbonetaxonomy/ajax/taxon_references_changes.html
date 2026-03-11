@@ -61,7 +61,7 @@
                             <div class="my-3">
                                 {% for similar_entry in entry.new_author_taxa %}
                                     <div class="d-flex align-items-center">
-                                        <div class="pr-3">
+                                        <div class="pe-3">
                                             <i>{{ similar_entry.similar_taxon.taxon_latname }}</i> {{ similar_entry.similar_taxon.taxon_author }} 
                                         </div>
                                         <div>
@@ -102,10 +102,10 @@
                         
                         <div class="card-text">
                             <div class="d-flex align-items-center">
-                                <div class="pr-2">
+                                <div class="pe-2">
                                     <strong>{% trans 'accepted name:' %}</strong>
                                 </div>
-                                <div class="pr-3">
+                                <div class="pe-3">
                                     <i>{{ entry.taxon.reference_accepted_name.taxon_latname }}</i> {{ entry.taxon.reference_accepted_name.taxon_author }}
                                 </div>
                                 <div>

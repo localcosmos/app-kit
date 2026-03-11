@@ -260,10 +260,11 @@ class NatureGuideJSONBuilder(JSONBuilder):
 
         cache[child.taxon_nuid] = child_cache
 
-        grandparent_taxon_nuid = parent_taxon_nuid[:-3]
+        # why delete grandparents from cache?
+        #grandparent_taxon_nuid = parent_taxon_nuid[:-3]
 
-        if grandparent_taxon_nuid in cache:
-            del cache[grandparent_taxon_nuid]
+        #if grandparent_taxon_nuid in cache:
+        #    del cache[grandparent_taxon_nuid]
 
     def _get_matrix_filter_json(self, matrix_filter):
 

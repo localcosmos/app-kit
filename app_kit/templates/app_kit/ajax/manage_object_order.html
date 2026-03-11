@@ -33,7 +33,7 @@
 				onEnd: function (evt) {
 					
 					var itemEl = $(evt.item);  // dragged HTMLElement
-					positionmanager.store_positions(itemEl);
+					positionmanager.store_positions(evt.item);
 
 					var $parent = itemEl.parent(); 
 

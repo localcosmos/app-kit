@@ -35,9 +35,9 @@
 
 {% block script %}
 	{% if success is True %}
-		<script>
-			$("#LargeModal").modal('hide');
-		</script>
 		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+		<script>
+			hideLargeModal();
+		</script>
 	{% endif %}
 {% endblock %}

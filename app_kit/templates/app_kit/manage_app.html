@@ -14,11 +14,11 @@
 				<div class="card-header">
 					<img src="{% get_static_prefix %}app_kit/images/features/template_content.svg" alt="Template Content" width="30" height="auto"/>
 					<small>{% trans 'Template content' %}</small>
-					<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon float-right"  data-toggle="popover" title="{% trans 'Template content' %}" data-content="{% trans 'Template content supplies layouted templates and pages can be made available instantly. Similar to a content management system.' %}" data-placement="left" />
+					<img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon float-end"  data-bs-toggle="popover" title="{% trans 'Template content' %}" data-bs-content="{% trans 'Template content supplies layouted templates and pages can be made available instantly. Similar to a content management system.' %}" data-bs-placement="left" />
 				</div>
 				<div class="card-body" style="position:relative;">
 					<h5 class="card-title">{% trans 'Template content' %}</h5>
-					<div class="text-right">
+					<div class="text-end">
 						{% if meta_app.is_localcosmos_private %}
 							<strong><span class="text-danger">{% trans 'Managed on your private server.' %}</span></strong>
 						{% else %}
@@ -32,7 +32,7 @@
 	<div class="row">
 		<div class="col-12">
 			<div class="btn-group dropup">
-				<button type="button" class="btn btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				<button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 					{% trans 'Add component' %}
 				</button>
 				<div class="dropdown-menu">
@@ -76,16 +76,19 @@
 
 	<script>
 		(function(){
-			$('[data-toggle="popover"]').popover({
+
+			const popoverOptions = {
 				trigger: 'hover'
-			});
+			};
+			const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+			const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl, popoverOptions))
 
 			// drag and drop
 			const componentsContainer = document.getElementById('app-components');
 			var sortable = Sortable.create(componentsContainer, {
 				onEnd: function (evt) {
 					const itemEl = evt.item;  // dragged HTMLElement
-					positionmanager.store_positions($(itemEl));
+					positionmanager.store_positions(itemEl);
 				}
 			});
 		})();
