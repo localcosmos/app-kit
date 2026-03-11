@@ -192,7 +192,8 @@ class GlossaryJSONBuilder(JSONBuilder):
 
                 term_lower = tas_entry['localizedTerm'].lower()
 
-                term_whole_word = r'\b{0}\b'.format(term_lower)
+                escaped_term = re.escape(term_lower)
+                term_whole_word = r'(?<!\w){0}(?!\w)'.format(escaped_term)
 
                 # first, check if the text part is blocked
                 # original matches reference the plain text. These references are used to avoid multiple
