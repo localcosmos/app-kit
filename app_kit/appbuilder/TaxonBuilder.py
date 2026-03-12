@@ -84,11 +84,15 @@ class TaxaBuilder(ContentImagesJSONBuilder):
         
         if lazy_taxon.taxon_source in self.installed_taxonomic_sources:
 
-            meta_nodes = MetaNode.objects.filter(
+            meta_nodes_qry = MetaNode.objects.filter(
                 nature_guide_id__in=nature_guide_ids,
                 node_type='result',
-                morphotype=morphotype,
-                name_uuid = lazy_taxon.name_uuid).values_list('pk', flat=True)
+                name_uuid = lazy_taxon.name_uuid)
+            
+            if morphotype:
+                meta_nodes_qry = meta_nodes_qry.filter(morphotype=morphotype)
+            
+            meta_nodes = meta_nodes_qry.values_list('pk', flat=True)
 
             node_occurrences = NatureGuidesTaxonTree.objects.filter(nature_guide_id__in=nature_guide_ids,
                        meta_node_id__in=meta_nodes).order_by('pk').distinct('pk')
@@ -216,8 +220,13 @@ class TaxonSerializer:
         
         taxon_profile_qry = TaxonProfile.objects.filter(
             taxon_profiles=self.taxa_builder.taxon_profiles,
-            name_uuid=self.lazy_taxon.name_uuid,
-            morphotype=morphotype).first()
+            name_uuid=self.lazy_taxon.name_uuid)
+        
+        if morphotype:
+            taxon_profile_qry = taxon_profile_qry.filter(
+            morphotype=morphotype)
+            
+        taxon_profile_qry = taxon_profile_qry.first()
         
         if taxon_profile_qry and taxon_profile_qry.publication_status != 'draft':
             taxon_profile = taxon_profile_qry

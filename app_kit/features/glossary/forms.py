@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import GlossaryEntry
+from .models import GlossaryEntry, GlossaryEntryCategory
 
 from django.utils.translation import gettext_lazy as _
 
@@ -58,3 +58,31 @@ class GlossaryEntryWithImageForm(OptionalContentImageForm, GlossaryEntryForm):
         ]
 
         self.order_fields(field_order)
+
+
+class GlossaryEntryCategoryForm(forms.ModelForm):
+    
+    def __init__(self, glossary, *args, **kwargs):
+        self.glossary = glossary
+        super().__init__(*args, **kwargs)
+    
+    def clean_name(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name', None)
+
+        if self.instance.pk:
+            existing_categories = GlossaryEntryCategory.objects.filter(glossary=self.instance.glossary).exclude(pk=self.instance.pk)
+        else:
+            existing_categories = GlossaryEntryCategory.objects.filter(glossary=self.glossary)
+
+        if existing_categories.filter(name=name).exists():
+            raise forms.ValidationError(_('A category with this name already exists in this glossary. Please choose a different name.'))
+
+        return name
+
+    class Meta:
+        model = GlossaryEntryCategory
+        exclude = ('glossary',)
+        labels = {
+            'name' : _('Category name'),
+        }

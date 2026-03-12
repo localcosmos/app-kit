@@ -310,10 +310,14 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
             name_uuid = kwargs['name_uuid']
             
             morphotype = kwargs.get('morphotype', None)
+            
+            taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                taxon_source=taxon_source, name_uuid=name_uuid)
+            
+            if morphotype:
+                taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
 
-            self.taxon_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
-                                                    taxon_source=taxon_source, name_uuid=name_uuid,
-                                                    morphotype=morphotype)
+            self.taxon_profile = taxon_profile_qry.first()
 
         self.taxon = LazyTaxon(instance=self.taxon_profile)
 
@@ -557,7 +561,7 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                 taxon_source = meta_node.taxon_source
                 name_uuid = meta_node.name_uuid
                 taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                                taxon_source=taxon_source, name_uuid=name_uuid, morphotype=None).first()
+                                taxon_source=taxon_source, name_uuid=name_uuid, morphotype__in=(None, '')).first()
                 
                 if taxon_profile:
                     self.change_taxon_profile_publication_status(taxon_profile, publication_status)
@@ -567,7 +571,7 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                 for fallback_taxon in fallback_taxa:
                     fallback_taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
                         taxon_source='app_kit.features.nature_guides', name_uuid=fallback_taxon.name_uuid,
-                        morphotype=None).first()
+                        morphotype__in=(None, '')).first()
                     if fallback_taxon_profile:
                         self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
 

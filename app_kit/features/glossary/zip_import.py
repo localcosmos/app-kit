@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from app_kit.generic_content_zip_import import GenericContentZipImporter
 
-from app_kit.features.glossary.models import GlossaryEntry, TermSynonym
+from app_kit.features.glossary.models import GlossaryEntry, TermSynonym, GlossaryEntryCategory
 
 from openpyxl.utils import get_column_letter
 
@@ -28,6 +28,7 @@ class GlossaryZipImporter(GenericContentZipImporter):
             col_A_value = self.get_stripped_cell_value_lowercase(row[0].value)
             col_B_value = self.get_stripped_cell_value_lowercase(row[1].value)
             col_C_value = self.get_stripped_cell_value_lowercase(row[2].value)
+            col_D_value = self.get_stripped_cell_value_lowercase(row[3].value)
 
             if col_A_value != 'term':
                 message = _('Cell content has to be "Term", not %(value)s') % {
@@ -48,6 +49,12 @@ class GlossaryZipImporter(GenericContentZipImporter):
                     'value' : row[2].value
                 }
                 self.add_cell_error(self.workbook_filename, glossary_sheet.title, 'C', 0, message)
+                
+            if col_D_value and col_D_value != 'category (optional)':
+                message = _('Cell content has to be "Category (optional)", not %(value)s') % {
+                    'value' : row[3].value
+                }
+                self.add_cell_error(self.workbook_filename, glossary_sheet.title, 'D', 0, message)
 
     
     def validate_content(self):
@@ -168,6 +175,12 @@ class GlossaryZipImporter(GenericContentZipImporter):
                 synonyms = [s.strip() for s in synonyms_value.split('|')]
 
             definition = self.get_stripped_cell_value(row[2].value)
+            
+            category_name = self.get_stripped_cell_value(row[3].value)
+            category = None
+            
+            if category_name:
+                category, created = GlossaryEntryCategory.objects.get_or_create(glossary=self.generic_content, name=category_name)
 
             db_glossary_entry = GlossaryEntry.objects.filter(glossary=self.generic_content, term=term).first()
 
@@ -200,6 +213,10 @@ class GlossaryZipImporter(GenericContentZipImporter):
             # check if case has been altered, eg. TErm -> Term
             if db_glossary_entry.term != term:
                 db_glossary_entry.term = term
+                save_entry = True
+                
+            if db_glossary_entry.category != category:
+                db_glossary_entry.category = category
                 save_entry = True
                 
             # check if definition has been altered

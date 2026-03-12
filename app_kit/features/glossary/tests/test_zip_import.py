@@ -8,7 +8,7 @@ from app_kit.tests.common import TESTS_ROOT
 
 from app_kit.features.glossary.tests.test_models import WithGlossary
 
-from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym
+from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym, GlossaryEntryCategory
 
 import os
 
@@ -61,6 +61,7 @@ class TestGlossaryZipImporter(WithMedia, WithGlossary, WithUser, WithMetaApp, Te
         
         glossary_entry = GlossaryEntry.objects.get(glossary=self.glossary, term='Bark')
         self.assertEqual(glossary_entry.definition, 'outer, firm, often hard, bark-like layer surrounding the trunk, branches, and roots')
+        self.assertEqual(glossary_entry.category, None)
         
         term_synonyms = TermSynonym.objects.filter(glossary_entry=glossary_entry).values_list('term', flat=True)
         self.assertEqual(list(term_synonyms), ['Rind', 'Cortex'])
@@ -68,9 +69,16 @@ class TestGlossaryZipImporter(WithMedia, WithGlossary, WithUser, WithMetaApp, Te
         
         glossary_entry_2 = GlossaryEntry.objects.get(glossary=self.glossary, term='mulm cavities')
         self.assertEqual(glossary_entry_2.definition, 'Cavities in the living tree')
+        self.assertEqual(glossary_entry_2.category, None)
         
         glossary_entry_3 = GlossaryEntry.objects.get(glossary=self.glossary, term='Seepage water')
         self.assertEqual(glossary_entry_3.definition, 'underground water that moves downward under the influence of gravity')
+        self.assertEqual(glossary_entry_3.category, None)
+        
+        glossary_entry_4 = GlossaryEntry.objects.get(glossary=self.glossary, term='Categorized term')
+        self.assertEqual(glossary_entry_4.definition, 'Defintion of a categorized entry')
+        category = GlossaryEntryCategory.objects.get(glossary=self.glossary, name='category')
+        self.assertEqual(glossary_entry_4.category, category)
         
         # test the update
         updated_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'Glossary', 'valid_update')
@@ -88,6 +96,7 @@ class TestGlossaryZipImporter(WithMedia, WithGlossary, WithUser, WithMetaApp, Te
         glossary_entry.refresh_from_db()
         self.assertEqual(glossary_entry.definition, 'Updated bark text')
         self.assertEqual(glossary_entry.term, 'Bark')
+        self.assertEqual(glossary_entry.category, category)
         
         term_synonyms = TermSynonym.objects.filter(glossary_entry=glossary_entry).values_list('term', flat=True)
         self.assertEqual(list(term_synonyms), ['Rind'])
@@ -98,8 +107,12 @@ class TestGlossaryZipImporter(WithMedia, WithGlossary, WithUser, WithMetaApp, Te
         glossary_entry_3.refresh_from_db()
         self.assertEqual(glossary_entry_3.definition, 'underground water that moves downward under the influence of gravity')
         
-        glossary_rey_4 = GlossaryEntry.objects.get(glossary=self.glossary, term='New entry')
-        self.assertEqual(glossary_rey_4.definition, 'New entry definition')
+        glossary_entry_4.refresh_from_db()
+        self.assertEqual(glossary_entry_4.category, None)
+        
+        glossary_entry_5 = GlossaryEntry.objects.get(glossary=self.glossary, term='New entry')
+        self.assertEqual(glossary_entry_5.definition, 'New entry definition')
+        self.assertEqual(glossary_entry_5.category, None)
                 
         
 class TestGlossaryZipImporterInvalidData(WithMedia, WithGlossary, WithUser, WithMetaApp, TenantTestCase):

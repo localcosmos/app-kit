@@ -108,19 +108,48 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
     def get_taxon_profile_template_content_links(self, profile_taxon, language_code):
         template_contents = self.get_template_content_json_for_taxon(profile_taxon, language_code)
         return template_contents
+    
+    
+    def get_taxonomic_branch_as_dicts(self, lazy_taxon):
+        branch = []
+        tree_instance = lazy_taxon.tree_instance()
+        
+        if tree_instance:
+            
+            parent = tree_instance.parent
+            
+            while parent:
+                entry = {
+                    'taxonLatname': parent.taxon_latname,
+                    'taxonAuthor': parent.taxon_author,
+                    'rank': parent.rank,
+                }
+                branch.append(entry)
+                parent = parent.parent
+        
+        branch.reverse()
+        return branch
 
     # languages is for the vernacular name only, the rest are keys for translation
     def build_taxon_profile(self, profile_taxon, morphotype, languages):
+        
+        # if morphotype is the empty string, make it None for better handling in the code
+        if morphotype == '':
+            morphotype = None
         
         lazy_taxon = LazyTaxon(instance=profile_taxon)
 
         #self.app_release_builder.logger.info('building profile for {0}'.format(profile_taxon.taxon_latname))
 
         # get the profile
-        db_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+        db_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
             taxon_source=profile_taxon.taxon_source, taxon_latname=profile_taxon.taxon_latname,
-            taxon_author=profile_taxon.taxon_author, morphotype=morphotype).first()
+            taxon_author=profile_taxon.taxon_author)
         
+        if morphotype:
+            db_profile_qry = db_profile_qry.filter(morphotype=morphotype)
+        
+        db_profile = db_profile_qry.first()
         
         taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
         
@@ -132,16 +161,19 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon, morphotype=morphotype)
 
         is_featured = False
+
         if db_profile:
             if db_profile.publication_status == 'draft':
                 return None
             
             if db_profile.is_featured:
-                is_featured = True
+                is_featured = True                
+                
+        classification = self.get_taxonomic_branch_as_dicts(lazy_taxon)
 
         taxon_profile_json.update({
             'taxonProfileId': db_profile.id if db_profile else None,
-            'morphotype': db_profile.morphotype if db_profile else None,
+            'morphotype': morphotype,
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
@@ -152,6 +184,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'categorizedTexts' : [],
             'images' : images,
             'synonyms' : [],
+            'classification' : classification,
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
             'taxonRelationships': self.collect_taxon_relationships(profile_taxon) if not morphotype else [],

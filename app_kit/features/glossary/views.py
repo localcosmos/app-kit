@@ -8,9 +8,9 @@ from app_kit.views import ManageGenericContent
 
 from app_kit.view_mixins import MetaAppMixin
 
-from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm, GlossaryOptionsForm
+from .forms import GlossaryEntryForm, GlossaryEntryWithImageForm, GlossaryOptionsForm, GlossaryEntryCategoryForm
 
-from .models import Glossary, GlossaryEntry, TermSynonym
+from .models import Glossary, GlossaryEntry, TermSynonym, GlossaryEntryCategory
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
@@ -30,6 +30,7 @@ class ManageGlossary(ManageGenericContent):
         context = super().get_context_data(**kwargs)
         context['glossary_entry_form'] = self.get_glossary_entry_form()
         context['glossary_entries'] = GlossaryEntry.objects.filter(glossary=self.generic_content)
+        context['categories'] = GlossaryEntryCategory.objects.filter(glossary=self.generic_content)
         return context
 
 
@@ -200,3 +201,84 @@ class DeleteGlossaryEntry(AjaxDeleteView):
             'deleted':True,
         }
         return self.render_to_response(context)
+
+
+class GetGlossaryEntryCategories(MetaAppMixin, TemplateView):
+
+    template_name = 'glossary/ajax/glossary_entry_categories.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.glossary = Glossary.objects.get(pk=kwargs['glossary_id'])
+        return super().dispatch(request, *args, **kwargs)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['generic_content'] = self.glossary
+        context['categories'] = GlossaryEntryCategory.objects.filter(glossary=self.glossary)
+        return context
+
+
+class ManageGlossaryEntryCategory(MetaAppMixin, FormView):
+
+    template_name = 'glossary/ajax/manage_glossary_entry_category.html'
+    form_class = GlossaryEntryCategoryForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_category(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_category(self, **kwargs):
+        self.glossary = Glossary.objects.get(pk=kwargs['glossary_id'])
+        self.category = None
+        if 'category_id' in kwargs:
+            self.category = GlossaryEntryCategory.objects.get(pk=kwargs['category_id'])
+
+    
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        if self.category:
+            form_kwargs['instance'] = self.category
+        return form_kwargs
+    
+    
+    def get_form(self, form_class=None):
+        form_class = self.get_form_class()
+        form = form_class(glossary=self.glossary, **self.get_form_kwargs())
+        return form
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['generic_content'] = self.glossary
+        context['category'] = self.category
+        context['success'] = False
+        return context
+    
+    def form_valid(self, form):
+        category = form.save(commit=False)
+
+        if not category.glossary_id:
+            category.glossary = self.glossary
+
+        category.save()
+
+        if hasattr(form, 'save_m2m'):
+            form.save_m2m()
+
+        context = self.get_context_data(**self.kwargs)
+        context['success'] = True
+        context['category'] = category
+
+        return self.render_to_response(context)
+    
+class DeleteGlossaryEntryCategory(MetaAppMixin, AjaxDeleteView):
+    
+    template_name = 'glossary/ajax/delete_glossary_entry_category.html'
+    
+    model = GlossaryEntryCategory
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['generic_content'] = self.object.glossary
+        return context

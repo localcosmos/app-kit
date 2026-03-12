@@ -10,11 +10,12 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 
 from app_kit.features.glossary.views import (ManageGlossary, AddGlossaryEntry, ManageGlossaryEntry,
-                                             GetGlossaryEntry, GetGlossaryEntries, DeleteGlossaryEntry)
+    GetGlossaryEntry, GetGlossaryEntries, DeleteGlossaryEntry, ManageGlossaryEntryCategory,
+    GetGlossaryEntryCategories, DeleteGlossaryEntryCategory)
 
-from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym
+from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym, GlossaryEntryCategory
 
-from app_kit.features.glossary.forms import GlossaryEntryForm, GlossaryEntryWithImageForm
+from app_kit.features.glossary.forms import GlossaryEntryForm, GlossaryEntryWithImageForm, GlossaryEntryCategoryForm
 
 
 from app_kit.models import MetaAppGenericContent
@@ -36,6 +37,18 @@ class WithGlossary:
         )
 
         self.link.save()
+        
+        
+    def create_glossary_entry_category(self, glossary, name):
+
+        category, created = GlossaryEntryCategory.objects.get_or_create(
+            glossary=glossary,
+            name=name,
+        )
+
+        category.save()
+
+        return category
 
 class TestManageGlossary(WithGlossary, ViewTestMixin, WithAdminOnly, WithUser, WithLoggedInUser, WithMetaApp,
                          WithTenantClient, TenantTestCase):
@@ -336,3 +349,254 @@ class TestDeleteGlossaryEntry(WithGlossaryEntry, WithGlossary, ViewTestMixin, Wi
 
 
         
+class TestGetGlossaryEntryCategories(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+                             WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'get_glossary_entry_categories'
+    view_class = GetGlossaryEntryCategories
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'glossary_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    @test_settings
+    def get_context_data(self):
+
+        view = self.get_view()
+        view.glossary = self.generic_content
+        view.meta_app = self.meta_app
+
+        context = view.get_context_data(**view.kwargs)
+
+        self.assertEqual(context['generic_content'], self.generic_content)
+        self.assertEqual(context['categories'].count(), 0)
+        
+        category = self.create_glossary_entry_category(self.generic_content, 'test category')
+        
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['categories'].count(), 1)
+        self.assertEqual(context['categories'].first(), category)
+        
+
+class TestAddGlossaryEntryCategory(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+                             WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'add_glossary_entry_category'
+    view_class = ManageGlossaryEntryCategory
+
+    def get_url_kwargs(self):
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'glossary_id' : self.generic_content.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_set_category(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        self.assertEqual(view.category, None)
+        self.assertEqual(view.glossary, self.generic_content)
+        
+
+    @test_settings
+    def test_get_form_kwargs(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        form_kwargs = view.get_form_kwargs()
+        self.assertEqual(form_kwargs.get('instance'), None)
+        
+    
+    @test_settings
+    def test_get_form(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        form = view.get_form()
+        self.assertEqual(form.__class__, GlossaryEntryCategoryForm)
+        self.assertEqual(form.glossary, self.generic_content)
+        self.assertIsNone(form.instance.pk)
+        
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['generic_content'], self.generic_content)
+        self.assertEqual(context['category'], None)
+        self.assertEqual(context['form'].__class__, GlossaryEntryCategoryForm)
+        self.assertEqual(context['success'], False)
+        
+    @test_settings
+    def test_form_valid(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        data = {
+            'name' : 'Test category',
+        }
+
+        form = GlossaryEntryCategoryForm(data=data, glossary=view.glossary)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        category = GlossaryEntryCategory.objects.all().last()
+        self.assertEqual(response.context_data['category'], category)
+        
+
+
+class TestEditGlossaryEntryCategory(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+                             WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'edit_glossary_entry_category'
+    view_class = ManageGlossaryEntryCategory
+
+    def get_url_kwargs(self):
+        category = self.create_glossary_entry_category(self.generic_content, 'test category')
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'glossary_id' : self.generic_content.id,
+            'category_id' : category.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_set_category(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        category = GlossaryEntryCategory.objects.get(pk=view.kwargs['category_id'])
+
+        self.assertEqual(view.category, category)
+        self.assertEqual(view.glossary, self.generic_content)
+    
+    @test_settings
+    def test_get_form_kwargs(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        category = GlossaryEntryCategory.objects.get(pk=view.kwargs['category_id'])
+
+        form_kwargs = view.get_form_kwargs()
+        self.assertEqual(form_kwargs['instance'], category)
+        
+    
+    @test_settings
+    def test_get_form(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        category = GlossaryEntryCategory.objects.get(pk=view.kwargs['category_id'])
+
+        form = view.get_form()
+        self.assertEqual(form.__class__, GlossaryEntryCategoryForm)
+        self.assertEqual(form.glossary, self.generic_content)
+        self.assertEqual(form.instance, category)
+        
+    
+    @test_settings
+    def test_get_context_data(self):
+
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        category = GlossaryEntryCategory.objects.get(pk=view.kwargs['category_id'])
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['generic_content'], self.generic_content)
+        self.assertEqual(context['category'], category)
+        self.assertEqual(context['form'].__class__, GlossaryEntryCategoryForm)
+        self.assertEqual(context['success'], False)
+    
+    
+    @test_settings
+    def test_form_valid(self):
+        
+        view = self.get_view()
+        view.set_category(**view.kwargs)
+
+        category = GlossaryEntryCategory.objects.get(pk=view.kwargs['category_id'])
+
+        data = {
+            'name' : 'Test category',
+        }
+
+        form = GlossaryEntryCategoryForm(data=data, glossary=view.glossary, instance=category)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context_data['success'], True)
+        category.refresh_from_db()
+        self.assertEqual(category.name, 'Test category')
+        
+        # make sure there is no new category created
+        self.assertEqual(GlossaryEntryCategory.objects.count(), 1)
+        
+class TestDeleteGlossaryEntryCategory(WithGlossaryEntry, WithGlossary, ViewTestMixin, WithAjaxAdminOnly, WithUser,
+                             WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'delete_glossary_entry_category'
+    view_class = DeleteGlossaryEntryCategory
+
+    def get_url_kwargs(self):
+        category = self.create_glossary_entry_category(self.generic_content, 'test category')
+        url_kwargs = {
+            'meta_app_id' : self.meta_app.id,
+            'pk' : category.id,
+        }
+        return url_kwargs
+    
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+    
+    @test_settings
+    def test_post(self):
+
+        view = self.get_view()
+
+        category_pk = view.kwargs['pk']
+        query = GlossaryEntryCategory.objects.filter(pk=category_pk)
+
+        self.assertTrue(query.exists())
+
+        view.request.method = 'POST'
+
+        response = view.post(view.request, **view.kwargs)
+
+        self.assertFalse(query.exists())
+
+        self.assertEqual(response.context_data['deleted'], True)
+        self.assertEqual(response.context_data['generic_content'], self.generic_content)

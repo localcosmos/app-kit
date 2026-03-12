@@ -138,7 +138,7 @@ if settings.APP_KIT_ENABLE_META_NODE_DESCRIPTION == True:
     META_NODE_DESCRIPTION_WIDGET = forms.Textarea
 
 is_active_field = forms.BooleanField(required=False, label=_('included in app'),
-                    help_text=_('Marks if this node is included in your app.'))
+                    help_text=_('Marks if this is included in your app.'))
 
  # parent_node is fetched using view kwargs
 class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):

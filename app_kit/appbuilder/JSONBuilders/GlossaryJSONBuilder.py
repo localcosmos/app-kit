@@ -39,10 +39,13 @@ class GlossaryJSONBuilder(JSONBuilder):
     def get_glossary_json_entry(self, glossary_entry):
 
         synonyms = list(glossary_entry.synonyms.values_list('term', flat=True))
+        
+        category_name = glossary_entry.category.name if glossary_entry.category else None
 
         entry_json = {
             'definition' : glossary_entry.definition,
             'synonyms' : synonyms,
+            'category' : category_name,
             'imageUrl' : self._get_image_urls(glossary_entry),
         }
 
@@ -125,7 +128,7 @@ class GlossaryJSONBuilder(JSONBuilder):
 
             localized_term = locale.get(term, term)
 
-            term_word_count = len(localized_term.split(' '))
+            term_word_count = len(localized_term.split())
 
             term_entry = {
                 'term' : term,
@@ -156,7 +159,7 @@ class GlossaryJSONBuilder(JSONBuilder):
 
                 localized_term_synonym = locale.get(synonym.term, synonym.term)
 
-                synonym_word_count = len(localized_term_synonym.split(' '))
+                synonym_word_count = len(localized_term_synonym.split())
                 
                 synonym_entry = {
                     'term' : synonym.term,
@@ -320,6 +323,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         localized_glossary_entry = {
             'definition' : localized_definition,
             'synonyms' : [],
+            'category' : glossary_entry.get('category', None),
             'imageUrl' : glossary_entry['imageUrl'],
         }
 
@@ -352,6 +356,43 @@ class GlossaryJSONBuilder(JSONBuilder):
         localized_glossary_sorted = self.sort_glossary(localized_glossary)
         
         return localized_glossary_sorted
+    
+    def build_localized_categorized_glossaries(self, glossary_json, language_code):
+        
+        localized_glossaries = {
+            'no_category' : {},
+        }
+        
+        locale = self.meta_app.localizations[language_code]
+        
+        for term, glossary_entry in glossary_json['glossary'].items():
+
+            category = glossary_entry.get('category', None)
+
+            if category is None:
+                category = 'no_category'
+
+            if category not in localized_glossaries:
+                localized_glossaries[category] = {}
+                
+            
+            localized_term = locale.get(term, term)
+
+            localized_glossary_entry = self.get_localized_glossary_entry(glossary_entry, language_code)
+            
+            start_letter = localized_term[0].upper()
+            
+            if start_letter not in localized_glossaries[category]:
+                localized_glossaries[category][start_letter] = {}
+
+            localized_glossaries[category][start_letter][localized_term] = localized_glossary_entry
+            
+        # sort all glossaries
+        localized_glossaries_sorted = {}
+        for category, glossary in localized_glossaries.items():
+            localized_glossaries_sorted[category] = self.sort_glossary(glossary)
+            
+        return localized_glossaries_sorted
             
 
     # convert glossary to sorted OrderedDict instance

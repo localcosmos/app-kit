@@ -92,6 +92,10 @@ class GenericContentZipImporter:
             cell_value = cell_value.strip()
         else:
             cell_value = None
+            
+        # make it None if it is an empty string after stripping
+        if cell_value == '':
+            cell_value = None
         return cell_value
     
     def get_stripped_cell_value_lowercase(self, cell_value):

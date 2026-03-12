@@ -1,7 +1,7 @@
 from django_tenants.test.cases import TenantTestCase
 
 from app_kit.tests.common import test_settings
-from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym
+from app_kit.features.glossary.models import Glossary, GlossaryEntry, TermSynonym, GlossaryEntryCategory
 
 from app_kit.features.glossary.zip_import import GlossaryZipImporter
 from taxonomy.lazy import LazyTaxonList
@@ -35,6 +35,17 @@ class WithGlossary:
         synonym.save()
 
         return synonym
+    
+    def create_glossary_entry_category(self, glossary, name):
+
+        category = GlossaryEntryCategory(
+            glossary=glossary,
+            name=name,
+        )
+
+        category.save()
+
+        return category
 
 class TestGlossary(WithGlossary, TenantTestCase):
 
@@ -124,3 +135,18 @@ class TestTermSynonym(WithGlossary, TenantTestCase):
 
             self.assertEqual(str(term_synonym), term_synonym.term)
         
+
+
+class TestGlossaryEntryCategory(WithGlossary, TenantTestCase):
+
+    @test_settings
+    def test_str(self):
+
+        glossary = self.create_glossary()
+
+        category = GlossaryEntryCategory.objects.create(
+            glossary=glossary,
+            name='Test category',
+        )
+
+        self.assertEqual(str(category), category.name)

@@ -241,6 +241,21 @@ class AppReleaseBuilder(AppBuilderBase):
         filename = 'glossary.json'
 
         return os.path.join(localized_glossaries_path, filename)
+    
+    def _app_categorized_glossaries_folder(self, glossary, language_code):
+
+        glossary_path = self._app_absolute_generic_content_path(glossary)
+
+        return os.path.join(glossary_path, 'categorized', language_code)
+    
+    
+    def _app_categorized_localized_glossary_filepath(self, glossary, category, language_code):
+        
+        categorized_glossaries_path = self._app_categorized_glossaries_folder(glossary, language_code)
+
+        filename = '{0}.json'.format(slugify(category))
+
+        return os.path.join(categorized_glossaries_path, filename)
 
 
     def _app_localized_glossary_csv_filepath(self, glossary, language_code):
@@ -274,6 +289,13 @@ class AppReleaseBuilder(AppBuilderBase):
         relative_glossary_path = self._app_relative_generic_content_path(glossary)
 
         return os.path.join(relative_glossary_path, language_code)
+    
+    
+    def _app_relative_categorized_glossaries_folder(self, glossary, language_code):
+
+        relative_glossary_path = self._app_relative_generic_content_path(glossary)
+
+        return os.path.join(relative_glossary_path, 'categorized', language_code)
 
 
     def _app_relative_localized_glossary_filepath(self, glossary, language_code):
@@ -282,6 +304,13 @@ class AppReleaseBuilder(AppBuilderBase):
         filename = 'glossary.json'
 
         return os.path.join(localized_glossaries_relative_path, filename)
+    
+    
+    def _app_relative_localized_categorized_localized_glossary_filepath(self, glossary, category, language_code):
+        categorized_relative_glossaries_path = self._app_relative_categorized_glossaries_folder(glossary, language_code)
+        filename = '{0}.json'.format(slugify(category))
+        
+        return os.path.join(categorized_relative_glossaries_path, filename)
 
 
     def _app_relative_localized_glossary_csv_filepath(self, glossary, language_code):
@@ -2502,7 +2531,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         generic_content_type = glossary.__class__.__name__
         self.build_features[generic_content_type]['localized'] = {}
-        
+        self.build_features[generic_content_type]['categorized'] = {}
 
         for language_code in self.meta_app.languages():
 
@@ -2563,6 +2592,27 @@ class AppReleaseBuilder(AppBuilderBase):
             localized_glossary_relative_path = self._app_relative_localized_glossary_filepath(glossary, language_code)
             
             self.build_features[generic_content_type]['localized'][language_code]['allTerms'] = '/{0}'.format(localized_glossary_relative_path)
+            
+            
+            # categrized localized glossary
+            categorized_localized_glossaries = jsonbuilder.build_localized_categorized_glossaries(glossary_json, language_code)
+            
+            for category, categorized_glossary in categorized_localized_glossaries.items():
+                absolute_folder_path = self._app_categorized_glossaries_folder(glossary, language_code)
+                
+                if not os.path.isdir(absolute_folder_path):
+                    os.makedirs(absolute_folder_path)
+                
+                categorized_localized_glossary_filepath = self._app_categorized_localized_glossary_filepath(glossary, category, language_code)
+                
+                with open(categorized_localized_glossary_filepath, 'w', encoding='utf-8') as f:
+                    json.dump(categorized_glossary, f, indent=4, ensure_ascii=False)
+
+                categorized_localized_glossary_relative_path = self._app_relative_localized_categorized_localized_glossary_filepath(glossary,
+                    category, language_code)
+
+
+                self.build_features[generic_content_type]['categorized'][category] = '/{0}'.format(categorized_localized_glossary_relative_path)
 
 
             # downloadable csv file of all terms

@@ -1,0 +1,43 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+	{% if category %}{% url 'edit_glossary_entry_category' meta_app.id generic_content.id category.id %}{% else %}{% url 'add_glossary_entry_category' meta_app.id generic_content.id %}{% endif %}
+{% endblock %}
+
+{% block enctype %}multipart/form-data{% endblock %}
+
+{% block title %}
+	{% if category %}{% trans 'Edit category' %}{% else %}{% trans 'Add category' %}{% endif %}
+{% endblock %}
+
+{% block body %}
+    {% if success %}
+        <div class="alert alert-success">
+            {% trans 'successfully saved category' %}
+        </div>
+    {% else %}
+        {% render_bootstrap_form form %}
+    {% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+	<script>
+		$.get("{% url 'get_glossary_entry_categories' meta_app.id generic_content.id %}", function(html){
+			$("#glossary-entry-categories").html(html);
+			ajaxify("glossary-entry-categories");
+            hideLargeModal();
+		});
+
+        $.get("{% url 'get_glossary_entries' meta_app.id generic_content.id %}", function(html){
+			$("#glossary-entries").html(html);
+			ajaxify("glossary-entries");
+		});
+	</script>
+	{% endif %}
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'localcosmos_server/generic/delete_object.html' %}
+
+{% block success_js %}
+	<script>
+		hideModal();
+		$.get("{% url 'get_glossary_entries' meta_app.id generic_content.id %}", function(html){
+			$("#glossary-entries").html(html);
+			ajaxify("glossary-entries");
+		});
+	</script>
+{% endblock %}

@@ -70,12 +70,27 @@ class Glossary(GenericContent):
 FeatureModel = Glossary
 
 
+class GlossaryEntryCategory(models.Model):
+
+    glossary = models.ForeignKey(Glossary, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        unique_together = ('glossary', 'name')
+        ordering = ['name']
+
+
 class GlossaryEntry(models.Model, ContentImageMixin):
 
     glossary = models.ForeignKey(Glossary, on_delete=models.CASCADE)
 
     term = models.CharField(max_length=355) # cannot be unique, a user might remove a linked glossary and add a new one
     definition = models.TextField()
+    
+    category = models.ForeignKey(GlossaryEntryCategory, on_delete=models.SET_NULL, null=True, blank=True)
 
     @property
     def synonyms(self):

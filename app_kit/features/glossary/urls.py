@@ -14,4 +14,12 @@ urlpatterns = [
         views.GetGlossaryEntry.as_view(), name='get_glossary_entry'),
     path('delete-glossary-entry/<int:pk>/',
         views.DeleteGlossaryEntry.as_view(), name='delete_glossary_entry'),
+    path('add-glossary-entry-category/<int:meta_app_id>/<int:glossary_id>/',
+        views.ManageGlossaryEntryCategory.as_view(), name='add_glossary_entry_category'),
+    path('edit-glossary-entry-category/<int:meta_app_id>/<int:glossary_id>/<int:category_id>/',
+        views.ManageGlossaryEntryCategory.as_view(), name='edit_glossary_entry_category'),
+    path('get-glossary-entry-categories/<int:meta_app_id>/<int:glossary_id>/',
+        views.GetGlossaryEntryCategories.as_view(), name='get_glossary_entry_categories'),
+    path('delete-glossary-entry-category/<int:meta_app_id>/<int:pk>/',
+        views.DeleteGlossaryEntryCategory.as_view(), name='delete_glossary_entry_category'),
 ]
