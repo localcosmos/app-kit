@@ -112,7 +112,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
             nature_guide_results.append(entry)
 
-        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, morphotype=None).exclude(
+        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, morphotype__in=(None, '')).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
         backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
@@ -121,7 +121,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
             backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
-            morphotype=None,
+            morphotype__in=(None, ''),
             name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')

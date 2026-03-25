@@ -162,6 +162,11 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
                 
         self.assertEqual(len(quercus_robur_profile.images()), 1)
         
+        # position
+        qrp_image = quercus_robur_profile.images()[0]
+        # 14th column - 4 (offset) = 10
+        self.assertEqual(qrp_image.position, 10)
+        
         qr_image = quercus_robur_profile.images()[0]
         self.assertEqual(qr_image.title, 'Leaf title')
         self.assertEqual(qr_image.text, 'Leaf caption')

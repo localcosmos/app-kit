@@ -2526,6 +2526,8 @@ class AppReleaseBuilder(AppBuilderBase):
         
         # only contains the primary language
         glossary_json = jsonbuilder.build()
+        
+        # now builder.primary_locale_glossary is available
 
         self._add_generic_content_to_app(app_generic_content, glossary_json, only_one_allowed=True)
 
@@ -2538,7 +2540,7 @@ class AppReleaseBuilder(AppBuilderBase):
             self.build_features[generic_content_type]['localized'][language_code] = {}
             
             # create a glossarized version of te language file and save it as {language}_glossarized.json
-            glossarized_locale, used_terms_glossary = jsonbuilder.glossarize_language_file(glossary_json, language_code)
+            glossarized_locale, used_terms_glossary = jsonbuilder.glossarize_language_file(jsonbuilder.primary_locale_glossary, language_code)
 
             # store localized glossary file in the same folder as the language file
             glossarized_locale_filepath = self._app_glossarized_locale_filepath(language_code)
@@ -2582,7 +2584,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
             # localized glossary, all terms
-            localized_glossary = jsonbuilder.build_localized_glossary(glossary_json, language_code)
+            localized_glossary = jsonbuilder.build_localized_glossary(jsonbuilder.primary_locale_glossary, language_code)
             localized_glossary_filepath = self._app_localized_glossary_filepath(glossary, language_code)
             
             with open(localized_glossary_filepath, 'w', encoding='utf-8') as f:
@@ -2595,7 +2597,7 @@ class AppReleaseBuilder(AppBuilderBase):
             
             
             # categrized localized glossary
-            categorized_localized_glossaries = jsonbuilder.build_localized_categorized_glossaries(glossary_json, language_code)
+            categorized_localized_glossaries = jsonbuilder.build_localized_categorized_glossaries(jsonbuilder.primary_locale_glossary, language_code)
             
             for category, categorized_glossary in categorized_localized_glossaries.items():
                 absolute_folder_path = self._app_categorized_glossaries_folder(glossary, language_code)
@@ -2612,7 +2614,10 @@ class AppReleaseBuilder(AppBuilderBase):
                     category, language_code)
 
 
-                self.build_features[generic_content_type]['categorized'][category] = '/{0}'.format(categorized_localized_glossary_relative_path)
+                if category not in self.build_features[generic_content_type]['categorized']:
+                    self.build_features[generic_content_type]['categorized'][category] = {}
+                    
+                self.build_features[generic_content_type]['categorized'][category][language_code] = '/{0}'.format(categorized_localized_glossary_relative_path)
 
 
             # downloadable csv file of all terms

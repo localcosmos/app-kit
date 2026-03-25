@@ -20,8 +20,9 @@ class GlossaryJSONBuilder(JSONBuilder):
     def build(self):
 
         glossary_json = self._build_common_json()
-
-        glossary_json['glossary'] = {}
+        
+        #glossary_json['glossary'] = {}
+        self.primary_locale_glossary = {}
 
         glossary = self.generic_content
 
@@ -31,7 +32,7 @@ class GlossaryJSONBuilder(JSONBuilder):
 
             glossary_json_entry = self.get_glossary_json_entry(glossary_entry)
             
-            glossary_json['glossary'][glossary_entry.term] = glossary_json_entry
+            self.primary_locale_glossary[glossary_entry.term] = glossary_json_entry
             
         return glossary_json
 
@@ -102,11 +103,11 @@ class GlossaryJSONBuilder(JSONBuilder):
     #
     # glossarized.json language files
     # - contain links to the glossary terms
-    # - glossary_json contains only the primary language
+    # - primary_locale_glossary contains only the primary language
     # - b64encode glossary terms in data-term
     # - also create localized_used_terms_glossary
     ##########################################################################################################
-    def glossarize_language_file(self, glossary_json, language_code):
+    def glossarize_language_file(self, primary_locale_glossary, language_code):
 
         glossary = self.generic_content
 
@@ -124,7 +125,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         
         # the glossary entry (term) can consist of multiple words with spaces
         # iterate over all glossary entries and find them in the text
-        for term, glossary_entry in glossary_json['glossary'].items():
+        for term, glossary_entry in primary_locale_glossary.items():
 
             localized_term = locale.get(term, term)
 
@@ -293,7 +294,7 @@ class GlossaryJSONBuilder(JSONBuilder):
 
                                 if localized_term not in localized_used_terms_glossary[start_letter]:
 
-                                    glossary_entry = glossary_json['glossary'][glossary_lookup_term]
+                                    glossary_entry = primary_locale_glossary[glossary_lookup_term]
 
                                     localized_glossary_entry = self.get_localized_glossary_entry(glossary_entry,
                                                                                                 language_code)
@@ -334,13 +335,13 @@ class GlossaryJSONBuilder(JSONBuilder):
         return localized_glossary_entry
 
     # sort by begining letters { 'A' : {}}
-    def build_localized_glossary(self, glossary_json, language_code):
+    def build_localized_glossary(self, primary_locale_glossary, language_code):
 
         localized_glossary = {}
 
         locale = self.meta_app.localizations[language_code]
 
-        for term, glossary_entry in glossary_json['glossary'].items():
+        for term, glossary_entry in primary_locale_glossary.items():
 
             localized_term = locale.get(term, term)
 
@@ -357,7 +358,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         
         return localized_glossary_sorted
     
-    def build_localized_categorized_glossaries(self, glossary_json, language_code):
+    def build_localized_categorized_glossaries(self, primary_locale_glossary, language_code):
         
         localized_glossaries = {
             'no_category' : {},
@@ -365,7 +366,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         
         locale = self.meta_app.localizations[language_code]
         
-        for term, glossary_entry in glossary_json['glossary'].items():
+        for term, glossary_entry in primary_locale_glossary.items():
 
             category = glossary_entry.get('category', None)
 
@@ -412,7 +413,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         return glossary_sorted
         
     '''
-    def update_used_terms_glossary(self, used_terms_glossary, tas_entry, glossary_json, language_code):
+    def update_used_terms_glossary(self, used_terms_glossary, tas_entry, primary_locale_glossary, language_code):
 
         localized_term = tas_entry['localized_term']
         glossary_lookup_term = tas_entry['term']
@@ -427,7 +428,7 @@ class GlossaryJSONBuilder(JSONBuilder):
         
         if start_letter not in used_terms_glossary or localized_term not in used_terms_glossary[start_letter]:
 
-            glossary_entry = glossary_json['glossary'][glossary_lookup_term]
+            glossary_entry = primary_locale_glossary[glossary_lookup_term]
 
             localized_glossary_entry = self.get_localized_glossary_entry(glossary_entry, language_code)
 

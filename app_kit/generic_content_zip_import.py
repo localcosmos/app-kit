@@ -923,7 +923,10 @@ class GenericContentZipImporter:
             crop_parameters=json.dumps(crop_parameters),
             content_type = content_type,
             object_id = object_id
-        )        
+        )
+            
+        if image_data.get('position', None):
+            content_image.position = image_data['position']
         
         if image_data['title']:
             content_image.title = image_data['title']

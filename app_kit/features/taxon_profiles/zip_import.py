@@ -432,10 +432,14 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
                 
                 # taxa might be renamed. The reference is always the source tree, the name_uuid is constant across renames
-                taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
+                taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
                                                             taxon_source=lazy_taxon.taxon_source,
-                                                            name_uuid=lazy_taxon.name_uuid,
-                                                            morphotype=morphotype).first()
+                                                            name_uuid=lazy_taxon.name_uuid)
+                
+                if morphotype:
+                    taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+                
+                taxon_profile=taxon_profile_qry.first()
 
                 if taxon_profile:
                     if taxon_profile.taxon_latname != lazy_taxon.taxon_latname or taxon_profile.taxon_author != lazy_taxon.taxon_author:
@@ -446,13 +450,17 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                     
                     # in some cases, the CoL lists names as synonyms of itself, so the name_uuid lookup might fail
                     # in this case, we have to look for the taxon by latname and source
-                    taxon_profile = TaxonProfile.objects.filter(
+                    taxon_profile_qry = TaxonProfile.objects.filter(
                         taxon_profiles=self.generic_content,
                         taxon_source=lazy_taxon.taxon_source,
                         taxon_latname=lazy_taxon.taxon_latname,
                         taxon_author=lazy_taxon.taxon_author,
-                        morphotype=morphotype,
-                    ).first()
+                    )
+                    
+                    if morphotype:
+                        taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+                    
+                    taxon_profile = taxon_profile_qry.first()
                     
                     if not taxon_profile:
                         taxon_profile = TaxonProfile(
@@ -547,6 +555,9 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                     # get the image data from the images sheet
                                     image_filename = cell_value
                                     image_data = self.get_image_data_from_images_sheet(image_filename)
+                                    
+                                    # infer position from column_index
+                                    image_data['position'] = column_index - 4
                                     
                                     image_filepath = self.get_image_file_disk_path(image_filename)
                                     
