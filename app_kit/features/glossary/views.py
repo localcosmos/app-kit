@@ -77,6 +77,9 @@ class ManageGlossaryEntryCommon:
                     )
 
                     synonym.save()
+                    
+        else:
+            TermSynonym.objects.filter(glossary_entry=glossary_entry).delete()
 
         # save the image, if any
         if 'source_image' in form.cleaned_data and form.cleaned_data['source_image']:

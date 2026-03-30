@@ -75,7 +75,7 @@ from app_kit.features.frontend.models import Frontend
 
 from localcosmos_cordova_builder import MetaAppDefinition, CordovaAppBuilder
 
-import logging, os, json, shutil, traceback, inspect
+import logging, os, json, shutil, traceback, inspect, threading
 
 # getting app specific API
 from django_tenants.utils import get_tenant_domain_model
@@ -220,11 +220,23 @@ class AppBuilderBase:
         
         text_content = '{0} \n\n {1}'.format(tenant_text, traceback.format_exc())
 
-        mail.mail_admins(subject, text_content)
+        self.send_admin_email(subject, text_content)
 
 
     def send_admin_email(self, title, text_content):
-        mail.mail_admins(title, text_content)
+        # Keep release/build requests responsive: never block on SMTP in the request thread.
+        timeout = getattr(settings, 'APP_KIT_EMAIL_TIMEOUT', getattr(settings, 'EMAIL_TIMEOUT', 5))
+
+        def _send_mail():
+            try:
+                connection = mail.get_connection(fail_silently=True, timeout=timeout)
+                mail.mail_admins(title, text_content, fail_silently=True, connection=connection)
+            except Exception:
+                logger = getattr(self, 'logger', None)
+                if logger:
+                    logger.error('Failed to send admin email', exc_info=True)
+
+        threading.Thread(target=_send_mail, daemon=True).start()
 
 
     ###############################################################################################################

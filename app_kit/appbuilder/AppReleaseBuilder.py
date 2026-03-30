@@ -528,7 +528,7 @@ class AppReleaseBuilder(AppBuilderBase):
                 except URLError as e:
                     api_error_message = _('Local Cosmos Private API URL Error: {0}.'.format(e.reason))
                     
-                except:
+                except Exception as e:
                     error_message = _('Error validating your Local Cosmos Private API.')
 
 
@@ -709,7 +709,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
         try:
             OptionsForm = import_module(options_form_module_path)
-        except:
+        except Exception as e:
             print('No options form found at {0}'.format(options_form_module_path))
             OptionsForm = None
 
@@ -1110,11 +1110,27 @@ class AppReleaseBuilder(AppBuilderBase):
         for template_content in template_contents:
             if template_content.is_published == True:
                 
-                if not template_content.draft_template.template_exists:
+                if template_content.draft_template.template_exists:
+                    primary_ltc = template_content.get_locale(self.meta_app.primary_language)
+                    if primary_ltc.draft_version and primary_ltc.published_version:
+                        if primary_ltc.draft_version > primary_ltc.published_version:
+                            warning_message = _('The page "%(name)s" has a newer unpublished version.') % {'name':primary_ltc.draft_title}
+                            warning = ValidationError(template_content, template_content, [warning_message])
+                            result['warnings'].append(warning)
+                else:
                     primary_ltc = template_content.get_locale(self.meta_app.primary_language)
                     error_message = _('The page "%(name)s" is not supported by your frontend. You have to remove it first.') % {'name':primary_ltc.draft_title}
-                    error = ValidationError(self.meta_app, template_content, [error_message])
+                    error = ValidationError(template_content, template_content, [error_message])
                     result['errors'].append(error)
+                    
+            if template_content.is_published == False:
+                
+                if template_content.draft_template.template_exists:
+                    primary_ltc = template_content.get_locale(self.meta_app.primary_language)
+                    warning_message = _('The page "%(name)s" is currently not published.') % {'name':primary_ltc.draft_title}
+                    warning = ValidationError(template_content, template_content, [warning_message])
+                    result['warnings'].append(warning)
+                    
                     
         return result
 
@@ -3045,7 +3061,10 @@ class AppReleaseBuilder(AppBuilderBase):
             release_report['result'] = 'failure'
             
             # send email!
-            self.send_bugreport_email(e)
+            try:
+                self.send_bugreport_email(e)
+            except Exception as e:
+                self.logger.error('Failed to send bugreport email for release failure', exc_info=True)
 
         release_report['finished_at'] = int(time.time())
         self.meta_app.last_release_report = release_report
@@ -3137,7 +3156,12 @@ class AppReleaseBuilder(AppBuilderBase):
             
             self.logger.info('Sending release email for Android')
 
-            self._send_release_request_email('Android')
+            try:
+                self._send_release_request_email('Android')
+            # timeout exception
+            except Exception as e:
+                # only log mail exceptions, do not fail the release if email sending fails
+                self.logger.error('Failed to send release request email for Android', exc_info=True)
 
 
     ##############################################################################################################
@@ -3174,8 +3198,12 @@ class AppReleaseBuilder(AppBuilderBase):
             
             self.logger.info('Sending release email for iOS')
 
-            self._send_release_request_email('iOS')
-
+            try:
+                self._send_release_request_email('iOS')
+            # timeout exception
+            except Exception as e:
+                # only log mail exceptions, do not fail the release if email sending fails
+                self.logger.error('Failed to send release request email for iOS', exc_info=True)
 
     def _create_ios_release_job(self, meta_app, app_version):
 
