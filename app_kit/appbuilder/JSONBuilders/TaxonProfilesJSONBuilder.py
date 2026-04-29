@@ -187,7 +187,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'classification' : classification,
             'templateContents' : [],
             'genericForms' : self.collect_usable_generic_forms(profile_taxon),
-            'taxonRelationships': self.collect_taxon_relationships(profile_taxon) if not morphotype else [],
+            'taxonRelationships': [],
             'tags' : [],
             'seo': {
                 'title': None,
@@ -207,6 +207,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 }
 
                 taxon_profile_json['synonyms'].append(synonym_entry)
+                
+            taxon_relationships = self.collect_taxon_relationships(profile_taxon)
+            taxon_profile_json['taxonRelationships'] = taxon_relationships
 
         for language_code in languages:
 

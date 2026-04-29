@@ -18,6 +18,7 @@ from taxonomy.lazy import LazyTaxon
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 
 AVAILABLE_EXTERNAL_MEDIA_TYPES = [d[0] for d in EXTERNAL_MEDIA_TYPES]
+EXTERNAL_MEDIA_SHEET_NAME = 'External Media'
 
 import os, openpyxl, json, re
 
@@ -48,9 +49,10 @@ class GenericContentZipImporter:
     image_file_extensions = ['png', 'jpg', 'jpeg', 'webp']
 
     required_sheet_names = []
+    allowed_sheet_names = []
 
     images_sheet_name = 'Images'
-    external_media_sheet_name = 'External Media'
+    external_media_sheet_name = EXTERNAL_MEDIA_SHEET_NAME
 
 
     def __init__(self, user, generic_content, zip_contents_path, ignore_nonexistent_images=False):
@@ -72,6 +74,25 @@ class GenericContentZipImporter:
 
     def validate_spreadsheet(self):
         raise NotImplementedError('GenericContentZipValidator classes require a validate_spreadsheet method')
+    
+    def validate_sheet_names(self):
+        
+        if self.required_sheet_names:
+            for required_sheet_name in self.required_sheet_names:
+                if required_sheet_name not in self.workbook.sheetnames:
+                    message = _('Missing required sheet: %(sheet_name)s') % {
+                        'sheet_name': required_sheet_name,
+                    }
+                    self.errors.append(message)
+                    
+        if self.allowed_sheet_names:
+            for sheet in self.workbook.worksheets:
+                if sheet.title not in self.allowed_sheet_names:
+                    message = _('Sheet name "%(sheet_name)s" is not allowed. Only "%(allowed_sheet_names)s" are allowed.') % {
+                        'sheet_name': sheet.title,
+                        'allowed_sheet_names': ', '.join(self.allowed_sheet_names),
+                    }
+                    self.errors.append(message)
         
     
     def load_workbook(self):
@@ -223,21 +244,23 @@ class GenericContentZipImporter:
         images_sheet = self.get_sheet_by_name(self.images_sheet_name)
         image_data = None
         
-        for row in images_sheet.iter_rows(min_row=2):
+        if images_sheet:
+        
+            for row in images_sheet.iter_rows(min_row=2):
 
-            if row[0].value == image_filename:
-                image_data = {
-                    'identifier': self.get_stripped_cell_value(row[0].value),
-                    'author': self.get_stripped_cell_value(row[1].value),
-                    'licence': self.get_stripped_cell_value(row[2].value),
-                    'licence_version': self.get_stripped_cell_value(row[3].value),
-                    'link_to_source_image': self.get_stripped_cell_value(row[4].value),
-                    'title': self.get_stripped_cell_value(row[5].value),
-                    'caption': self.get_stripped_cell_value(row[6].value),
-                    'alt_text': self.get_stripped_cell_value(row[7].value),
-                    'primary_image': self.get_stripped_cell_value(row[8].value),
-                }
-                break
+                if row[0].value == image_filename:
+                    image_data = {
+                        'identifier': self.get_stripped_cell_value(row[0].value),
+                        'author': self.get_stripped_cell_value(row[1].value),
+                        'licence': self.get_stripped_cell_value(row[2].value),
+                        'licence_version': self.get_stripped_cell_value(row[3].value),
+                        'link_to_source_image': self.get_stripped_cell_value(row[4].value),
+                        'title': self.get_stripped_cell_value(row[5].value),
+                        'caption': self.get_stripped_cell_value(row[6].value),
+                        'alt_text': self.get_stripped_cell_value(row[7].value),
+                        'primary_image': self.get_stripped_cell_value(row[8].value),
+                    }
+                    break
         
         return image_data
 

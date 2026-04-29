@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 
-from app_kit.generic_content_zip_import import GenericContentZipImporter
+from app_kit.generic_content_zip_import import GenericContentZipImporter, EXTERNAL_MEDIA_SHEET_NAME
 
 from app_kit.features.taxon_profiles.models import (TaxonProfile, TaxonTextType, TaxonText, TaxonTextTypeCategory)
 
@@ -34,6 +34,7 @@ AVAILABLE_EXTERNAL_MEDIA_TYPES = [d[0] for d in EXTERNAL_MEDIA_TYPES]
 
 TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 TAXON_PROFILES_SHEET_NAME = 'Taxon Profiles'
+TAXON_PROFILE_IMAGES_SHEET_NAME = 'Taxon Profile Images'
 
 VALID_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 
@@ -46,22 +47,22 @@ VALID_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
 
 class TaxonProfilesZipImporter(GenericContentZipImporter):
     
-    images_sheet_name = 'Taxon Profile Images'
+    images_sheet_name = TAXON_PROFILE_IMAGES_SHEET_NAME
+    
+    allowed_sheet_names = [TAXON_PROFILES_SHEET_NAME, TAXON_PROFILE_IMAGES_SHEET_NAME, EXTERNAL_MEDIA_SHEET_NAME]
+    required_sheet_names = [TAXON_PROFILES_SHEET_NAME]
     
     def validate_spreadsheet(self):
         
+        self.validate_sheet_names()
+        
         taxon_profiles_sheet = self.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
         
-        if not taxon_profiles_sheet:
-            message = _('Sheet "%(sheet_name)s" not found in the spreadsheet') % {
-                'sheet_name': TAXON_PROFILES_SHEET_NAME,
-            }
-            self.errors.append(message)
-        
-        else:
+        if not self.errors:
             self.validate_definition_rows()
             self.validate_taxa(taxon_profiles_sheet, start_row=3)        
             self.validate_content()
+        
     
     def get_column_type(self, col):
         row_1_value = self.get_stripped_cell_value_lowercase(col[0].value)

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.views.generic import TemplateView, FormView
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -112,7 +112,9 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
             nature_guide_results.append(entry)
 
-        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content, morphotype__in=(None, '')).exclude(
+        non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(
+            taxon_profiles=self.generic_content,
+        ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
         backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
@@ -121,8 +123,8 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
             backbonetaxonomy=backbonetaxonomy).values_list('name_uuid', flat=True)
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
-            morphotype__in=(None, ''),
-            name_uuid__in=backbone_taxa_name_uuids).values_list('name_uuid', flat=True)
+            name_uuid__in=backbone_taxa_name_uuids,
+        ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
         
@@ -560,8 +562,11 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
             if meta_node.taxon:
                 taxon_source = meta_node.taxon_source
                 name_uuid = meta_node.name_uuid
-                taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                                taxon_source=taxon_source, name_uuid=name_uuid, morphotype__in=(None, '')).first()
+                taxon_profile = TaxonProfile.objects.filter(
+                    taxon_profiles=self.taxon_profiles,
+                    taxon_source=taxon_source,
+                    name_uuid=name_uuid,
+                ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).first()
                 
                 if taxon_profile:
                     self.change_taxon_profile_publication_status(taxon_profile, publication_status)
@@ -569,9 +574,11 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
             else:
                 fallback_taxa = NatureGuidesTaxonTree.objects.filter(meta_node=meta_node, nature_guide=self.nature_guide)
                 for fallback_taxon in fallback_taxa:
-                    fallback_taxon_profile = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                        taxon_source='app_kit.features.nature_guides', name_uuid=fallback_taxon.name_uuid,
-                        morphotype__in=(None, '')).first()
+                    fallback_taxon_profile = TaxonProfile.objects.filter(
+                        taxon_profiles=self.taxon_profiles,
+                        taxon_source='app_kit.features.nature_guides',
+                        name_uuid=fallback_taxon.name_uuid,
+                    ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).first()
                     if fallback_taxon_profile:
                         self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
 

@@ -146,9 +146,6 @@ footer {
 }
 
 .generic-content-image {
-	position: absolute;
-	left: .5rem;
-	bottom: .5rem;
 	height: 3rem;
 	width: 3rem;
 	background-size: contain;
