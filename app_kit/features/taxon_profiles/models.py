@@ -672,7 +672,7 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
         return __('Unconfigured navigation entry')    
     
     class Meta:
-        ordering = ('position', 'name')
+        ordering = ('position', 'id')
         
 
 class TaxonProfilesNavigationEntryTaxa(ModelWithRequiredTaxon):

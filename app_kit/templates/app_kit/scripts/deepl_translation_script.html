@@ -28,9 +28,9 @@
                 $.get("{% url 'get_translation' meta_app.id %}", function(html){
                     $("#ModalContent").html(html);
                     
-                    let modalEl = document.getElementById("Modal");
+                    var modalEl = document.getElementById("Modal");
                     if (modalEl){
-                        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                         modal.show();
                     }
 

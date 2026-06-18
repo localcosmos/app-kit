@@ -881,7 +881,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 })
                 
                 children = TaxonProfilesNavigationEntry.objects.filter(navigation=navigation,
-                        parent=navigation_entry).exclude(publication_status='draft').order_by('position')
+                        parent=navigation_entry).exclude(publication_status='draft').order_by('position', 'id')
                 
                 if children:
                     children_json = []

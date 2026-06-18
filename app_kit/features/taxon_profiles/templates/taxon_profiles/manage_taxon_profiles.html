@@ -214,9 +214,9 @@
 								$("#ModalContent").html(html);
 								ajaxify("ModalContent");
 								
-								let modalEl = document.getElementById("Modal");
+								var modalEl = document.getElementById("Modal");
 								if (modalEl){
-									let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+									var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 									modal.show();
 								}
 

@@ -12,9 +12,9 @@
 			hideModalName = "Modal2";
 		{% endif %}
 
-		let modalEl = document.getElementById(hideModalName);
+		var modalEl = document.getElementById(hideModalName);
 		if (modalEl){
-			let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+			var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 			modal.hide();
 		}
 	</script>
@@ -43,9 +43,9 @@
 			modalName = "Modal2";
 		{% endif %}
 
-		let modalShowEl = document.getElementById(modalName);
+		var modalShowEl = document.getElementById(modalName);
 		if (modalShowEl){
-			let modal = bootstrap.Modal.getOrCreateInstance(modalShowEl);
+			var modal = bootstrap.Modal.getOrCreateInstance(modalShowEl);
 			modal.show();
 		}
 	</script>
