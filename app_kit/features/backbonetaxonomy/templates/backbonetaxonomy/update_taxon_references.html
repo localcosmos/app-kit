@@ -36,7 +36,11 @@
 </div>
 
 <script>
-    $.get("{% url 'get_taxon_references_changes' meta_app.id %}", (html) => {
+    var url = "{% url 'get_taxon_references_changes' meta_app.id %}";
+    {% if custom_taxonomy_only is True %}
+        url += "?custom_taxonomy_only=true";
+    {% endif %}
+    $.get(url, (html) => {
         $("#check-result").html(html);
         ajaxify('check-result')
     });

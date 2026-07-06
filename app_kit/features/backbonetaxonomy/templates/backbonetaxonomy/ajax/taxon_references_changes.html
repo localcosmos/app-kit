@@ -1,4 +1,4 @@
-{% load i18n static %}
+{% load i18n static app_tags %}
 
 <div class="row">
     <div class="col-12">
@@ -55,6 +55,7 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             <i>{{ entry.taxon.taxon_latname }}</i> {{ entry.taxon.taxon_author }}
+                            <small><span class="badge bg-secondary">{{ entry.taxon.taxon_source|verbose_taxon_source }}</span></small>
                         </h5>
                         <div class="card-text">
                             <strong>{% trans 'New author names:' %}</strong>
@@ -98,6 +99,7 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             <i>{{ entry.taxon.taxon_latname }}</i> {{ entry.taxon.taxon_author }}
+                            <small><span class="badge bg-secondary">{{ entry.taxon.taxon_source|verbose_taxon_source }}</span></small>
                         </h5>
                         
                         <div class="card-text">
@@ -139,6 +141,7 @@
                         {% for taxon in result.taxa_missing %}
                             <div>
                                 {{ taxon }}
+                                <small><span class="badge bg-secondary">{{ taxon.taxon_source|verbose_taxon_source }}</span></small>
                             </div>
                         {% endfor %}
                     </div>

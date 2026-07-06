@@ -1370,7 +1370,10 @@ class AppReleaseBuilder(AppBuilderBase):
         taxon_profiles_link = MetaAppGenericContent.objects.get(meta_app=self.meta_app,
                                                                     content_type=taxon_profiles_content_type)
 
-        self._build_TaxonProfiles(taxon_profiles_link)        
+        self._build_TaxonProfiles(taxon_profiles_link)
+
+        # verify vernacular names in locale files and correct any that fell back to the scientific name
+        self._verify_vernacular_names_in_locales()
 
         # build TemplateContent
         self._build_TemplateContent()
@@ -1397,6 +1400,64 @@ class AppReleaseBuilder(AppBuilderBase):
 
         with open(self._app_licence_registry_filepath, 'w', encoding='utf-8') as f:
             json.dump(self.licence_registry, f, indent=4)
+
+
+    ###############################################################################################################
+    # VERIFY VERNACULAR NAMES IN LOCALE FILES
+    # After all features are built, scan every locale file and correct any taxon entry where the vernacular
+    # name was not resolved (value == key, i.e. scientific name used as fallback). This is a safety net that
+    # catches any case where _collect_primary_vernacular_names failed to resolve a name that IS in the database.
+    ###############################################################################################################
+    def _verify_vernacular_names_in_locales(self):
+
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        taxon_profiles = taxon_profiles_link.generic_content
+
+        # Use TaxonProfile instances directly so taxon_source is always correct
+        # (same instance type used by the user to confirm vernacular lookup works)
+        taxon_profiles_qs = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles).exclude(
+            publication_status='draft')
+
+        for language_code in self.meta_app.languages():
+
+            locale_filepath = self._app_locale_filepath(language_code)
+            complete_locale_filepath = self._app_complete_locale_filepath(language_code)
+
+            if not os.path.isfile(locale_filepath):
+                continue
+
+            with open(locale_filepath, 'r', encoding='utf-8') as f:
+                locale = json.load(f)
+
+            with open(complete_locale_filepath, 'r', encoding='utf-8') as f:
+                complete_locale = json.load(f)
+
+            fixed = False
+
+            for tp in taxon_profiles_qs:
+                lazy_taxon = LazyTaxon(instance=tp)
+                key = lazy_taxon.full_scientific_name
+
+                if key not in locale or locale[key] != key:
+                    continue
+
+                # vernacular name was not resolved during initial build; try again
+                vernacular_name = lazy_taxon.get_preferred_vernacular_name(language_code)
+
+                if vernacular_name and vernacular_name != key:
+                    self.logger.info(
+                        '_verify_vernacular_names_in_locales: fixing "{0}" -> "{1}" [{2}]'.format(
+                            key, vernacular_name, language_code))
+                    locale[key] = vernacular_name
+                    complete_locale[key] = vernacular_name
+                    fixed = True
+
+            if fixed:
+                with open(locale_filepath, 'w', encoding='utf-8') as f:
+                    json.dump(locale, f, ensure_ascii=False)
+
+                with open(complete_locale_filepath, 'w', encoding='utf-8') as f:
+                    json.dump(complete_locale, f, ensure_ascii=False)
 
 
     ###############################################################################################################
@@ -1558,13 +1619,22 @@ class AppReleaseBuilder(AppBuilderBase):
             
             for taxon in collected_taxa:
                 
-                key = '{0} {1}'.format(taxon.taxon_latname, taxon.taxon_author or '')
+                key = taxon.full_scientific_name
 
                 vernacular_name = taxon.vernacular(language=language_code, meta_app=self.meta_app)
                 
                 if not vernacular_name:
                     vernacular_name = key
-            
+
+                # never overwrite a resolved vernacular name with a scientific-name fallback:
+                # the same taxon may appear more than once in collected_taxa (e.g. via both a
+                # TaxonProfile and a MetaNode queryset). The TaxonProfile instance resolves
+                # correctly; a subsequent MetaNode instance with name=None would fall back to
+                # the key and silently discard the correct value.
+                existing = self.primary_vernacular_names[language_code].get(key)
+                if existing and existing != key:
+                    continue
+
                 self.primary_vernacular_names[language_code][key] = vernacular_name
 
 

@@ -204,7 +204,7 @@ class LazyTaxon(LazyTaxonBase):
             language=language, preferred=True).first()
         
         if not locale:
-            self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid,
+            locale = self.models.TaxonLocaleModel.objects.filter(taxon=self.name_uuid,
                 language=language).first()
             
         if not locale:
@@ -227,7 +227,8 @@ class LazyTaxon(LazyTaxonBase):
         preferred_vernacular_name = None
         
         meta_vernacular_names = MetaVernacularNames.objects.filter(taxon_source=self.taxon_source,
-                                                                   name_uuid=self.name_uuid)
+                                                                   name_uuid=self.name_uuid,
+                                                                   language=language)
         
         if meta_vernacular_names:
             preferred_meta_vernacular_name = meta_vernacular_names.filter(preferred=True).first()
@@ -247,7 +248,7 @@ class LazyTaxon(LazyTaxonBase):
             if language == meta_app.primary_language:
                 preferred_vernacular_name = primary_locale_vernacular_name
             else:
-                localization = self.meta_app.localizations.get(language, {})
+                localization = meta_app.localizations.get(language, {})
                 preferred_vernacular_name = localization.get(primary_locale_vernacular_name, None)
                 
         if not preferred_vernacular_name:
@@ -426,6 +427,13 @@ class LazyTaxon(LazyTaxonBase):
         
         branch.reverse()
         return branch
+    
+    @property
+    def full_scientific_name(self):
+        if self.taxon_author:
+            return f"{self.taxon_latname} {self.taxon_author}"
+        else:
+            return self.taxon_latname
 
 
 from localcosmos_server.taxonomy.lazy import LazyTaxonListBase

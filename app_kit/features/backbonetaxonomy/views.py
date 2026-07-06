@@ -288,14 +288,14 @@ class RemoveBackboneTaxon(TemplateView):
     def get_context_data(self, **kwargs):
         context = kwargs
 
-        context['taxon'] = self.models.TaxonTreeModel.objects.get(name_uuid=kwargs['name_uuid'])
+        #context['taxon'] = self.models.TaxonTreeModel.objects.get(name_uuid=kwargs['name_uuid'])
+        context['taxon'] = self.models.TaxonNamesModel.objects.get(name_uuid=kwargs['name_uuid'])
         context['backbone'] = self.backbone
         context['meta_app'] = MetaApp.objects.get(pk=self.kwargs['meta_app_id'])
         return context
 
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        backbone_id = kwargs['backbone_id']
         name_uuid = kwargs['name_uuid']
 
         link = BackboneTaxa.objects.filter(backbonetaxonomy=self.backbone, name_uuid=name_uuid).first()
@@ -518,13 +518,14 @@ class UpdateTaxonReferences(MetaAppMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['custom_taxonomy_only'] = self.request.GET.get('custom_taxonomy_only', 'false').lower() == 'true'
         context['updated'] = False
         return context
     
-    # only update taxon_nuid and name_nnuid only taxa
+    # only update taxon_nuid and name_uuid only taxa
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
-        updater = TaxonReferencesUpdater(self.meta_app)
+        updater = TaxonReferencesUpdater(self.meta_app, custom_taxonomy_only=context['custom_taxonomy_only'])
         updater.update_all_taxon_nuid_and_name_uuid_only()
         context['updated'] = True
         return self.render_to_response(context)
@@ -537,11 +538,12 @@ class GetTaxonReferencesChanges(MetaAppMixin, TemplateView):
     
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.custom_taxonomy_only = request.GET.get('custom_taxonomy_only', 'false').lower() == 'true'
         return super().dispatch(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        updater = TaxonReferencesUpdater(self.meta_app)
+        updater = TaxonReferencesUpdater(self.meta_app, custom_taxonomy_only=self.custom_taxonomy_only)
         result = updater.check_taxa()
         
         # provide usable forms for new author taxa

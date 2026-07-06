@@ -152,7 +152,11 @@ def taxon_origin(lazy_taxon):
         return lazy_taxon.nature_guide
 
     return origin
-    
+
+
+@register.filter
+def verbose_taxon_source(taxon_source):
+    return taxon_source.split('.')[-1]
 
 @register.filter
 def taxon_is_backbone_removable(lazy_taxon):

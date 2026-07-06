@@ -94,7 +94,9 @@
 	<p>
 		<a href="{% url 'update_taxon_references' meta_app.id %}" class="btn btn-primary">{% trans 'Update Taxonomic References' %}</a>
 	</p>
-
+	<p>
+		<a href="{% url 'update_taxon_references' meta_app.id %}?custom_taxonomy_only=true" class="btn btn-primary">{% trans 'Update Custom Taxonomic References' %}</a>
+	</p>
 	<hr>
 
 	<h3>{% trans 'Custom taxa' %}</h3>
