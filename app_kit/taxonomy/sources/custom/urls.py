@@ -16,4 +16,6 @@ urlpatterns = [
         views.ManageCustomTaxonChildren.as_view(), name='load_custom_taxon_children'),
     path('move-custom-taxon/<uuid:name_uuid>/',
         views.MoveCustomTaxonTreeEntry.as_view(), name='move_custom_taxon'),
+    path('add-custom-taxon-locale/<uuid:name_uuid>/',
+        views.AddCustomTaxonLocale.as_view(), name='add_custom_taxon_locale'),
 ]

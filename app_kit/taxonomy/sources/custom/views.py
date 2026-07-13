@@ -7,7 +7,7 @@
 '''
 from django.views.generic import FormView
 
-from .forms import ManageCustomTaxonForm, MoveCustomTaxonForm
+from .forms import ManageCustomTaxonForm, MoveCustomTaxonForm, AddCustomTaxonLocaleForm
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.utils import NuidManager
@@ -73,6 +73,8 @@ class ManageCustomTaxon(FormView):
 
         if self.parent_taxon is not None:
             initial['parent_name_uuid'] = self.parent_taxon.name_uuid
+            
+        initial['input_language'] = self.language
         return initial
 
 
@@ -129,6 +131,23 @@ class ManageCustomTaxon(FormView):
         else:
             self.locale.name = form.cleaned_data['name']
             self.locale.save()
+            
+        for field_name in form.localizeable_fields:
+            if field_name.startswith('name_'):
+                name_parts = field_name.split('_')
+                language = name_parts[1]
+                locale_id = name_parts[2]
+                name = form.cleaned_data.get(field_name, None)
+                if name:
+                    locale = custom_taxon_models.TaxonLocaleModel.objects.get(
+                        id=locale_id)
+                    
+                    if locale.taxon.name_uuid == self.taxon.name_uuid and locale.language == language:
+                        locale.name = name
+                        locale.save()
+                else:
+                    custom_taxon_models.TaxonLocaleModel.objects.filter(
+                        taxon=self.taxon, language=language, id=locale_id).delete()
 
         context['form'] = form
         context['success'] = True
@@ -284,6 +303,43 @@ class MoveCustomTaxonTreeEntry(FormView):
             self.update_lazy_taxa(descendant_taxon)
 
         context['new_parent_taxon'] = new_parent_taxon
+        context['success'] = True
+        context['form'] = form
+        return self.render_to_response(context)
+
+
+class AddCustomTaxonLocale(FormView):
+
+    template_name = 'custom_taxonomy/add_custom_taxon_locale.html'
+    form_class = AddCustomTaxonLocaleForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.taxon = custom_taxon_models.TaxonTreeModel.objects.get(name_uuid=kwargs['name_uuid'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon'] = self.taxon
+        return context
+
+    def get_initial(self):
+        initial = {
+            'name_uuid' : self.taxon.name_uuid,
+        }
+        return initial
+    
+    def form_valid(self, form):
+        context = self.get_context_data(**self.kwargs)
+        
+        language = form.cleaned_data['language']
+        language_clean = language.strip().lower()[:2]
+
+        self.locale = custom_taxon_models.TaxonLocaleModel.objects.create(
+            self.taxon, form.cleaned_data['name'], language_clean,
+            preferred = True,
+        )
+
         context['success'] = True
         context['form'] = form
         return self.render_to_response(context)

@@ -20,6 +20,8 @@
 						<a data-url="{% url 'move_custom_taxon' taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'move' %}</a>
 						<a data-url="{% url 'manage_custom_taxon' taxon.name_uuid language %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Edit' %}</a>
 						<div class="dropdown-divider"></div>
+						<a data-url="{% url 'add_custom_taxon_locale' taxon.name_uuid %}" class="dropdown-item xhr" ajax-target="ModalContent">{% trans 'Add vernacular name' %}</a>
+						<div class="dropdown-divider"></div>
 						<a data-url="{% url 'delete_custom_taxon' taxon.id %}" ajax-target="ModalContent" class="dropdown-item xhr">{% trans 'Delete' %}</a>
 					{% endif %}
 					

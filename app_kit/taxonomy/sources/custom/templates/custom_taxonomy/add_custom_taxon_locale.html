@@ -1,0 +1,21 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n static %}
+
+{% block action %}{% url 'add_custom_taxon_locale' taxon.name_uuid %}{% endblock %}
+
+{% block title %}{% blocktrans with name=taxon.taxon_name %}Add vernacular name for {{ name }}{% endblocktrans %}{% endblock %}
+
+{% block body %}
+	<p>
+		{% include 'localcosmos_server/bootstrap_form.html' %}
+	</p>
+	{% if success is True %}
+		<div class="alert alert-success">
+			{% trans 'Successfully added vernacular name.' %}
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
