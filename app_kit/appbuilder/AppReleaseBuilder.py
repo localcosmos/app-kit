@@ -1753,12 +1753,6 @@ class AppReleaseBuilder(AppBuilderBase):
 
         generic_content = app_generic_content.generic_content
 
-        #if only_one_allowed == True:
-        #    generic_content_json['isMulticontent'] = False
-        #else:
-        #    generic_content_json['isMulticontent'] = True
-
-
         filename_identifier = str(generic_content.uuid)
 
         # generic_content_json has options and global_options
@@ -2466,8 +2460,10 @@ class AppReleaseBuilder(AppBuilderBase):
     
     def _build_TemplateContent(self):
 
-        jsonbuilder = TemplateContentJSONBuilder(self, self.meta_app)
+        jsonbuilder = TemplateContentJSONBuilder(self, self.meta_app)    
+        
 
+        # json for the dedicated file
         template_contents_json = jsonbuilder.build()
 
         template_contents = TemplateContent.objects.filter(app=self.meta_app.app, template_type='page')
@@ -2478,6 +2474,14 @@ class AppReleaseBuilder(AppBuilderBase):
         app_absolute_template_contents_path = os.path.join(self._app_www_path, app_relative_template_contents_path)
 
         languages = self.meta_app.languages()
+        
+        # for looking up templates by template name and language code
+        localized_template_content_by_template_name = {}
+        
+        for language_code in languages:
+            localized_template_content_by_template_name[language_code] = {}
+            
+        
         for template_content in template_contents:
             
             # check if it is supported by the app
@@ -2527,6 +2531,29 @@ class AppReleaseBuilder(AppBuilderBase):
                                 template_contents_json['assignments'][template_content.assignment] = {}
 
                             template_contents_json['assignments'][template_content.assignment][language_code] = '/{0}'.format(relative_json_filepath)
+                            
+                        # add to the lookup dict for later use
+                        if template_folder_name not in localized_template_content_by_template_name[language_code]:
+                            localized_template_content_by_template_name[language_code][template_folder_name] = []
+                            
+                        by_template_name_entry = {
+                            'slug': localized_template_content.slug,
+                            'linkedTaxa': localized_template_content_json.get('linkedTaxa', []),
+                        }
+                        localized_template_content_by_template_name[language_code][template_folder_name].append(by_template_name_entry)
+                        
+        # store the localized_template_content_by_template_name for later use
+        for language_code, template_name_to_slug in localized_template_content_by_template_name.items():
+            filename = 'by_template_name.json'
+            relative_json_filepath = os.path.join(app_relative_template_contents_path, language_code, filename)
+            
+            # add the relative path to features
+            template_contents_json['byTemplateName'][language_code] = '/{0}'.format(relative_json_filepath)
+            
+            absolute_json_filepath = os.path.join(app_absolute_template_contents_path, language_code, filename)
+            os.makedirs(os.path.dirname(absolute_json_filepath), exist_ok=True)
+            with open(absolute_json_filepath, 'w') as f:
+                f.write(json.dumps(template_name_to_slug, indent=4, ensure_ascii=False))
 
         # build the navigations
         navigations = Navigation.objects.filter(app=self.meta_app.app)
@@ -2565,6 +2592,7 @@ class AppReleaseBuilder(AppBuilderBase):
 
 
         self.build_features['TemplateContent'] = template_contents_json
+    
         
     ###############################################################################################################
     # GENERIC FORMS

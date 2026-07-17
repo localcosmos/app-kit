@@ -19,6 +19,7 @@ urlpatterns = [
     path('glossary/', include('app_kit.features.glossary.urls')),
     path('maps/', include('app_kit.features.maps.urls')),
     path('frontend/', include('app_kit.features.frontend.urls')),
+    path('object-classes/', include('app_kit.features.object_classes.urls')),
     # apps
     # create apps
     path('create-app/', views.CreateApp.as_view(), name='create_app'), # generic forms etc need app_to_feature

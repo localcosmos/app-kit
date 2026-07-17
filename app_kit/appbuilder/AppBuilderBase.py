@@ -107,6 +107,7 @@ class AppBuilderBase:
 		'app_kit.features.taxon_profiles',
 		'app_kit.features.glossary',
 		'app_kit.features.maps',
+        'app_kit.features.object_classes',
 	]
 
     delete_on_app_delete = [
