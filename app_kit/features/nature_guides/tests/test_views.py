@@ -32,6 +32,7 @@ from app_kit.features.nature_guides.forms import (NatureGuideOptionsForm, Search
 from app_kit.features.nature_guides.tests.common import WithNatureGuide, WithMatrixFilters
 
 from app_kit.features.nature_guides.matrix_filters import MATRIX_FILTER_TYPES
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClass, ObjectClassTaxon
 
 from content_licencing.models import ContentLicenceRegistry
 
@@ -344,6 +345,76 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
         self.assertEqual(node.meta_node.name, data['name'])
         self.assertEqual(node.nature_guide, self.generic_content)
         self.assertEqual(node.meta_node.nature_guide, self.generic_content)
+
+
+    @test_settings
+    def test_save_nodelink_empty_morphotype_sets_none(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        data = self.get_nodelink_form_data(morphotype='')
+
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        view.save_nodelink(form)
+
+        node = self.start_node.children[0]
+        self.assertIsNone(node.meta_node.morphotype)
+
+
+    @test_settings
+    def test_save_nodelink_with_object_class(self):
+
+        view = self.get_view()
+        view.set_node(**view.kwargs)
+
+        object_classes_link = self.create_generic_content(ObjectClasses, self.meta_app)
+        object_classes = object_classes_link.generic_content
+
+        object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Tree class',
+            scientific_name='tree_class',
+        )
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        quercus = models.TaxonTreeModel.objects.get(taxon_latname='Quercus')
+        quercus_lazy = LazyTaxon(instance=quercus)
+
+        object_class_taxon = ObjectClassTaxon(object_class=object_class)
+        object_class_taxon.set_taxon(quercus_lazy)
+        object_class_taxon.save()
+
+        quercus_robur = models.TaxonTreeModel.objects.get(taxon_latname='Quercus robur')
+        quercus_robur_lazy = LazyTaxon(instance=quercus_robur)
+
+        taxon_post_data = {
+            'taxon_0': quercus_robur_lazy.taxon_source,
+            'taxon_1': quercus_robur_lazy.taxon_latname,
+            'taxon_2': quercus_robur_lazy.taxon_author or '',
+            'taxon_3': str(quercus_robur_lazy.name_uuid),
+            'taxon_4': quercus_robur_lazy.taxon_nuid,
+        }
+
+        data = self.get_nodelink_form_data(object_class=object_class.pk)
+        data.update(taxon_post_data)
+
+        form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
+                                  from_url=view.request.path)
+
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        view.save_nodelink(form)
+
+        node = self.start_node.children[0]
+        node.refresh_from_db()
+        self.assertEqual(node.meta_node.object_class, object_class)
 
 
     @test_settings

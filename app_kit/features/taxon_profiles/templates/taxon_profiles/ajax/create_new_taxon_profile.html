@@ -1,0 +1,28 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+
+{% block action %}
+	{% url 'create_new_taxon_profile' meta_app.id taxon_profiles.id %}
+{% endblock %}
+
+
+{% block title %}
+	{% blocktrans %}Create new taxon profile{% endblocktrans %}
+{% endblock %}
+
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save.html' %}
+{% endblock %}
+
+{% block script %}
+<script>
+    (function() {
+        {% if success %}
+            hideLargeModal();
+			window.location.href = "{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}";
+        {% endif %}
+    })();
+</script>
+{% endblock %}

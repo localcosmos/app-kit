@@ -135,6 +135,84 @@ class TestObjectClass(WithObjectClasses, TenantTestCase):
 		self.assertEqual(str(object_class), name)
 
 
+	@test_settings
+	def test_manager_create(self):
+
+		object_class = ObjectClass.objects.create(
+			object_classes=self.object_classes,
+			name='Manager class',
+			scientific_name='manager_class',
+			description='Created with manager',
+		)
+
+		self.assertEqual(object_class.object_classes, self.object_classes)
+		self.assertEqual(object_class.name, 'Manager class')
+		self.assertEqual(object_class.scientific_name, 'manager_class')
+		self.assertEqual(object_class.description, 'Created with manager')
+
+
+	@test_settings
+	def test_taxa_property(self):
+
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+
+		lacerta_agilis_db = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+		lacerta_agilis = LazyTaxon(instance=lacerta_agilis_db)
+
+		object_class = self.create_object_class('Lacerta agilis class')
+		self.create_object_class_taxon(object_class, lacerta_agilis)
+
+		taxa = object_class.taxa
+		self.assertEqual(taxa.count(), 1)
+		self.assertEqual(taxa.first().name_uuid, lacerta_agilis.name_uuid)
+
+
+	@test_settings
+	def test_is_taxon_compatible_exact_match(self):
+
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+
+		lacerta_agilis_db = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+		lacerta_agilis = LazyTaxon(instance=lacerta_agilis_db)
+
+		object_class = self.create_object_class('Lacerta agilis class')
+		self.create_object_class_taxon(object_class, lacerta_agilis)
+
+		self.assertTrue(object_class.is_taxon_compatible(lacerta_agilis))
+
+
+	@test_settings
+	def test_is_taxon_compatible_ancestor_match(self):
+
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+
+		quercus_db = models.TaxonTreeModel.objects.get(taxon_latname='Quercus')
+		quercus = LazyTaxon(instance=quercus_db)
+		quercus_robur_db = models.TaxonTreeModel.objects.get(taxon_latname='Quercus robur')
+		quercus_robur = LazyTaxon(instance=quercus_robur_db)
+
+		object_class = self.create_object_class('Quercus class')
+		self.create_object_class_taxon(object_class, quercus)
+
+		self.assertTrue(object_class.is_taxon_compatible(quercus_robur))
+
+
+	@test_settings
+	def test_is_taxon_compatible_returns_false_for_non_matching_taxon(self):
+
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+
+		quercus_db = models.TaxonTreeModel.objects.get(taxon_latname='Quercus')
+		quercus = LazyTaxon(instance=quercus_db)
+		lacerta_agilis_db = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+		lacerta_agilis = LazyTaxon(instance=lacerta_agilis_db)
+
+		object_class = self.create_object_class('Quercus class')
+		self.create_object_class_taxon(object_class, quercus)
+
+		self.assertFalse(object_class.is_taxon_compatible(lacerta_agilis))
+
+
 class TestObjectClassTaxon(WithObjectClasses, TenantTestCase):
 
 	@test_settings

@@ -79,7 +79,7 @@ class TaxaBuilder(ContentImagesJSONBuilder):
         return self.nature_guide_ids
     
     
-    def get_nature_guide_occurrences(self, lazy_taxon, morphotype=None):
+    def get_nature_guide_occurrences(self, lazy_taxon, morphotype=None, object_class=None):
         nature_guide_ids = self.get_nature_guide_ids()
         
         if lazy_taxon.taxon_source in self.installed_taxonomic_sources:
@@ -91,6 +91,9 @@ class TaxaBuilder(ContentImagesJSONBuilder):
             
             if morphotype:
                 meta_nodes_qry = meta_nodes_qry.filter(morphotype=morphotype)
+                
+            if object_class:
+                meta_nodes_qry = meta_nodes_qry.filter(object_class=object_class)
             
             meta_nodes = meta_nodes_qry.values_list('pk', flat=True)
 

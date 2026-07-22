@@ -131,7 +131,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         return branch
 
     # languages is for the vernacular name only, the rest are keys for translation
-    def build_taxon_profile(self, profile_taxon, morphotype, languages):
+    def build_taxon_profile(self, profile_taxon, morphotype, object_class, languages):
         
         # if morphotype is the empty string, make it None for better handling in the code
         if morphotype == '':
@@ -167,13 +167,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                 return None
             
             if db_profile.is_featured:
-                is_featured = True                
+                is_featured = True
+                
+            object_class = db_profile.object_class              
                 
         classification = self.get_taxonomic_branch_as_dicts(lazy_taxon)
 
         taxon_profile_json.update({
             'taxonProfileId': db_profile.id if db_profile else None,
             'morphotype': morphotype,
+            'objectClass': object_class,
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only

@@ -10,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 from app_kit.generic import GenericContent
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
-from localcosmos_server.slugifier import create_unique_slug
 
 from taxonomy.lazy import LazyTaxonList
 
@@ -61,6 +60,22 @@ class ObjectClass(models.Model):
     name = models.CharField(max_length=255)
     scientific_name = models.CharField(max_length=100) # language independent identifier for the object class
     description = models.TextField(null=True, blank=True)
+    
+    @property
+    def taxa(self):
+        queryset = ObjectClassTaxon.objects.filter(object_class=self)
+        return queryset
+    
+    def is_taxon_compatible(self, taxon):
+        valid_nuids = taxon.ancestor_nuids + [taxon.taxon_nuid]
+                    
+            
+        is_compatible_taxon = self.taxa.filter(
+            taxon_source=taxon.taxon_source,
+            taxon_nuid__in=valid_nuids,
+        ).exists()
+        
+        return is_compatible_taxon
 
 
     def __str__(self):

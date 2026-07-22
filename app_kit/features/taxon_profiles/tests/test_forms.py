@@ -9,10 +9,14 @@ from app_kit.tests.mixins import WithMetaApp, WithFormTest
 
 from app_kit.features.taxon_profiles.forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm,
     ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm, ManageTaxonTextTypeCategoryForm,
-    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm)
+    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, CreateTaxonProfileForm)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonTextType, TaxonProfile, TaxonText,
                                                     TaxonTextSet)
+
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClass, ObjectClassTaxon
+
+from app_kit.models import MetaAppGenericContent
 
 from app_kit.features.generic_forms.models import GenericForm
 
@@ -20,6 +24,8 @@ from app_kit.models import MetaAppGenericContent
 
 from taxonomy.lazy import LazyTaxon
 from taxonomy.models import TaxonomyModelRouter
+
+from .common import WithTaxonProfilesNavigation
 
 from .common import WithTaxonProfilesNavigation
 
@@ -465,3 +471,131 @@ class TestManageTaxonTextSetForm(WithMetaApp, WithFormTest, TenantTestCase):
             form = SetTaxonTextSetForTaxonProfileForm(taxon_profiles)
             
             self.perform_form_test(SetTaxonTextSetForTaxonProfileForm, post_data, form_args=[taxon_profiles])
+
+
+class TestCreateTaxonProfileForm(WithMetaApp, TenantTestCase):
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+    def taxon_to_post_data(self, taxon):
+        return {
+            'taxon_0': taxon.taxon_source,
+            'taxon_1': taxon.taxon_latname,
+            'taxon_2': taxon.taxon_author,
+            'taxon_3': str(taxon.name_uuid),
+            'taxon_4': taxon.taxon_nuid,
+        }
+
+    def create_object_classes_with_link(self):
+        object_classes = ObjectClasses.objects.create('Test Object Classes', self.meta_app.primary_language)
+        link = MetaAppGenericContent(
+            meta_app=self.meta_app,
+            content_type=ContentType.objects.get_for_model(ObjectClasses),
+            object_id=object_classes.id,
+        )
+        link.save()
+        return object_classes
+
+    @test_settings
+    def test_init_without_object_classes(self):
+        form = CreateTaxonProfileForm(self.meta_app, language=self.meta_app.primary_language)
+        self.assertIn('taxon', form.fields)
+        self.assertIn('morphotype', form.fields)
+        self.assertIn('object_class', form.fields)
+        # no ObjectClasses linked to the meta_app, queryset should be empty
+        self.assertEqual(form.fields['object_class'].queryset.count(), 0)
+
+    @test_settings
+    def test_init_with_object_classes(self):
+        object_classes = self.create_object_classes_with_link()
+        ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Test Class',
+            scientific_name='test_class',
+        )
+
+        form = CreateTaxonProfileForm(self.meta_app, language=self.meta_app.primary_language)
+        self.assertEqual(form.fields['object_class'].queryset.count(), 1)
+
+    @test_settings
+    def test_form_valid_taxon_only(self):
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data, language=self.meta_app.primary_language)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+        self.assertTrue(is_valid)
+        self.assertEqual(form.cleaned_data['taxon'], self.lazy_taxon)
+
+    @test_settings
+    def test_form_valid_with_morphotype(self):
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'morphotype': 'Imago',
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data, language=self.meta_app.primary_language)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+        self.assertTrue(is_valid)
+        self.assertEqual(form.cleaned_data['morphotype'], 'Imago')
+
+    @test_settings
+    def test_form_valid_with_valid_object_class(self):
+        object_classes = self.create_object_classes_with_link()
+        object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Test Class',
+            scientific_name='test_class',
+        )
+        # Link the taxon to the object class so the combination is valid
+        taxon_link = ObjectClassTaxon(object_class=object_class)
+        taxon_link.set_taxon(self.lazy_taxon)
+        taxon_link.save()
+
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'object_class': object_class.id,
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data, language=self.meta_app.primary_language)
+        is_valid = form.is_valid()
+        self.assertEqual(form.errors, {})
+        self.assertTrue(is_valid)
+
+    @test_settings
+    def test_clean_invalid_object_class(self):
+        object_classes = self.create_object_classes_with_link()
+        object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Test Class',
+            scientific_name='test_class',
+        )
+        # Link the object class to a different taxon (Plantae), not to self.lazy_taxon
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        plantae_db = models.TaxonTreeModel.objects.get(taxon_latname='Plantae')
+        plantae = LazyTaxon(instance=plantae_db)
+
+        taxon_link = ObjectClassTaxon(object_class=object_class)
+        taxon_link.set_taxon(plantae)
+        taxon_link.save()
+
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'object_class': object_class.id,
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data, language=self.meta_app.primary_language)
+        is_valid = form.is_valid()
+        self.assertFalse(is_valid)
+        self.assertIn('object_class', form.errors)

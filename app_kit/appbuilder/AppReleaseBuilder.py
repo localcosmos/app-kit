@@ -2254,8 +2254,10 @@ class AppReleaseBuilder(AppBuilderBase):
         for profile_taxon in active_collected_taxa:
             
             morphotype = None
+            
+            object_class = None
 
-            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype,
+            profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype, object_class,
                                                            languages=self.meta_app.languages())
 
             if profile_json is not None:
@@ -2311,8 +2313,10 @@ class AppReleaseBuilder(AppBuilderBase):
                 
                 
             for morphotype in morphotypes:
+                
+                object_class = None
 
-                morphotype_profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype,
+                morphotype_profile_json = jsonbuilder.build_taxon_profile(profile_taxon, morphotype, object_class,
                                                            languages=self.meta_app.languages())
 
                 if morphotype_profile_json is not None:

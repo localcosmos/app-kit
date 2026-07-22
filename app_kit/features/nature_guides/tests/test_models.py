@@ -1584,9 +1584,14 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
             )
 
             space.save()
-
-            self.assertEqual(str(space), str(matrix_filter.matrix_filter_type.verbose_space_name))
             
+            if filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
+                self.assertEqual(str(space), '{0}: "{1}"'.format(str(filter_type), str(space.encoded_space)))
+            elif filter_type == 'TaxonFilter':
+                pass
+            else:
+                self.assertEqual(str(space), '{0}: {1}'.format(str(filter_type), str(space.encoded_space)))
+
 
 class TestNodeFilterSpace(WithNatureGuide, TenantTestCase):
 

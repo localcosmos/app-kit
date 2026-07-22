@@ -1,0 +1,33 @@
+{% extends 'localcosmos_server/modals/large_modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+    {% url 'add_object_class_taxon' meta_app.id object_classes.id object_class.id %}
+{% endblock %}
+
+{% block title %}
+    {% blocktrans %}Add taxon to {{ object_class }}{% endblocktrans %}
+{% endblock %}
+
+
+{% block footer %}
+	{% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+	{% if success is True %}
+        <script>
+            fetch("{% url 'get_object_classes' meta_app.id object_classes.id %}", {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById("object-classes-container").innerHTML = html;
+                    ajaxify('object-classes-container');
+                    hideLargeModal();
+                });
+        </script>
+	{% endif %}
+{% endblock %}

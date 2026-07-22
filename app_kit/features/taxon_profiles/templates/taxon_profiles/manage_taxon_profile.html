@@ -14,6 +14,9 @@
 
 				{% if vernacular_name_from_nature_guides %}
 					<h3>
+						{% if taxon_profile.object_class %}
+							{{ taxon_profile.object_class }}
+						{% endif %}
 						{{ vernacular_name_from_nature_guides }}
 						{% if taxon_profile.morphotype %}
 							({{ taxon_profile.morphotype }})
@@ -22,6 +25,9 @@
 					<i>{{ taxon }}</i>
 				{% elif taxon.vernacular %}
 					<h3>
+						{% if taxon_profile.object_class %}
+							{{ taxon_profile.object_class }}
+						{% endif %}
 						{{ taxon.vernacular }}
 						{% if taxon_profile.morphotype %}
 							({{ taxon_profile.morphotype }})
@@ -30,6 +36,9 @@
 					<i>{{ taxon }}</i>
 				{% else %}
 					<h3>
+						{% if taxon_profile.object_class %}
+							{{ taxon_profile.object_class }}
+						{% endif %}
 						<i>{{ taxon }}</i>
 						{% if taxon_profile.morphotype %}
 							({{ taxon_profile.morphotype }})
@@ -111,14 +120,16 @@
 				</div>
 			</div>
 		{% endif %}
-		{% if taxon_profile.morphotype and taxon_profile.parent_profile %}
-			<div class="row">
-				<div class="col-12">
-					{% trans 'This is a morphotype of:' %} <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profile.parent_profile.id %}">
-						{{ taxon }}
-					</a>
+		{% if taxon_profile.morphotype %}
+			{% if taxon_profile.parent_profile %}
+				<div class="row">
+					<div class="col-12">
+						{% trans 'This is a morphotype of:' %} <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profile.parent_profile.id %}">
+							{{ taxon }}
+						</a>
+					</div>
 				</div>
-			</div>
+			{% endif %}
 		{% else %}
 			<div class="row mb-5">
 				<div class="col-12">
@@ -193,6 +204,9 @@
 					</div>
 				</div>
 			</div>
+		{% endif %}
+		{% if taxon_profile.morphotype and taxon_profile.parent_profile %}
+		{% else %}
 			<div class="row mt-5">
 				<div class="col-12">
 					<div class="card">
@@ -220,14 +234,13 @@
 				</div>
 			</div>
 			<hr>
+		{% endif %}
 			<div class="row">
 				<div class="col-12">
 					<h4>{% trans 'Traits' %}</h4>
 					<div id="taxon-traits"><img src="{% static 'app_kit/images/spinner.gif' %}" /></div>
 				</div>
-			</div>
-		{% endif %}
-		<hr>
+			</div>		<hr>
 		<div class="row">
 			<div class="col-12">
 
@@ -342,7 +355,7 @@
 			});
 		{% endif %}
 
-		$.get("{% url 'collect_taxon_traits' meta_app.id taxon.taxon_source taxon.name_uuid %}", function(html){
+		$.get("{% url 'collect_taxon_traits' meta_app.id taxon_profile.id %}", function(html){
 			$("#taxon-traits").html(html);
 		});
 

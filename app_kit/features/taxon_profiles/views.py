@@ -12,7 +12,7 @@ from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTax
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
                     TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm,
                     ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, TaxonProfileMorphotypeForm,
-                    MoveImageToSectionForm)
+                    MoveImageToSectionForm, CreateTaxonProfileForm)
 
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                      TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory,
@@ -138,6 +138,8 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         context['backbone_taxa_noprofile'] = backbone_taxa_noprofile
         context['uses_taxon_profiles_navigation'] = uses_taxon_profiles_navigation
         context['taxon_profiles_navigation'] = taxon_profiles_navigation
+        
+        context['all_taxon_profiles'] = TaxonProfile.objects.filter(taxon_profiles=self.generic_content).order_by('taxon_latname')
 
         form_kwargs = {
             'taxon_search_url': reverse('search_backbonetaxonomy_and_custom_taxa', kwargs={'meta_app_id':self.meta_app.id}),
@@ -176,18 +178,39 @@ class NatureGuideTaxonProfilePage(GetNatureGuideTaxaMixin, ManageGenericContent)
 
         return context
 
+
+class GetAllTaxonProfilesPage(ManageGenericContent):
+    template_name = 'taxon_profiles/ajax/all_taxon_profiles_list.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        all_taxon_profiles = TaxonProfile.objects.filter(taxon_profiles=self.generic_content).order_by('taxon_latname')
+
+        context['all_taxon_profiles'] = all_taxon_profiles
+
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'content_type_id': kwargs['content_type_id'],
+            'object_id': self.generic_content.id,
+        }
+        context['pagination_url'] = reverse('get_all_taxon_profiles_page', kwargs=url_kwargs)
+
+        return context
+
 class CreateTaxonProfileMixin:
 
-    def create_taxon_profile(self, taxon_profiles, taxon, morphotype=None):
+    def create_taxon_profile(self, taxon_profiles, taxon, morphotype=None, object_class=None):
 
         taxon_profile = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
-            taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid, morphotype=morphotype).first()
+            taxon_source=taxon.taxon_source, name_uuid=taxon.name_uuid, morphotype=morphotype, object_class=object_class).first()
 
         if not taxon_profile:
             taxon_profile = TaxonProfile(
                 taxon_profiles=taxon_profiles,
                 taxon=taxon,
-                morphotype=morphotype
+                morphotype=morphotype,
+                object_class=object_class
             )
             taxon_profile.save()
 
@@ -232,6 +255,49 @@ class CreateTaxonProfile(CreateTaxonProfileMixin, MetaAppMixin, TemplateView):
 
         return self.render_to_response(context)
 
+
+
+class CreateNewTaxonProfile(CreateTaxonProfileMixin, MetaAppMixin, FormView):
+    template_name = 'taxon_profiles/ajax/create_new_taxon_profile.html'
+    form_class = CreateTaxonProfileForm
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profiles(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def set_taxon_profiles(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['taxon_profiles'] = self.taxon_profiles
+        context['taxon_profile'] = None
+        context['success'] = False
+        return context
+    
+    def get_form(self, form_class=None):
+        if form_class is None:
+            form_class = self.get_form_class()
+        return form_class(self.meta_app, **self.get_form_kwargs())
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['language'] = self.meta_app.primary_language
+        return kwargs
+    
+    def form_valid(self, form):
+        taxon = form.cleaned_data['taxon']
+        morphotype = form.cleaned_data.get('morphotype') or None
+        object_class = form.cleaned_data.get('object_class', None)
+        
+        taxon_profile = self.create_taxon_profile(self.taxon_profiles, taxon, morphotype=morphotype, object_class=object_class)
+        
+        context = self.get_context_data(**self.kwargs)
+        context['taxon_profile'] = taxon_profile
+        context['success'] = True
+
+        return self.render_to_response(context)
 
 class ManageTaxonProfileMorphotype(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, FormView):
     
@@ -848,13 +914,12 @@ class CollectTaxonTraits(MetaAppMixin, TemplateView):
         taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
         taxon_profiles = taxon_profiles_link.generic_content
         
-        taxon_source = kwargs['taxon_source']
-        name_uuid = kwargs['name_uuid']
+        taxon_profile_id = kwargs['taxon_profile_id']
 
-        taxon_profile = TaxonProfile.objects.get(taxon_profiles=taxon_profiles,
-                                                 taxon_source=taxon_source, name_uuid=name_uuid, morphotype=None)
+        self.taxon_profile = TaxonProfile.objects.get(taxon_profiles=taxon_profiles,
+                                                 pk=taxon_profile_id)
 
-        self.taxon = LazyTaxon(instance=taxon_profile)
+        self.taxon = LazyTaxon(instance=self.taxon_profile)
 
 
     def get_taxon_traits(self):
@@ -868,6 +933,12 @@ class CollectTaxonTraits(MetaAppMixin, TemplateView):
         #        meta_node__taxon_author=self.taxon.taxon_author)
 
         nodes = NatureGuidesTaxonTree.objects.filter(meta_node__name_uuid=self.taxon.name_uuid)
+
+        if self.taxon_profile.morphotype:
+            nodes = nodes.filter(meta_node__morphotype=self.taxon_profile.morphotype)
+            
+        if self.taxon_profile.object_class:
+            nodes = nodes.filter(meta_node__object_class=self.taxon_profile.object_class)
         
         node_spaces = NodeFilterSpace.objects.filter(node__in=nodes)
 

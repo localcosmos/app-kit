@@ -16,6 +16,8 @@ from app_kit.features.nature_guides.matrix_filter_space_forms import ColorFilter
 from app_kit.features.nature_guides.models import (MatrixFilter, MatrixFilterSpace, NodeFilterSpace,
                                                    NatureGuideCrosslinks, MatrixFilterRestriction)
 
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClass, ObjectClassTaxon
+
 from app_kit.features.taxon_profiles.models import TaxonProfiles
 
 from app_kit.models import MetaAppGenericContent
@@ -78,6 +80,20 @@ class TestNatureGuideOptionsForm(WithNatureGuide, WithMetaApp, TenantTestCase):
 
 
 class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
+
+    def get_lazy_taxon(self, taxon_latname):
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        taxon_db = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname)
+        return LazyTaxon(instance=taxon_db)
+
+    def get_taxon_post_data(self, taxon):
+        return {
+            'taxon_0': taxon.taxon_source,
+            'taxon_1': taxon.taxon_latname,
+            'taxon_2': taxon.taxon_author or '',
+            'taxon_3': str(taxon.name_uuid),
+            'taxon_4': taxon.taxon_nuid or '',
+        }
 
     @test_settings
     def test_init(self):
@@ -281,6 +297,65 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         form.is_valid()
         #self.assertEqual(form.errors, {})
         self.assertIn('name', form.errors)
+
+        object_classes_link = self.create_generic_content(ObjectClasses, self.meta_app)
+        object_classes = object_classes_link.generic_content
+
+        object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Tree class',
+            scientific_name='tree_class',
+        )
+
+        incompatible_data = {
+            'input_language': 'en',
+            'node_type': 'node',
+            'name': 'node with object class',
+            'object_class': object_class.pk,
+        }
+
+        form = ManageNodelinkForm(
+            self.meta_app,
+            parent_node,
+            parent_node,
+            from_url=from_url,
+            data=incompatible_data,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('taxon', form.errors)
+
+        quercus = self.get_lazy_taxon('Quercus')
+        quercus_mapping = ObjectClassTaxon(object_class=object_class)
+        quercus_mapping.set_taxon(quercus)
+        quercus_mapping.save()
+
+        lacerta_agilis = self.get_lazy_taxon('Lacerta agilis')
+        incompatible_with_taxon_data = incompatible_data.copy()
+        incompatible_with_taxon_data.update(self.get_taxon_post_data(lacerta_agilis))
+
+        form = ManageNodelinkForm(
+            self.meta_app,
+            parent_node,
+            parent_node,
+            from_url=from_url,
+            data=incompatible_with_taxon_data,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('object_class', form.errors)
+
+        quercus_robur = self.get_lazy_taxon('Quercus robur')
+        compatible_data = incompatible_data.copy()
+        compatible_data.update(self.get_taxon_post_data(quercus_robur))
+
+        form = ManageNodelinkForm(
+            self.meta_app,
+            parent_node,
+            parent_node,
+            from_url=from_url,
+            data=compatible_data,
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.errors, {})
         
 
 class TestMoveNodeForm(WithNatureGuide, TenantTestCase):

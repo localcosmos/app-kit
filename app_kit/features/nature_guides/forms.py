@@ -10,6 +10,8 @@ from localcosmos_server.taxonomy.fields import TaxonField
 from .models import (MatrixFilter, NodeFilterSpace, NatureGuidesTaxonTree, MatrixFilterRestriction,
     NatureGuideCrosslinks, IDENTIFICATION_MODE_STRICT, IDENTIFICATION_MODE_POLYTOMOUS)
 
+from app_kit.features.object_classes.models import ObjectClass, ObjectClasses
+
 
 from app_kit.utils import get_appkit_taxon_search_url
 
@@ -150,8 +152,15 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
     morphotype = forms.CharField(help_text=_('Morphotype, like sex or development stage'), required=False,
                            max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['morphotype'])
+    
+    object_class = forms.ModelChoiceField(
+        queryset=ObjectClass.objects.none(),
+        required=False,
+        label=_('Object Class'),
+        help_text=_('Optional: select an object class for this taxon profile.')
+    )
 
-    taxon = TaxonField(label=_('Taxon (makes taxonomic filters work)'),
+    taxon = TaxonField(label=_('Taxon'),
                        taxon_search_url=get_appkit_taxon_search_url, required=False)
 
     is_active = is_active_field
@@ -196,6 +205,18 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
         super().__init__(*args, **kwargs)
 
         self.add_matrix_filter_value_choices()
+        self.add_object_class_choices()
+        
+        
+    def add_object_class_choices(self):
+        object_classes_links = self.meta_app.get_generic_content_links(ObjectClasses)
+        if object_classes_links.exists():
+            object_classes = object_classes_links.first().generic_content
+        
+            self.fields['object_class'].queryset = ObjectClass.objects.filter(
+                object_classes=object_classes
+            ).order_by('name')
+    
         
     # only called if field has a matrix filter assigned to field.matrix_filter
     def get_matrix_filter_field_initial(self, field):
@@ -224,6 +245,10 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
         name = cleaned_data.get('name', None)
 
         node_type = cleaned_data.get('node_type', None)
+        
+        object_class = cleaned_data.get('object_class', None)
+        
+        taxon = cleaned_data.get('taxon', None)
 
         if name and node_type == 'result':
             exists_qry = NatureGuidesTaxonTree.objects.filter(nature_guide=self.nature_guide,
@@ -285,6 +310,14 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
                     if existing_space.exists():
                         self.add_error(field_uuid,
                             _('The value "{0}" is already assigned to another identification result. In polytomous identification mode, each value can only be assigned to one result.'.format(value)))
+        
+        if object_class:
+            if not taxon:
+                self.add_error('taxon', _('You must select a taxon when selecting an object class.'))
+            else:
+                is_compatible = object_class.is_taxon_compatible(taxon)
+                if not is_compatible:
+                    self.add_error('object_class', _('The selected object class is not compatible with the selected taxon. Please select a compatible taxon or choose a different object class.'))
         
         return cleaned_data
 

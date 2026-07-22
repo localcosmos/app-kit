@@ -1,0 +1,23 @@
+{% load i18n el_pagination_tags %}
+{% paginate 100 all_taxon_profiles with pagination_url %}
+    <div class="row">
+        {% for taxon_profile in all_taxon_profiles %}
+            <div class="col-12 col-lg-6 col-xl-4">
+                <a href="{% url 'manage_taxon_profile' meta_app.id taxon_profile.id %}">
+                    {% if taxon_profile.object_class %}
+                        {{ taxon_profile.object_class }}
+                    {% endif %}
+                    <i>{{ taxon_profile.taxon_latname }}</i> {% if taxon_profile.taxon_author %}{{ taxon_profile.taxon_author }}{% endif %}
+                    {% if taxon_profile.morphotype %}
+                        ({{ taxon_profile.morphotype }})
+                    {% endif %}
+                </a>
+                {% if taxon_profile.publication_status == 'draft' %}
+                    <span class="badge rounded-pill text-bg-warning">{% trans 'draft' %}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div class="col-12">
+            {% show_pages %}
+        </div>
+    </div>

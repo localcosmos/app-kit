@@ -1,9 +1,16 @@
 from django_tenants.test.cases import TenantTestCase
 
-from app_kit.features.object_classes.forms import ObjectClassForm
-from app_kit.features.object_classes.models import ObjectClass
+from app_kit.features.object_classes.forms import (
+	ObjectClassForm,
+	AddObjectClassTaxonForm,
+	AddObjectClassLinkForm,
+)
+from app_kit.features.object_classes.models import ObjectClass, ObjectClassTaxon
 from app_kit.features.object_classes.tests.test_models import WithObjectClasses
 from app_kit.tests.common import test_settings
+
+from taxonomy.lazy import LazyTaxon
+from taxonomy.models import TaxonomyModelRouter
 
 
 class TestObjectClassForm(WithObjectClasses, TenantTestCase):
@@ -98,4 +105,87 @@ class TestObjectClassForm(WithObjectClasses, TenantTestCase):
 			object_classes=self.object_classes,
 		)
 
+		self.assertTrue(form.is_valid(), form.errors)
+
+
+class TestAddObjectClassTaxonForm(WithObjectClasses, TenantTestCase):
+
+	def get_lazy_taxon(self, taxon_latname):
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+		taxon_db = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname)
+		return LazyTaxon(instance=taxon_db)
+
+	def build_taxon_post_data(self, taxon):
+		return {
+			'taxon_0': taxon.taxon_source,
+			'taxon_1': taxon.taxon_latname,
+			'taxon_2': taxon.taxon_author or '',
+			'taxon_3': str(taxon.name_uuid),
+			'taxon_4': taxon.taxon_nuid or '',
+		}
+
+	@test_settings
+	def test_valid_new_taxon(self):
+		object_class = self.create_object_class('Trees')
+		taxon = self.get_lazy_taxon('Quercus')
+
+		form = AddObjectClassTaxonForm(
+			data=self.build_taxon_post_data(taxon),
+			object_class=object_class,
+			taxon_search_url='/search_taxon/',
+		)
+
+		self.assertTrue(form.is_valid(), form.errors)
+
+	@test_settings
+	def test_duplicate_taxon_invalid(self):
+		object_class = self.create_object_class('Lizards')
+		taxon = self.get_lazy_taxon('Lacerta agilis')
+
+		taxon_mapping = ObjectClassTaxon(object_class=object_class)
+		taxon_mapping.set_taxon(taxon)
+		taxon_mapping.save()
+
+		form = AddObjectClassTaxonForm(
+			data=self.build_taxon_post_data(taxon),
+			object_class=object_class,
+			taxon_search_url='/search_taxon/',
+		)
+
+		self.assertFalse(form.is_valid())
+		self.assertIn('taxon', form.errors)
+
+
+class TestAddObjectClassLinkForm(WithObjectClasses, TenantTestCase):
+
+	def get_lazy_taxon(self, taxon_latname):
+		models = TaxonomyModelRouter('taxonomy.sources.col')
+		taxon_db = models.TaxonTreeModel.objects.get(taxon_latname=taxon_latname)
+		return LazyTaxon(instance=taxon_db)
+
+	@test_settings
+	def test_queryset_filters_object_classes_by_matching_taxon(self):
+		target_taxon = self.get_lazy_taxon('Quercus')
+		non_matching_taxon = self.get_lazy_taxon('Lacerta agilis')
+
+		matching_object_class = self.create_object_class('Tree class')
+		non_matching_object_class = self.create_object_class('Lizard class')
+
+		matching_mapping = ObjectClassTaxon(object_class=matching_object_class)
+		matching_mapping.set_taxon(target_taxon)
+		matching_mapping.save()
+
+		non_matching_mapping = ObjectClassTaxon(object_class=non_matching_object_class)
+		non_matching_mapping.set_taxon(non_matching_taxon)
+		non_matching_mapping.save()
+
+		form = AddObjectClassLinkForm(
+			data={'object_class': matching_object_class.pk},
+			object_classes=self.object_classes,
+			taxon=target_taxon,
+		)
+
+		queryset = form.fields['object_class'].queryset
+		self.assertIn(matching_object_class, queryset)
+		self.assertNotIn(non_matching_object_class, queryset)
 		self.assertTrue(form.is_valid(), form.errors)

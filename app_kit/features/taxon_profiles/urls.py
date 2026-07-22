@@ -6,10 +6,14 @@ urlpatterns = [
          views.ManageTaxonProfiles.as_view(), name='manage_taxonprofiles'),
     path('nature-guides-taxon-profile-page/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/<int:nature_guide_id>/<str:list_type>/',
          views.NatureGuideTaxonProfilePage.as_view(), name='get_nature_guide_taxonprofile_page'),
+    path('get-all-taxon-profiles-page/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
+         views.GetAllTaxonProfilesPage.as_view(), name='get_all_taxon_profiles_page'),
     path('create-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.CreateTaxonProfile.as_view(), name='create_taxon_profile'),
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/<str:taxon_source>/<uuid:name_uuid>/',
          views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
+    path('create-new-taxon-profile/<int:meta_app_id>/<int:taxon_profiles_id>/',
+         views.CreateNewTaxonProfile.as_view(), name='create_new_taxon_profile'),
     # this should be the future wherever possible, as it is more robust (does not rely on taxon_source and name_uuid to be unchanged)
     path('manage-taxon-profile/<int:meta_app_id>/<int:taxon_profile_id>/',
          views.ManageTaxonProfile.as_view(), name='manage_taxon_profile'),
@@ -46,7 +50,7 @@ urlpatterns = [
         views.CollectTaxonImages.as_view(), name='collect_taxon_images'),
     path('collect-taxon-images/<int:meta_app_id>/<int:pk>/<str:taxon_source>/<uuid:name_uuid>/<morphotype>/',
         views.CollectTaxonImages.as_view(), name='collect_taxon_images'),
-    path('collect-taxon-traits/<int:meta_app_id>/<str:taxon_source>/<uuid:name_uuid>/',
+    path('collect-taxon-traits/<int:meta_app_id>/<int:taxon_profile_id>/',
         views.CollectTaxonTraits.as_view(), name='collect_taxon_traits'),
     # taxon profile images with text
     path('manage-taxon-profile-image/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',

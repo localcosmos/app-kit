@@ -1,11 +1,13 @@
 from django_tenants.test.cases import TenantTestCase
 
 from django.contrib.contenttypes.models import ContentType
+from django.db import IntegrityError, transaction
 
 from app_kit.tests.common import test_settings
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonTextType,
         TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa,
         TaxonTextTypeCategory, TaxonTextSet)
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
         
 from app_kit.models import MetaAppGenericContent
 
@@ -366,6 +368,116 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
 
         complete_2 = taxon_profile.profile_complete()
         self.assertFalse(complete_2)
+
+
+class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithMetaApp, TenantTestCase):
+
+    def get_lazy_taxon(self):
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        return LazyTaxon(instance=lacerta_agilis)
+
+    def create_object_classes(self):
+        object_classes = ObjectClasses.objects.create('Test Object Classes', self.meta_app.primary_language)
+        link = MetaAppGenericContent(
+            meta_app=self.meta_app,
+            content_type=ContentType.objects.get_for_model(ObjectClasses),
+            object_id=object_classes.id,
+        )
+        link.save()
+        return object_classes
+
+    def create_object_class(self, object_classes, name):
+        return ObjectClass.objects.create(
+            object_classes=object_classes,
+            name=name,
+            scientific_name=name.lower().replace(' ', '_'),
+        )
+
+    def create_profile(self, taxon_profiles, taxon, morphotype=None, object_class=None):
+        profile = TaxonProfile(
+            taxon_profiles=taxon_profiles,
+            taxon=taxon,
+            morphotype=morphotype,
+            object_class=object_class,
+        )
+        profile.save()
+        return profile
+
+    @test_settings
+    def test_unique_conflict_when_morphotype_and_object_class_are_both_set(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+        object_classes = self.create_object_classes()
+        object_class = self.create_object_class(object_classes, 'Imago class')
+
+        self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+
+    @test_settings
+    def test_unique_conflict_when_morphotype_is_set_and_object_class_is_null(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+
+        self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
+
+    @test_settings
+    def test_unique_conflict_when_morphotype_is_null_and_object_class_is_set(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+        object_classes = self.create_object_classes()
+        object_class = self.create_object_class(object_classes, 'Juvenile class')
+
+        self.create_profile(taxon_profiles, taxon, morphotype=None, object_class=object_class)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_profile(taxon_profiles, taxon, morphotype=None, object_class=object_class)
+
+    @test_settings
+    def test_unique_conflict_when_morphotype_and_object_class_are_both_null(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+
+        self.create_profile(taxon_profiles, taxon, morphotype=None, object_class=None)
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_profile(taxon_profiles, taxon, morphotype=None, object_class=None)
+
+    @test_settings
+    def test_allows_same_morphotype_for_different_object_classes(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+        object_classes = self.create_object_classes()
+        object_class_1 = self.create_object_class(object_classes, 'Class one')
+        object_class_2 = self.create_object_class(object_classes, 'Class two')
+
+        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class_1)
+        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class_2)
+
+        self.assertIsNotNone(profile_1.id)
+        self.assertIsNotNone(profile_2.id)
+
+    @test_settings
+    def test_allows_same_morphotype_across_null_and_non_null_object_class(self):
+        taxon_profiles = self.get_taxon_profiles()
+        taxon = self.get_lazy_taxon()
+        object_classes = self.create_object_classes()
+        object_class = self.create_object_class(object_classes, 'Class one')
+
+        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
+        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+
+        self.assertIsNotNone(profile_1.id)
+        self.assertIsNotNone(profile_2.id)
         
 
 

@@ -3,7 +3,13 @@
 
 {% block generic_content_specific %}
 	<div>
-		here
+		<div id="object-classes-container" class="row">
+			{% include 'object_classes/ajax/object_classes_list.html' %}
+		</div>
+		<div class="mt-3">
+			<button class="btn btn-outline-primary xhr" ajax-target="ModalContent" data-url="{% url 'create_object_class' meta_app.id generic_content.id %}">
+				{% trans "Create new object class" %}
+			</button>
+		</div>
 	</div>
-
 {% endblock %}

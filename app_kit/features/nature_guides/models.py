@@ -11,6 +11,7 @@ from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from app_kit.models import ContentImage, ContentImageMixin, UpdateContentImageTaxonMixin, MetaAppGenericContent
 
 from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+from app_kit.features.object_classes.models import ObjectClass
 
 from taxonomy.models import TaxonTree, TaxonSynonym, TaxonNamesView, TaxonLocale
 
@@ -574,6 +575,8 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     name = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'], null=True)
 
     morphotype = models.CharField(max_length=355, null=True)
+    
+    object_class = models.ForeignKey(ObjectClass, on_delete=models.SET_NULL, null=True)
 
     node_type = models.CharField(max_length=30, choices=NODE_TYPES)
 

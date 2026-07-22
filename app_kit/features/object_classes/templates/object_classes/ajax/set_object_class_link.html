@@ -1,0 +1,22 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n localcosmos_tags %}
+
+{% block action %}
+    {% url 'set_object_class_link' meta_app.id linked_instance|ctype_id linked_instance.pk %}
+{% endblock %}
+
+{% block title %}
+    {% blocktrans with instance=linked_instance %}Assign object class to {{ instance }}{% endblocktrans %}
+{% endblock %}
+
+{% block footer %}
+    {% include 'localcosmos_server/modals/footers/save_close.html' %}
+{% endblock %}
+
+{% block script %}
+    {% if success is True %}
+        <script>
+            hideLargeModal();
+        </script>
+    {% endif %}
+{% endblock %}

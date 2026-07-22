@@ -12,6 +12,11 @@ from app_kit.forms import GenericContentOptionsForm, GenericContentStatusForm
 from localcosmos_server.forms import LocalizeableModelForm, LocalizeableForm
 from taxonomy.lazy import LazyTaxon
 
+from localcosmos_server.taxonomy.fields import TaxonField
+from app_kit.utils import get_appkit_taxon_search_url
+
+from app_kit.features.object_classes.models import ObjectClass, ObjectClasses
+
 
 '''
     App-wide settings for taxonomic profiles
@@ -388,3 +393,46 @@ class MoveImageToSectionForm(forms.Form):
         
         self.fields['target_text_type'].queryset = text_types_in_profile
     
+    
+class CreateTaxonProfileForm(LocalizeableForm):
+    
+    localizeable_fields = ['morphotype']
+    
+    taxon = TaxonField(label=_('Taxon'), help_text=_('Enter latin or vernacular name, then select.'),
+                                      taxon_search_url=get_appkit_taxon_search_url)
+    
+    morphotype = forms.CharField(required=False, help_text=_('Optional: specify a morphotype for this taxon profile.'))
+    
+    object_class = forms.ModelChoiceField(
+        queryset=ObjectClass.objects.none(),
+        required=False,
+        label=_('Object Class'),
+        help_text=_('Optional: select an object class for this taxon profile.')
+    )
+    
+    def __init__(self, meta_app, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        object_classes_links = meta_app.get_generic_content_links(ObjectClasses)
+        if object_classes_links.exists():
+            object_classes = object_classes_links.first().generic_content
+        
+            self.fields['object_class'].queryset = ObjectClass.objects.filter(
+                object_classes=object_classes
+            ).order_by('name')
+            
+    def clean(self):
+        # make sure the selected object class is valid for the selected taxon
+        cleaned_data = super().clean()
+        taxon = cleaned_data.get('taxon')
+        object_class = cleaned_data.get('object_class')
+        
+        if taxon and object_class:
+            # check if the taxon is linked to the object class
+            # respect nuids
+            is_valid_link = object_class.is_taxon_compatible(taxon)
+            
+            if not is_valid_link:
+                self.add_error('object_class', _('The selected object class is not available for the chosen taxon.'))
+
+        return cleaned_data

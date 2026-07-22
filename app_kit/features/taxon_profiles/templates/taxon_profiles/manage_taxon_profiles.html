@@ -63,14 +63,27 @@
 	<div class="card">
 		<div class="card-body">
 			<h4 class="card-title">{% trans 'Create your taxon profiles' %}</h4>
-			<div>{% trans 'Type the name of the taxon you want to manage the profile for or select a taxon from your nature guides.' %}</div>
-			<form>
-				<div class="form-group">
-					{{ searchbackboneform }}
-				</div>
-			</form>
+			<div>
+				<button type="button" class="btn btn-outline-primary xhr" ajax-target="LargeModalContent" data-url="{% url 'create_new_taxon_profile' meta_app.id generic_content.id %}">
+					{% trans 'Create taxon profile' %}
+				</button>
+			</div>
+			
 		</div>
 	</div>
+
+	<div class="mt-5">
+		<h3>{% trans 'All Taxon Profiles' %}</h3>
+	</div>
+	<div class="card mt-3">
+		<div class="card-body">
+			{% url 'get_all_taxon_profiles_page' meta_app.id content_type.id generic_content.id as pagination_url %}
+			<div id="all-taxon-profiles" class="endless_page_template">
+				{% include 'taxon_profiles/ajax/all_taxon_profiles_list.html' %}
+			</div>
+		</div>
+	</div>
+	
 	{% if nature_guide_results %}
 		<div class="mt-5">
 			<h3>
@@ -139,6 +152,7 @@
 		{% endfor %}
 	{% endif %}
 	
+	<!--
 	<div class="mt-5">
 		<h3>
 			{% trans 'Taxon Profiles with no occurrence in any nature guide' %}
@@ -155,7 +169,8 @@
 			</div>
 		</div>
 	</div>
-
+	-->
+	<!--
 	<div class="mt-5">
 		<h3>
 			{% trans 'Backbone taxa without profile' %}
@@ -168,6 +183,7 @@
 			</div>
 		</div>
 	</div>
+	-->
 
 	<div class="mt-5">
 		<h3 class="text-danger">
@@ -190,43 +206,6 @@
 
 	<script>
 		
-		var get_manage_or_create_baseurl = "{% url 'get_taxon_profiles_manage_or_create_url' meta_app.id generic_content.id %}";
-
-		var taxon_source_input = document.getElementById("id_taxon_0");
-		var taxon_latname_input = document.getElementById("id_taxon_1");
-		var taxon_author_input = document.getElementById("id_taxon_2")
-		var name_uuid_input = document.getElementById("id_taxon_3")
-
-		name_uuid_input.addEventListener("change", function(event){
-
-			if (taxon_source_input.value && name_uuid_input.value){
-				// create taxon profile or manage taxon profile?
-				// currently name_uuid is used. maybe use latname&author - what happens if a taxon DB gets updated with name_uuid?
-				// var url = base_url + '?taxon_source=' + source_input.value + '&taxon_latname=' + taxon_latname_input.value + '&taxon_author=' + encodeURIComponent(taxon_author_input.value);
-				var determineURL_url = get_manage_or_create_baseurl + '?taxon_source=' + taxon_source_input.value + '&name_uuid=' + name_uuid_input.value;
-				$.get(determineURL_url, function(data){
-					if (typeof data == "object"){
-						if (data.exists) {
-							window.location = data.url;
-						}
-						else {
-							$.get(data.url, function(html) {
-								$("#ModalContent").html(html);
-								ajaxify("ModalContent");
-								
-								var modalEl = document.getElementById("Modal");
-								if (modalEl){
-									var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-									modal.show();
-								}
-
-							});
-						}
-					}
-				}); 
-				
-			}
-		});
 		{% for entry in nature_guide_results %}
 			$('#ng_taxonlist_{{ entry.nature_guide.id }}').endlessPaginate({
 				onCompleted: function() {
@@ -239,9 +218,18 @@
 				}
 			});
 		{% endfor %}
+
+		/*
 		$('#non_ng_taxa').endlessPaginate({
 			onCompleted: function() {
 				ajaxify('non_ng_taxa');
+			}
+		});
+		*/
+
+		$('#all-taxon-profiles').endlessPaginate({
+			onCompleted: function() {
+				ajaxify('all-taxon-profiles');
 			}
 		});
 

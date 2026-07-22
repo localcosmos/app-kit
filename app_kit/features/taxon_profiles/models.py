@@ -9,6 +9,8 @@ from django.dispatch import receiver
 from app_kit.models import ContentImageMixin, AppKitSeoParameters, AppKitExternalMedia
 from app_kit.generic import GenericContent, PUBLICATION_STATUS
 
+from app_kit.features.object_classes.models import ObjectClass
+
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
 from taxonomy.lazy import LazyTaxonList, LazyTaxon
 
@@ -234,6 +236,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     taxon_text_set = models.ForeignKey(TaxonTextSet, null=True, blank=True, on_delete=models.SET_NULL)
     updated_at = models.DateTimeField(auto_now=True)
     
+    object_class = models.ForeignKey(ObjectClass, null=True, blank=True, on_delete=models.SET_NULL)
+    
     
     @property
     def morphotype_profiles(self):
@@ -244,6 +248,17 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
                                                name_uuid=self.name_uuid).exclude(morphotype__isnull=True)
             return morphotypes
         return None
+    
+    
+    @property
+    def object_class_profiles(self):
+        if not self.object_class:
+            object_class_profiles = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                                               taxon_source=self.taxon_source,
+                                               name_uuid=self.name_uuid).exclude(object_class__isnull=True)
+            return object_class_profiles
+        return None
+    
     
     @property
     def parent_profile(self):
@@ -321,7 +336,28 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
 
     class Meta:
         # unique_together=('taxon_source', 'taxon_latname', 'taxon_author')
-        unique_together=('taxon_profiles', 'taxon_source', 'name_uuid', 'morphotype')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid', 'morphotype', 'object_class'],
+                condition=Q(morphotype__isnull=False, object_class__isnull=False),
+                name='tp_unique_taxon_morphotype_objectclass',
+            ),
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid', 'morphotype'],
+                condition=Q(morphotype__isnull=False, object_class__isnull=True),
+                name='tp_unique_taxon_morphotype_no_objectclass',
+            ),
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid', 'object_class'],
+                condition=Q(morphotype__isnull=True, object_class__isnull=False),
+                name='tp_unique_taxon_objectclass_no_morphotype',
+            ),
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid'],
+                condition=Q(morphotype__isnull=True, object_class__isnull=True),
+                name='tp_unique_taxon_no_morphotype_no_objectclass',
+            ),
+        ]
         verbose_name = _('Taxon Profile')
         verbose_name_plural = _('Taxon Profiles')
         

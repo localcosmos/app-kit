@@ -16,7 +16,7 @@ from app_kit.features.taxon_profiles.views import (ManageTaxonProfiles, ManageTa
                 DeleteTaxonTextType, CollectTaxonImages, CollectTaxonTraits, ManageTaxonProfileImage,
                 DeleteTaxonProfileImage, GetManageOrCreateTaxonProfileURL, ManageTaxonTextTypesOrder,
                 ChangeTaxonProfilePublicationStatus, BatchChangeNatureGuideTaxonProfilesPublicationStatus,
-                CreateTaxonProfile, ManageTaxonProfilesNavigationEntry, AddTaxonProfilesNavigationEntryTaxon,
+                CreateTaxonProfile, CreateNewTaxonProfile, ManageTaxonProfilesNavigationEntry, AddTaxonProfilesNavigationEntryTaxon,
                 DeleteTaxonProfilesNavigationEntry, GetTaxonProfilesNavigation, ManageNavigationImage,
                 DeleteNavigationImage, DeleteTaxonProfilesNavigationEntryTaxon, DeleteTaxonTextTypeCategory,
                 ChangeNavigationEntryPublicationStatus, ManageTaxonTextTypeCategory, ManageTaxonTextSet,
@@ -28,6 +28,7 @@ from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile,
                 TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory, TaxonTextSet)
 
 from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
 
 
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MetaNode
@@ -816,8 +817,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
     def get_url_kwargs(self):
         url_kwargs = {
             'meta_app_id': self.meta_app.id,
-            'taxon_source' : self.lazy_taxon.taxon_source,
-            'name_uuid' : str(self.lazy_taxon.name_uuid),
+            'taxon_profile_id' : self.taxon_profile.id,
         }
         return url_kwargs
 
@@ -851,6 +851,99 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
                               'TextOnlyFilter'])
         self.assertEqual(set(trait_types), expected_types)
 
+
+    @test_settings
+    def test_get_taxon_traits_with_morphotype(self):
+        # Create a TaxonProfile for the same taxon but with a morphotype
+        morphotype_profile = TaxonProfile(
+            taxon_profiles=self.generic_content,
+            taxon=self.lazy_taxon,
+            morphotype='Imago',
+        )
+        morphotype_profile.save()
+
+        # Create a MetaNode for the same taxon but with morphotype='Imago'
+        morphotype_meta_node = MetaNode(
+            name='Test meta node imago',
+            nature_guide=self.nature_guide,
+            node_type='result',
+            taxon=self.lazy_taxon,
+            morphotype='Imago',
+        )
+        morphotype_meta_node.save()
+
+        morphotype_node = NatureGuidesTaxonTree(
+            nature_guide=self.nature_guide,
+            meta_node=morphotype_meta_node,
+        )
+        morphotype_node.save(self.start_node)
+
+        # Assign the same matrix filter spaces to the morphotype node
+        self.fill_matrix_filters_nodes(self.parent_node, [morphotype_node])
+
+        # Use a view targeting the morphotype profile
+        view = self.get_view()
+        view.kwargs['taxon_profile_id'] = morphotype_profile.id
+        view.set_meta_app(**view.kwargs)
+        view.set_taxon(**view.kwargs)
+
+        traits = view.get_taxon_traits()
+
+        # Only the morphotype node's 5 traits should be returned;
+        # self.node (morphotype=None) must be excluded by the morphotype filter
+        self.assertEqual(len(traits), 5)
+        for trait in traits:
+            self.assertEqual(trait.node, morphotype_node)
+
+    @test_settings
+    def test_get_taxon_traits_with_object_class(self):
+
+        object_classes_link = self.create_generic_content(ObjectClasses, self.meta_app)
+        object_classes = object_classes_link.generic_content
+
+        matching_object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Lacerta class',
+            scientific_name='lacerta_class',
+        )
+        other_object_class = ObjectClass.objects.create(
+            object_classes=object_classes,
+            name='Other class',
+            scientific_name='other_class',
+        )
+
+        self.taxon_profile.object_class = matching_object_class
+        self.taxon_profile.save()
+
+        self.meta_node.object_class = matching_object_class
+        self.meta_node.save()
+
+        other_meta_node = MetaNode(
+            name='Test meta node other object class',
+            nature_guide=self.nature_guide,
+            node_type='result',
+            taxon=self.lazy_taxon,
+            object_class=other_object_class,
+        )
+        other_meta_node.save()
+
+        other_node = NatureGuidesTaxonTree(
+            nature_guide=self.nature_guide,
+            meta_node=other_meta_node,
+        )
+        other_node.save(self.start_node)
+
+        self.fill_matrix_filters_nodes(self.parent_node, [other_node])
+
+        view = self.get_view()
+        view.set_meta_app(**view.kwargs)
+        view.set_taxon(**view.kwargs)
+
+        traits = view.get_taxon_traits()
+
+        self.assertEqual(len(traits), 5)
+        for trait in traits:
+            self.assertEqual(trait.node, self.node)
 
     @test_settings
     def test_get_context_data(self):
@@ -2687,4 +2780,143 @@ class TestDeleteAllManuallyAddedTaxonProfileImages(WithTaxonProfile, WithTaxonPr
         )
         self.assertTrue(meta_app_images_qry.exists())
         
-        
+
+class TestCreateNewTaxonProfile(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly,
+                                 WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'create_new_taxon_profile'
+    view_class = CreateNewTaxonProfile
+
+    def setUp(self):
+        super().setUp()
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        lacerta_agilis = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lazy_taxon = LazyTaxon(instance=lacerta_agilis)
+
+    def get_url_kwargs(self):
+        return {
+            'meta_app_id': self.meta_app.id,
+            'taxon_profiles_id': self.generic_content.id,
+        }
+
+    def get_view(self):
+        view = super().get_view()
+        view.meta_app = self.meta_app
+        return view
+
+    def taxon_to_post_data(self, taxon):
+        return {
+            'taxon_0': taxon.taxon_source,
+            'taxon_1': taxon.taxon_latname,
+            'taxon_2': taxon.taxon_author,
+            'taxon_3': str(taxon.name_uuid),
+            'taxon_4': taxon.taxon_nuid,
+        }
+
+    @test_settings
+    def test_set_taxon_profiles(self):
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+        self.assertEqual(view.taxon_profiles, self.generic_content)
+
+    @test_settings
+    def test_get_context_data(self):
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+        self.assertEqual(context['taxon_profiles'], self.generic_content)
+        self.assertIsNone(context['taxon_profile'])
+        self.assertFalse(context['success'])
+
+    @test_settings
+    def test_get_form(self):
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        form = view.get_form()
+        self.assertIsInstance(form, view.form_class)
+
+    @test_settings
+    def test_form_valid(self):
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        taxon_profile_qry = TaxonProfile.objects.filter(
+            taxon_profiles=self.generic_content,
+            taxon_source=self.lazy_taxon.taxon_source,
+            name_uuid=self.lazy_taxon.name_uuid,
+        )
+        self.assertFalse(taxon_profile_qry.exists())
+
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        from app_kit.features.taxon_profiles.forms import CreateTaxonProfileForm
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data,
+                                       language=self.meta_app.primary_language)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+        self.assertIsNotNone(response.context_data['taxon_profile'])
+
+        self.assertTrue(taxon_profile_qry.exists())
+
+    @test_settings
+    def test_form_valid_with_morphotype(self):
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+            'morphotype': 'Imago',
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        from app_kit.features.taxon_profiles.forms import CreateTaxonProfileForm
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data,
+                                       language=self.meta_app.primary_language)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+
+        taxon_profile = response.context_data['taxon_profile']
+        self.assertIsNotNone(taxon_profile)
+        self.assertEqual(taxon_profile.morphotype, 'Imago')
+
+    @test_settings
+    def test_form_valid_idempotent(self):
+        # posting the same taxon twice should return the existing profile, not create a duplicate
+        view = self.get_view()
+        view.set_taxon_profiles(**view.kwargs)
+
+        post_data = {
+            'input_language': self.meta_app.primary_language,
+        }
+        post_data.update(self.taxon_to_post_data(self.lazy_taxon))
+
+        from app_kit.features.taxon_profiles.forms import CreateTaxonProfileForm
+        form = CreateTaxonProfileForm(self.meta_app, data=post_data,
+                                       language=self.meta_app.primary_language)
+        self.assertTrue(form.is_valid(), form.errors)
+        view.form_valid(form)
+
+        # submit again
+        form2 = CreateTaxonProfileForm(self.meta_app, data=post_data,
+                                        language=self.meta_app.primary_language)
+        self.assertTrue(form2.is_valid(), form2.errors)
+        view.form_valid(form2)
+
+        count = TaxonProfile.objects.filter(
+            taxon_profiles=self.generic_content,
+            taxon_source=self.lazy_taxon.taxon_source,
+            name_uuid=self.lazy_taxon.name_uuid,
+            morphotype=None,
+        ).count()
+        self.assertEqual(count, 1)
