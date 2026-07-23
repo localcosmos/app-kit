@@ -186,3 +186,12 @@ class JSONBuilder(ContentImagesJSONBuilder):
                 external_media_json.append(media_json)
 
         return external_media_json
+    
+    def build_object_class_json(self, object_class):
+        object_class_json = {
+            'name': object_class.name,
+            'scientificName': object_class.scientific_name,
+            'description': object_class.description,
+        }
+
+        return object_class_json

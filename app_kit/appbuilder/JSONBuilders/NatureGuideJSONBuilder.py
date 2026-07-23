@@ -109,12 +109,16 @@ class NatureGuideJSONBuilder(JSONBuilder):
             parent_node_name = parent_node.meta_node.name
             if parent_node.meta_node.node_type == 'root':
                 parent_node_name = parent_node.nature_guide.name
+                
+            object_class_json = None
+            if parent_node.meta_node.object_class:
+                object_class_json = self.build_object_class_json(parent_node.meta_node.object_class)
 
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
                 'name' : parent_node_name,
                 'morphotype': parent_node.meta_node.morphotype,
-                'objectClass': parent_node.meta_node.object_class,
+                'objectClass': object_class_json,
                 'taxon' : None,
                 'children' : [],
                 'matrixFilters' : {},

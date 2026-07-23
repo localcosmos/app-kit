@@ -1133,6 +1133,17 @@ class AppReleaseBuilder(AppBuilderBase):
                     
                     
         return result
+    
+    
+    def validate_ObjectClasses(self, object_classes):
+    
+            result = {
+                'errors' : [],
+                'warnings' : [],
+            }
+    
+            return result
+    
 
 
     ###############################################################################################################
@@ -2769,6 +2780,19 @@ class AppReleaseBuilder(AppBuilderBase):
         map_json = jsonbuilder.build()
 
         self._add_generic_content_to_app(app_generic_content, map_json, only_one_allowed=True)
+        
+        
+    ###############################################################################################################
+    # Object Classes
+    # - optional
+
+    def _build_ObjectClasses(self, app_generic_content):
+
+        jsonbuilder = self.get_json_builder(app_generic_content)
+        
+        object_classes_json = jsonbuilder.build()
+
+        self._add_generic_content_to_app(app_generic_content, object_classes_json, only_one_allowed=True)
 
 
     ###############################################################################################################

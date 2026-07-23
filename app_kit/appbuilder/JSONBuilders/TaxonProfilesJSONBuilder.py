@@ -161,6 +161,8 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon, morphotype=morphotype)
 
         is_featured = False
+        
+        object_class_json = None
 
         if db_profile:
             if db_profile.publication_status == 'draft':
@@ -168,15 +170,16 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             
             if db_profile.is_featured:
                 is_featured = True
-                
-            object_class = db_profile.object_class              
+            
+            if object_class:
+                object_class_json = self.build_object_class_json(db_profile.object_class)
                 
         classification = self.get_taxonomic_branch_as_dicts(lazy_taxon)
 
         taxon_profile_json.update({
             'taxonProfileId': db_profile.id if db_profile else None,
             'morphotype': morphotype,
-            'objectClass': object_class,
+            'objectClass': object_class_json,
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
