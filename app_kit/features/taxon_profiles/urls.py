@@ -129,4 +129,7 @@ urlpatterns = [
      # delete all manually added images
      path('delete-all-manually-added-taxon-profile-images/<int:meta_app_id>/<int:taxon_profiles_id>/',
            views.DeleteAllManuallyAddedTaxonProfileImages.as_view(), name='delete_all_manually_added_taxon_profile_images'),
+     # search taxon profiles
+     path('search-taxon-profiles/<int:meta_app_id>/<int:taxon_profiles_id>/',
+           views.TaxonProfileSearch.as_view(), name='search_taxon_profiles'),
 ]

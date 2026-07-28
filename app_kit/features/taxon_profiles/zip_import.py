@@ -153,7 +153,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
                         
                         row_3_value = col[2].value
-                        if row_3_value and r3v_is_valid_content_type == True:
+                        if row_3_value:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -172,7 +172,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                 }
                                 self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
 
-                        if row_3_value and r3v_is_valid_content_type == True:
+                        if row_3_value:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -556,6 +556,15 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                     # get the image data from the images sheet
                                     image_filename = cell_value
                                     image_data = self.get_image_data_from_images_sheet(image_filename)
+
+                                    if not image_data:
+                                        if self.ignore_nonexistent_images:
+                                            continue
+
+                                        raise ValueError(_('Image file "%(image_filename)s" not found in the "%(images_sheet_name)s" sheet.') % {
+                                            'image_filename': image_filename,
+                                            'images_sheet_name': self.images_sheet_name,
+                                        })
                                     
                                     # infer position from column_index
                                     image_data['position'] = column_index - 4

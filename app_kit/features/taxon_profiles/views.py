@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db.models import Prefetch, Q
-from django.views.generic import TemplateView, FormView
+from django.views.generic import TemplateView, FormView, View
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.contrib.contenttypes.models import ContentType
@@ -12,7 +12,7 @@ from .forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm, ManageTax
                     ManageTaxonProfilesNavigationEntryForm, AddTaxonProfilesNavigationEntryTaxonForm,
                     TaxonProfileStatusForm, ManageTaxonTextTypeCategoryForm, MoveTaxonProfilesNavigationEntryForm,
                     ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, TaxonProfileMorphotypeForm,
-                    MoveImageToSectionForm, CreateTaxonProfileForm)
+                    MoveImageToSectionForm, CreateTaxonProfileForm, TaxonProfileSearchForm)
 
 from .models import (TaxonTextType, TaxonText, TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                      TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory,
@@ -34,6 +34,9 @@ from localcosmos_server.template_content.models import TemplateContent
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
+from taxonomy.TaxonSearch import TaxonSearch
+
+from taxonomy.models import MetaVernacularNames
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
@@ -140,13 +143,8 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         context['taxon_profiles_navigation'] = taxon_profiles_navigation
         
         context['all_taxon_profiles'] = TaxonProfile.objects.filter(taxon_profiles=self.generic_content).order_by('taxon_latname')
-
-        form_kwargs = {
-            'taxon_search_url': reverse('search_backbonetaxonomy_and_custom_taxa', kwargs={'meta_app_id':self.meta_app.id}),
-            'fixed_taxon_source' : '__all__',
-        }
         
-        context['searchbackboneform'] = AddSingleTaxonForm(**form_kwargs)
+        context['search_taxon_profiles_form'] = TaxonProfileSearchForm()
         return context
 
 
@@ -1712,3 +1710,84 @@ class DeleteAllManuallyAddedTaxonProfileImages(MetaAppMixin, TemplateView):
         context['success'] = True
         
         return self.render_to_response(context)
+    
+    
+class TaxonProfileSearch(MetaAppMixin, View):
+    
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.set_taxon_profiles(**kwargs)
+        return super().dispatch(request, *args, **kwargs)
+    
+    def set_taxon_profiles(self, **kwargs):
+        self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
+    
+    def get_vernacular_name_uuids(self, search_query):
+        matching_uuids = set(
+            MetaVernacularNames.objects.filter(
+                name__icontains=search_query
+            ).values_list('name_uuid', flat=True)
+        )
+
+        taxon_sources = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles
+        ).values_list('taxon_source', flat=True).distinct()
+
+        for source in taxon_sources:
+            try:
+                search = TaxonSearch(source, search_query, self.meta_app.primary_language)
+                matching_uuids.update(search.get_matching_taxon_name_uuids())
+            except Exception:
+                pass
+
+        return matching_uuids
+
+    def get_taxon_profiles_queryset(self, search_query):
+        vernacular_uuids = self.get_vernacular_name_uuids(search_query)
+
+        queryset = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+        ).filter(
+            Q(taxon_latname__icontains=search_query) |
+            Q(taxon_author__icontains=search_query) |
+            Q(morphotype__icontains=search_query) |
+            Q(object_class__name__icontains=search_query) |
+            Q(name_uuid__in=vernacular_uuids)
+        ).select_related('object_class').order_by('taxon_latname')[:20]
+        
+        return queryset
+        
+    def get(self, request, *args, **kwargs):
+        search_query = request.GET.get('taxon_profile_search_query', '').strip()
+        results = []
+
+        if len(search_query) >= 3:
+            profiles = self.get_taxon_profiles_queryset(search_query)
+
+            for profile in profiles:
+                label = profile.taxon_latname
+                if profile.taxon_author:
+                    label = f'{label} {profile.taxon_author}'
+                    
+                if profile.morphotype:
+                    label = f'{label} ({profile.morphotype})'
+                    
+                if profile.object_class:
+                    label = f'{profile.object_class.name} {label}'
+
+                results.append({
+                    'label': label,
+                    'id': profile.id,
+                    'taxon_latname': profile.taxon_latname,
+                    'taxon_author': profile.taxon_author or '',
+                    'name_uuid': str(profile.name_uuid),
+                    'taxon_source': profile.taxon_source,
+                    'taxon_nuid': profile.taxon_nuid,
+                    'morphotype': profile.morphotype or '',
+                    'object_class': profile.object_class.name if profile.object_class else '',
+                })
+
+        return JsonResponse(results, safe=False)
+
+    
+    

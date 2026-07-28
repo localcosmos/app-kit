@@ -125,3 +125,34 @@ class TaxonSearch(object):
                 choices.append(obj)
 
         return choices
+
+    def get_matching_taxon_name_uuids(self):
+        """
+        Return a set of accepted-taxon name_uuids whose scientific or vernacular names
+        match the search text. Suitable for filtering model querysets on name_uuid.
+        """
+        if not self.queries_ready:
+            self.make_queries()
+
+        uuids = set()
+
+        if self.taxon_source == 'taxonomy.sources.custom':
+            # exact_matches_query / matches_query are TaxonTreeModel rows
+            uuids.update(self.exact_matches_query.values_list('name_uuid', flat=True))
+            uuids.update(self.matches_query.values_list('name_uuid', flat=True))
+            # vernacular_query is TaxonLocaleModel; taxon_id is FK → TaxonTree.name_uuid
+            uuids.update(self.vernacular_query.values_list('taxon_id', flat=True))
+        else:
+            # TaxonNamesView rows: name_uuid is per-name (not per taxon).
+            # taxon_nuid reliably identifies the accepted taxon.
+            nuids = set()
+            nuids.update(self.exact_matches_query.values_list('taxon_nuid', flat=True))
+            nuids.update(self.matches_query.values_list('taxon_nuid', flat=True))
+            nuids.update(self.vernacular_query.values_list('taxon_nuid', flat=True))
+            uuids.update(
+                self.models.TaxonTreeModel.objects.filter(
+                    taxon_nuid__in=nuids
+                ).values_list('name_uuid', flat=True)
+            )
+
+        return uuids

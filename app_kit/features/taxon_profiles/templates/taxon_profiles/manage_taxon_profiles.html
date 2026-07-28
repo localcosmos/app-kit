@@ -77,6 +77,11 @@
 	</div>
 	<div class="card mt-3">
 		<div class="card-body">
+			<div class="row">
+				<div class="col-12 col-lg-6">
+					{% render_bootstrap_form search_taxon_profiles_form %}
+				</div>
+			</div>
 			{% url 'get_all_taxon_profiles_page' meta_app.id content_type.id generic_content.id as pagination_url %}
 			<div id="all-taxon-profiles" class="endless_page_template">
 				{% include 'taxon_profiles/ajax/all_taxon_profiles_list.html' %}
@@ -152,39 +157,6 @@
 		{% endfor %}
 	{% endif %}
 	
-	<!--
-	<div class="mt-5">
-		<h3>
-			{% trans 'Taxon Profiles with no occurrence in any nature guide' %}
-		</h3>
-		{% get_generic_content_option generic_content 'include_only_taxon_profiles_from_nature_guides' as ng_only %}
-		{% if ng_only %}
-			({% trans 'not included in app' %})
-		{% endif %}
-	</div>
-	<div class="card mt-3">
-		<div class="card-body">
-			<div id="non_ng_taxa" class="endless_page_template">
-				{% include 'taxon_profiles/ajax/non_nature_guide_taxonlist.html' %}
-			</div>
-		</div>
-	</div>
-	-->
-	<!--
-	<div class="mt-5">
-		<h3>
-			{% trans 'Backbone taxa without profile' %}
-		</h3>
-	</div>
-	<div class="card mt-3">
-		<div class="card-body">
-			<div id="backbone_taxa_page" class="endless_page_template">
-				{% include 'taxon_profiles/ajax/backbone_taxa_taxonlist.html' %}
-			</div>
-		</div>
-	</div>
-	-->
-
 	<div class="mt-5">
 		<h3 class="text-danger">
 			{% trans 'Danger Zone' %}
@@ -219,14 +191,6 @@
 			});
 		{% endfor %}
 
-		/*
-		$('#non_ng_taxa').endlessPaginate({
-			onCompleted: function() {
-				ajaxify('non_ng_taxa');
-			}
-		});
-		*/
-
 		$('#all-taxon-profiles').endlessPaginate({
 			onCompleted: function() {
 				ajaxify('all-taxon-profiles');
@@ -254,6 +218,79 @@
 			$("#taxon-texts-management").html(html);
 			ajaxify('taxon-texts-management');
 		});
+
+		$("#id_taxon_profile_search_query").typeahead({
+			autoSelect: false,
+			matcher: function() { return true; },
+			highlighter: function(item) { return item; },
+			source: function(input_value, process){
+
+				$.ajax({
+					type: "GET",
+					url: "{% url 'search_taxon_profiles' meta_app.id generic_content.id %}",
+					dataType: "json",
+					cache: false,
+					data: {
+						"taxon_profile_search_query": input_value,
+					},
+					beforeSend : function(){
+					},
+					success: function (data) {
+
+						if (data.length == 0){
+							process([{ name: '<em class="text-muted">{% trans "No results found." %}</em>', noResult: true }]);
+						}
+						else {
+							process($.map(data, function (item) {
+
+								let label = `<em>${item.taxon_latname}</em>`;
+
+								if (item.taxon_author) {
+									label = `${label} ${item.taxon_author}`;
+								}
+
+								if (item.morphotype) {
+									label = `${label} (${item.morphotype})`;
+								}
+
+								if (item.object_class) {
+									label = `${item.object_class} ${label}`;
+								}
+
+								if (item.taxon_source) {
+									label = `${label} <span class="badge rounded-pill badge-light">${item.taxon_source}</span>`;
+								}
+
+								var taxon_object = {
+									"name": label,
+									"id": item.id,
+									"taxon_nuid": item.taxon_nuid,
+									"taxon_latname": item.taxon_latname,
+									"taxon_author": item.taxon_author,
+									"name_uuid": item.name_uuid,
+									"taxon_source": item.taxon_source,
+									"morphotype": item.morphotype,
+									"object_class": item.object_class,
+								};
+
+								return taxon_object;
+							}));
+						}
+					},
+					error: function(){
+						process([{ name: '<em class="text-danger">{% trans "An error occurred. Please try again." %}</em>', noResult: true }]);
+					}
+				});
+			}, 
+			afterSelect : function(item){
+				this.$element.val('');
+				if (item.noResult) return;
+				const url = "{% url 'manage_taxon_profile' meta_app.id 9999 %}".replace('9999', item.id);
+				window.location.href = url;
+			},
+			minLength: 3,
+			delay: 500
+		}); 
 
 
 	</script>

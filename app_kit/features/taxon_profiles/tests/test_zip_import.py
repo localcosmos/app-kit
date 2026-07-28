@@ -14,6 +14,7 @@ from app_kit.features.taxon_profiles.models import TaxonProfile
 
 
 import os
+from unittest.mock import patch
 
 TEST_IMAGE_FILENAME = 'Leaf.jpg'
 
@@ -359,6 +360,61 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         
         
         
+    @test_settings
+    def test_import_generic_content_ignores_missing_image_data_when_configured(self):
+
+        importer = TaxonProfilesZipImporter(
+            self.superuser,
+            self.taxon_profiles,
+            self.zip_contents_path,
+            ignore_nonexistent_images=True,
+        )
+        importer.load_workbook()
+
+        importer.errors = []
+        importer.validate()
+
+        self.assertEqual(importer.errors, [])
+
+        original_get_image_data = importer.get_image_data_from_images_sheet
+
+        def missing_first_image(image_filename):
+            if image_filename == 'Leaf.jpg':
+                return None
+            return original_get_image_data(image_filename)
+
+        with patch.object(importer, 'get_image_data_from_images_sheet', side_effect=missing_first_image):
+            importer.import_generic_content()
+
+        quercus_robur_profile = TaxonProfile.objects.get(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+        )
+
+        self.assertEqual(quercus_robur_profile.short_profile, 'Quercus robur short profile')
+
+    @test_settings
+    def test_import_generic_content_raises_clear_error_for_missing_image_data(self):
+
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+
+        importer.errors = []
+        importer.validate()
+
+        self.assertEqual(importer.errors, [])
+
+        original_get_image_data = importer.get_image_data_from_images_sheet
+
+        def missing_first_image(image_filename):
+            if image_filename == 'Leaf.jpg':
+                return None
+            return original_get_image_data(image_filename)
+
+        with patch.object(importer, 'get_image_data_from_images_sheet', side_effect=missing_first_image):
+            with self.assertRaisesMessage(ValueError, 'Image file "Leaf.jpg" not found in the "Taxon Profile Images" sheet.'):
+                importer.import_generic_content()
+
     
         
     @test_settings

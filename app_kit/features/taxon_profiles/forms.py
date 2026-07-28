@@ -436,3 +436,9 @@ class CreateTaxonProfileForm(LocalizeableForm):
                 self.add_error('object_class', _('The selected object class is not available for the chosen taxon.'))
 
         return cleaned_data
+    
+    
+class TaxonProfileSearchForm(forms.Form):
+    
+    taxon_profile_search_query = forms.CharField(label=_('Search for taxon profiles'), required=True,
+                                   help_text=_('Enter a scientific or vernacular name to search for taxon profiles.'))
