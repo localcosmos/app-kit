@@ -243,10 +243,13 @@ def get_vernacular(taxon, language, cache=None):
     
     if type(taxon) == dict:
         taxon = LazyTaxon(**taxon)
+        
+    elif not isinstance(taxon, LazyTaxon):
+        taxon = LazyTaxon(instance=taxon)
 
     if cache:
         try:
-            return cache[self.taxon_source][self.name_uuid][language]
+            return cache[taxon.taxon_source][taxon.name_uuid][language]
         except:
             return None
     

@@ -1722,12 +1722,19 @@ class TaxonProfileSearch(MetaAppMixin, View):
     def set_taxon_profiles(self, **kwargs):
         self.taxon_profiles = TaxonProfiles.objects.get(pk=kwargs['taxon_profiles_id'])
     
-    def get_vernacular_name_uuids(self, search_query):
-        matching_uuids = set(
-            MetaVernacularNames.objects.filter(
-                name__icontains=search_query
-            ).values_list('name_uuid', flat=True)
-        )
+    def get_vernacular_data(self, search_query):
+        """
+        Returns (matching_uuids: set, vernacular_map: dict{name_uuid_str: name}).
+        Covers both MetaVernacularNames (user-defined) and taxonomy source DBs.
+        """
+        vernacular_map = {}
+
+        for vn in MetaVernacularNames.objects.filter(
+            name__icontains=search_query
+        ).values('name_uuid', 'name'):
+            vernacular_map[str(vn['name_uuid'])] = vn['name']
+
+        matching_uuids = set(vernacular_map.keys())
 
         taxon_sources = TaxonProfile.objects.filter(
             taxon_profiles=self.taxon_profiles
@@ -1736,15 +1743,30 @@ class TaxonProfileSearch(MetaAppMixin, View):
         for source in taxon_sources:
             try:
                 search = TaxonSearch(source, search_query, self.meta_app.primary_language)
-                matching_uuids.update(search.get_matching_taxon_name_uuids())
+                search.make_queries()
+
+                if source == 'taxonomy.sources.custom':
+                    for vn in search.vernacular_query.values('taxon_id', 'name'):
+                        key = str(vn['taxon_id'])
+                        vernacular_map.setdefault(key, vn['name'])
+                        matching_uuids.add(key)
+                else:
+                    nuid_to_name = {}
+                    for vn in search.vernacular_query.values('taxon_nuid', 'name'):
+                        nuid_to_name[vn['taxon_nuid']] = vn['name']
+                    if nuid_to_name:
+                        for taxon in search.models.TaxonTreeModel.objects.filter(
+                            taxon_nuid__in=nuid_to_name.keys()
+                        ).values('name_uuid', 'taxon_nuid'):
+                            key = str(taxon['name_uuid'])
+                            vernacular_map.setdefault(key, nuid_to_name[taxon['taxon_nuid']])
+                            matching_uuids.add(key)
             except Exception:
                 pass
+            
+        return matching_uuids, vernacular_map
 
-        return matching_uuids
-
-    def get_taxon_profiles_queryset(self, search_query):
-        vernacular_uuids = self.get_vernacular_name_uuids(search_query)
-
+    def get_taxon_profiles_queryset(self, search_query, vernacular_uuids):
         queryset = TaxonProfile.objects.filter(
             taxon_profiles=self.taxon_profiles,
         ).filter(
@@ -1762,7 +1784,8 @@ class TaxonProfileSearch(MetaAppMixin, View):
         results = []
 
         if len(search_query) >= 3:
-            profiles = self.get_taxon_profiles_queryset(search_query)
+            vernacular_uuids, vernacular_map = self.get_vernacular_data(search_query)
+            profiles = self.get_taxon_profiles_queryset(search_query, vernacular_uuids)
 
             for profile in profiles:
                 label = profile.taxon_latname
@@ -1775,6 +1798,11 @@ class TaxonProfileSearch(MetaAppMixin, View):
                 if profile.object_class:
                     label = f'{profile.object_class.name} {label}'
 
+                print(f"Profile: {profile.taxon_latname}, UUID: {profile.name_uuid}, Vernacular Map: {vernacular_map}")
+                vernacular = vernacular_map.get(str(profile.name_uuid))
+                if vernacular:
+                    label = f'{vernacular} - {label}'
+
                 results.append({
                     'label': label,
                     'id': profile.id,
@@ -1783,6 +1811,7 @@ class TaxonProfileSearch(MetaAppMixin, View):
                     'name_uuid': str(profile.name_uuid),
                     'taxon_source': profile.taxon_source,
                     'taxon_nuid': profile.taxon_nuid,
+                    'vernacular': vernacular or '',
                     'morphotype': profile.morphotype or '',
                     'object_class': profile.object_class.name if profile.object_class else '',
                 })

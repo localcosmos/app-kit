@@ -13,6 +13,7 @@ from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile,
 from app_kit.features.maps.models import Map, FilterTaxon
 from app_kit.features.nature_guides.models import NatureGuide, MetaNode
 from app_kit.features.generic_forms.models import GenericForm, GenericField
+from app_kit.features.object_classes.models import ObjectClasses, ObjectClassTaxon
 from app_kit.utils import get_content_instance_meta_app
 
 from taxonomy.lazy import LazyTaxon
@@ -39,7 +40,8 @@ CUSTOM_TAXONOMY_NAME = 'taxonomy.sources.custom'
 '''
 
 APP_KIT_SUPPORTED_SWAP_MODELS = [AppContentTaxonomicRestriction, BackboneTaxa, FilterTaxon, TaxonProfile,
-                                 TaxonProfilesNavigationEntryTaxa, MetaNode, ImageStore, TaxonRelationship]
+                                 TaxonProfilesNavigationEntryTaxa, MetaNode, ImageStore, TaxonRelationship,
+                                 ObjectClassTaxon]
 
 APP_KIT_SWAPPABILITY_CHECK_STATIC_FIELDS = SWAPPABILITY_CHECK_STATIC_FIELDS.copy()
 APP_KIT_SWAPPABILITY_CHECK_STATIC_FIELDS.update({
@@ -51,6 +53,7 @@ APP_KIT_SWAPPABILITY_CHECK_STATIC_FIELDS.update({
     'TaxonProfilesNavigationEntryTaxa': ['navigation_entry'],
     'MetaNode': ['nature_guide'],
     'ImageStore': [],
+    'ObjectClassTaxon': ['object_class'],
 })
 
 class TaxonManager(BaseTaxonManager):
@@ -139,6 +142,8 @@ class TaxonManager(BaseTaxonManager):
                     matching_image_stores.append(image_store)
                     
         return matching_image_stores
+    
+    
     
     
     '''
@@ -253,6 +258,20 @@ class TaxonManager(BaseTaxonManager):
 
         return [verbose_entry]
     
+    def _get_ObjectClassTaxon_occurrences(self, occurrence_qry, lazy_taxon):
+        object_classes_links = self.meta_app.get_generic_content_links(ObjectClasses)
+        all_object_classes = [link.generic_content for link in object_classes_links]
+        occurrence_qry = occurrence_qry.filter(object_class__object_classes__in=all_object_classes)
+        return occurrence_qry
+
+    def _get_ObjectClassTaxon_occurrences_verbose(self, occurrences_entry):
+        occurrences = occurrences_entry['occurrences']
+        model = occurrences_entry['model']
+        verbose_model_name = str(model._meta.verbose_name)
+        verbose_occurrences = [_('occurs in %(count)s object class taxon mappings') % {'count': len(occurrences)}]
+        verbose_entry = self._get_verbose_entry(model, occurrences, verbose_model_name, verbose_occurrences)
+        return [verbose_entry]
+
     # support for swapping related_taxon
     def _swap_taxon_TaxonRelationship(self, lazy_taxon, new_lazy_taxon):
         
@@ -280,74 +299,76 @@ class TaxonReferencesUpdater:
         self.taxon_manager = TaxonManager(meta_app)
         self.custom_taxonomy_only = custom_taxonomy_only
     def update_all_taxon_nuid_and_name_uuid_only(self):
-        result = self.check_taxa()
-        for lazy_taxon in result['position_or_name_uuid_changed']:
-            if lazy_taxon.exists_as_taxon_in_reference == True and lazy_taxon.reference_taxon:
-                models_with_taxon = self.taxon_manager.get_taxon_models()
-                for model in models_with_taxon:
-                    instances = model.objects.filter(taxon_latname=lazy_taxon.taxon_latname, taxon_author=lazy_taxon.taxon_author)
-                    for instance_with_taxon in instances:
-                        meta_app = get_content_instance_meta_app(instance_with_taxon)
-                        if meta_app == self.meta_app:
-                            # update the taxon, use both .taxon_nuid and .taxon.taxon_nuid
-                            # to ensure its update
-                            # reference_taxon can be a synonym, a synonym has no taxon_nuid
-                            if hasattr(lazy_taxon.reference_taxon, 'taxon'):
-                                taxon_nuid = lazy_taxon.reference_taxon.taxon.taxon_nuid
-                            else:
-                                taxon_nuid = lazy_taxon.reference_taxon.taxon_nuid
-                            instance_with_taxon.name_uuid = lazy_taxon.reference_taxon.name_uuid
-                            instance_with_taxon.taxon_nuid = taxon_nuid
-                            instance_with_taxon.taxon.name_uuid = lazy_taxon.reference_taxon.name_uuid
-                            instance_with_taxon.taxon.taxon_nuid = taxon_nuid
-                            instance_with_taxon.save()
-    def check_taxa(self):
+        self.check_taxa(update=True)
+
+    def check_taxa(self, update=False):
         models_with_taxon = self.taxon_manager.get_taxon_models()
-        result = {
-            'total_taxa_checked': 0,
-            'taxa_with_errors': 0,
-            'position_or_name_uuid_changed': [],
-            'taxa_missing': [],
-            'taxa_new_author': [],
-            'taxa_in_synonyms': [],
-        }
-        checked_lazy_taxa = []
+        errors = []
+        self._total_taxa_checked = 0
+        checked_taxa_cache = {}  # cache reference check results by taxon identity key
+
         for model in models_with_taxon:
             instances = model.objects.filter(taxon_latname__isnull=False)
             for instance_with_taxon in instances:
                 meta_app = get_content_instance_meta_app(instance_with_taxon)
-                if meta_app == self.meta_app:
-                    lazy_taxon = LazyTaxon(instance=instance_with_taxon)
-                    already_checked = False
-                    for checked_lazy_taxon in checked_lazy_taxa:
-                        if lazy_taxon.taxon_latname == checked_lazy_taxon.taxon_latname and lazy_taxon.taxon_author == checked_lazy_taxon.taxon_author and lazy_taxon.taxon_source == checked_lazy_taxon.taxon_source and lazy_taxon.name_uuid == checked_lazy_taxon.name_uuid and lazy_taxon.taxon_nuid == checked_lazy_taxon.taxon_nuid:
-                            # this taxon has already been checked, skip it
-                            already_checked = True
-                            break
-                    if already_checked:
-                        continue
-                    if self.custom_taxonomy_only and lazy_taxon.taxon_source != CUSTOM_TAXONOMY_NAME:
-                        continue
+                if meta_app != self.meta_app:
+                    continue
+
+                lazy_taxon = LazyTaxon(instance=instance_with_taxon)
+
+                if self.custom_taxonomy_only and lazy_taxon.taxon_source != CUSTOM_TAXONOMY_NAME:
+                    continue
+
+                cache_key = (lazy_taxon.taxon_source, lazy_taxon.taxon_latname,
+                             lazy_taxon.taxon_author, str(lazy_taxon.name_uuid), lazy_taxon.taxon_nuid)
+
+                if cache_key in checked_taxa_cache:
+                    checked_taxon = checked_taxa_cache[cache_key]
+                else:
                     lazy_taxon.check_with_reference()
-                    result['total_taxa_checked'] += 1
-                    if len(lazy_taxon.reference_errors) > 0:
-                        result['taxa_with_errors'] += 1
-                    if lazy_taxon.exists_as_taxon_in_reference:
-                        if lazy_taxon.changed_taxon_nuid_in_reference or lazy_taxon.changed_name_uuid_in_reference:
-                            if lazy_taxon not in result['position_or_name_uuid_changed']:
-                                result['position_or_name_uuid_changed'].append(lazy_taxon)                        
-                    else:
-                        if len(lazy_taxon.reference_taxa_with_similar_taxon_latname) > 0:
-                            if lazy_taxon not in result['taxa_new_author']:
-                                result['taxa_new_author'].append(lazy_taxon)
-                        elif lazy_taxon.exists_as_synonym_in_reference:
-                            if lazy_taxon not in result['taxa_in_synonyms']:
-                                result['taxa_in_synonyms'].append(lazy_taxon)
+                    checked_taxa_cache[cache_key] = lazy_taxon
+                    checked_taxon = lazy_taxon
+
+                self._total_taxa_checked += 1
+
+                if len(checked_taxon.reference_errors) == 0:
+                    continue
+
+                updated = False
+                result_taxon = checked_taxon
+
+                if update and checked_taxon.exists_as_taxon_in_reference and checked_taxon.reference_taxon:
+                    
+                    if checked_taxon.changed_taxon_nuid_in_reference or checked_taxon.changed_name_uuid_in_reference:
+                        
+                        ref = checked_taxon.reference_taxon
+                        if hasattr(ref, 'taxon'):
+                            taxon_nuid = ref.taxon.taxon_nuid
+                            name_uuid = ref.name_uuid
                         else:
-                            if lazy_taxon not in result['taxa_missing']:
-                                result['taxa_missing'].append(lazy_taxon)
-                    checked_lazy_taxa.append(lazy_taxon)
-        return result
+                            taxon_nuid = ref.taxon_nuid
+                            name_uuid = ref.name_uuid
+
+                        type(instance_with_taxon).objects.filter(pk=instance_with_taxon.pk).update(
+                            taxon_nuid=taxon_nuid,
+                            name_uuid=name_uuid,
+                        )
+
+                        instance_with_taxon.refresh_from_db()
+                        result_taxon = LazyTaxon(instance=instance_with_taxon)
+                        
+                        updated = True
+
+                errors.append({
+                    'instance': instance_with_taxon,
+                    'taxon': result_taxon,
+                    'errors': list(checked_taxon.reference_errors),
+                    'updated': updated,
+                })
+
+        return errors
+
+
     
     
 def check_taxon_parameter_changes():

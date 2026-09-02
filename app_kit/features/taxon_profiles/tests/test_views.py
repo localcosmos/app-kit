@@ -27,15 +27,12 @@ from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile,
                 TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry,
                 TaxonProfilesNavigationEntryTaxa, TaxonTextTypeCategory, TaxonTextSet)
 
-from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm
+from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm, TaxonProfileSearchForm
 from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
 
 
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MetaNode
 from app_kit.features.nature_guides.tests.common import WithMatrixFilters
-
-
-from localcosmos_server.taxonomy.forms import AddSingleTaxonForm
 
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
@@ -151,7 +148,7 @@ class TestManageTaxonProfiles(WithNatureGuideNode, WithTaxonProfiles, ViewTestMi
         context = view.get_context_data(**view.kwargs)
         self.assertIn('taxa', context)
         self.assertEqual(context['taxa'][0], self.lazy_taxon)
-        self.assertEqual(context['searchbackboneform'].__class__, AddSingleTaxonForm)
+        self.assertEqual(context['search_taxon_profiles_form'].__class__, TaxonProfileSearchForm)
 
 
 class TestCreateTaxonProfile(WithNatureGuideNode, WithTaxonProfiles, ViewTestMixin, WithUser, WithLoggedInUser,

@@ -37,6 +37,8 @@ class TaxonProfilesOptionsForm(GenericFormChoicesMixin, GenericContentOptionsFor
     include_vernacular_names_languages = forms.CharField(required=False, label=_('Include Vernacular Names Languages'),
         help_text=_('A comma-separated list of language codes (e.g. "en,de,fr") to include vernacular names from. Leave empty to include all available languages.'))
     
+    primary_images_first = forms.BooleanField(required=False, label=_('Show primary images first in taxon profile image galleries'))
+    
     version = forms.CharField(help_text=_('You can manually set you own version here. This will not affect the automated versioning.'), required=False)
 
 

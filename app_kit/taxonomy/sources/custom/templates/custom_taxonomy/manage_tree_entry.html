@@ -1,8 +1,12 @@
-{% load i18n localcosmos_tags %}
+{% load i18n localcosmos_tags app_tags %}
 <div id="ctype-{{ taxon|ctype_id }}-{{ taxon.id }}" class="card">
 	<div class="card-body">
 		<div>
-			{{ taxon.taxon_latname }}
+			<i>{{ taxon.taxon_latname }}</i>
+			{% get_vernacular taxon meta_app.primary_language as vernacular_name %}
+			{% if vernacular_name %}
+				- <span class="text-muted">{{ vernacular_name }}</span>
+			{% endif %}
 
 			<a href class="btn btn-xs btn-outline-primary xhr" data-url="{% url 'load_custom_taxon_children' taxon.name_uuid language %}" ajax-target="{{ taxon.name_uuid }}-children">{% trans 'Load children' %}</a>
 

@@ -18,6 +18,8 @@ from localcosmos_server.models import ServerImageStore
 
 from app_kit.features.backbonetaxonomy.utils import TaxonManager, TaxonReferencesUpdater
 
+from app_kit.features.object_classes.models import ObjectClassTaxon
+
 from taxonomy.models import TaxonomyModelRouter
 from taxonomy.lazy import LazyTaxon
 
@@ -34,6 +36,7 @@ ALL_TAXON_MODELS = [
     ServerImageStore,
     ImageStore,
     TaxonRelationship,
+    ObjectClassTaxon,
 ]
 
 class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantTestCase):
@@ -812,7 +815,7 @@ class TestTaxonManager(WithImageStore, WithMedia, WithMetaApp, WithUser, TenantT
         
         expected_occurrences = [{
             'model': TaxonRelationship,
-            'occurrences': [relationship, relationship_2],
+            'occurrences': [relationship_2, relationship],
             'verbose_model_name': 'Taxon Relationship',
             'verbose_occurrences': ['is used in 2 taxon relationship(s)'],
         }]
@@ -885,8 +888,8 @@ class TestTaxonReferencesUpdater(WithImageStore, WithMedia, WithMetaApp, WithUse
                 'instance': self.taxon_profile,
                 'taxon': outdated_lazy_taxon,
                 'errors': [
-                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2019',
-                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2019'
+                    'Taxon Picea abies (L.) H. Karst. has changed its position in Catalogue Of Life 2024',
+                    'Taxon Picea abies (L.) H. Karst. has changed its identifier in Catalogue Of Life 2024'
                 ],
                 'updated': False
             }
@@ -898,16 +901,19 @@ class TestTaxonReferencesUpdater(WithImageStore, WithMedia, WithMetaApp, WithUse
         # update = True switches from old_taxon_nuid to new
         errors = updater.check_taxa(update=True)
         
-        expected_errors[0].update({
-            'taxon': reference_lazy_taxon,
-            'updated':True,
-        })
-        
-        self.assertEqual(errors, expected_errors)
-        
         updated_taxon_profile = TaxonProfile.objects.get(id=self.taxon_profile.id)
         self.assertEqual(updated_taxon_profile.taxon_nuid, reference_lazy_taxon.taxon_nuid)
         self.assertEqual(updated_taxon_profile.taxon_latname, reference_lazy_taxon.taxon_latname)
         self.assertEqual(updated_taxon_profile.taxon_author, reference_lazy_taxon.taxon_author)
         self.assertEqual(updated_taxon_profile.taxon_source, reference_lazy_taxon.taxon_source)
         self.assertEqual(updated_taxon_profile.name_uuid, str(reference_lazy_taxon.name_uuid))
+        
+        expected_errors[0].update({
+            'taxon': reference_lazy_taxon,
+            'updated':True,
+        })
+        
+        self.assertEqual(expected_errors[0]['taxon'], errors[0]['taxon'])
+        
+        self.assertEqual(errors, expected_errors)
+        

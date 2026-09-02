@@ -1216,8 +1216,8 @@ class NatureGuideCrosslinks(models.Model):
             
             all_crosslinks.append(crosslink_tuple)
 
-        print('Checking crosslinks for circularity:')
-        print(all_crosslinks)
+        #print('Checking crosslinks for circularity:')
+        #print(all_crosslinks)
         crosslink_manager =  CrosslinkManager()
         is_circular = crosslink_manager.check_circularity(all_crosslinks)
 

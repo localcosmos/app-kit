@@ -62,6 +62,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             self.validate_definition_rows()
             self.validate_taxa(taxon_profiles_sheet, start_row=3)        
             self.validate_content()
+            self.validate_taxon_profile_images_sheet()
         
     
     def get_column_type(self, col):
@@ -258,6 +259,45 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             is_valid = self.validate_external_media(url, col_letter, row_index)
                             if is_valid:
                                 self.validate_listing_in_external_media_sheet(url, media_type, col_letter, row_index)
+       
+                                
+    def validate_taxon_profile_images_sheet(self):
+        taxon_profiles_sheet = self.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
+        images_sheet = self.get_sheet_by_name(TAXON_PROFILE_IMAGES_SHEET_NAME)
+
+        if not taxon_profiles_sheet or not images_sheet or self.ignore_nonexistent_images == True:
+            return
+
+        used_image_identifiers = set([])
+
+        # Collect all image identifiers referenced from image-type columns.
+        for col in taxon_profiles_sheet.iter_cols(min_col=5):
+            column_type = self.get_column_type(col)
+
+            if column_type != ColumnType.IMAGE.value:
+                continue
+
+            for row_index, cell in enumerate(col, 1):
+                if row_index < 4 or not cell.value:
+                    continue
+
+                image_identifier = self.get_stripped_cell_value(cell.value)
+                if image_identifier:
+                    used_image_identifiers.add(image_identifier)
+
+        # Validate every identifier defined in the images sheet is used at least once.
+        for row_index, row in enumerate(images_sheet.iter_rows(min_row=2), 1):
+            image_identifier = self.get_stripped_cell_value(row[0].value)
+
+            if not image_identifier:
+                continue
+
+            if image_identifier not in used_image_identifiers:
+                message = _('Image identifier "%(image_identifier)s" is not used in the "%(taxon_profiles_sheet_name)s" sheet.') % {
+                    'image_identifier': image_identifier,
+                    'taxon_profiles_sheet_name': TAXON_PROFILES_SHEET_NAME,
+                }
+                self.add_cell_error(self.workbook_filename, images_sheet.title, 'A', row_index, message)
 
 
     def validate_external_media(self, url, col_letter, row_index):

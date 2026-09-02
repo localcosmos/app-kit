@@ -30,6 +30,7 @@ from app_kit.features.glossary. models import Glossary
 from app_kit.features.maps.models import Map
 from app_kit.features.nature_guides.models import NatureGuide, MetaNode, NatureGuidesTaxonTree
 from app_kit.features.frontend.models import Frontend
+from app_kit.features.object_classes.models import ObjectClasses
 
 from app_kit.settings import ADDABLE_FEATURES
 
@@ -37,7 +38,7 @@ from app_kit.generic import AppContentTaxonomicRestriction
 
 from app_kit.tests.common import (TEST_MEDIA_ROOT, TEST_IMAGE_PATH)
 
-feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, Frontend]
+feature_models = [BackboneTaxonomy, TaxonProfiles, GenericForm, Glossary, Map, NatureGuide, Frontend, ObjectClasses]
 
 from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from taxonomy.models import TaxonomyModelRouter

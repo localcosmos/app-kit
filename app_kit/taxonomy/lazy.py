@@ -36,7 +36,6 @@ class LazyTaxon(LazyTaxonBase):
             
         self.checked_with_reference = False
 
-
     def exists_in_tree(self):
         instance = self.tree_instance()
         if instance:
@@ -145,6 +144,8 @@ class LazyTaxon(LazyTaxonBase):
                 taxon_latnames_query = self.models.TaxonTreeModel.objects.filter(
                     taxon_latname__iexact=self.taxon_latname)
                 self.reference_taxa_with_similar_taxon_latname = taxon_latnames_query.all()
+                
+        return self.reference_errors
         
 
     def synonyms(self):

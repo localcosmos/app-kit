@@ -140,6 +140,8 @@ def get_content_instance_meta_app(instance):
         return get_generic_content_meta_app(instance.navigation_entry.navigation.taxon_profiles)
     elif instance.__class__.__name__ == 'MetaNode':
         return get_generic_content_meta_app(instance.nature_guide)        
+    elif instance.__class__.__name__ == 'ObjectClassTaxon':
+        return get_generic_content_meta_app(instance.object_class.object_classes)
     elif instance.__class__.__name__ in ['BackboneTaxonomy', 'TaxonProfiles', 'NatureGuide', 'Map', 'GenericForm', 'Frontend', 'Glossary']:
         return get_generic_content_meta_app(instance)
     elif instance.__class__.__name__ == 'MetaApp':

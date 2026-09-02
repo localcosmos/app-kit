@@ -5,7 +5,8 @@ from app_kit.tests.common import test_settings
 from app_kit.tests.mixins import (WithMetaApp, WithUser, WithMedia)
 
 from app_kit.features.taxon_profiles.zip_import import (TaxonProfilesZipImporter, ColumnType,
-                                                        TAXON_PROFILES_SHEET_NAME)
+                                                        TAXON_PROFILES_SHEET_NAME,
+                                                        TAXON_PROFILE_IMAGES_SHEET_NAME)
 from app_kit.tests.common import TESTS_ROOT
 
 from app_kit.features.taxon_profiles.tests.test_models import WithTaxonProfiles
@@ -92,6 +93,23 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         importer.errors = []
         importer.validate_content()
         self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_taxon_profile_images_sheet_reports_unused_identifier(self):
+
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+
+        images_sheet = importer.get_sheet_by_name(TAXON_PROFILE_IMAGES_SHEET_NAME)
+        images_sheet['A2'] = 'Unused.jpg'
+
+        importer.errors = []
+        importer.validate_taxon_profile_images_sheet()
+
+        expected_errors = [
+            '[Taxon profiles.xlsx][Sheet:Taxon Profile Images][cell:A2] Image identifier "Unused.jpg" is not used in the "Taxon Profiles" sheet.'
+        ]
+        self.assertEqual(importer.errors, expected_errors)
     
     @test_settings
     def test_validate(self):

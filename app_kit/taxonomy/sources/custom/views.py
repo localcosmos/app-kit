@@ -281,12 +281,24 @@ class MoveCustomTaxonTreeEntry(FormView):
         context = self.get_context_data(**self.kwargs)
 
         # move the taxon, use the form taxon as this has been validated against the new parent taxon
-        new_parent_lazy_taxon = form.cleaned_data['new_parent_taxon']
-        new_parent_taxon = custom_taxon_models.TaxonTreeModel.objects.get(name_uuid=new_parent_lazy_taxon.name_uuid)
-
-        old_taxon_nuid = self.taxon.taxon_nuid
-        new_taxon_nuid = self.get_new_taxon_nuid(new_parent_taxon)
+        new_parent_lazy_taxon = form.cleaned_data.get('new_parent_taxon', None)
+        move_to_root = form.cleaned_data.get('move_to_root', False)
         
+        if new_parent_lazy_taxon:
+            new_parent_taxon = custom_taxon_models.TaxonTreeModel.objects.get(name_uuid=new_parent_lazy_taxon.name_uuid)
+
+            old_taxon_nuid = self.taxon.taxon_nuid
+            new_taxon_nuid = self.get_new_taxon_nuid(new_parent_taxon)
+            
+        if move_to_root:
+            new_parent_taxon = None
+            old_taxon_nuid = self.taxon.taxon_nuid
+            new_taxon_nuid = self.get_new_taxon_nuid(new_parent_taxon)
+            self.taxon.is_root_taxon = True
+            
+        else:
+            self.taxon.is_root_taxon = False
+            
         self.taxon.parent = new_parent_taxon
         self.taxon.taxon_nuid = new_taxon_nuid
         

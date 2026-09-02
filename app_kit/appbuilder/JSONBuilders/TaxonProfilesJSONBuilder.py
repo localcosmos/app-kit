@@ -158,7 +158,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         taxon_profile_json['taxonAuthor'] = lazy_taxon.taxon_author
         images = []
         
-        images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon, morphotype=morphotype)
+        images = self.app_release_builder.taxa_builder.serialize_taxon_images(lazy_taxon, morphotype=morphotype, object_class=object_class)
 
         is_featured = False
         
@@ -271,7 +271,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         # get information (traits, node_names) from nature guides if possible
         # collect node images
         # only use occurrences in nature guides of this app
-        node_occurrences = self.app_release_builder.taxa_builder.get_nature_guide_occurrences(lazy_taxon, morphotype=morphotype)
+        node_occurrences = self.app_release_builder.taxa_builder.get_nature_guide_occurrences(lazy_taxon, morphotype=morphotype, object_class=object_class)
 
         # collect traits of upward branch in tree (higher taxa)
         parent_nuids = set([])

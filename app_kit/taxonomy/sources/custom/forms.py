@@ -96,15 +96,21 @@ class MoveCustomTaxonForm(forms.Form):
         super().__init__(*args, **kwargs)
 
     new_parent_taxon = TaxonField(label=_('Move to'), help_text=_('Enter latin or vernacular name, then select.'),
-                                  taxon_search_url=get_appkit_taxon_search_url, fixed_taxon_source='taxonomy.sources.custom')
+                                  taxon_search_url=get_appkit_taxon_search_url, fixed_taxon_source='taxonomy.sources.custom', required=False)
+    
+    move_to_root = forms.BooleanField(label=_('Move to root'), required=False, help_text=_('Check this box to move the taxon to the root of the taxonomy.'))
 
     def clean(self):
 
         new_parent_taxon = self.cleaned_data.get('new_parent_taxon', None)
+        move_to_root = self.cleaned_data.get('move_to_root', False)
 
         if new_parent_taxon is not None:
 
             if new_parent_taxon.taxon_nuid.startswith(self.taxon.taxon_nuid):
                 raise forms.ValidationError(_('Cannot move a taxon into its own descendants. Please select another taxon.'))
+        
+        if move_to_root and new_parent_taxon is not None:
+            raise forms.ValidationError(_('Cannot select both a new parent taxon and move to root. Please select one option.'))
 
         return self.cleaned_data

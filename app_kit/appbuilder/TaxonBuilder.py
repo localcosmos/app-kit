@@ -65,9 +65,9 @@ class TaxaBuilder(ContentImagesJSONBuilder):
                                   accepted_name_uuid)
     
     
-    def serialize_taxon_images(self, lazy_taxon, morphotype=None):
+    def serialize_taxon_images(self, lazy_taxon, morphotype=None, object_class=None):
         taxon_serializer = TaxonSerializer(lazy_taxon, self)
-        return taxon_serializer.serialize_images(morphotype=morphotype)
+        return taxon_serializer.serialize_images(morphotype=morphotype, object_class=object_class)
     
     
     def get_nature_guide_ids(self):
@@ -180,7 +180,7 @@ class TaxonSerializer:
         return taxon_json
         
 
-    def serialize_extended(self):
+    def serialize_extended(self, morphotype=None, object_class=None):
         
         name_uuid_str = str(self.lazy_taxon.name_uuid)
         
@@ -196,7 +196,8 @@ class TaxonSerializer:
             taxon_json = self.serialize_with_slugs()
             
             has_taxon_profile = False
-            taxon_profile = self.get_taxon_profile()
+            taxon_profile = self.get_taxon_profile(morphotype=morphotype, object_class=object_class)
+            
             if taxon_profile:
                 has_taxon_profile = True
             
@@ -207,10 +208,9 @@ class TaxonSerializer:
                 'hasTaxonProfile': has_taxon_profile,
             })
             
-            taxon_profile = self.get_taxon_profile()
+
             if taxon_profile:
                 taxon_json['shortProfile'] = taxon_profile.short_profile
-            
             
             self.taxa_builder.cache['extended'][name_uuid_str] = taxon_json
 
@@ -218,7 +218,7 @@ class TaxonSerializer:
         
         return taxon_json_copy
     
-    def get_taxon_profile(self, morphotype=None):
+    def get_taxon_profile(self, morphotype=None, object_class=None):
         taxon_profile = None
         
         taxon_profile_qry = TaxonProfile.objects.filter(
@@ -237,7 +237,7 @@ class TaxonSerializer:
         return taxon_profile
         
     
-    def serialize_images(self, morphotype=None):
+    def serialize_images(self, morphotype=None, object_class=None):
         
         name_uuid_str = str(self.lazy_taxon.name_uuid)
         cache_key=name_uuid_str
@@ -253,7 +253,7 @@ class TaxonSerializer:
             collected_content_image_ids = set([])
             collected_image_store_ids = set([])
             
-            taxon_profile = self.get_taxon_profile(morphotype=morphotype)
+            taxon_profile = self.get_taxon_profile(morphotype=morphotype, object_class=object_class)
             
             taxon_images = {
                 'primary': None,
@@ -266,6 +266,12 @@ class TaxonSerializer:
             
             if taxon_profile:
                 taxon_profile_images = taxon_profile.images().order_by('position')
+                
+                taxon_profiles = taxon_profile.taxon_profiles
+                force_primary_image_first = taxon_profiles.get_option(self.taxa_builder.meta_app, 'primary_images_first')
+                
+                if force_primary_image_first == True:
+                    taxon_profile_images = taxon_profile_images.order_by('-is_primary', 'position')
 
             for content_image in taxon_profile_images:
                 

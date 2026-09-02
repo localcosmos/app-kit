@@ -8,7 +8,7 @@ from taxonomy.forms import ManageMetaVernacularNameForm
 
 from django.views.generic import TemplateView, FormView
 
-from taxonomy.lazy import LazyTaxon
+from taxonomy.lazy import LazyTaxon, LazyTaxonList
 from .TaxonSearch import TaxonSearch
 
 from .utils import get_lazy_taxon_from_name_uuid
@@ -76,6 +76,7 @@ class TaxonTreeView(TemplateView):
         return self.models.TaxonTreeModel.objects.filter(is_root_taxon=True)
 
     def get_taxa(self):
+        
         if self.taxon:
             children_nuid_length = len(self.taxon.taxon_nuid) + 3
             taxa = self.models.TaxonTreeModel.objects.annotate(nuid_len=Length('taxon_nuid')).filter(

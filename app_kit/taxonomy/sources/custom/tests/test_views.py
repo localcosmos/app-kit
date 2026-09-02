@@ -498,3 +498,41 @@ class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         qry = models.TaxonTreeModel.objects.filter(taxon_nuid__startswith=old_nuid)
         
         self.assertFalse(qry.exists())
+
+    @test_settings
+    def test_form_valid_move_to_root(self):
+
+        taxon_profile = self.create_taxon_profile(self.taxon_2_1_1)
+        self.assertEqual(taxon_profile.taxon_nuid, '001002001001')
+
+        view = self.get_view()
+        view.taxon = self.taxon_2_1
+
+        old_nuid = self.taxon_2_1.taxon_nuid
+
+        post_data = {
+            'move_to_root': True,
+        }
+
+        form = view.form_class(self.taxon_2_1, data=post_data)
+        form.is_valid()
+
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        self.taxon_2_1.refresh_from_db()
+        self.assertIsNone(self.taxon_2_1.parent)
+        self.assertEqual(self.taxon_2_1.taxon_nuid, '002')
+
+        self.taxon_2_1_1.refresh_from_db()
+        self.assertEqual(self.taxon_2_1_1.parent, self.taxon_2_1)
+        self.assertEqual(self.taxon_2_1_1.taxon_nuid, '002001')
+
+        taxon_profile.refresh_from_db()
+        self.assertEqual(taxon_profile.taxon_nuid, '002001')
+
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        qry = models.TaxonTreeModel.objects.filter(taxon_nuid__startswith=old_nuid)
+        self.assertFalse(qry.exists())

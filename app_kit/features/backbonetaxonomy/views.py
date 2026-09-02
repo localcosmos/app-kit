@@ -374,12 +374,18 @@ class CollectedVernacularNames(MetaAppMixin, TemplateView):
     def set_taxon(self, **kwargs):
         models = TaxonomyModelRouter(kwargs['taxon_source'])
         taxon = models.TaxonNamesModel.objects.filter(name_uuid=kwargs['name_uuid']).first()
-        self.lazy_taxon = LazyTaxon(instance=taxon)
+        self.lazy_taxon = None
+        if taxon:
+            self.lazy_taxon = LazyTaxon(instance=taxon)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        languages = self.meta_app.languages()
-        all_names = self.lazy_taxon.all_vernacular_names(self.meta_app, distinct=False, languages=languages)
+        all_names = []
+        
+        if self.lazy_taxon:
+            languages = self.meta_app.languages()
+            all_names = self.lazy_taxon.all_vernacular_names(self.meta_app, distinct=False, languages=languages)
+            
         context['taxon'] = self.lazy_taxon
         context['collected_vernacular_names'] = all_names
         return context
@@ -535,6 +541,7 @@ class UpdateTaxonReferences(MetaAppMixin, TemplateView):
 class GetTaxonReferencesChanges(MetaAppMixin, TemplateView):
     
     template_name = 'backbonetaxonomy/ajax/taxon_references_changes.html'
+    custom_taxonomy_only = False
     
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
@@ -544,64 +551,66 @@ class GetTaxonReferencesChanges(MetaAppMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         updater = TaxonReferencesUpdater(self.meta_app, custom_taxonomy_only=self.custom_taxonomy_only)
-        result = updater.check_taxa()
-        
-        # provide usable forms for new author taxa
+        errors = updater.check_taxa()
+
+        # Deduplicate by taxon and categorise into legacy groups for the template
         processed_new_author_taxa = []
         processed_synonym_taxa = []
-        
-        for lazy_taxon in result['taxa_new_author']:
-            
-            new_author_taxa = []
-            
-            for similar_taxon in lazy_taxon.reference_taxa_with_similar_taxon_latname:
-                
-                similar_lazy_taxon = LazyTaxon(instance=similar_taxon)
-                
-                initial = {
-                    'from_taxon': lazy_taxon,
-                    'to_taxon': similar_lazy_taxon,
-                }
-                
-                form = FixedSwapTaxonForm(initial=initial)
-                
-                new_author_taxa.append({
-                    'similar_taxon': similar_lazy_taxon,
-                    'form': form,
-                })
-            
-            entry = {
-                'taxon': lazy_taxon,
-                'new_author_taxa': new_author_taxa,
-            }
-            processed_new_author_taxa.append(entry)
-            
-        
-        for lazy_taxon in result['taxa_in_synonyms']:    
-            
-            initial = {
-                'from_taxon': lazy_taxon,
-                'to_taxon': lazy_taxon.reference_accepted_name,
-            }
-            
-            form = FixedSwapTaxonForm(initial=initial)
-            
-            entry = {
-                'taxon': lazy_taxon,
-                'form': form,
-            }
-            processed_synonym_taxa.append(entry)
-        
-        # provide forms for processing
+        position_or_name_uuid_changed = []
+        taxa_missing = []
+        seen_taxa = set()
+
+        for entry in errors:
+            lazy_taxon = entry['taxon']
+            taxon_key = (lazy_taxon.taxon_source, lazy_taxon.taxon_latname, str(lazy_taxon.taxon_author))
+
+            if taxon_key in seen_taxa:
+                continue
+            seen_taxa.add(taxon_key)
+
+            if lazy_taxon.exists_as_taxon_in_reference:
+                if lazy_taxon.changed_taxon_nuid_in_reference or lazy_taxon.changed_name_uuid_in_reference:
+                    position_or_name_uuid_changed.append(lazy_taxon)
+            else:
+                if lazy_taxon.reference_taxa_with_similar_taxon_latname:
+                    new_author_taxa = []
+                    for similar_taxon in lazy_taxon.reference_taxa_with_similar_taxon_latname:
+                        similar_lazy_taxon = LazyTaxon(instance=similar_taxon)
+                        initial = {
+                            'from_taxon': lazy_taxon,
+                            'to_taxon': similar_lazy_taxon,
+                        }
+                        form = FixedSwapTaxonForm(initial=initial)
+                        new_author_taxa.append({
+                            'similar_taxon': similar_lazy_taxon,
+                            'form': form,
+                        })
+                    processed_new_author_taxa.append({
+                        'taxon': lazy_taxon,
+                        'new_author_taxa': new_author_taxa,
+                    })
+                elif lazy_taxon.exists_as_synonym_in_reference:
+                    initial = {
+                        'from_taxon': lazy_taxon,
+                        'to_taxon': lazy_taxon.reference_accepted_name,
+                    }
+                    form = FixedSwapTaxonForm(initial=initial)
+                    processed_synonym_taxa.append({
+                        'taxon': lazy_taxon,
+                        'form': form,
+                    })
+                else:
+                    taxa_missing.append(lazy_taxon)
+
         processed_result = {
-            'total_taxa_checked': result['total_taxa_checked'],
-            'taxa_with_errors': result['taxa_with_errors'],
-            'position_or_name_uuid_changed': result['position_or_name_uuid_changed'],
-            'taxa_missing': result['taxa_missing'],
+            'total_taxa_checked': updater._total_taxa_checked,
+            'taxa_with_errors': len(seen_taxa),
+            'position_or_name_uuid_changed': position_or_name_uuid_changed,
+            'taxa_missing': taxa_missing,
             'taxa_new_author': processed_new_author_taxa,
             'taxa_in_synonyms': processed_synonym_taxa,
-        }        
-        
+        }
+
         context['result'] = processed_result
         return context
 

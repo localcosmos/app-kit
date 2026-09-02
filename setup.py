@@ -4,12 +4,12 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
-    'localcosmos-server==0.28.1',
+    'localcosmos-server==1.0.0',
     'localcosmos-cordova-builder==0.9.8',
-    'django-tenants==3.7.0',
+    'django-tenants==3.14.0',
     'django-cleanup==9.0.0',
     'django-ipware==7.0.1',
-    'django-filter==24.3',
+    'django-filter==26.1',
     'lxml',
     'openpyxl==3.1.5',
     'deepl',
@@ -20,7 +20,7 @@ install_requires = [
 
 setup(
     name='localcosmos_app_kit',
-    version='0.14.3',
+    version='1.0.0',
     description='LocalCosmos App Kit. Web Portal to build Android and iOS apps',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -28,7 +28,7 @@ setup(
     platforms=['OS Independent'],
     keywords='django, localcosmos, localcosmos server, biodiversity',
     author='Thomas Uher',
-    author_email='thomas.uher@sisol-systems.com',
+    author_email='thomas.uher@code-for-nature.com',
     url='https://github.com/localcosmos/app-kit',
     packages=find_packages(),
     classifiers=[

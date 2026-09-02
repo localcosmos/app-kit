@@ -261,6 +261,10 @@
 									label = `${label} <span class="badge rounded-pill badge-light">${item.taxon_source}</span>`;
 								}
 
+								if (item.vernacular) {
+									label = `${item.vernacular} - ${label}`;
+								}
+
 								var taxon_object = {
 									"name": label,
 									"id": item.id,

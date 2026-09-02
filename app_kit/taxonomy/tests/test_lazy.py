@@ -196,7 +196,7 @@ class TestLazyTaxon(TenantTestCase):
         })
         wrong_latname_lazy_taxon = LazyTaxon(**wrong_latname)
         errors = wrong_latname_lazy_taxon.check_with_reference()
-        self.assertEqual(errors, ['Taxon wrong_latname (Linnaeus, 1758) not found in Catalogue Of Life 2019'])
+        self.assertEqual(errors, ['Taxon wrong_latname (Linnaeus, 1758) not found in Catalogue Of Life 2024'])
         
         wrong_nuid = taxon_kwargs.copy()
         wrong_nuid.update({
@@ -204,7 +204,7 @@ class TestLazyTaxon(TenantTestCase):
         })
         wrong_nuid_lazy_taxon = LazyTaxon(**wrong_nuid)
         errors = wrong_nuid_lazy_taxon.check_with_reference()
-        self.assertEqual(errors, ['Taxon Natrix natrix (Linnaeus, 1758) has changed its position in Catalogue Of Life 2019'])
+        self.assertEqual(errors, ['Taxon Natrix natrix (Linnaeus, 1758) has changed its position in Catalogue Of Life 2024'])
         
         wrong_name_uuid = taxon_kwargs.copy()
         wrong_name_uuid.update({
@@ -212,7 +212,7 @@ class TestLazyTaxon(TenantTestCase):
         })
         wrong_name_uuid_lazy_taxon = LazyTaxon(**wrong_name_uuid)
         errors = wrong_name_uuid_lazy_taxon.check_with_reference()
-        self.assertEqual(errors, ['Taxon Natrix natrix (Linnaeus, 1758) has changed its identifier in Catalogue Of Life 2019'])
+        self.assertEqual(errors, ['Taxon Natrix natrix (Linnaeus, 1758) has changed its identifier in Catalogue Of Life 2024'])
         
         
     def test_check_with_reference_synonym(self):
@@ -229,7 +229,7 @@ class TestLazyTaxon(TenantTestCase):
         errors = lazy_taxon.check_with_reference()
         
         expected_errors = [
-            'Taxon Pinus iztacihuatlii Roezl not found as accepted name, but as synonym of Pinus hartwegii Lindl.'
+            'Taxon Pinus iztacihuatlii Roezl not found as accepted name, but as synonym of Pinus hartwegii'
         ]
         
         self.assertEqual(errors, expected_errors)
