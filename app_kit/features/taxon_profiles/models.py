@@ -227,6 +227,9 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     short_profile = models.TextField(null=True)
     publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
     is_featured = models.BooleanField(default=False)
+    
+    featured_from = models.DateField(null=True)
+    featured_until = models.DateField(null=True)
 
     tags = TaggableManager()
     

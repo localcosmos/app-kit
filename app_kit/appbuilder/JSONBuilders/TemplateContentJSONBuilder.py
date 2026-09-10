@@ -38,6 +38,7 @@ class TemplateContentJSONBuilder(JSONBuilder):
             'slugs' : {},
             'assignments': {},
             'byTemplateName' : {},
+            'byAssignment' : {},
         }
 
         return generic_content_json

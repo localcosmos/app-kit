@@ -2493,8 +2493,11 @@ class AppReleaseBuilder(AppBuilderBase):
         # for looking up templates by template name and language code
         localized_template_content_by_template_name = {}
         
+        localized_template_content_by_assignment = {}
+        
         for language_code in languages:
             localized_template_content_by_template_name[language_code] = {}
+            localized_template_content_by_assignment[language_code] = {}
             
         
         for template_content in template_contents:
@@ -2557,6 +2560,12 @@ class AppReleaseBuilder(AppBuilderBase):
                         }
                         localized_template_content_by_template_name[language_code][template_folder_name].append(by_template_name_entry)
                         
+                        # add to the localized_template_content_by_assignment dict for later use
+                        if template_content.assignment:
+                            if template_content.assignment not in localized_template_content_by_assignment[language_code]:
+                                localized_template_content_by_assignment[language_code][template_content.assignment] = []
+                            localized_template_content_by_assignment[language_code][template_content.assignment].append(by_template_name_entry)
+                        
         # store the localized_template_content_by_template_name for later use
         for language_code, template_name_to_slug in localized_template_content_by_template_name.items():
             filename = 'by_template_name.json'
@@ -2569,6 +2578,21 @@ class AppReleaseBuilder(AppBuilderBase):
             os.makedirs(os.path.dirname(absolute_json_filepath), exist_ok=True)
             with open(absolute_json_filepath, 'w') as f:
                 f.write(json.dumps(template_name_to_slug, indent=4, ensure_ascii=False))
+                
+        # store localized template contents by_assignment for later use
+        for language_code, assignment_to_slug in localized_template_content_by_assignment.items():
+            filename = 'by_assignment.json'
+            relative_json_filepath = os.path.join(app_relative_template_contents_path, language_code, filename)
+            
+            # add the relative path to features
+            template_contents_json['byAssignment'][language_code] = '/{0}'.format(relative_json_filepath)
+            
+            absolute_json_filepath = os.path.join(app_absolute_template_contents_path, language_code, filename)
+            os.makedirs(os.path.dirname(absolute_json_filepath), exist_ok=True)
+            with open(absolute_json_filepath, 'w') as f:
+                f.write(json.dumps(assignment_to_slug, indent=4, ensure_ascii=False))
+        
+        
 
         # build the navigations
         navigations = Navigation.objects.filter(app=self.meta_app.app)

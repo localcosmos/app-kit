@@ -9,7 +9,8 @@ from app_kit.tests.mixins import WithMetaApp, WithFormTest
 
 from app_kit.features.taxon_profiles.forms import (TaxonProfilesOptionsForm, ManageTaxonTextTypeForm,
     ManageTaxonTextsForm, AddTaxonProfilesNavigationEntryTaxonForm, ManageTaxonTextTypeCategoryForm,
-    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, CreateTaxonProfileForm)
+    ManageTaxonTextSetForm, SetTaxonTextSetForTaxonProfileForm, CreateTaxonProfileForm,
+    TaxonProfileStatusForm)
 
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonTextType, TaxonProfile, TaxonText,
                                                     TaxonTextSet)
@@ -599,3 +600,35 @@ class TestCreateTaxonProfileForm(WithMetaApp, TenantTestCase):
         is_valid = form.is_valid()
         self.assertFalse(is_valid)
         self.assertIn('object_class', form.errors)
+
+
+class TestTaxonProfileStatusForm(WithMetaApp, WithFormTest, TenantTestCase):
+
+    @test_settings
+    def test_form(self):
+        post_data = {
+            'publication_status': 'publish',
+            'is_featured': True,
+            'featured_from': '2026-01-01',
+            'featured_until': '2026-12-31',
+        }
+        self.perform_form_test(TaxonProfileStatusForm, post_data)
+
+    @test_settings
+    def test_form_without_dates(self):
+        post_data = {
+            'publication_status': 'publish',
+        }
+        self.perform_form_test(TaxonProfileStatusForm, post_data)
+
+    @test_settings
+    def test_form_invalid_date(self):
+        post_data = {
+            'publication_status': 'publish',
+            'featured_from': 'not-a-date',
+            'featured_until': 'also-not-a-date',
+        }
+        form = TaxonProfileStatusForm(data=post_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('featured_from', form.errors)
+        self.assertIn('featured_until', form.errors)

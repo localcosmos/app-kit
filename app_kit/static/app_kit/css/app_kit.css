@@ -1020,8 +1020,8 @@ input[type="color"] {
 /* non-bootstrap barrier for the phone demo */
 @media (min-width: 400px) {
 	.app-review.phone {
-		width: 21rem;
-		height: 36rem;
+		width: 27rem;
+		height: 55rem;
 	}
 }
 

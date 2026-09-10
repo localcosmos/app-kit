@@ -301,6 +301,9 @@ class MoveTaxonProfilesNavigationEntryForm(forms.Form):
 class TaxonProfileStatusForm(GenericContentStatusForm):
     
     is_featured = forms.BooleanField(required=False)
+    
+    featured_from = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    featured_until = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 
 
 class ManageTaxonTextSetForm(LocalizeableModelForm):

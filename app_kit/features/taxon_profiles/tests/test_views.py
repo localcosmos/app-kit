@@ -1086,6 +1086,27 @@ class TestChangeTaxonProfilePublicationStatus(WithNatureGuideNode, WithTaxonProf
         initial = view.get_initial()
         self.assertEqual(initial['publication_status'], 'publish')
 
+    @test_settings
+    def test_get_initial_featured_dates(self):
+
+        import datetime
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertNotIn('featured_from', initial)
+        self.assertNotIn('featured_until', initial)
+
+        self.taxon_profile.featured_from = datetime.date(2026, 1, 1)
+        self.taxon_profile.featured_until = datetime.date(2026, 12, 31)
+        self.taxon_profile.save()
+        view.set_taxon_profile(**view.kwargs)
+
+        initial = view.get_initial()
+        self.assertEqual(initial['featured_from'], datetime.date(2026, 1, 1))
+        self.assertEqual(initial['featured_until'], datetime.date(2026, 12, 31))
 
     @test_settings
     def test_form_valid(self):
@@ -1111,6 +1132,60 @@ class TestChangeTaxonProfilePublicationStatus(WithNatureGuideNode, WithTaxonProf
 
         self.taxon_profile.refresh_from_db()
         self.assertEqual(self.taxon_profile.publication_status, 'draft')
+
+    @test_settings
+    def test_form_valid_with_featured_dates(self):
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+
+        post_data = {
+            'publication_status': 'publish',
+            'is_featured': True,
+            'featured_from': '2026-01-01',
+            'featured_until': '2026-12-31',
+        }
+
+        form = view.form_class(data=post_data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context_data['success'])
+
+        self.taxon_profile.refresh_from_db()
+        self.assertTrue(self.taxon_profile.is_featured)
+        self.assertEqual(str(self.taxon_profile.featured_from), '2026-01-01')
+        self.assertEqual(str(self.taxon_profile.featured_until), '2026-12-31')
+
+    @test_settings
+    def test_form_valid_clears_featured_dates(self):
+
+        import datetime
+
+        self.taxon_profile.is_featured = True
+        self.taxon_profile.featured_from = datetime.date(2026, 1, 1)
+        self.taxon_profile.featured_until = datetime.date(2026, 12, 31)
+        self.taxon_profile.save()
+
+        view = self.get_view()
+        view.meta_app = self.meta_app
+        view.set_taxon_profile(**view.kwargs)
+
+        post_data = {
+            'publication_status': 'publish',
+        }
+
+        form = view.form_class(data=post_data)
+        self.assertTrue(form.is_valid(), form.errors)
+
+        view.form_valid(form)
+
+        self.taxon_profile.refresh_from_db()
+        self.assertFalse(self.taxon_profile.is_featured)
+        self.assertIsNone(self.taxon_profile.featured_from)
+        self.assertIsNone(self.taxon_profile.featured_until)
 
 
 class TestBatchChangeNatureGuideTaxonProfilesPublicationStatus(WithNatureGuideNode, WithTaxonProfile,

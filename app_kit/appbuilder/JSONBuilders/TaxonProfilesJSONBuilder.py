@@ -923,11 +923,22 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
 
         featured_taxon_profiles = []
         
+        
+        
         for taxon_profile in featured_profiles_qry:
             
             lazy_taxon = LazyTaxon(instance=taxon_profile)
             taxon_profile_json = self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon)
+            
+            feature_entry = {
+                'featuredFrom': None,
+                'featuredUntil': None,
+                'taxon': taxon_profile_json
+            }
+            
+            feature_entry['featuredFrom'] = taxon_profile.featured_from.isoformat() if taxon_profile.featured_from else None
+            feature_entry['featuredUntil'] = taxon_profile.featured_until.isoformat() if taxon_profile.featured_until else None
                 
-            featured_taxon_profiles.append(taxon_profile_json)
+            featured_taxon_profiles.append(feature_entry)
         
         return featured_taxon_profiles

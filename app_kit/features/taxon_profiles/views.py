@@ -555,6 +555,11 @@ class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
             initial['publication_status'] = self.taxon_profile.publication_status
             
         initial['is_featured'] = self.taxon_profile.is_featured
+        
+        if self.taxon_profile.featured_from:
+            initial['featured_from'] = self.taxon_profile.featured_from
+        if self.taxon_profile.featured_until:
+            initial['featured_until'] = self.taxon_profile.featured_until
 
         return initial
 
@@ -562,6 +567,8 @@ class ChangeTaxonProfilePublicationStatus(MetaAppMixin, FormView):
 
         self.taxon_profile.publication_status = form.cleaned_data['publication_status']
         self.taxon_profile.is_featured = form.cleaned_data.get('is_featured', False)
+        self.taxon_profile.featured_from = form.cleaned_data.get('featured_from', None)
+        self.taxon_profile.featured_until = form.cleaned_data.get('featured_until', None)
         self.taxon_profile.save()
 
         context = self.get_context_data(**self.kwargs)

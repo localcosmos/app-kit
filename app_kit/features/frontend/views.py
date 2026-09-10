@@ -33,8 +33,11 @@ class FrontendSettingsMixin:
 
     def get_preview_build_frontend_settings(self):
         preview_builder = AppPreviewBuilder(self.meta_app)
-        app_settings = preview_builder.get_app_settings()
-        return app_settings
+        try:
+            return preview_builder.get_app_settings()
+        except FileNotFoundError:
+            # no preview build exists yet; treat built version as '0' so update is offered
+            return {'version': '0'}
     
 
     def get_frontend_settings(self):
@@ -224,12 +227,12 @@ class FrontendMixin:
         self.frontend.frontend_name = frontend_name
         self.frontend.save()
 
+        self.frontend.lock('preview_build')
+
         def run_in_thread():
 
             # threading resets the connection -> set to tenant
             connection.set_tenant(self.request.tenant)
-
-            self.frontend.lock('preview_build')
 
             try:
                 preview_builder = self.meta_app.get_preview_builder()
@@ -345,14 +348,13 @@ class UpdateUsedFrontend(FrontendSettingsMixin, FrontendMixin, MetaAppMixin, Tem
     
     def post(self, request, *args, **kwargs):
 
-        context = self.get_context_data(**self.kwargs)
-        
-        frontend_name = context['frontend_settings']['frontend']
-        
-        self.update_frontend(frontend_name)
+        self.update_frontend(self.frontend.frontend_name)
 
+        # skip FrontendSettingsMixin context — frontend dir may not exist during reinstall
+        context = super(FrontendSettingsMixin, self).get_context_data(**self.kwargs)
+        context['frontend'] = self.frontend
         context['updating'] = True
-            
+
         return self.render_to_response(context)
     
     
