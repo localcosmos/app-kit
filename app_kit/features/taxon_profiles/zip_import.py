@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.contenttypes.models import ContentType
@@ -610,6 +612,13 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                     image_data['position'] = column_index - 4
                                     
                                     image_filepath = self.get_image_file_disk_path(image_filename)
+
+                                    if not os.path.exists(image_filepath):
+                                        if self.ignore_nonexistent_images:
+                                            continue
+                                        raise ValueError(_('Image file "%(image_filename)s" not found on disk.') % {
+                                            'image_filename': image_filename,
+                                        })
                                     
                                     self.save_content_image(
                                         image_filepath,

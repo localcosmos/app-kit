@@ -226,12 +226,9 @@ class AppBuilderBase:
 
     def send_admin_email(self, title, text_content):
         # Keep release/build requests responsive: never block on SMTP in the request thread.
-        timeout = getattr(settings, 'APP_KIT_EMAIL_TIMEOUT', getattr(settings, 'EMAIL_TIMEOUT', 5))
-
         def _send_mail():
             try:
-                connection = mail.get_connection(fail_silently=True, timeout=timeout)
-                mail.mail_admins(title, text_content, fail_silently=True, connection=connection)
+                mail.mail_admins(title, text_content)
             except Exception:
                 logger = getattr(self, 'logger', None)
                 if logger:

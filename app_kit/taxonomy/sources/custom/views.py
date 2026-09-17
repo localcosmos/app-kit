@@ -354,4 +354,6 @@ class AddCustomTaxonLocale(FormView):
 
         context['success'] = True
         context['form'] = form
+        context['locale'] = self.locale
+        context['added_name'] = form.cleaned_data['name']
         return self.render_to_response(context)

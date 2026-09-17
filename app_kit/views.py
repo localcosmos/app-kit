@@ -1508,8 +1508,16 @@ class ImportFromZip(MetaAppMixin, FormView):
 
         os.makedirs(unzip_path)
         
-        with zipfile.ZipFile(zip_destination_path, 'r') as zip_file:
-            zip_file.extractall(unzip_path)
+        with zipfile.ZipFile(zip_destination_path, 'r') as zf:
+            for info in zf.infolist():
+                # Linux/ChromeOS zip tools write UTF-8 filenames without setting the UTF-8 flag;
+                # Python then decodes as CP437, corrupting non-ASCII chars like umlauts.
+                if not (info.flag_bits & 0x800):
+                    try:
+                        info.filename = info.filename.encode('cp437').decode('utf-8')
+                    except (UnicodeDecodeError, UnicodeEncodeError):
+                        pass
+                zf.extract(info, unzip_path)
             
 
         def run_in_thread():

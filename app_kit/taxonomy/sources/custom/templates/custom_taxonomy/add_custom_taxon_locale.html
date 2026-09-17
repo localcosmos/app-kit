@@ -3,7 +3,7 @@
 
 {% block action %}{% url 'add_custom_taxon_locale' taxon.name_uuid %}{% endblock %}
 
-{% block title %}{% blocktrans with name=taxon.taxon_name %}Add vernacular name for {{ name }}{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans with name=taxon.taxon_latname %}Add vernacular name for {{ name }}{% endblocktrans %}{% endblock %}
 
 {% block body %}
 	<p>
@@ -11,7 +11,7 @@
 	</p>
 	{% if success is True %}
 		<div class="alert alert-success">
-			{% trans 'Successfully added vernacular name.' %}
+			{% blocktrans with added_name=added_name locale=locale.language %}Successfully added vernacular name {{ added_name }} ({{ locale }}).{% endblocktrans %}
 		</div>
 	{% endif %}
 {% endblock %}
