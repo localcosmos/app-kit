@@ -60,13 +60,17 @@
 			
 		</div>
 		<div class="card-footer text-muted">
-			uid: {{ meta_app.app.uid}} <br>
-			{% if meta_app.published_version %}
-				{% trans 'published version' %}: {{ meta_app.published_version }}
-			{% else %}
-				{% trans 'draft' %}
-			{% endif %}
-			<br><small class="text-secondary d-none">uuid: {{ meta_app.app.uuid}}</small>
+			<small>
+				uid: {{ meta_app.app.uid}} <br>
+				{% if meta_app.published_version %}
+					{% trans 'published version' %}: {{ meta_app.published_version }}
+				{% else %}
+					{% trans 'draft' %}
+				{% endif %}
+				<br/>
+				<span class="text-secondary">pkgname: {{ meta_app.package_name }}</span>
+				<span class="d-none">uuid: {{ meta_app.app.uuid }}</span>
+			</small>
 		</div>
 	</div>				
 </div>

@@ -1651,6 +1651,39 @@ class DeleteOverviewImage(DeleteContentImage):
     template_name = 'nature_guides/ajax/delete_overview_image.html'
     
 
+SWAPPABLE_FILTER_TYPES = {
+    'TextOnlyFilter': 'DescriptiveTextAndImagesFilter',
+    'DescriptiveTextAndImagesFilter': 'TextOnlyFilter',
+}
+
+
+class SwapMatrixFilterType(MetaAppMixin, TemplateView):
+
+    template_name = 'nature_guides/ajax/swap_matrix_filter_type.html'
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        self.matrix_filter = MatrixFilter.objects.get(pk=kwargs['matrix_filter_id'])
+        self.target_filter_type = SWAPPABLE_FILTER_TYPES.get(self.matrix_filter.filter_type)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['matrix_filter'] = self.matrix_filter
+        context['target_filter_type'] = self.target_filter_type
+        context['swapped'] = False
+        return context
+
+    def post(self, request, *args, **kwargs):
+        if self.target_filter_type:
+            self.matrix_filter.filter_type = self.target_filter_type
+            self.matrix_filter.save()
+        context = self.get_context_data(**kwargs)
+        context['meta_node'] = self.matrix_filter.meta_node
+        context['swapped'] = True
+        return self.render_to_response(context)
+
+
 class ManageIdentificationNodeSettings(MetaAppMixin, FormView):
 
     template_name = 'nature_guides/ajax/manage_identification_node_settings.html'

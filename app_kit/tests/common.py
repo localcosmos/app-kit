@@ -16,6 +16,7 @@ TEST_TEMPLATE_PATH = os.path.join(TESTS_ROOT, 'templates', 'neobiota.html')
 LARGE_TEST_IMAGE_PATH = os.path.join(TESTS_ROOT, 'images', 'test-image-2560-1440.jpg')
 
 TEST_MEDIA_ROOT = os.path.join(TESTS_ROOT, 'media_for_tests')
+TEST_FRONTEND_RESOURCE_FILES_ROOT = os.path.join(TESTS_ROOT, 'frontend_resource_files_for_tests')
 
 APP_KIT_TMP = os.path.join(TESTS_ROOT, 'app_kit_tmp')
 
@@ -25,6 +26,7 @@ test_settings = override_settings(
     APP_KIT_ROOT = os.path.join(TESTS_ROOT, 'app_kit_apps'),
     APP_KIT_TEMPORARY_FOLDER = APP_KIT_TMP,
     APP_KIT_PRIVATE_FRONTENDS_PATH = os.path.join(TESTS_ROOT, 'private_frontends/'),
+    APP_KIT_FRONTEND_RESOURCE_FILES_ROOT = TEST_FRONTEND_RESOURCE_FILES_ROOT,
     MEDIA_ROOT = TEST_MEDIA_ROOT,
     DATASET_VALIDATION_CLASSES = (
         'localcosmos_server.datasets.validation.ExpertReviewValidator',

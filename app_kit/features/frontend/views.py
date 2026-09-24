@@ -13,7 +13,7 @@ from app_kit.appbuilder import AppBuilder, AppPreviewBuilder
 
 from .forms import FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFrontendForm, InstallPrivateFrontendForm
 
-from .models import Frontend, FrontendText
+from .models import Frontend, FrontendText, FrontendResourceFile
 
 from .PrivateFrontendImporter import PrivateFrontendImporter
 
@@ -108,6 +108,9 @@ class FrontendSettingsMixin:
         
         return configuration_keys
 
+    def get_resource_file_identifiers(self):
+        frontend_settings = self.get_frontend_settings()
+        return list(frontend_settings.get('userContent', {}).get('resourceFiles', {}).keys())
 
     def get_initial(self):
 
@@ -127,7 +130,15 @@ class FrontendSettingsMixin:
 
             for configuration_key, configuration_value in self.generic_content.configuration.items():
                 initial[configuration_key] = configuration_value
-        
+
+        frontend_settings = self.get_frontend_settings()
+        for identifier in frontend_settings.get('userContent', {}).get('resourceFiles', {}):
+            existing = FrontendResourceFile.objects.filter(
+                frontend=self.generic_content, identifier=identifier
+            ).first()
+            if existing:
+                initial['resource_file_{0}'.format(identifier)] = existing.resource_file
+
         return initial
 
 
@@ -199,7 +210,27 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
                 self.frontend.configuration[configuration_key] = configuration_value
         
         self.frontend.save()
-        
+
+        for identifier in self.get_resource_file_identifiers():
+            field_name = 'resource_file_{0}'.format(identifier)
+            uploaded = form.cleaned_data.get(field_name)
+
+            if uploaded is False:
+                existing = FrontendResourceFile.objects.filter(
+                    frontend=self.frontend, identifier=identifier
+                ).first()
+                if existing:
+                    existing.resource_file.delete(save=False)
+                    existing.delete()
+            elif uploaded:
+                obj, _ = FrontendResourceFile.objects.get_or_create(
+                    frontend=self.frontend, identifier=identifier
+                )
+                if obj.resource_file:
+                    obj.resource_file.delete(save=False)
+                obj.resource_file = uploaded
+                obj.save()
+
         context = self.get_context_data(**self.kwargs)
         context['success'] = True
         return self.render_to_response(context)

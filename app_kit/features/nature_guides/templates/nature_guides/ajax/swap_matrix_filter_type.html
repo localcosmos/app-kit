@@ -1,0 +1,47 @@
+{% extends 'localcosmos_server/modals/modal_form.html' %}
+{% load i18n %}
+
+{% block above %}{% if not swapped %}<form method="POST" action="{{ request.path }}" class="xhr">{% csrf_token %}{% endif %}{% endblock %}
+{% block below %}{% if not swapped %}</form>{% endif %}{% endblock %}
+
+{% block title %}
+	{% if matrix_filter.filter_type == 'TextOnlyFilter' %}
+		{% trans 'Convert to Text and Images filter' %}
+	{% else %}
+		{% trans 'Convert to Text only filter' %}
+	{% endif %}
+{% endblock %}
+
+{% block body %}
+	{% if not swapped %}
+		<p>
+			{% if matrix_filter.filter_type == 'TextOnlyFilter' %}
+				{% blocktrans with name=matrix_filter.name %}
+					Convert <strong>{{ name }}</strong> from a text-only filter to a text and images filter?
+					You will be able to attach images to each value afterwards.
+				{% endblocktrans %}
+			{% else %}
+				{% blocktrans with name=matrix_filter.name %}
+					Convert <strong>{{ name }}</strong> from a text and images filter to a text-only filter?
+					Existing images will be kept and restored if you convert back.
+				{% endblocktrans %}
+			{% endif %}
+		</p>
+	{% endif %}
+{% endblock %}
+
+{% block footer %}
+	{% if not swapped %}
+		<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Cancel' %}</button>
+		<button type="submit" class="btn btn-primary">{% trans 'Convert' %}</button>
+	{% endif %}
+{% endblock %}
+
+{% block open_modal %}{% if not swapped %}{{ block.super }}{% endif %}{% endblock %}
+
+{% block script %}
+	{% if swapped %}
+		{% include 'nature_guides/ajax/reload_matrix_filters.html' %}
+		<script>hideModal();</script>
+	{% endif %}
+{% endblock %}

@@ -140,6 +140,10 @@ class WithMetaApp:
             if os.path.isdir(www_entry.path):
                 shutil.rmtree(www_entry.path)
 
+        resource_files_root = getattr(settings, 'APP_KIT_FRONTEND_RESOURCE_FILES_ROOT', None)
+        if resource_files_root and os.path.isdir(resource_files_root):
+            shutil.rmtree(resource_files_root)
+
         super().tearDown()
 
 

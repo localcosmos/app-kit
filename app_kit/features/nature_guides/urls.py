@@ -80,4 +80,7 @@ urlpatterns = [
     # node settings
     path('manage-node-settings/<int:meta_app_id>/<int:meta_node_id>/',
          views.ManageIdentificationNodeSettings.as_view(), name='manage_node_settings'),
+    # swap filter type (TextOnlyFilter <-> DescriptiveTextAndImagesFilter)
+    path('swap-matrix-filter-type/<int:meta_app_id>/<int:matrix_filter_id>/',
+         views.SwapMatrixFilterType.as_view(), name='swap_matrix_filter_type'),
 ]

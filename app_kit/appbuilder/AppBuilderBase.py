@@ -720,11 +720,6 @@ class AppBuilderBase:
             target_cordova_res_path =  os.path.join(self._app_build_sources_cordova_assets_path, 'res')    
             shutil.copytree(self._frontend_cordova_res_path, target_cordova_res_path)
 
-        frontend_cordova_resource_files_path = os.path.join(self._frontend_cordova_path, 'resource_files')
-        if os.path.isdir(frontend_cordova_resource_files_path):
-            target_cordova_resource_files_path = os.path.join(self._app_build_sources_cordova_assets_path, 'resource_files')
-            shutil.copytree(frontend_cordova_resource_files_path, target_cordova_resource_files_path)
-
 
     def _create_localcosmos_content_folder(self):
         os.makedirs(self._app_localcosmos_content_path)

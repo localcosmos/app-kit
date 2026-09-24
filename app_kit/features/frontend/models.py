@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+
+import os
 
 from app_kit.generic import GenericContent
 from app_kit.models import ContentImageMixin, SingleFeatureMixin
@@ -117,6 +120,7 @@ class Frontend(SingleFeatureMixin, ContentImageMixin, GenericContent):
         return content_image
 
 
+
 FeatureModel = Frontend
 
 
@@ -135,3 +139,46 @@ class FrontendText(models.Model):
 
     class Meta:
         unique_together=('frontend', 'identifier', 'frontend_name')
+
+
+class FrontendResourceFileStorage(FileSystemStorage):
+    """Reads location from settings on each access so override_settings works in tests."""
+
+    @property
+    def base_location(self):
+        return settings.APP_KIT_FRONTEND_RESOURCE_FILES_ROOT
+
+    @base_location.setter
+    def base_location(self, value):
+        pass
+
+    @property
+    def location(self):
+        return settings.APP_KIT_FRONTEND_RESOURCE_FILES_ROOT
+
+    @location.setter
+    def location(self, value):
+        pass
+
+
+frontend_resource_file_storage = FrontendResourceFileStorage()
+
+
+def frontend_resource_file_upload_to(instance, filename):
+    return os.path.join(
+        str(instance.frontend_id), instance.identifier, filename
+    )
+
+
+class FrontendResourceFile(models.Model):
+
+    frontend = models.ForeignKey(Frontend, on_delete=models.CASCADE)
+    # matches key in settings.json userContent.resourceFiles
+    identifier = models.CharField(max_length=255)
+    resource_file = models.FileField(
+        upload_to=frontend_resource_file_upload_to,
+        storage=frontend_resource_file_storage,
+    )
+
+    class Meta:
+        unique_together = ('frontend', 'identifier')

@@ -63,7 +63,7 @@ def copy_model_instance(instance, copy_fields, overwrite_values={}):
 
 
 def unCamelCase(string):
-    return re.sub(r"(\w)([A-Z])", r"\1 \2", string).title()
+    return re.sub(r"([a-z])([A-Z])", r"\1 \2", string).title()
 
 def camelCase_to_underscore_case(string):
 

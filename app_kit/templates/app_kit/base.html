@@ -167,7 +167,10 @@
 											<img src="{% static 'phosphor-icons/user-circle.svg' %}" class="phicon phicon-20" />
 										</a>
 										<div class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
-											<a href="{% url 'log_out' %}" class="dropdown-item" >{% trans 'Sign out' %}</a>
+											<form method="post" action="{% url 'log_out' %}" class="d-inline">
+												{% csrf_token %}
+												<button type="submit" class="dropdown-item">{% trans 'Sign out' %}</button>
+											</form>
 										</div>
 									</li>
 								</ul>

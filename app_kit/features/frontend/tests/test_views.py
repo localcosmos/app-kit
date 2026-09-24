@@ -1,7 +1,10 @@
 from django.conf import settings
 from django_tenants.test.cases import TenantTestCase
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
+
+from unittest.mock import patch
 
 from app_kit.tests.common import test_settings, TESTS_ROOT
 
@@ -16,7 +19,9 @@ from app_kit.features.frontend.views import (FrontendSettingsMixin, ManageFronte
 from app_kit.features.frontend.forms import (FrontendSettingsForm, ChangeFrontendForm, UploadPrivateFrontendForm,
                                                 InstallPrivateFrontendForm)
 
-from app_kit.features.frontend.models import FrontendText
+from app_kit.features.frontend.models import FrontendText, FrontendResourceFile
+
+from .test_forms import MOCK_RESOURCE_FILES, add_resource_files_to_settings
 
 from .test_models import WithFrontend
 from app_kit.features.frontend.PrivateFrontendImporter import PrivateFrontendImporter
@@ -172,6 +177,35 @@ class TestFrontendSettingsMixin(WithFrontend, ViewTestMixin, WithAjaxAdminOnly, 
 
         for text in frontend_texts:
             self.assertIn(text.identifier, initial)
+
+    @test_settings
+    def test_get_resource_file_identifiers(self):
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+
+        with patch.object(AppBuilder, '_get_frontend_settings',
+                          add_resource_files_to_settings(AppBuilder._get_frontend_settings)):
+            identifiers = view.get_resource_file_identifiers()
+
+        self.assertIn('firebaseAndroid', identifiers)
+        self.assertIn('firebaseIOS', identifiers)
+
+    @test_settings
+    def test_get_initial_includes_resource_files(self):
+        rf = FrontendResourceFile.objects.create(
+            frontend=self.frontend,
+            identifier='firebaseAndroid',
+            resource_file=SimpleUploadedFile('google-services.json', b'{}'),
+        )
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+
+        with patch.object(AppBuilder, '_get_frontend_settings',
+                          add_resource_files_to_settings(AppBuilder._get_frontend_settings)):
+            initial = view.get_initial()
+
+        self.assertEqual(initial.get('resource_file_firebaseAndroid'), rf.resource_file)
 
 
 class TestManageFrontend(WithFrontend, ViewTestMixin, WithAdminOnly, WithUser, WithLoggedInUser,
@@ -350,6 +384,79 @@ class TestManageFrontendSettings(WithFrontend, ViewTestMixin, WithAjaxAdminOnly,
                 identifier='legal_notice')
 
         self.assertEqual(ln_text.text, data_2['legal_notice'])
+
+    @test_settings
+    def test_form_valid_uploads_resource_file(self):
+        self.build_preview()
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+
+        uploaded = SimpleUploadedFile('google-services.json', b'{}')
+
+        with patch.object(AppBuilder, '_get_frontend_settings',
+                          add_resource_files_to_settings(AppBuilder._get_frontend_settings)):
+            form = FrontendSettingsForm(
+                self.meta_app, self.frontend,
+                data={},
+                files={'resource_file_firebaseAndroid': uploaded},
+            )
+            form.is_valid()
+            view.form_valid(form)
+
+        rf = FrontendResourceFile.objects.filter(frontend=self.frontend, identifier='firebaseAndroid').first()
+        self.assertIsNotNone(rf)
+        self.assertTrue(rf.resource_file.path.startswith(settings.APP_KIT_FRONTEND_RESOURCE_FILES_ROOT))
+
+    @test_settings
+    def test_form_valid_replaces_resource_file(self):
+        self.build_preview()
+
+        FrontendResourceFile.objects.create(
+            frontend=self.frontend,
+            identifier='firebaseAndroid',
+            resource_file=SimpleUploadedFile('google-services.json', b'old'),
+        )
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+
+        with patch.object(AppBuilder, '_get_frontend_settings',
+                          add_resource_files_to_settings(AppBuilder._get_frontend_settings)):
+            form = FrontendSettingsForm(
+                self.meta_app, self.frontend,
+                data={},
+                files={'resource_file_firebaseAndroid': SimpleUploadedFile('google-services.json', b'new')},
+            )
+            form.is_valid()
+            view.form_valid(form)
+
+        self.assertEqual(FrontendResourceFile.objects.filter(frontend=self.frontend, identifier='firebaseAndroid').count(), 1)
+
+    @test_settings
+    def test_form_valid_clears_resource_file(self):
+        self.build_preview()
+
+        FrontendResourceFile.objects.create(
+            frontend=self.frontend,
+            identifier='firebaseAndroid',
+            resource_file=SimpleUploadedFile('google-services.json', b'{}'),
+        )
+
+        view = self.get_view()
+        view.set_frontend(**view.kwargs)
+
+        with patch.object(AppBuilder, '_get_frontend_settings',
+                          add_resource_files_to_settings(AppBuilder._get_frontend_settings)):
+            form = FrontendSettingsForm(
+                self.meta_app, self.frontend,
+                data={'resource_file_firebaseAndroid-clear': 'checked'},
+                files={},
+            )
+            form.is_valid()
+            view.form_valid(form)
+
+        self.assertFalse(FrontendResourceFile.objects.filter(frontend=self.frontend, identifier='firebaseAndroid').exists())
         
 
 # also tests frontendmixin

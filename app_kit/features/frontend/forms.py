@@ -1,6 +1,10 @@
+import os
+
 from django import forms
 from django.urls import reverse
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ValidationError
 
 from django.utils.translation import gettext_lazy as _
 
@@ -10,6 +14,18 @@ from app_kit.utils import unCamelCase
 
 from localcosmos_server.widgets import TwoStepFileInput
 
+from .models import FrontendResourceFile
+from .widgets import ResourceFileInput
+
+
+def validate_resource_file_name(expected_name):
+    def validator(value):
+        if os.path.basename(value.name) != expected_name:
+            raise ValidationError(
+                _('File must be named "%(expected)s".')
+                % {'expected': expected_name}
+            )
+    return validator
 
 '''
     mandatory: legal notice
@@ -154,6 +170,33 @@ class FrontendSettingsForm(forms.Form):
                 self.fields[configuration_type] = field
 
 
+        if 'resourceFiles' in self.frontend_settings['userContent']:
+
+            for identifier, definition in self.frontend_settings['userContent']['resourceFiles'].items():
+
+                label = unCamelCase(identifier)
+                help_text = definition.get('helpText', '')
+                allowed_extensions = definition.get('fileType', [])
+
+                validators = []
+                if allowed_extensions:
+                    validators.append(FileExtensionValidator(allowed_extensions=allowed_extensions))
+
+                expected_name = definition.get('fileName')
+                if expected_name:
+                    validators.append(validate_resource_file_name(expected_name))
+
+                field = forms.FileField(
+                    label=label,
+                    required=False,
+                    help_text=help_text,
+                    validators=validators,
+                    widget=ResourceFileInput(),
+                )
+
+                self.fields['resource_file_{0}'.format(identifier)] = field
+
+
 
 class ChangeFrontendForm(forms.Form):
 
@@ -179,7 +222,6 @@ class ChangeFrontendForm(forms.Form):
         return choices
     
 
-from django.core.validators import FileExtensionValidator
 class UploadPrivateFrontendForm(forms.Form):
     frontend_zip = forms.FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
 

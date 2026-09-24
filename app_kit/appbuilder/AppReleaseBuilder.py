@@ -33,7 +33,7 @@ from app_kit.features.glossary.models import Glossary
 from app_kit.features.backbonetaxonomy.models import BackboneTaxonomy
 from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile, TaxonProfilesNavigation,
                                                     TaxonProfilesNavigationEntry)
-from app_kit.features.frontend.models import Frontend
+from app_kit.features.frontend.models import Frontend, FrontendResourceFile
 from app_kit.features.maps.models import Map, MapTaxonomicFilter
 from app_kit.appbuilder.JSONBuilders.NatureGuideJSONBuilder import NatureGuideJSONBuilder
 from app_kit.appbuilder.JSONBuilders.TemplateContentJSONBuilder import TemplateContentJSONBuilder
@@ -55,6 +55,7 @@ from localcosmos_cordova_builder import MetaAppDefinition, CordovaAppBuilder
 from localcosmos_cordova_builder.required_assets import REQUIRED_ASSETS
 
 import os, json, base64, time, shutil, hashlib, zipfile
+import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = settings.APP_KIT_LOAD_TRUNCATED_IMAGES
@@ -627,6 +628,20 @@ class AppReleaseBuilder(AppBuilderBase):
                     error = ValidationError(self.meta_app, frontend, [error_message])
                     result['errors'].append(error)
 
+
+        for identifier, resource_file_definition in frontend_settings.get('userContent', {}).get('resourceFiles', {}).items():
+
+            resource_file_is_required = resource_file_definition.get('required', False)
+
+            if resource_file_is_required:
+
+                exists = FrontendResourceFile.objects.filter(frontend=frontend, identifier=identifier).exists()
+
+                if not exists:
+                    verbose_name = resource_file_definition.get('fileName', identifier)
+                    error_message = _('Your frontend is missing the resource file "{0}"'.format(verbose_name))
+                    error = ValidationError(self.meta_app, frontend, [error_message])
+                    result['errors'].append(error)
 
 
         return result
@@ -1673,6 +1688,61 @@ class AppReleaseBuilder(AppBuilderBase):
         frontend_json = jsonbuilder.build()
 
         self._add_generic_content_to_app(frontend_link, frontend_json, only_one_allowed=True)
+
+        # copy user-uploaded resource files (e.g. google-services.json) into the cordova assets tree
+        frontend_settings = self._get_frontend_settings()
+        resource_file_definitions = frontend_settings.get('userContent', {}).get('resourceFiles', {})
+
+        for identifier, definition in resource_file_definitions.items():
+            rf = FrontendResourceFile.objects.filter(frontend=frontend, identifier=identifier).first()
+            if rf and rf.resource_file:
+                # use the canonical fileName so the path matches what config.xml declares
+                canonical_filename = definition.get('fileName', os.path.basename(rf.resource_file.name))
+                dest_dir = os.path.join(
+                    self._app_build_sources_cordova_assets_path, 'resource_files', identifier
+                )
+                os.makedirs(dest_dir, exist_ok=True)
+                shutil.copyfile(rf.resource_file.path, os.path.join(dest_dir, canonical_filename))
+
+        self._patch_config_xml_resource_files(frontend, resource_file_definitions)
+        
+
+    def _patch_config_xml_resource_files(self, frontend, resource_file_definitions):
+        config_xml_path = os.path.join(self._app_build_sources_cordova_assets_path, 'config.xml')
+
+        if not os.path.isfile(config_xml_path):
+            return
+
+        ns = 'http://www.w3.org/ns/widgets'
+        ET.register_namespace('', ns)
+        ET.register_namespace('cdv', 'http://cordova.apache.org/ns/1.0')
+
+        tree = ET.parse(config_xml_path)
+        root = tree.getroot()
+
+        for identifier, definition in resource_file_definitions.items():
+            rf = FrontendResourceFile.objects.filter(frontend=frontend, identifier=identifier).first()
+            if not rf or not rf.resource_file:
+                continue
+
+            platform_name = definition.get('platform')
+            cordova_target = definition.get('cordovaTarget', '')
+            canonical_filename = definition.get('fileName', os.path.basename(rf.resource_file.name))
+            cordova_src = 'resource_files/{0}/{1}'.format(identifier, canonical_filename)
+
+            platform_elem = next(
+                (e for e in root.findall('{%s}platform' % ns) if e.get('name') == platform_name),
+                None
+            )
+            if platform_elem is None:
+                platform_elem = ET.SubElement(root, '{%s}platform' % ns, name=platform_name)
+
+            attribs = {'src': cordova_src}
+            if cordova_target:
+                attribs['target'] = cordova_target
+            ET.SubElement(platform_elem, '{%s}resource-file' % ns, **attribs)
+
+        tree.write(config_xml_path, encoding='utf-8', xml_declaration=True)
 
     ###############################################################################################################
     # BUILDING GENERIC CONTENTS

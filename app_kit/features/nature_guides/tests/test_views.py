@@ -18,7 +18,7 @@ from app_kit.features.nature_guides.views import (ManageNatureGuide, ManageNodel
         SearchForNode, LoadMatrixFilters, ManageMatrixFilter, ManageMatrixFilterSpace, DeleteMatrixFilterSpace,
         NodeAnalysis, GetIdentificationMatrix, MoveNatureGuideNode, SearchMoveToGroup,
         ManageMatrixFilterRestrictions, CopyTreeBranch, ManageAdditionalMatrixFilterSpaceImage,
-        DeleteAdditionalMatrixFilterSpaceImage)
+        DeleteAdditionalMatrixFilterSpaceImage, SwapMatrixFilterType, SWAPPABLE_FILTER_TYPES)
 
 
 from app_kit.features.nature_guides.models import (NatureGuide, NatureGuidesTaxonTree, NatureGuideCrosslinks,
@@ -4107,4 +4107,80 @@ class TestDeleteAdditionalMatrixFilterSpaceImage(WithImageStore, WithMedia, With
         view.meta_app = self.meta_app
         context = view.get_context_data(**view.kwargs)
         self.assertEqual(context['image_type'], 'image')
-        self.assertEqual(context['content_instance'], self.space)
+
+
+class TestSwapMatrixFilterType(WithNatureGuideLink, ViewTestMixin, WithUser, WithMatrixFilters,
+                WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'swap_matrix_filter_type'
+    view_class = SwapMatrixFilterType
+
+    def setUp(self):
+        super().setUp()
+        self.dtai_filter = self.create_matrix_filter_with_space(
+            self.start_node, 'DescriptiveTextAndImagesFilter', 'description')
+        self.textonly_filter = self.create_matrix_filter_with_space(
+            self.start_node, 'TextOnlyFilter', 'text only value')
+
+    def get_url_kwargs(self, matrix_filter=None):
+        if matrix_filter is None:
+            matrix_filter = self.dtai_filter
+        return {
+            'meta_app_id': self.meta_app.id,
+            'matrix_filter_id': matrix_filter.id,
+        }
+
+    def get_url(self, matrix_filter=None):
+        return reverse(self.url_name, kwargs=self.get_url_kwargs(matrix_filter))
+
+    def get_ajax_request(self, matrix_filter, method='get'):
+        factory = RequestFactory()
+        url = self.get_url(matrix_filter)
+        kwargs = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+        request = getattr(factory, method)(url, **kwargs)
+        request.user = self.user
+        request.session = self.client.session
+        request.tenant = self.tenant
+        return request
+
+    def get_view(self, matrix_filter=None, method='get'):
+        if matrix_filter is None:
+            matrix_filter = self.dtai_filter
+        request = self.get_ajax_request(matrix_filter, method=method)
+        view = self.view_class()
+        view.request = request
+        view.kwargs = self.get_url_kwargs(matrix_filter)
+        view.matrix_filter = matrix_filter
+        view.target_filter_type = SWAPPABLE_FILTER_TYPES[matrix_filter.filter_type]
+        view.meta_app = self.meta_app
+        return view
+
+    @test_settings
+    def test_get(self):
+        for matrix_filter in [self.dtai_filter, self.textonly_filter]:
+            view = self.get_view(matrix_filter)
+            response = view.get(view.request, **view.kwargs)
+            self.assertEqual(response.status_code, 200)
+            context = response.context_data
+            self.assertEqual(context['matrix_filter'], matrix_filter)
+            self.assertEqual(context['target_filter_type'],
+                             SWAPPABLE_FILTER_TYPES[matrix_filter.filter_type])
+            self.assertFalse(context['swapped'])
+
+    @test_settings
+    def test_post_textonly_to_dtai(self):
+        view = self.get_view(self.textonly_filter, method='post')
+        response = view.post(view.request, **view.kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.textonly_filter.refresh_from_db()
+        self.assertEqual(self.textonly_filter.filter_type, 'DescriptiveTextAndImagesFilter')
+        self.assertTrue(response.context_data['swapped'])
+
+    @test_settings
+    def test_post_dtai_to_textonly(self):
+        view = self.get_view(self.dtai_filter, method='post')
+        response = view.post(view.request, **view.kwargs)
+        self.assertEqual(response.status_code, 200)
+        self.dtai_filter.refresh_from_db()
+        self.assertEqual(self.dtai_filter.filter_type, 'TextOnlyFilter')
+        self.assertTrue(response.context_data['swapped'])

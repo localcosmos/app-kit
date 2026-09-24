@@ -1178,8 +1178,16 @@ class GenericContentZipImporter:
     def validate_square_image(self, image_filepath):
         
         filename = os.path.basename(image_filepath)
-        
-        im = Image.open(image_filepath)
+
+        try:
+            im = Image.open(image_filepath)
+        except Image.DecompressionBombError:
+            message = _('Image file is too large (too many pixels): %(filename)s. Please reduce the image resolution before uploading.') % {
+                'filename': filename,
+            }
+            self.errors.append(message)
+            return
+
         width, height = im.size
 
         if width != height:
