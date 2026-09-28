@@ -383,8 +383,17 @@ class CollectedVernacularNames(MetaAppMixin, TemplateView):
         all_names = []
         
         if self.lazy_taxon:
-            languages = self.meta_app.languages()
-            all_names = self.lazy_taxon.all_vernacular_names(self.meta_app, distinct=False, languages=languages)
+            languages = set(self.meta_app.languages())
+            taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+            if taxon_profiles_link:
+                option = taxon_profiles_link.generic_content.get_option(
+                    self.meta_app, 'include_vernacular_names_languages')
+                if option:
+                    for lang in option.split(','):
+                        lang = lang.strip()
+                        if lang:
+                            languages.add(lang)
+            all_names = self.lazy_taxon.all_vernacular_names(self.meta_app, distinct=False, languages=list(languages))
             
         context['taxon'] = self.lazy_taxon
         context['collected_vernacular_names'] = all_names

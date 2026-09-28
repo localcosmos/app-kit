@@ -13,6 +13,11 @@ from app_kit.features.taxon_profiles.tests.test_models import WithTaxonProfiles
 
 from app_kit.features.taxon_profiles.models import TaxonProfile
 
+from app_kit.features.object_classes.models import ObjectClass
+from app_kit.features.object_classes.tests.test_models import WithObjectClasses
+
+from taxonomy.lazy import LazyTaxon
+from taxonomy.models import TaxonomyModelRouter
 
 import os
 from unittest.mock import patch
@@ -183,7 +188,7 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         
         # position
         qrp_image = quercus_robur_profile.images()[0]
-        # 14th column - 4 (offset) = 10
+        # 15th column - 5 (offset) = 10
         self.assertEqual(qrp_image.position, 10)
         
         qr_image = quercus_robur_profile.images()[0]
@@ -553,7 +558,7 @@ class TestTaxonProfilesZipImporterInvalidCellContentType(WithTaxonProfiles, With
         importer.errors = []
         importer.validate_cell_value_content_types()
         expected_errors = [
-            '[Taxon profiles.xlsx][Sheet:Taxon profiles][cell:E4] Invalid cell content: =SUM(). Formulas are not allowed.'
+            '[Taxon profiles.xlsx][Sheet:Taxon profiles][cell:F4] Invalid cell content: =SUM(0). Formulas are not allowed.'
         ]
 
         self.assertEqual(importer.errors, expected_errors)
@@ -581,9 +586,9 @@ class TestTaxonProfilesZipImporterInvalidData(WithTaxonProfiles, WithUser, WithM
         expected_errors = [
             '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:A1] Cell content has to be "Scientific name", not Scientific Names',
             '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:C1] Cell content has to be "Taxonomic source", not None',
-            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:N3] Columns of type image are not allowed to have a value in row 2',
-            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:Q3] Cell content has to be one of title, meta_description. Found error instead',
-            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:T1] Cell content has to be one of text, shorttext, longtext, short_profile, image, tags, external_media, seo. Found something wrong instead']
+            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:O3] Columns of type image are not allowed to have a value in row 2',
+            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:R3] Cell content has to be one of title, meta_description. Found error instead',
+            '[Taxon profiles.xlsx][Sheet:Taxon Profiles][cell:U1] Cell content has to be one of text, shorttext, longtext, short_profile, image, tags, external_media, seo. Found something wrong instead']
         self.assertEqual(importer.errors, expected_errors)
     
     @test_settings
@@ -619,3 +624,187 @@ class TestTaxonProfilesZipImporterInvalidData(WithTaxonProfiles, WithUser, WithM
             '[Taxon profiles.xlsx][Sheet:Taxon profiles][cell:I6] Image file "MissingImage.png" not found in the "Taxon Profile Images" sheet.',
         ]
         self.assertEqual(importer.errors, expected_errors)
+
+
+class TestObjectClassZipImport(WithMedia, WithObjectClasses, WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
+    """Tests for validate_object_class, validate_object_classes, and object_class import."""
+
+    def setUp(self):
+        super().setUp()
+        self.superuser = self.create_superuser()
+        self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid')
+        self.taxon_profiles = self.get_taxon_profiles()
+
+        models = TaxonomyModelRouter('taxonomy.sources.col')
+        quercus_db = models.TaxonTreeModel.objects.get(taxon_latname='Quercus')
+        self.quercus_lazy = LazyTaxon(instance=quercus_db)
+        quercus_robur_db = models.TaxonTreeModel.objects.get(taxon_latname='Quercus robur')
+        self.quercus_robur_lazy = LazyTaxon(instance=quercus_robur_db)
+        lacerta_db = models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis')
+        self.lacerta_lazy = LazyTaxon(instance=lacerta_db)
+
+        # create_object_class derives scientific_name as name.lower().replace(' ', '_')
+        # so self.oak_class.scientific_name == 'bark'
+        self.oak_class = self.create_object_class('Bark')
+        self.create_object_class_taxon(self.oak_class, self.quercus_lazy)
+
+    def get_zip_importer(self):
+        importer = TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
+        importer.errors = []
+        return importer
+
+    # ------------------------------------------------------------------ #
+    # validate_object_class – unit tests                                   #
+    # ------------------------------------------------------------------ #
+
+    @test_settings
+    def test_validate_object_class_found_by_scientific_name(self):
+        importer = self.get_zip_importer()
+        importer.validate_object_class(
+            'bark', self.quercus_robur_lazy, 'test.xlsx', TAXON_PROFILES_SHEET_NAME, 0)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_object_class_found_by_name(self):
+        importer = self.get_zip_importer()
+        importer.validate_object_class(
+            'Bark', self.quercus_robur_lazy, 'test.xlsx', TAXON_PROFILES_SHEET_NAME, 0)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_object_class_duplicate_name(self):
+        # Two classes share the same name; the lookup value matches neither scientific_name.
+        ObjectClass.objects.create(
+            object_classes=self.object_classes,
+            name='Ambiguous Name',
+            scientific_name='ambiguous_1',
+        )
+        ObjectClass.objects.create(
+            object_classes=self.object_classes,
+            name='Ambiguous Name',
+            scientific_name='ambiguous_2',
+        )
+        importer = self.get_zip_importer()
+        importer.validate_object_class(
+            'Ambiguous Name', self.quercus_robur_lazy, 'test.xlsx', TAXON_PROFILES_SHEET_NAME, 0)
+        self.assertEqual(len(importer.errors), 1)
+        self.assertIn('not unique', importer.errors[0])
+
+    @test_settings
+    def test_validate_object_class_not_found(self):
+        importer = self.get_zip_importer()
+        importer.validate_object_class(
+            'nonexistent_class', self.quercus_robur_lazy, 'test.xlsx', TAXON_PROFILES_SHEET_NAME, 0)
+        self.assertEqual(len(importer.errors), 1)
+        self.assertIn('not found', importer.errors[0])
+
+    @test_settings
+    def test_validate_object_class_incompatible_taxon(self):
+        importer = self.get_zip_importer()
+        importer.validate_object_class(
+            'bark', self.lacerta_lazy, 'test.xlsx', TAXON_PROFILES_SHEET_NAME, 0)
+        self.assertEqual(len(importer.errors), 1)
+        self.assertIn('not compatible', importer.errors[0])
+
+    # ------------------------------------------------------------------ #
+    # validate_object_classes – sheet-level tests                          #
+    # ------------------------------------------------------------------ #
+
+    @test_settings
+    def test_validate_object_classes_no_data(self):
+        importer = self.get_zip_importer()
+        importer.load_workbook()
+        sheet = importer.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
+        importer.validate_object_classes(sheet)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_object_classes_valid_value(self):
+        importer = TaxonProfilesZipImporter(
+            self.superuser, self.taxon_profiles,
+            os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_with_object_class'))
+        importer.errors = []
+        importer.load_workbook()
+        sheet = importer.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
+        importer.validate_object_classes(sheet)
+        self.assertEqual(importer.errors, [])
+
+    @test_settings
+    def test_validate_object_classes_invalid_value(self):
+        importer = TaxonProfilesZipImporter(
+            self.superuser, self.taxon_profiles,
+            os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_with_invalid_object_class'))
+        importer.errors = []
+        importer.load_workbook()
+        sheet = importer.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
+        importer.validate_object_classes(sheet)
+        self.assertEqual(len(importer.errors), 1)
+        self.assertIn('not found', importer.errors[0])
+
+    # ------------------------------------------------------------------ #
+    # import_generic_content – object_class persistence                    #
+    # ------------------------------------------------------------------ #
+
+    @test_settings
+    def test_import_assigns_object_class(self):
+        path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_with_object_class')
+        importer = TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, path)
+        importer.errors = []
+        importer.validate()
+        self.assertEqual(importer.errors, [])
+        importer.import_generic_content()
+
+        qr_base = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+            morphotype__isnull=True,
+            object_class__isnull=True,
+        ).first()
+        self.assertIsNotNone(qr_base, 'Quercus robur (no morphotype, no object class) not created')
+
+        qr_morphotype = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+            morphotype='sprout',
+            object_class__isnull=True,
+        ).first()
+        self.assertIsNotNone(qr_morphotype, 'Quercus robur morphotype=sprout not created')
+
+        qr_object_class = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+            morphotype__isnull=True,
+            object_class=self.oak_class,
+        ).first()
+        self.assertIsNotNone(qr_object_class, 'Quercus robur object_class=Bark not created')
+
+        qr_both = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+            morphotype='sprout',
+            object_class=self.oak_class,
+        ).first()
+        self.assertIsNotNone(qr_both, 'Quercus robur morphotype=sprout + object_class=Bark not created')
+
+        total = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+        ).count()
+        self.assertEqual(total, 4)
+
+    @test_settings
+    def test_import_does_not_duplicate_profile_on_reimport(self):
+        path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid_with_object_class')
+        # First import creates all 4 profiles; second import must find them rather than duplicate.
+        for _ in range(2):
+            importer = TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, path)
+            importer.errors = []
+            importer.validate()
+            self.assertEqual(importer.errors, [])
+            importer.import_generic_content()
+
+        total = TaxonProfile.objects.filter(
+            taxon_profiles=self.taxon_profiles,
+            taxon_latname='Quercus robur',
+        ).count()
+        self.assertEqual(total, 4)

@@ -16,6 +16,8 @@ from taxonomy.lazy import LazyTaxon
 from django.utils.decorators import method_decorator
 from localcosmos_server.decorators import ajax_required
 
+from app_kit.view_mixins import MetaAppMixin
+
 
 custom_taxon_models = TaxonomyModelRouter('taxonomy.sources.custom')
 
@@ -24,7 +26,7 @@ from django.db.models.functions import Length
 CharField.register_lookup(Length, 'length')
 
 
-class ManageCustomTaxon(FormView):
+class ManageCustomTaxon(MetaAppMixin, FormView):
 
     template_name = 'custom_taxonomy/manage_custom_taxon.html'
 
@@ -32,10 +34,17 @@ class ManageCustomTaxon(FormView):
 
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
+        self.set_meta_app(**kwargs)
+        self.set_taxa(**kwargs)
+        
+        return super().dispatch(request, *args, **kwargs)  # MetaAppMixin.dispatch sets self.meta_app
+    
+    def set_taxa(self, **kwargs):
         self.taxon = None
         self.parent_taxon = None
         self.locale = None
         self.language = kwargs['language']
+        self.include_vernacular_names_languages = self._get_include_vernacular_names_languages()
         
         if 'name_uuid' in kwargs:
             self.taxon = custom_taxon_models.TaxonTreeModel.objects.get(name_uuid=kwargs['name_uuid'])
@@ -50,8 +59,21 @@ class ManageCustomTaxon(FormView):
         if self.parent_taxon == None and 'parent_name_uuid' in kwargs:
             self.parent_taxon = custom_taxon_models.TaxonTreeModel.objects.get(
                 name_uuid=kwargs['parent_name_uuid'])
-        
-        return super().dispatch(request, *args, **kwargs)
+
+
+    def _get_include_vernacular_names_languages(self):
+        from app_kit.features.taxon_profiles.models import TaxonProfiles
+        languages = set(self.meta_app.secondary_languages())
+        taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+        if taxon_profiles_link:
+            taxon_profiles = taxon_profiles_link.generic_content
+            option = taxon_profiles.get_option(self.meta_app, 'include_vernacular_names_languages')
+            if option:
+                for lang in option.split(','):
+                    lang = lang.strip()
+                    if lang:
+                        languages.add(lang)
+        return list(languages)
 
 
     def get_initial(self):
@@ -79,7 +101,7 @@ class ManageCustomTaxon(FormView):
 
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)  # MetaAppMixin adds meta_app to context
         context['language'] = self.language
         context['taxon'] = self.taxon
         context['parent_taxon'] = self.parent_taxon
@@ -88,6 +110,7 @@ class ManageCustomTaxon(FormView):
     def get_form_kwargs(self):
         form_kwargs = super().get_form_kwargs()
         form_kwargs['language'] = self.language
+        form_kwargs['include_vernacular_names_languages'] = self.include_vernacular_names_languages
         return form_kwargs
 
     def form_valid(self, form):
@@ -136,18 +159,24 @@ class ManageCustomTaxon(FormView):
             if field_name.startswith('name_'):
                 name_parts = field_name.split('_')
                 language = name_parts[1]
-                locale_id = name_parts[2]
                 name = form.cleaned_data.get(field_name, None)
-                if name:
-                    locale = custom_taxon_models.TaxonLocaleModel.objects.get(
-                        id=locale_id)
-                    
-                    if locale.taxon.name_uuid == self.taxon.name_uuid and locale.language == language:
-                        locale.name = name
-                        locale.save()
+                if len(name_parts) == 3:
+                    # existing locale: name_{lang}_{id}
+                    locale_id = name_parts[2]
+                    if name:
+                        locale = custom_taxon_models.TaxonLocaleModel.objects.get(
+                            id=locale_id)
+                        if locale.taxon.name_uuid == self.taxon.name_uuid and locale.language == language:
+                            locale.name = name
+                            locale.save()
+                    else:
+                        custom_taxon_models.TaxonLocaleModel.objects.filter(
+                            taxon=self.taxon, language=language, id=locale_id).delete()
                 else:
-                    custom_taxon_models.TaxonLocaleModel.objects.filter(
-                        taxon=self.taxon, language=language, id=locale_id).delete()
+                    # new locale from include_vernacular_names_languages: name_{lang}
+                    if name:
+                        custom_taxon_models.TaxonLocaleModel.objects.create(
+                            self.taxon, name, language, preferred=False)
 
         context['form'] = form
         context['success'] = True
@@ -213,7 +242,7 @@ class ManageCustomTaxonTree(TaxonTreeView):
 
 class ManageCustomTaxonChildren(ManageCustomTaxonTree):
     template_name = 'taxonomy/treeview_children.html'
-    load_app_bar = False
+    load_app_bar = True
 
     
 

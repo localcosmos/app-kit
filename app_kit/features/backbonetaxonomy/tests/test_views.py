@@ -11,7 +11,7 @@ from app_kit.tests.mixins import (WithMetaApp, WithTenantClient, WithUser, WithL
 
 from app_kit.features.backbonetaxonomy.views import (ManageBackboneTaxonomy, BackboneFulltreeUpdate,
             AddMultipleBackboneTaxa, AddBackboneTaxon, RemoveBackboneTaxon, SearchBackboneTaxonomy,
-            ManageBackboneTaxon, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences,
+            ManageBackboneTaxon, CollectedVernacularNames, SwapTaxon, AnalyzeTaxon, UpdateTaxonReferences,
             TaxonRelationships, ManageTaxonRelationshipType, DeleteTaxonRelationshipType,
             ManageTaxonRelationship, DeleteTaxonRelationship, GetTaxonReferencesChanges)
 
@@ -372,6 +372,90 @@ class TestSearchBackboneTaxonomy(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInU
         content = json.loads(response_2.content)
         self.assertEqual(len(content), 1)
 
+
+
+class TestCollectedVernacularNames(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,
+                                   WithBackboneTaxonomy, WithMetaApp, WithTenantClient, TenantTestCase):
+
+    url_name = 'collected_vernacular_names'
+    view_class = CollectedVernacularNames
+
+    def setUp(self):
+        super().setUp()
+        taxon_source = 'taxonomy.sources.col'
+        models = TaxonomyModelRouter(taxon_source)
+        self.taxon = LazyTaxon(instance=models.TaxonTreeModel.objects.get(taxon_latname='Lacerta agilis'))
+
+    def get_url_kwargs(self):
+        return {
+            'meta_app_id': self.meta_app.id,
+            'taxon_source': self.taxon.taxon_source,
+            'name_uuid': self.taxon.name_uuid,
+        }
+
+    def get_taxon_profiles_link(self):
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        return MetaAppGenericContent.objects.get(meta_app=self.meta_app, content_type=taxon_profiles_ctype)
+
+    @test_settings
+    def test_set_taxon(self):
+        view = self.get_view(ajax=True)
+        view.set_taxon(**view.kwargs)
+
+        self.assertEqual(view.lazy_taxon, self.taxon)
+
+    @test_settings
+    def test_set_taxon_unknown_name_uuid(self):
+        view = self.get_view(ajax=True)
+        view.set_taxon(meta_app_id=self.meta_app.id,
+                       taxon_source=self.taxon.taxon_source,
+                       name_uuid='00000000-0000-0000-0000-000000000000')
+
+        self.assertIsNone(view.lazy_taxon)
+
+    @test_settings
+    def test_get_context_data_includes_app_languages(self):
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.set_taxon(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+
+        self.assertEqual(context['taxon'], self.taxon)
+        self.assertIn('collected_vernacular_names', context)
+        self.assertIsInstance(context['collected_vernacular_names'], list)
+
+    @test_settings
+    def test_get_context_data_includes_taxon_profiles_option_languages(self):
+        link = self.get_taxon_profiles_link()
+        if link.options is None:
+            link.options = {}
+        link.options['include_vernacular_names_languages'] = 'de'
+        link.save()
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.set_taxon(**view.kwargs)
+
+        context = view.get_context_data(**view.kwargs)
+
+        # result must equal what we get when 'de' is explicitly in the language set
+        expected_languages = set(self.meta_app.languages())
+        expected_languages.add('de')
+        expected_names = self.taxon.all_vernacular_names(
+            self.meta_app, distinct=False, languages=list(expected_languages))
+        self.assertEqual(context['collected_vernacular_names'], expected_names)
+
+    @test_settings
+    def test_get_context_data_no_taxon(self):
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.lazy_taxon = None
+
+        context = view.get_context_data(**view.kwargs)
+
+        self.assertIsNone(context['taxon'])
+        self.assertEqual(context['collected_vernacular_names'], [])
 
 
 class TestManageTaxon(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser, WithNatureGuide,

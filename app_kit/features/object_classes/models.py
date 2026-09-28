@@ -43,6 +43,22 @@ class ObjectClasses(GenericContent):
             taxon_include_descendants=True,
         )
         return LazyTaxonList(queryset)
+    
+    def get_primary_localization(self, meta_app):
+        locale = super().get_primary_localization(meta_app)
+        
+        all_object_classes = ObjectClass.objects.filter(object_classes=self)
+        
+        for obj_class in all_object_classes:
+            name = obj_class.name
+            description = obj_class.description
+            
+            if name:
+                locale['name'] = name
+            if description:
+                locale['description'] = description
+        return locale
+        
 
     class Meta:
         verbose_name = _('Object classes')

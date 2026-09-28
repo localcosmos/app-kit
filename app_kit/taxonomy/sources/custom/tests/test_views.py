@@ -151,6 +151,7 @@ class TestAddCustomTaxonLocale(WithLoggedInUser, WithUser, WithTenantClient, Ten
 class TestManageCustomTaxon(ViewTestMixin, WithLoggedInUser, WithUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'manage_custom_taxon'
+    view_class = ManageCustomTaxon
 
     def setUp(self):
         super().setUp()
@@ -168,13 +169,14 @@ class TestManageCustomTaxon(ViewTestMixin, WithLoggedInUser, WithUser, WithMetaA
 
     def get_url_kwargs(self):
         return {
+            'meta_app_id': self.meta_app.id,
             'name_uuid': self.root_taxon.name_uuid,
             'language': self.language,
         }
 
     @test_settings
     def test_create_taxon_with_primary_locale(self):
-        url = reverse('create_new_custom_root_taxon', kwargs={'language': self.language})
+        url = reverse('create_new_custom_root_taxon', kwargs={'meta_app_id': self.meta_app.id, 'language': self.language})
         self.make_user_tenant_admin(self.user, self.tenant)
 
         post_data = {
@@ -320,6 +322,218 @@ class TestManageCustomTaxon(ViewTestMixin, WithLoggedInUser, WithUser, WithMetaA
         de_locale.refresh_from_db()
         self.assertEqual(de_locale.name, 'Aktualisierter deutscher Name')
         self.assertFalse(models.TaxonLocaleModel.objects.filter(id=fr_locale.id).exists())
+
+    # -- helpers --
+
+    def get_taxon_profiles_link(self):
+        taxon_profiles_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        return MetaAppGenericContent.objects.get(meta_app=self.meta_app, content_type=taxon_profiles_ctype)
+
+    def set_include_vernacular_names_languages(self, languages):
+        link = self.get_taxon_profiles_link()
+        if link.options is None:
+            link.options = {}
+        link.options['include_vernacular_names_languages'] = ','.join(languages)
+        link.save()
+
+    # -- _get_include_vernacular_names_languages --
+
+    @test_settings
+    def test_get_include_vernacular_names_languages_no_option(self):
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+
+        result = view._get_include_vernacular_names_languages()
+        self.assertEqual(result, [])
+
+    @test_settings
+    def test_get_include_vernacular_names_languages_with_option(self):
+        self.set_include_vernacular_names_languages(['de', 'fr'])
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+
+        result = view._get_include_vernacular_names_languages()
+        self.assertCountEqual(result, ['de', 'fr'])
+
+    @test_settings
+    def test_get_include_vernacular_names_languages_includes_secondary_languages(self):
+        self.create_secondary_languages(['de'])
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+
+        result = view._get_include_vernacular_names_languages()
+        self.assertIn('de', result)
+
+    @test_settings
+    def test_get_include_vernacular_names_languages_merges_option_and_secondary(self):
+        self.create_secondary_languages(['de'])
+        self.set_include_vernacular_names_languages(['fr'])
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+
+        result = view._get_include_vernacular_names_languages()
+        self.assertCountEqual(result, ['de', 'fr'])
+
+    # -- set_taxa --
+
+    @test_settings
+    def test_set_taxa_new_root_taxon(self):
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.include_vernacular_names_languages = []
+
+        view.set_taxa(meta_app_id=self.meta_app.id, language=self.language)
+
+        self.assertIsNone(view.taxon)
+        self.assertIsNone(view.parent_taxon)
+        self.assertIsNone(view.locale)
+        self.assertEqual(view.language, self.language)
+
+    @test_settings
+    def test_set_taxa_existing_taxon_with_locale(self):
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        locale = models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'English Name', self.language, preferred=True
+        )
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.include_vernacular_names_languages = []
+
+        view.set_taxa(meta_app_id=self.meta_app.id, name_uuid=self.root_taxon.name_uuid, language=self.language)
+
+        self.assertEqual(view.taxon, self.root_taxon)
+        self.assertEqual(view.locale, locale)
+        self.assertIsNone(view.parent_taxon)
+
+    @test_settings
+    def test_set_taxa_sets_parent_from_tree(self):
+        child_taxon = self.create_custom_taxon('Child Taxon', parent=self.root_taxon)
+
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.include_vernacular_names_languages = []
+
+        view.set_taxa(meta_app_id=self.meta_app.id, name_uuid=child_taxon.name_uuid, language=self.language)
+
+        self.assertEqual(view.taxon, child_taxon)
+        self.assertEqual(view.parent_taxon, self.root_taxon)
+
+    @test_settings
+    def test_set_taxa_sets_parent_from_parent_name_uuid(self):
+        view = self.get_view(ajax=True)
+        view.meta_app = self.meta_app
+        view.include_vernacular_names_languages = []
+
+        view.set_taxa(
+            meta_app_id=self.meta_app.id,
+            parent_name_uuid=self.root_taxon.name_uuid,
+            language=self.language,
+        )
+
+        self.assertIsNone(view.taxon)
+        self.assertEqual(view.parent_taxon, self.root_taxon)
+
+    # -- include_vernacular_names_languages form integration --
+
+    @test_settings
+    def test_form_shows_included_language_fields(self):
+        self.set_include_vernacular_names_languages(['de', 'fr'])
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'English Name', self.language, preferred=True
+        )
+
+        url = self.get_url()
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        response = self.tenant_client.get(url, **AJAX_KWARGS)
+        self.assertEqual(response.status_code, 200)
+
+        form = response.context['form']
+        self.assertIn('name_de', form.fields)
+        self.assertIn('name_fr', form.fields)
+
+    @test_settings
+    def test_form_uses_existing_locale_field_when_language_already_has_locale(self):
+        self.set_include_vernacular_names_languages(['de', 'fr'])
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'English Name', self.language, preferred=True
+        )
+        de_locale = models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'German Name', 'de', preferred=False
+        )
+
+        url = self.get_url()
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        response = self.tenant_client.get(url, **AJAX_KWARGS)
+        form = response.context['form']
+
+        self.assertNotIn('name_de', form.fields)
+        self.assertIn(f'name_de_{de_locale.id}', form.fields)
+        self.assertIn('name_fr', form.fields)
+
+    @test_settings
+    def test_form_valid_creates_included_language_locale(self):
+        self.set_include_vernacular_names_languages(['de'])
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'English Name', self.language, preferred=True
+        )
+
+        url = self.get_url()
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        post_data = {
+            'name_uuid': str(self.root_taxon.name_uuid),
+            'taxon_latname': self.root_taxon.taxon_latname,
+            'name': 'English Name',
+            'input_language': self.language,
+            'name_de': 'Deutscher Name',
+        }
+
+        response = self.tenant_client.post(url, data=post_data, **AJAX_KWARGS)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['success'])
+
+        de_locale = models.TaxonLocaleModel.objects.filter(
+            taxon=self.root_taxon, language='de'
+        ).first()
+        self.assertIsNotNone(de_locale)
+        self.assertEqual(de_locale.name, 'Deutscher Name')
+        self.assertTrue(de_locale.preferred)  # first locale for a language is always preferred
+
+    @test_settings
+    def test_form_valid_skips_empty_included_language_field(self):
+        self.set_include_vernacular_names_languages(['de'])
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        models.TaxonLocaleModel.objects.create(
+            self.root_taxon, 'English Name', self.language, preferred=True
+        )
+
+        url = self.get_url()
+        self.make_user_tenant_admin(self.user, self.tenant)
+
+        post_data = {
+            'name_uuid': str(self.root_taxon.name_uuid),
+            'taxon_latname': self.root_taxon.taxon_latname,
+            'name': 'English Name',
+            'input_language': self.language,
+            'name_de': '',
+        }
+
+        response = self.tenant_client.post(url, data=post_data, **AJAX_KWARGS)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['success'])
+
+        self.assertFalse(
+            models.TaxonLocaleModel.objects.filter(taxon=self.root_taxon, language='de').exists()
+        )
 
 
 class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedInUser, WithUser,

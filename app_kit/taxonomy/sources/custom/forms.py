@@ -37,17 +37,22 @@ class ManageCustomTaxonForm(LocalizeableForm):
     def __init__(self, *args, **kwargs):
         
         self.localizeable_fields = ['name']
+        include_vernacular_names_languages = kwargs.pop('include_vernacular_names_languages', [])
         
         super().__init__(*args, **kwargs)
                 
         name_uuid = self.initial.get('name_uuid', None)
         input_language = self.initial.get('input_language', None)
-        
-        
+
+        covered_languages = set()
+        if input_language:
+            covered_languages.add(input_language)
+
+        locale_field_names = []
+
         if name_uuid is not None and input_language is not None:
            existing_locales = custom_taxonomy_models.TaxonLocaleModel.objects.filter(taxon__name_uuid=name_uuid).exclude(language=input_language)
 
-           locale_field_names = []
            for locale in existing_locales:
                field_label = _('Name') + f' ({locale.language})'
                help_text = _('Vernacular name in this language')
@@ -57,13 +62,26 @@ class ManageCustomTaxonForm(LocalizeableForm):
                field.language = locale.language
                self.fields[field_name] = field
                locale_field_names.append(field_name)
+               covered_languages.add(locale.language)
 
-           if locale_field_names:
-               name_index = list(self.fields).index('name')
-               field_order = [k for k in self.fields if k not in locale_field_names]
-               for lf in reversed(locale_field_names):
-                   field_order.insert(name_index + 1, lf)
-               self.order_fields(field_order)
+        if input_language:
+            for lang in include_vernacular_names_languages:
+                if lang not in covered_languages:
+                    field_label = _('Name') + f' ({lang})'
+                    help_text = _('Vernacular name in this language')
+                    field = forms.CharField(label=field_label, help_text=help_text, required=False)
+                    field_name = f'name_{lang}'
+                    self.localizeable_fields.append(field_name)
+                    field.language = lang
+                    self.fields[field_name] = field
+                    locale_field_names.append(field_name)
+
+        if locale_field_names:
+            name_index = list(self.fields).index('name')
+            field_order = [k for k in self.fields if k not in locale_field_names]
+            for lf in reversed(locale_field_names):
+                field_order.insert(name_index + 1, lf)
+            self.order_fields(field_order)
                        
 
     def clean(self):
@@ -80,6 +98,7 @@ class ManageCustomTaxonForm(LocalizeableForm):
         return self.cleaned_data
     
 
+
 LANGUAGE_CHOICES = [('', _('Select language'))] + sorted(settings.LANGUAGES, key=lambda x: x[1])
 
 class AddCustomTaxonLocaleForm(forms.Form):
@@ -87,6 +106,27 @@ class AddCustomTaxonLocaleForm(forms.Form):
     name_uuid = forms.UUIDField(widget=forms.HiddenInput, required=True)
     language = forms.ChoiceField(choices=LANGUAGE_CHOICES)
     name = forms.CharField(label=_('Vernacular name'), help_text=_('Vernacular name'))
+    
+    def clean_language(self):
+        language = self.cleaned_data.get('language', None)
+        if not language:
+            raise forms.ValidationError(_('Language is required.'))
+        
+        language = language[:2]
+        return language
+    
+    def clean(self):
+        name_uuid = self.cleaned_data.get('name_uuid', None)
+        language = self.cleaned_data.get('language', None)
+        name = self.cleaned_data.get('name', None)
+
+        # check if exists
+        taxon = custom_taxonomy_models.TaxonTreeModel.objects.filter(name_uuid=name_uuid).first()
+        exists = custom_taxonomy_models.TaxonLocaleModel.objects.filter(taxon=taxon, language=language, name__iexact=name).exists()
+        if exists:
+            raise forms.ValidationError(_('A vernacular name with this language already exists.'))
+
+        return self.cleaned_data
 
 
 class MoveCustomTaxonForm(forms.Form):

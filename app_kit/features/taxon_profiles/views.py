@@ -1805,7 +1805,6 @@ class TaxonProfileSearch(MetaAppMixin, View):
                 if profile.object_class:
                     label = f'{profile.object_class.name} {label}'
 
-                print(f"Profile: {profile.taxon_latname}, UUID: {profile.name_uuid}, Vernacular Map: {vernacular_map}")
                 vernacular = vernacular_map.get(str(profile.name_uuid))
                 if vernacular:
                     label = f'{vernacular} - {label}'

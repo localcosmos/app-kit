@@ -41,6 +41,8 @@ from app_kit.appbuilder.TaxonBuilder import TaxaBuilder
 
 from localcosmos_server.template_content.models import TemplateContent, Navigation
 
+MORPHOTYPE_MODELS = [MetaNode, TaxonProfile]
+
 
 # TAXONOMY
 from taxonomy.lazy import LazyTaxon
@@ -413,6 +415,10 @@ class AppReleaseBuilder(AppBuilderBase):
                 template_content_result = self.validate_TemplateContent()
                 result['errors'] += template_content_result['errors']
                 result['warnings'] += template_content_result['warnings']
+
+                morphotype_result = self.validate_Morphotypes()
+                result['errors'] += morphotype_result['errors']
+                result['warnings'] += morphotype_result['warnings']
 
                 # store last validation result in db
                 validation_result = 'valid'
@@ -1158,7 +1164,90 @@ class AppReleaseBuilder(AppBuilderBase):
             }
     
             return result
-    
+
+
+    # Returns a queryset of instances with a non-null morphotype, scoped to this meta_app.
+    # Add a branch here when adding a new model to MORPHOTYPE_MODELS.
+    def _get_morphotype_queryset(self, model):
+        if model is MetaNode:
+            nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
+            nature_guides = [link.generic_content for link in nature_guide_links]
+            if not nature_guides:
+                return model.objects.none()
+            return model.objects.filter(
+                nature_guide__in=nature_guides, node_type='result',
+            ).exclude(morphotype__isnull=True).exclude(morphotype='')
+        elif model is TaxonProfile:
+            taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
+            if not taxon_profiles_link:
+                return model.objects.none()
+            return model.objects.filter(
+                taxon_profiles=taxon_profiles_link.generic_content,
+            ).exclude(morphotype__isnull=True).exclude(morphotype='')
+        raise NotImplementedError('No morphotype queryset defined for model {0}'.format(model.__name__))
+
+
+    # Returns the owning generic_content (e.g. NatureGuide, TaxonProfiles) for a morphotype instance.
+    # Add a branch here when adding a new model to MORPHOTYPE_MODELS.
+    def _get_generic_content_from_morphotype_instance(self, instance):
+        if isinstance(instance, MetaNode):
+            return instance.nature_guide
+        elif isinstance(instance, TaxonProfile):
+            return instance.taxon_profiles
+        raise NotImplementedError('No generic_content mapping defined for {0}'.format(type(instance).__name__))
+
+
+    def validate_Morphotypes(self):
+
+        result = {
+            'warnings': [],
+            'errors': [],
+        }
+
+        # Build {name_uuid: set(morphotypes)} for every model in MORPHOTYPE_MODELS
+        morphotype_sets = {}
+        for model in MORPHOTYPE_MODELS:
+            qs = self._get_morphotype_queryset(model)
+            per_taxon = {}
+            for row in qs.values('name_uuid', 'morphotype'):
+                per_taxon.setdefault(row['name_uuid'], set()).add(row['morphotype'])
+            morphotype_sets[model] = per_taxon
+
+        # Compare every ordered pair; warn on morphotypes present in one model but absent in the other
+        for i, model_a in enumerate(MORPHOTYPE_MODELS):
+            for model_b in MORPHOTYPE_MODELS[i + 1:]:
+                sets_a = morphotype_sets[model_a]
+                sets_b = morphotype_sets[model_b]
+
+                for name_uuid in set(sets_a) | set(sets_b):
+                    morphotypes_a = sets_a.get(name_uuid, set())
+                    morphotypes_b = sets_b.get(name_uuid, set())
+
+                    for morphotype in morphotypes_a - morphotypes_b:
+                        instance = self._get_morphotype_queryset(model_a).filter(
+                            name_uuid=name_uuid, morphotype=morphotype).first()
+                        generic_content = self._get_generic_content_from_morphotype_instance(instance)
+                        warning_message = _('Morphotype "%(morphotype)s" of "%(instance)s" exists in %(model_a)s but not in %(model_b)s.') % {
+                            'morphotype': morphotype,
+                            'instance': str(instance),
+                            'model_a': model_a._meta.verbose_name,
+                            'model_b': model_b._meta.verbose_name,
+                        }
+                        result['warnings'].append(ValidationWarning(generic_content, instance, [warning_message]))
+
+                    for morphotype in morphotypes_b - morphotypes_a:
+                        instance = self._get_morphotype_queryset(model_b).filter(
+                            name_uuid=name_uuid, morphotype=morphotype).first()
+                        generic_content = self._get_generic_content_from_morphotype_instance(instance)
+                        warning_message = _('Morphotype "%(morphotype)s" of "%(instance)s" exists in %(model_b)s but not in %(model_a)s.') % {
+                            'morphotype': morphotype,
+                            'instance': str(instance),
+                            'model_b': model_b._meta.verbose_name,
+                            'model_a': model_a._meta.verbose_name,
+                        }
+                        result['warnings'].append(ValidationWarning(generic_content, instance, [warning_message]))
+
+        return result
 
 
     ###############################################################################################################

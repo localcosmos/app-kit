@@ -10,6 +10,8 @@ from app_kit.generic_content_zip_import import GenericContentZipImporter, EXTERN
 
 from app_kit.features.taxon_profiles.models import (TaxonProfile, TaxonTextType, TaxonText, TaxonTextTypeCategory)
 
+from app_kit.features.object_classes.models import ObjectClass
+
 from app_kit.models import AppKitSeoParameters, AppKitExternalMedia
 
 from localcosmos_server.models import EXTERNAL_MEDIA_TYPES
@@ -62,7 +64,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         
         if not self.errors:
             self.validate_definition_rows()
-            self.validate_taxa(taxon_profiles_sheet, start_row=3)        
+            self.validate_taxa(taxon_profiles_sheet, start_row=3)
+            self.validate_object_classes(taxon_profiles_sheet)
             self.validate_content()
             self.validate_taxon_profile_images_sheet()
         
@@ -81,6 +84,49 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 
         return column_type
         
+
+    def validate_object_class(self, object_class_value, lazy_taxon, workbook_filename, sheet_title, row_index):
+        object_class = ObjectClass.objects.filter(scientific_name=object_class_value).first()
+        if not object_class:
+            # fall back to name lookup; name must be unambiguous for import
+            by_name = ObjectClass.objects.filter(name=object_class_value)
+            if by_name.count() > 1:
+                message = _('Object class name "%(name)s" is not unique. Use the scientific name to identify the object class.') % {
+                    'name': object_class_value,
+                }
+                self.add_row_error(workbook_filename, sheet_title, row_index, message)
+                return
+            object_class = by_name.first()
+        if not object_class:
+            message = _('Object class "%(value)s" not found (checked scientific name and name).') % {
+                'value': object_class_value,
+            }
+            self.add_row_error(workbook_filename, sheet_title, row_index, message)
+            return
+        if not object_class.is_taxon_compatible(lazy_taxon):
+            message = _('Taxon %(taxon_latname)s is not compatible with object class "%(scientific_name)s".') % {
+                'taxon_latname': lazy_taxon.taxon_latname,
+                'scientific_name': object_class_value,
+            }
+            self.add_row_error(workbook_filename, sheet_title, row_index, message)
+
+    def validate_object_classes(self, sheet):
+        for row_index, row in enumerate(sheet.iter_rows(min_row=4), 1):
+            if not row[0].value:
+                continue
+            object_class_value = self.get_stripped_cell_value(row[4].value)
+            if not object_class_value:
+                continue
+            taxon_latname = self.get_stripped_cell_value(row[0].value)
+            taxon_author = self.get_stripped_cell_value(row[1].value) or None
+            taxon_source = self.get_stripped_cell_value(row[2].value)
+            if not taxon_source or taxon_source not in TAXON_SOURCES:
+                continue
+            try:
+                lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
+            except ValueError:
+                continue  # taxon error already reported by validate_taxa
+            self.validate_object_class(object_class_value, lazy_taxon, self.workbook_filename, sheet.title, row_index)
 
     def validate_definition_rows(self):
         
@@ -116,6 +162,13 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             elif col_index == 4:
                 if not row_1_value or row_1_value != 'morphotype (optional)':
                     message = _('Cell content has to be "Morphotype (optional)", not %(cell_value)s') % {
+                        'cell_value': col[0].value,
+                    }
+                    self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 0, message)
+                    
+            elif col_index == 5:
+                if not row_1_value or row_1_value != 'object class (optional)':
+                    message = _('Cell content has to be "Object class (optional)", not %(cell_value)s') % {
                         'cell_value': col[0].value,
                     }
                     self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 0, message)
@@ -235,7 +288,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         taxon_profiles_sheet = self.get_sheet_by_name(TAXON_PROFILES_SHEET_NAME)
 
         # the texts and images have to be validated column by column
-        for col_index, col in enumerate(taxon_profiles_sheet.iter_cols(min_col=5), 1):
+        for col_index, col in enumerate(taxon_profiles_sheet.iter_cols(min_col=6), 1):
             
             col_letter = get_column_letter(col_index)
             
@@ -273,7 +326,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         used_image_identifiers = set([])
 
         # Collect all image identifiers referenced from image-type columns.
-        for col in taxon_profiles_sheet.iter_cols(min_col=5):
+        for col in taxon_profiles_sheet.iter_cols(min_col=6):
             column_type = self.get_column_type(col)
 
             if column_type != ColumnType.IMAGE.value:
@@ -359,8 +412,8 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
         # iterate over all columns to create a column_type map
         for col_index, col in enumerate(taxon_profiles_sheet.iter_cols(), 1):
             
-            # skip taxon columns
-            if col_index < 5:
+            # skip taxon columns (scientific name, author, taxonomic source, morphotype, object class)
+            if col_index < 6:
                 continue
             
             column_type = self.get_column_type(col)
@@ -471,22 +524,33 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 morphotype = self.get_stripped_cell_value(row[3].value)
                 if not morphotype:
                     morphotype = None
+                object_class_value = self.get_stripped_cell_value(row[4].value) or None
+                object_class = None
+                if object_class_value:
+                    object_class = ObjectClass.objects.filter(scientific_name=object_class_value).first()
+                    if not object_class:
+                        object_class = ObjectClass.objects.filter(name=object_class_value).first()
 
                 lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
                 
                 # taxa might be renamed. The reference is always the source tree, the name_uuid is constant across renames
                 taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
                                                             taxon_source=lazy_taxon.taxon_source,
-                                                            name_uuid=lazy_taxon.name_uuid)
-                
-                if morphotype:
-                    taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+                                                            name_uuid=lazy_taxon.name_uuid,
+                                                            morphotype=morphotype)
+                if object_class:
+                    taxon_profile_qry = taxon_profile_qry.filter(object_class=object_class)
+                else:
+                    taxon_profile_qry = taxon_profile_qry.filter(object_class__isnull=True)
                 
                 taxon_profile=taxon_profile_qry.first()
 
                 if taxon_profile:
+                    updated = False
                     if taxon_profile.taxon_latname != lazy_taxon.taxon_latname or taxon_profile.taxon_author != lazy_taxon.taxon_author:
                         taxon_profile.set_taxon(lazy_taxon)
+                        updated = True
+                    if updated:
                         taxon_profile.save()
 
                 else:
@@ -498,10 +562,12 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                         taxon_source=lazy_taxon.taxon_source,
                         taxon_latname=lazy_taxon.taxon_latname,
                         taxon_author=lazy_taxon.taxon_author,
+                        morphotype=morphotype,
                     )
-                    
-                    if morphotype:
-                        taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+                    if object_class:
+                        taxon_profile_qry = taxon_profile_qry.filter(object_class=object_class)
+                    else:
+                        taxon_profile_qry = taxon_profile_qry.filter(object_class__isnull=True)
                     
                     taxon_profile = taxon_profile_qry.first()
                     
@@ -510,6 +576,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             taxon_profiles=self.generic_content,
                             taxon=lazy_taxon,
                             morphotype=morphotype,
+                            object_class=object_class,
                         )
 
                         taxon_profile.save()
@@ -518,7 +585,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 # iterate over all columns of the current row
                 for column_index, cell in enumerate(row, 1):
 
-                    if column_index >= 5:
+                    if column_index >= 6:
                         column_letter = get_column_letter(column_index)
                         
                         if column_letter in column_content_type_map:
@@ -609,7 +676,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                                         })
                                     
                                     # infer position from column_index
-                                    image_data['position'] = column_index - 4
+                                    image_data['position'] = column_index - 5
                                     
                                     image_filepath = self.get_image_file_disk_path(image_filename)
 
