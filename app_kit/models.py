@@ -337,6 +337,12 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         url = '{0}{1}'.format(self.domain, view_url)
 
         return url
+    
+    def get_package_name(self):
+        custom_package_name = self.get_global_option('package_name')
+        if custom_package_name:
+            return custom_package_name
+        return self.package_name
 
     def languages(self):
         return self.app.languages()
@@ -522,14 +528,7 @@ class MetaApp(ContentImageMixin, GenericContentMethodsMixin, models.Model):
         return taxonlist.included_in_taxa(lazy_taxon)
 
     def all_taxa(self):
-        include_full_tree = self.backbone().get_global_option('include_full_tree')
-
-        if include_full_tree:
-            models = TaxonomyModelRouter(source)
-            taxa = models.TaxonTreeModel.objects.all().order_by('taxon_latname')
-        else:
-            taxa = self.taxa()
-
+        taxa = self.taxa()
         return taxa
 
     # search the backbone and all associated contents

@@ -215,7 +215,7 @@ class AddExistingGenericContentForm(forms.Form):
         
 class MetaAppOptionsForm(GenericContentOptionsForm):
 
-    global_options_fields = ['allow_user_create_matrices', 'allow_anonymous_observations',
+    global_options_fields = ['allow_user_create_matrices', 'allow_anonymous_observations', 'package_name',
                              'localcosmos_private', 'localcosmos_private_api_url', 'version']
     
     allow_anonymous_observations = forms.BooleanField(required=False,
@@ -230,6 +230,22 @@ class MetaAppOptionsForm(GenericContentOptionsForm):
                                                 required=False)
     
     version = forms.CharField(max_length=30, required=False, help_text = _('Manually set the version of your app.'))
+    
+    package_name = forms.CharField(max_length=255, required=False,
+        help_text=_('Override the default package name of your app. Used by Android and iOS to identify your app. '
+                    'Required when migrating an existing Android app — you must first enroll that app in '
+                    'Google Play App Signing via Play Console.'))
+    
+    def clean_package_name(self):
+        package_name = self.cleaned_data.get('package_name')
+        if package_name:
+            package_name = package_name.strip()
+        # something like org.localcosmos.appname. validate 3 parts, two dots
+        if package_name:
+            parts = package_name.split('.')
+            if len(parts) != 3:
+                raise forms.ValidationError(_('Package name must have exactly three parts separated by dots.'))
+        return package_name
 
 
 

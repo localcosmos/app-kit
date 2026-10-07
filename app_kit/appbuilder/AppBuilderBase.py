@@ -640,7 +640,7 @@ class AppBuilderBase:
 
         settings = {
             "NAME" : self.meta_app.name,
-            "PACKAGE_NAME" : self.meta_app.package_name,
+            "PACKAGE_NAME" : self.meta_app.get_package_name(), # custom or default
             "LANGUAGES" : [language_code for language_code in self.meta_app.languages()], # the languages supported by this app
             "PRIMARY_LANGUAGE" : self.meta_app.primary_language, # primary language is the fallback language
             "APP_UID" : self.meta_app.app.uid,

@@ -3121,13 +3121,15 @@ class AppReleaseBuilder(AppBuilderBase):
     # NGINX android, review and published
     @property
     def _aab_filename(self):
-        filename = '{0}-{1}-{2}.aab'.format(self.meta_app.package_name, self.meta_app.current_version,
+        package_name = self.meta_app.get_package_name()
+        filename = '{0}-{1}-{2}.aab'.format(package_name, self.meta_app.current_version,
             self.meta_app.build_number)
         return filename
     
     @property
     def _apk_filename(self):
-        filename = '{0}-{1}-{2}.apk'.format(self.meta_app.package_name, self.meta_app.current_version,
+        package_name = self.meta_app.get_package_name()
+        filename = '{0}-{1}-{2}.apk'.format(package_name, self.meta_app.current_version,
             self.meta_app.build_number)
         return filename
 

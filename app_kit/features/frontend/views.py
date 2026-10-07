@@ -17,6 +17,8 @@ from .models import Frontend, FrontendText, FrontendResourceFile
 
 from .PrivateFrontendImporter import PrivateFrontendImporter
 
+from django.core.files.uploadedfile import UploadedFile
+
 import threading
 
 
@@ -222,7 +224,7 @@ class ManageFrontendSettings(FrontendSettingsMixin, MetaAppMixin, FormView):
                 if existing:
                     existing.resource_file.delete(save=False)
                     existing.delete()
-            elif uploaded:
+            elif isinstance(uploaded, UploadedFile):
                 obj, _ = FrontendResourceFile.objects.get_or_create(
                     frontend=self.frontend, identifier=identifier
                 )

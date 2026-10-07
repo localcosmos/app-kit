@@ -68,7 +68,7 @@
 					{% trans 'draft' %}
 				{% endif %}
 				<br/>
-				<span class="text-secondary">pkgname: {{ meta_app.package_name }}</span>
+				<span class="text-secondary">pkgname: {{ meta_app.get_package_name }}</span>
 				<span class="d-none">uuid: {{ meta_app.app.uuid }}</span>
 			</small>
 		</div>
