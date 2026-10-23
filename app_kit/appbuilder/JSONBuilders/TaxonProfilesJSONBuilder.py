@@ -201,6 +201,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             },
             'externalMedia': [],
             'morphotypeProfiles': [],
+            'objectClassProfiles': [],
             'isFeatured': is_featured,
         })
 
@@ -353,6 +354,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             
             if not morphotype:
                 taxon_profile_json['morphotypeProfiles'] = self.collect_morphotype_profiles(db_profile, languages)
+                
+            if not object_class:
+                taxon_profile_json['objectClassProfiles'] = self.collect_object_class_profiles(db_profile, languages, morphotype)
             
             taxon_profile_json['shortProfile'] = db_profile.short_profile
             
@@ -549,6 +553,49 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             morphotype_profiles.append(morphotype_json)
 
         return morphotype_profiles
+
+
+    def collect_object_class_profiles(self, taxon_profile, languages, morphotype=None):
+
+        object_class_profiles = []
+
+        object_class_profiles_db = TaxonProfile.objects.filter(
+            taxon_profiles=self.generic_content,
+            taxon_source=taxon_profile.taxon_source,
+            name_uuid=taxon_profile.name_uuid,
+            object_class__isnull=False,
+        )
+
+        if morphotype:
+            object_class_profiles_db = object_class_profiles_db.filter(morphotype=morphotype)
+        else:
+            object_class_profiles_db = object_class_profiles_db.filter(
+                Q(morphotype__isnull=True) | Q(morphotype=''))
+
+        for oc_profile in object_class_profiles_db:
+
+            primary_image = oc_profile.primary_image()
+            image_entry = self.get_image_json(primary_image) if primary_image else None
+
+            lazy_taxon = LazyTaxon(instance=oc_profile)
+
+            oc_profile_json = {
+                'taxonProfileId': oc_profile.id,
+                'parentTaxonProfileId': taxon_profile.id,
+                'objectClass': self.build_object_class_json(oc_profile.object_class),
+                'taxon': self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon),
+                'vernacular': {},
+                'image': image_entry,
+            }
+
+            for language_code in languages:
+                preferred_vernacular_name = lazy_taxon.get_preferred_vernacular_name(language_code,
+                                                                                     self.meta_app)
+                oc_profile_json['vernacular'][language_code] = preferred_vernacular_name
+
+            object_class_profiles.append(oc_profile_json)
+
+        return object_class_profiles
 
 
     def collect_usable_generic_forms(self, profile_taxon):
@@ -828,8 +875,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         return image_analysis
     
+    # fetch all taxon profiles matching this node. do not include morphotypes and object classes
     def get_attached_taxon_profiles_json(self, navigation_entry):
-        # fetch all taxon profiles matching this node
+        
         attached_taxon_profiles = []
         attached_taxon_profiles_json = []
         

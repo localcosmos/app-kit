@@ -1606,18 +1606,15 @@ class TagAnyElement(TagsMixin, FormView):
         return initial
 
     def form_valid(self, form):
-        old_tags = [tag.name.lower() for tag in self.content_object.tags.all()]
-        new_tags = form.cleaned_data['tags']
-
-        for tag in new_tags:
-            tag = tag.lower()
-            if tag in old_tags:
-                del old_tags[old_tags.index(tag)]
-            else:
-                self.content_object.tags.add(tag)
-        
-        for tag in old_tags:
-            self.content_object.tags.remove(tag)
+        existing = {tag.name.lower(): tag.name for tag in self.content_object.tags.all()}
+        # deduplicate case-insensitively; prefer existing casing over submitted casing
+        seen = {}
+        for tag in form.cleaned_data['tags']:
+            key = tag.lower()
+            if key not in seen:
+                seen[key] = existing.get(key, tag)
+        new_tags = list(seen.values())
+        self.content_object.tags.set(*new_tags)
 
         context = self.get_context_data(**self.kwargs)
         context['success'] = True

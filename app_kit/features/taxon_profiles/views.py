@@ -117,6 +117,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
 
         non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
+            object_class__isnull=True,
         ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
@@ -127,6 +128,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         backbone_taxa_profiles_name_uuids = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
             name_uuid__in=backbone_taxa_name_uuids,
+            object_class__isnull=True,
         ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
@@ -378,10 +380,12 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
             morphotype = kwargs.get('morphotype', None)
             
             taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-                taxon_source=taxon_source, name_uuid=name_uuid)
+                taxon_source=taxon_source, name_uuid=name_uuid, object_class__isnull=True)
             
             if morphotype:
                 taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+            else:
+                taxon_profile_qry = taxon_profile_qry.filter(morphotype__isnull=True)
 
             self.taxon_profile = taxon_profile_qry.first()
 
@@ -445,7 +449,7 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
         else:
             possible_nature_guide_ids = self.meta_app.get_generic_content_links(NatureGuide).values_list('object_id', flat=True)
             nature_guide_ids = MetaNode.objects.filter(name_uuid=self.taxon_profile.name_uuid,
-                nature_guide_id__in=possible_nature_guide_ids, morphotype=self.taxon_profile.morphotype).values_list('nature_guide', flat=True).distinct()
+                nature_guide_id__in=possible_nature_guide_ids, morphotype=self.taxon_profile.morphotype, object_class=self.taxon_profile.object_class).values_list('nature_guide', flat=True).distinct()
             nature_guides = NatureGuide.objects.filter(pk__in=nature_guide_ids)
 
         context['nature_guides'] = nature_guides
@@ -470,7 +474,8 @@ class ManageTaxonProfile(CreateTaxonProfileMixin, MetaAppFormLanguageMixin, Form
 
         # show possible duplicates
         possible_duplicates = TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
-            taxon_latname=self.taxon_profile.taxon_latname, morphotype=None).exclude(pk=self.taxon_profile.pk)
+            taxon_latname=self.taxon_profile.taxon_latname, morphotype=self.taxon_profile.morphotype,
+            object_class=self.taxon_profile.object_class).exclude(pk=self.taxon_profile.pk)
         context['possible_duplicates'] = possible_duplicates
         
         context['category_content_type'] = ContentType.objects.get_for_model(TaxonTextTypeCategory)
@@ -849,7 +854,8 @@ class CollectTaxonImages(MetaAppFormLanguageMixin, TemplateView):
         if not self.taxon_profile.morphotype:
         
             meta_nodes = MetaNode.objects.filter(taxon_source=self.taxon.taxon_source, 
-                taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author, morphotype=self.morphotype)
+                taxon_latname=self.taxon.taxon_latname, taxon_author=self.taxon.taxon_author, morphotype=self.morphotype,
+                object_class=self.taxon_profile.object_class)
 
             if meta_nodes:
 

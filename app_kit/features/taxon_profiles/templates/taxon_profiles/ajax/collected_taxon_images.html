@@ -1,5 +1,5 @@
 {% load i18n localcosmos_tags %}
-{% if taxon_images %}
+{% if taxon_images and not taxon_profile.morphotype and not taxon_profile.object_class %}
 	<div class="row mb-3">
 		<div class="col-12">
 			<h5>{% trans 'Images from taxonomic collection' %}</h5>

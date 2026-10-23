@@ -271,6 +271,12 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
                                                taxon_source=self.taxon_source,
                                                name_uuid=self.name_uuid,
                                                morphotype__isnull=True).first()
+        elif self.object_class:
+            return TaxonProfile.objects.filter(taxon_profiles=self.taxon_profiles,
+                                               taxon_source=self.taxon_source,
+                                               name_uuid=self.name_uuid,
+                                               morphotype=self.morphotype,
+                                               object_class__isnull=True).first()
         return None
 
     def texts(self):
@@ -334,6 +340,9 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
         
         if self.morphotype:
             text = text + ' ({0})'.format(self.morphotype)
+            
+        if self.object_class:
+            text = text + ' ({0})'.format(self.object_class)
     
         return text
 
@@ -666,7 +675,8 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
                     q_objects |= Q(taxon_source=custom_taxonomy_name,
                                    taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
                     
-        final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & q_objects
+        # only include base profiles, not morphotypes or object class variants
+        final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & (Q(morphotype__isnull=True) | Q(morphotype='')) & Q(object_class__isnull=True) & q_objects
         taxon_profile_candidates = TaxonProfile.objects.filter(final_q)
         
         for candidate in taxon_profile_candidates:
