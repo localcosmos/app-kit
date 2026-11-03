@@ -1553,7 +1553,7 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
             if self.encoded_space:
                 # Strip HTML tags from encoded_space before JSON dumping
                 cleaned_space = self._clean_html_from_json(self.encoded_space)
-                return '{0}: {1}'.format(self.matrix_filter.name, json.dumps(cleaned_space))
+                return '{0}: {1}'.format(self.matrix_filter.name, json.dumps(cleaned_space, ensure_ascii=False))
             return '{0}'.format(self.matrix_filter.matrix_filter_type.verbose_space_name)
         return self.__class__.__name__
 

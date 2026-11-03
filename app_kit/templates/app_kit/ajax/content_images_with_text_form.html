@@ -2,11 +2,7 @@
 {% load i18n localcosmos_tags %}
 
 {% block base_url %}
-	{% if content_image %}
-		{% url 'manage_content_images_with_text' meta_app.id content_image.id %}
-	{% else %}
-		{% url 'manage_content_images_with_text' meta_app.id content_type.id content_instance.id %}
-	{% endif %}
+	{% if content_image %}{% url 'manage_content_images_with_text' meta_app.id content_image.id %}{% else %}{% url 'manage_content_images_with_text' meta_app.id content_type.id content_instance.id %}{% endif %}
 {% endblock %}
 
 

@@ -668,6 +668,9 @@ class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
     @test_settings
     def test_form_valid(self):
         
+        taxon_profile_2_1 = self.create_taxon_profile(self.taxon_2_1)
+        self.assertEqual(taxon_profile_2_1.taxon_nuid, '001002001')
+
         taxon_profile = self.create_taxon_profile(self.taxon_2_1_1)
         self.assertEqual(taxon_profile.taxon_nuid, '001002001001')
         
@@ -699,6 +702,10 @@ class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         
         self.assertEqual(self.taxon_2_1.parent, self.taxon_3)
         self.assertEqual(self.taxon_2_1.taxon_nuid, '001003004')
+
+        # the moved taxon itself must have its lazy taxa updated
+        taxon_profile_2_1.refresh_from_db()
+        self.assertEqual(taxon_profile_2_1.taxon_nuid, '001003004')
         
         self.taxon_2_1_1.refresh_from_db()
         
@@ -714,7 +721,48 @@ class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         self.assertFalse(qry.exists())
 
     @test_settings
+    def test_form_valid_leaf_node(self):
+        # moving a leaf node: only the taxon itself has lazy taxa to update (no descendants)
+        taxon_profile = self.create_taxon_profile(self.taxon_2_1_1)
+        self.assertEqual(taxon_profile.taxon_nuid, '001002001001')
+
+        view = self.get_view()
+        view.taxon = self.taxon_2_1_1
+
+        old_nuid = self.taxon_2_1_1.taxon_nuid
+
+        post_data = {
+            'new_parent_taxon_0': 'taxonomy.sources.custom',
+            'new_parent_taxon_1': self.taxon_3.taxon_latname,
+            'new_parent_taxon_2': self.taxon_3.taxon_author,
+            'new_parent_taxon_3': self.taxon_3.name_uuid,
+            'new_parent_taxon_4': self.taxon_3.taxon_nuid,
+        }
+
+        form = view.form_class(self.taxon_2_1_1, data=post_data)
+        form.is_valid()
+        self.assertEqual(form.errors, {})
+
+        response = view.form_valid(form)
+        self.assertEqual(response.status_code, 200)
+
+        self.taxon_2_1_1.refresh_from_db()
+        self.assertEqual(self.taxon_2_1_1.parent, self.taxon_3)
+        self.assertEqual(self.taxon_2_1_1.taxon_nuid, '001003004')
+
+        # the leaf taxon's lazy taxa must also be updated
+        taxon_profile.refresh_from_db()
+        self.assertEqual(taxon_profile.taxon_nuid, '001003004')
+
+        models = TaxonomyModelRouter('taxonomy.sources.custom')
+        qry = models.TaxonTreeModel.objects.filter(taxon_nuid__startswith=old_nuid)
+        self.assertFalse(qry.exists())
+
+    @test_settings
     def test_form_valid_move_to_root(self):
+
+        taxon_profile_2_1 = self.create_taxon_profile(self.taxon_2_1)
+        self.assertEqual(taxon_profile_2_1.taxon_nuid, '001002001')
 
         taxon_profile = self.create_taxon_profile(self.taxon_2_1_1)
         self.assertEqual(taxon_profile.taxon_nuid, '001002001001')
@@ -739,6 +787,10 @@ class TestMoveCustomTaxonTreeEntry(ViewTestMixin, WithAjaxAdminOnly, WithLoggedI
         self.taxon_2_1.refresh_from_db()
         self.assertIsNone(self.taxon_2_1.parent)
         self.assertEqual(self.taxon_2_1.taxon_nuid, '002')
+
+        # the moved taxon itself must have its lazy taxa updated
+        taxon_profile_2_1.refresh_from_db()
+        self.assertEqual(taxon_profile_2_1.taxon_nuid, '002')
 
         self.taxon_2_1_1.refresh_from_db()
         self.assertEqual(self.taxon_2_1_1.parent, self.taxon_2_1)

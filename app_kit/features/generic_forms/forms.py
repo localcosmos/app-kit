@@ -163,6 +163,35 @@ class DynamicField:
                 'initial' : initial,
             })
 
+        elif generic_field.field_class == 'ObjectClassField':
+            from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
+
+            choices = []
+            if not generic_field_link.is_required:
+                choices.append(('', '-------'))
+
+            object_classes_link = meta_app.get_generic_content_links(ObjectClasses).first()
+
+            if object_classes_link:
+                object_classes = object_classes_link.generic_content
+                # initial choices are universal classes only (no taxa assigned);
+                # taxon-specific classes are loaded via AJAX when a taxon is selected
+                universal_qs = ObjectClass.objects.filter(
+                    object_classes=object_classes,
+                    taxon_mappings__isnull=True,
+                )
+                for obj_class in universal_qs:
+                    choices.append((obj_class.scientific_name, obj_class.name))
+            else:
+                choices.append(('', _('Please add an Object Classes feature to your app')))
+
+            taxon_field = generic_field_link.generic_form.taxonomic_reference_field()
+            widget_kwargs['ajax_url'] = reverse(
+                'get_object_classes_for_taxon', kwargs={'meta_app_id': meta_app.id}
+            )
+            widget_kwargs['taxon_field_id'] = str(taxon_field.uuid) if taxon_field else ''
+            initparams['choices'] = choices
+
 
         widget_kwargs['attrs'] = widget_attrs
         initparams['widget'] = widget(**widget_kwargs)

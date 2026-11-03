@@ -239,14 +239,13 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                         row_2_value = self.get_stripped_cell_value_lowercase(col[1].value)
                         row_3_value = self.get_stripped_cell_value_lowercase(col[2].value)
 
-                        if row_2_value and row_2_value not in AVAILABLE_EXTERNAL_MEDIA_TYPES:
-                            message = _('Cell content has to be one of %(valid_choices)s. Found %(cell_value)s instead') % {
-                                'valid_choices': ', '.join(AVAILABLE_EXTERNAL_MEDIA_TYPES),
-                                'cell_value': col[1].value
-                            }
+                        if row_2_value:
+                            message = _('Columns of type %(column_type)s are not allowed to have a value in row 2') % {
+                                                            'column_type': column_type,
+                                                        }
                             self.add_cell_error(self.workbook_filename, taxon_profiles_sheet.title, column_letter, 2, message)
 
-                        if row_3_value and row_3_value not in AVAILABLE_EXTERNAL_MEDIA_TYPES:
+                        if row_3_value:
                             message = _('Columns of type %(column_type)s are not allowed to have a value in row 3') % {
                                 'column_type': column_type,
                             }
@@ -305,15 +304,13 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                             self.validate_listing_in_images_sheet(image_filename, col_letter, row_index)
                         
                     elif column_type == ColumnType.EXTERNAL_MEDIA.value:
-                        
-                        media_type = col[1].value
                 
                         if cell.value:
                             url = self.get_stripped_cell_value(cell.value)
                             # check if the external media is valid
                             is_valid = self.validate_external_media(url, col_letter, row_index)
                             if is_valid:
-                                self.validate_listing_in_external_media_sheet(url, media_type, col_letter, row_index)
+                                self.validate_listing_in_external_media_sheet(url, col_letter, row_index)
        
                                 
     def validate_taxon_profile_images_sheet(self):

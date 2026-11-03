@@ -2803,7 +2803,7 @@ msgid ""
 "You have not defined traits for this part of your nature guide yet. You can "
 "add traits below."
 msgstr ""
-"Für diesen Bereich des Naturführers sind noch keine Merkmaledefiniert. Du "
+"Für diesen Bereich des Naturführers sind noch keine Merkmale definiert. Du "
 "kannst unten Merkmale hinzufügen."
 
 #: app_kit/features/nature_guides/templates/nature_guides/ajax/move_natureguide_node.html:9

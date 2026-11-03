@@ -51,7 +51,7 @@
 			{% if parent_node.meta_node.node_type == 'root' %}
 			{% else %}
 				{% for tree_node in tree_path %}
-					<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id parent_node.parent.id %}">{{ tree_node }}</a> &xrarr; 
+					<a href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id tree_node.id %}">{{ tree_node }}</a> &xrarr; 
 				{%	endfor %}
 				
 				{% for crosslink in parent_crosslinks %}

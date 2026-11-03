@@ -1,7 +1,8 @@
 from django.contrib.contenttypes.models import ContentType
-from django.http import Http404
+from django.db.models import Q
+from django.http import Http404, JsonResponse
 from django.utils.decorators import method_decorator
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, TemplateView, View
 from django.urls import reverse
 
 from localcosmos_server.decorators import ajax_required
@@ -214,3 +215,51 @@ class SetObjectClassLink(MetaAppMixin, FormView):
         context['success'] = True
         context['form'] = form
         return self.render_to_response(context)
+
+
+class GetObjectClassesForTaxon(MetaAppMixin, View):
+    """
+    Returns a JSON list of ObjectClass entries for the given taxon.
+    Always includes universal classes (no taxa assigned).
+    If taxon_source and taxon_nuid are supplied, also includes classes
+    whose taxa are ancestors of (or equal to) the given taxon.
+
+    Query parameters: taxon_source, taxon_nuid
+    """
+
+    @method_decorator(ajax_required)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        taxon_source = request.GET.get('taxon_source', '')
+        taxon_nuid = request.GET.get('taxon_nuid', '')
+
+        object_classes_link = self.meta_app.get_generic_content_links(ObjectClasses).first()
+
+        if not object_classes_link:
+            return JsonResponse([], safe=False)
+
+        object_classes = object_classes_link.generic_content
+
+        universal_pks = ObjectClass.objects.filter(
+            object_classes=object_classes,
+            taxon_mappings__isnull=True,
+        ).values_list('pk', flat=True)
+
+        compatible_pks = []
+        if taxon_source and taxon_nuid:
+            valid_nuids = [taxon_nuid[:i] for i in range(3, len(taxon_nuid) + 1, 3)]
+            compatible_pks = ObjectClassTaxon.objects.filter(
+                object_class__object_classes=object_classes,
+                taxon_source=taxon_source,
+                taxon_nuid__in=valid_nuids,
+            ).values_list('object_class_id', flat=True)
+
+        result_qs = ObjectClass.objects.filter(
+            Q(pk__in=universal_pks) | Q(pk__in=compatible_pks)
+        ).order_by('name')
+
+        data = [{'scientific_name': oc.scientific_name, 'name': oc.name} for oc in result_qs]
+        return JsonResponse(data, safe=False)
+

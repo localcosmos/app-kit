@@ -20,7 +20,7 @@ TAXON_SOURCES = [d[0] for d in settings.TAXONOMY_DATABASES]
 AVAILABLE_EXTERNAL_MEDIA_TYPES = [d[0] for d in EXTERNAL_MEDIA_TYPES]
 EXTERNAL_MEDIA_SHEET_NAME = 'External Media'
 
-import os, openpyxl, json, re
+import os, openpyxl, json, re, unicodedata
 
 from PIL import Image
 
@@ -340,18 +340,11 @@ class GenericContentZipImporter:
         return media_data
 
 
-    def validate_listing_in_external_media_sheet(self, url, expected_media_type, col_letter, row_index):
+    def validate_listing_in_external_media_sheet(self, url, col_letter, row_index):
 
         media_data = self.get_external_media_data_from_external_media_sheet(url)
         
-        if media_data:
-            if media_data['media_type'] != expected_media_type:
-                message = _('Expected media type "%(expected_media_type)s", found "%(actual_media_type)s"') % {
-                    'expected_media_type': expected_media_type,
-                    'actual_media_type': media_data['media_type'],
-                }
-                self.add_cell_error(self.workbook_filename, self.generic_content.name, col_letter, row_index, message)
-        else:
+        if not media_data:
             message = _('External media URL "%(url)s" not found in the "%(external_media_sheet_name)s" sheet.') % {
                 'url': url,
                 'external_media_sheet_name': self.external_media_sheet_name,
@@ -362,6 +355,13 @@ class GenericContentZipImporter:
     def get_image_file_disk_path(self, image_filename):
         """
         Get the actual file path, handling case-insensitive extension matching
+        and Unicode normalization differences (NFC vs NFD).
+
+        ZIP files created on macOS store filenames in NFD form (decomposed), while
+        Excel cells and ZIP files from other platforms use NFC (composed).  On a
+        Linux filesystem the comparison is byte-exact, so os.path.exists() fails
+        when the two sides are in different normalization forms even though the
+        characters look identical (e.g. "ä" as U+00E4 vs "a" + U+0308).
         """
         images_folder = os.path.join(self.zip_contents_path, self.image_folder_name)
         exact_path = os.path.join(images_folder, image_filename)
@@ -381,6 +381,15 @@ class GenericContentZipImporter:
                 path_candidate = os.path.join(images_folder, name_without_ext + variation)
                 if os.path.exists(path_candidate):
                     return path_candidate
+
+        # Fall back to a directory scan comparing NFC-normalized names.
+        # This handles ZIP files where filenames use a different Unicode normalization
+        # form than the string coming from the spreadsheet (e.g., macOS NFD vs NFC).
+        if os.path.isdir(images_folder):
+            nfc_target = unicodedata.normalize('NFC', image_filename)
+            for entry in os.listdir(images_folder):
+                if unicodedata.normalize('NFC', entry) == nfc_target:
+                    return os.path.join(images_folder, entry)
 
         # Return original path if no match found for error handling
         return exact_path

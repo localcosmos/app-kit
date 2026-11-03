@@ -1,0 +1,52 @@
+{% load i18n %}
+<div class="row">
+	<div class="col-12">
+		{% include "django/forms/widgets/select.html" %}
+	</div>
+</div>
+{% if ajax_url %}
+<script>
+(function () {
+	const selectEl = document.getElementById('{{ widget.attrs.id }}');
+	const taxonFieldId = '{{ taxon_field_id }}';
+	const ajaxUrl = '{{ ajax_url }}';
+
+	function updateChoices(taxonSource, taxonNuid) {
+		const url = ajaxUrl + '?taxon_source=' + encodeURIComponent(taxonSource) + '&taxon_nuid=' + encodeURIComponent(taxonNuid);
+		fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+			.then(function (r) { return r.json(); })
+			.then(function (data) {
+				const currentVal = selectEl.value;
+				const emptyOption = selectEl.querySelector('option[value=""]');
+				selectEl.innerHTML = '';
+				if (emptyOption) { selectEl.appendChild(emptyOption); }
+				data.forEach(function (oc) {
+					const opt = document.createElement('option');
+					opt.value = oc.scientific_name;
+					opt.textContent = oc.name;
+					if (oc.scientific_name === currentVal) { opt.selected = true; }
+					selectEl.appendChild(opt);
+				});
+			});
+	}
+
+	if (taxonFieldId) {
+		const nameUuidInput = document.getElementById('id_' + taxonFieldId + '_3');
+		if (nameUuidInput) {
+			if (nameUuidInput.value) {
+				const taxonSource = document.getElementById('id_' + taxonFieldId + '_0').value;
+				const taxonNuid = document.getElementById('id_' + taxonFieldId + '_4').value;
+				if (taxonSource && taxonNuid) { updateChoices(taxonSource, taxonNuid); }
+			}
+			nameUuidInput.addEventListener('change', function () {
+				const taxonSource = document.getElementById('id_' + taxonFieldId + '_0').value;
+				const taxonNuid = document.getElementById('id_' + taxonFieldId + '_4').value;
+				if (taxonSource && taxonNuid) {
+					updateChoices(taxonSource, taxonNuid);
+				}
+			});
+		}
+	}
+})();
+</script>
+{% endif %}

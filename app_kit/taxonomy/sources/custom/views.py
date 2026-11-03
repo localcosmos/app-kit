@@ -332,6 +332,7 @@ class MoveCustomTaxonTreeEntry(FormView):
         self.taxon.taxon_nuid = new_taxon_nuid
         
         self.taxon.save()
+        self.update_lazy_taxa(self.taxon)
         
         # get all descendants
         for descendant_taxon in custom_taxon_models.TaxonTreeModel.objects.filter(taxon_nuid__startswith=old_taxon_nuid):

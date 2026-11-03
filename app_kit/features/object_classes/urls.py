@@ -18,4 +18,6 @@ urlpatterns = [
         views.DeleteObjectClassTaxon.as_view(), name='delete_object_class_taxon'),
     path('set-object-class-link/<int:meta_app_id>/<int:content_type_id>/<int:object_id>/',
         views.SetObjectClassLink.as_view(), name='set_object_class_link'),
+    path('object-classes-for-taxon/<int:meta_app_id>/',
+        views.GetObjectClassesForTaxon.as_view(), name='get_object_classes_for_taxon'),
 ]

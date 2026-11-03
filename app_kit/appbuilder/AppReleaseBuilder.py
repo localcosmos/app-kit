@@ -1166,25 +1166,31 @@ class AppReleaseBuilder(AppBuilderBase):
             return result
 
 
-    # Returns a queryset of instances with a non-null morphotype, scoped to this meta_app.
+    # Returns an app-scoped queryset for the given model, without any morphotype filter.
+    # All models in MORPHOTYPE_MODELS are ModelWithTaxon, so name_uuid is always available.
     # Add a branch here when adding a new model to MORPHOTYPE_MODELS.
-    def _get_morphotype_queryset(self, model):
+    def _get_scoped_queryset(self, model):
         if model is MetaNode:
             nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
             nature_guides = [link.generic_content for link in nature_guide_links]
             if not nature_guides:
                 return model.objects.none()
-            return model.objects.filter(
-                nature_guide__in=nature_guides, node_type='result',
-            ).exclude(morphotype__isnull=True).exclude(morphotype='')
+            return model.objects.filter(nature_guide__in=nature_guides, node_type='result')
         elif model is TaxonProfile:
             taxon_profiles_link = self.meta_app.get_generic_content_links(TaxonProfiles).first()
             if not taxon_profiles_link:
                 return model.objects.none()
-            return model.objects.filter(
-                taxon_profiles=taxon_profiles_link.generic_content,
-            ).exclude(morphotype__isnull=True).exclude(morphotype='')
-        raise NotImplementedError('No morphotype queryset defined for model {0}'.format(model.__name__))
+            return model.objects.filter(taxon_profiles=taxon_profiles_link.generic_content)
+        raise NotImplementedError('No scoped queryset defined for model {0}'.format(model.__name__))
+
+    # Returns a queryset of instances with a non-null morphotype, scoped to this meta_app.
+    def _get_morphotype_queryset(self, model):
+        return self._get_scoped_queryset(model).exclude(morphotype__isnull=True).exclude(morphotype='')
+
+    # Returns the set of name_uuids for which the model has any entry (regardless of morphotype).
+    # Works generically because all MORPHOTYPE_MODELS are ModelWithTaxon/ModelWithRequiredTaxon.
+    def _get_taxon_uuid_set(self, model):
+        return set(self._get_scoped_queryset(model).values_list('name_uuid', flat=True))
 
 
     # Returns the owning generic_content (e.g. NatureGuide, TaxonProfiles) for a morphotype instance.
@@ -1204,6 +1210,11 @@ class AppReleaseBuilder(AppBuilderBase):
             'errors': [],
         }
 
+        # Meta-node checks are only meaningful when a nature guide is linked
+        nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
+        if not nature_guide_links.exists():
+            return result
+
         # Build {name_uuid: set(morphotypes)} for every model in MORPHOTYPE_MODELS
         morphotype_sets = {}
         for model in MORPHOTYPE_MODELS:
@@ -1212,6 +1223,10 @@ class AppReleaseBuilder(AppBuilderBase):
             for row in qs.values('name_uuid', 'morphotype'):
                 per_taxon.setdefault(row['name_uuid'], set()).add(row['morphotype'])
             morphotype_sets[model] = per_taxon
+
+        # Precompute all name_uuids per model (regardless of morphotype) so that warnings
+        # are only raised when a counterpart node actually exists for the taxon.
+        taxon_uuid_sets = {model: self._get_taxon_uuid_set(model) for model in MORPHOTYPE_MODELS}
 
         # Compare every ordered pair; warn on morphotypes present in one model but absent in the other
         for i, model_a in enumerate(MORPHOTYPE_MODELS):
@@ -1224,6 +1239,8 @@ class AppReleaseBuilder(AppBuilderBase):
                     morphotypes_b = sets_b.get(name_uuid, set())
 
                     for morphotype in morphotypes_a - morphotypes_b:
+                        if name_uuid not in taxon_uuid_sets[model_b]:
+                            continue
                         instance = self._get_morphotype_queryset(model_a).filter(
                             name_uuid=name_uuid, morphotype=morphotype).first()
                         generic_content = self._get_generic_content_from_morphotype_instance(instance)
@@ -1236,6 +1253,8 @@ class AppReleaseBuilder(AppBuilderBase):
                         result['warnings'].append(ValidationWarning(generic_content, instance, [warning_message]))
 
                     for morphotype in morphotypes_b - morphotypes_a:
+                        if name_uuid not in taxon_uuid_sets[model_a]:
+                            continue
                         instance = self._get_morphotype_queryset(model_b).filter(
                             name_uuid=name_uuid, morphotype=morphotype).first()
                         generic_content = self._get_generic_content_from_morphotype_instance(instance)

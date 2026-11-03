@@ -31,6 +31,7 @@ DJANGO_FIELD_WIDGETS = (
     ('CameraAndAlbumWidget', _('Camera and album')),
     ('FixedTaxonWidget', _('Fixed taxon')),
     ('SelectTaxonWidget', _('Select taxon widget')),
+    ('ObjectClassWidget', _('Object class dropdown')),
 )
 
 DJANGO_FIELD_CLASSES = (
@@ -47,6 +48,7 @@ DJANGO_FIELD_CLASSES = (
     ('PointJSONField', _('Point field')),
     #('GeoJSONField', _('Geometry field')),
     ('PictureField', _('Image field')),
+    ('ObjectClassField', _('Object class field')),
 )
 
 NUMBER_FIELDS = ['DecimalField', 'FloatField', 'IntegerField']
@@ -64,6 +66,7 @@ DEFAULT_WIDGETS = {
     'TaxonField' : 'BackboneTaxonAutocompleteWidget',
     'SelectTaxonField': 'SelectTaxonWidget',
     'PictureField' : 'CameraAndAlbumWidget',
+    'ObjectClassField' : 'ObjectClassWidget',
     #'GeoJSONField' : 'PointOrAreaInput',
 }
 
@@ -81,6 +84,7 @@ ALLOWED_WIDGETS = {
     'TaxonField' : ['BackboneTaxonAutocompleteWidget', 'FixedTaxonWidget'],
     'SelectTaxonField' : ['SelectTaxonWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
+    'ObjectClassField' : ['ObjectClassWidget']
 }
 
 FIELDCLASS_DATATYPE = {
@@ -97,6 +101,7 @@ FIELDCLASS_DATATYPE = {
     #'GeoJSONField' : 'json',
     'PictureField' : 'json',
     'SelectTaxonField' : 'json',
+    'ObjectClassField' : 'text',
 }
 
 class GenericFormVersionBumpMixin:

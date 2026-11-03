@@ -10,8 +10,21 @@
 			<div class="row align-items-center node-content">
 				<div class="col-12">
 					<div class="node-name">
-						<strong>{% if node.meta_node.object_class %}{{ node.meta_node.object_class }} {% endif %}{{ node.meta_node.name }}{% if node.meta_node.morphotype %} ({{ node.meta_node.morphotype }}){% endif %}</strong> {% if node.is_crosslink is True %}&nbsp; <span class="badge rounded-pill  badge-xs bg-info">{% trans 'crosslink' %}</span>
-						{% endif %} {% if not node.is_active %}&nbsp; <span class="badge rounded-pill badge-xs bg-danger">{% trans 'inactive' %}</span>{% endif %}
+						<strong>{% if node.meta_node.object_class %}{{ node.meta_node.object_class }} {% endif %}
+							{{ node.meta_node.name }}
+							{% if node.meta_node.morphotype %} ({{ node.meta_node.morphotype }}){% endif %}
+						</strong>
+						{% if node.meta_node.taxon_latname and node.meta_node.taxon_latname != node.meta_node.name %}
+								<br>
+								<small><small><i>{{ node.meta_node.taxon_latname }}</i></small></small>
+							{% endif %}
+							
+						{% if node.is_crosslink is True %}
+							&nbsp; <span class="badge rounded-pill  badge-xs bg-info">{% trans 'crosslink' %}</span>
+						{% endif %}
+						{% if not node.is_active %}
+							&nbsp; <span class="badge rounded-pill badge-xs bg-danger">{% trans 'inactive' %}</span>
+						{% endif %}
 					</div>
 				</div>
 				
