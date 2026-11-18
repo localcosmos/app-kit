@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
 from django_tenants.test.cases import TenantTestCase
+from django.urls import reverse
 
 from app_kit.features.object_classes.models import ObjectClass, ObjectClassTaxon
 from app_kit.features.object_classes.tests.test_models import WithObjectClasses
@@ -88,6 +89,7 @@ class TestManageObjectClassCreate(
 		return {
 			'meta_app_id': self.meta_app.id,
 			'object_classes_id': self.object_classes.id,
+			'category': 'object_class',
 		}
 
 	@test_settings
@@ -304,6 +306,7 @@ class TestSetObjectClassLink(
 
 	def get_url_kwargs(self):
 		return {
+			'category': 'object_class',
 			'meta_app_id': self.meta_app.id,
 			'content_type_id': ContentType.objects.get_for_model(TaxonProfile).id,
 			'object_id': self.taxon_profile.id,
@@ -325,12 +328,40 @@ class TestSetObjectClassLink(
 		self.assertEqual(self.taxon_profile.object_class, self.object_class)
 
 	@test_settings
+	def test_post_sets_morphotype_on_linked_instance(self):
+		self.make_user_tenant_admin(self.user, self.tenant)
+
+		morphotype = self.create_morphotype('Leaf morphotype')
+		morphotype_taxon = ObjectClassTaxon(object_class=morphotype)
+		morphotype_taxon.set_taxon(self.taxon)
+		morphotype_taxon.save()
+  
+		url = reverse('set_object_class_link', kwargs={
+			'meta_app_id': self.meta_app.id,
+			'category': 'morphotype',
+			'content_type_id': ContentType.objects.get_for_model(TaxonProfile).id,
+			'object_id': self.taxon_profile.id,
+		})
+
+		response = self.tenant_client.post(
+			url,
+			data={'object_class': morphotype.id},
+			**AJAX_KWARGS,
+		)
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.context['success'])
+
+		self.taxon_profile.refresh_from_db()
+		self.assertEqual(self.taxon_profile.morphotype, morphotype)
+
+	@test_settings
 	def test_set_linked_instance_raises_404_for_invalid_target_model(self):
 		invalid_instance = self.create_object_class('Invalid target')
 		content_type_id = ContentType.objects.get_for_model(ObjectClass).id
 
 		view = self.get_view(ajax=True)
 		invalid_kwargs = {
+			'category': 'object_class',
 			'meta_app_id': self.meta_app.id,
 			'content_type_id': content_type_id,
 			'object_id': invalid_instance.id,

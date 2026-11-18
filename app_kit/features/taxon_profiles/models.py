@@ -94,9 +94,6 @@ class TaxonProfiles(GenericContent):
             
             if taxon_profile.publication_status == 'draft':
                 continue
-                
-            if taxon_profile.morphotype:
-                locale[taxon_profile.morphotype] = taxon_profile.morphotype
 
             for text in taxon_profile.texts():
 
@@ -223,7 +220,8 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     LazyTaxonClass = LazyTaxon
 
     taxon_profiles = models.ForeignKey(TaxonProfiles, on_delete=models.CASCADE)
-    morphotype = models.CharField(max_length=255, null=True) 
+    legacy_morphotype = models.CharField(max_length=255, null=True, blank=True)
+    morphotype = models.ForeignKey('object_classes.ObjectClass', null=True, blank=True, on_delete=models.PROTECT, related_name='taxon_profiles', limit_choices_to={'category': 'morphotype'})
     short_profile = models.TextField(null=True)
     publication_status = models.CharField(max_length=100, null=True, choices=PUBLICATION_STATUS)
     is_featured = models.BooleanField(default=False)
@@ -239,7 +237,7 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
     taxon_text_set = models.ForeignKey(TaxonTextSet, null=True, blank=True, on_delete=models.SET_NULL)
     updated_at = models.DateTimeField(auto_now=True)
     
-    object_class = models.ForeignKey(ObjectClass, null=True, blank=True, on_delete=models.SET_NULL)
+    object_class = models.ForeignKey(ObjectClass, null=True, blank=True, on_delete=models.PROTECT, limit_choices_to={'category': 'object_class'})
     
     
     @property
@@ -366,8 +364,18 @@ class TaxonProfile(ContentImageMixin, ModelWithRequiredTaxon):
             ),
             models.UniqueConstraint(
                 fields=['taxon_profiles', 'taxon_source', 'name_uuid'],
-                condition=Q(morphotype__isnull=True, object_class__isnull=True),
+                condition=Q(morphotype__isnull=True, object_class__isnull=True, legacy_morphotype__isnull=True),
                 name='tp_unique_taxon_no_morphotype_no_objectclass',
+            ),
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid', 'legacy_morphotype', 'object_class'],
+                condition=Q(morphotype__isnull=True, object_class__isnull=False, legacy_morphotype__isnull=False),
+                name='tp_unique_taxon_legacy_morphotype_objectclass',
+            ),
+            models.UniqueConstraint(
+                fields=['taxon_profiles', 'taxon_source', 'name_uuid', 'legacy_morphotype'],
+                condition=Q(morphotype__isnull=True, object_class__isnull=True, legacy_morphotype__isnull=False),
+                name='tp_unique_taxon_legacy_morphotype_no_objectclass',
             ),
         ]
         verbose_name = _('Taxon Profile')
@@ -676,7 +684,7 @@ class TaxonProfilesNavigationEntry(ContentImageMixin, models.Model):
                                    taxon_nuid__startswith=custom_parent_taxon.taxon_nuid)
                     
         # only include base profiles, not morphotypes or object class variants
-        final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & (Q(morphotype__isnull=True) | Q(morphotype='')) & Q(object_class__isnull=True) & q_objects
+        final_q = Q(taxon_profiles=self.navigation.taxon_profiles) & Q(morphotype__isnull=True) & Q(object_class__isnull=True) & q_objects
         taxon_profile_candidates = TaxonProfile.objects.filter(final_q)
         
         for candidate in taxon_profile_candidates:

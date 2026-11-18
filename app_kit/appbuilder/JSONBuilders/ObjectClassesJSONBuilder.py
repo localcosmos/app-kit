@@ -27,40 +27,45 @@ class ObjectClassesJSONBuilder(JSONBuilder):
 
         object_classes = self.generic_content
 
-        all_classes = ObjectClass.objects.filter(object_classes=object_classes).prefetch_related('taxon_mappings')
+        for category in ('object_class', 'morphotype'):
+            section_key = 'objectClasses' if category == 'object_class' else 'morphotypes'
 
-        classes_dict = {}
-        universal_classes = []
-        taxon_map = {}
+            all_classes = ObjectClass.objects.filter(
+                object_classes=object_classes, category=category
+            ).prefetch_related('taxon_mappings')
 
-        for obj_class in all_classes:
-            classes_dict[obj_class.scientific_name] = {
-                'name': obj_class.name,
-                'description': obj_class.description,
+            classes_dict = {}
+            universal_classes = []
+            taxon_map = {}
+
+            for obj_class in all_classes:
+                classes_dict[obj_class.scientific_name] = {
+                    'name': obj_class.name,
+                    'description': obj_class.description,
+                }
+
+                taxon_mappings = list(obj_class.taxon_mappings.all())
+
+                if not taxon_mappings:
+                    universal_classes.append(obj_class.scientific_name)
+                else:
+                    for taxon_mapping in taxon_mappings:
+                        source = taxon_mapping.taxon_source
+                        nuid = taxon_mapping.taxon_nuid
+
+                        if source not in taxon_map:
+                            taxon_map[source] = {}
+
+                        if nuid not in taxon_map[source]:
+                            taxon_map[source][nuid] = []
+
+                        taxon_map[source][nuid].append(obj_class.scientific_name)
+
+            object_classes_json[section_key] = {
+                'universalClasses': universal_classes,
+                'classes': classes_dict,
+                'taxonMap': taxon_map,
             }
-
-            taxon_mappings = list(obj_class.taxon_mappings.all())
-
-            if not taxon_mappings:
-                universal_classes.append(obj_class.scientific_name)
-            else:
-                for taxon_mapping in taxon_mappings:
-                    source = taxon_mapping.taxon_source
-                    nuid = taxon_mapping.taxon_nuid
-
-                    if source not in taxon_map:
-                        taxon_map[source] = {}
-
-                    if nuid not in taxon_map[source]:
-                        taxon_map[source][nuid] = []
-
-                    taxon_map[source][nuid].append(obj_class.scientific_name)
-
-        object_classes_json.update({
-            'universalClasses': universal_classes,
-            'classes': classes_dict,
-            'taxonMap': taxon_map,
-        })
 
         return object_classes_json
 

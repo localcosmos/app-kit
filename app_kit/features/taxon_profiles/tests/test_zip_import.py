@@ -29,7 +29,7 @@ class MockCell:
     def __init__(self, value):
         self.value = value
 
-class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
+class TestTaxonProfilesZipImporter(WithMedia, WithObjectClasses, WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
     
     def setUp(self):
         super().setUp()
@@ -38,8 +38,17 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'valid')
         self.taxon_profiles = self.get_taxon_profiles()
         
+        self.morphotype_leaf = self.get_morphotype('leaf')
+        self.morphotype_sprout = self.get_morphotype('sprout')
+        
     def get_zip_importer(self):
         return TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
+    
+    def get_morphotype(self, name):
+        morphotype, created = ObjectClass.objects.get_or_create(object_classes=self.object_classes,
+                                    category='morphotype', name=name, scientific_name=name)
+        return morphotype
+
     
     @test_settings
     def test_get_column_type(self):
@@ -372,13 +381,14 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
         self.assertEqual(external_file.caption, None)
         self.assertEqual(external_file.alt_text, None)
         
+        morphotype = self.get_morphotype('leaf')
         
         fraxinus_excelsior_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
                                                             taxon_latname='Fraxinus excelsior', morphotype=None)
         self.assertEqual(fraxinus_excelsior_profile.short_profile, None)
         
         fraxinus_excielior_leaf_profile = TaxonProfile.objects.get(taxon_profiles=self.taxon_profiles,
-                                                                  taxon_latname='Fraxinus excelsior', morphotype='leaf')
+                                                                  taxon_latname='Fraxinus excelsior', morphotype=morphotype)
         self.assertEqual(fraxinus_excielior_leaf_profile.short_profile,'Fraxinus excelsior morphotype leaf short profile')
         
         
@@ -538,13 +548,24 @@ class TestTaxonProfilesZipImporter(WithMedia, WithTaxonProfiles, WithUser, WithM
 
 
 
-class TestTaxonProfilesZipImporterInvalidCellContentType(WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
+class TestTaxonProfilesZipImporterInvalidCellContentType(WithObjectClasses, WithTaxonProfiles, WithUser, WithMetaApp, TenantTestCase):
     def setUp(self):
         super().setUp()
         self.superuser = self.create_superuser()
         self.user = self.create_user()
         self.zip_contents_path = os.path.join(TESTS_ROOT, 'xlsx_for_testing', 'TaxonProfiles', 'invalid_content_type')
         self.taxon_profiles = self.get_taxon_profiles()
+        
+        self.morphotype_leaf = self.get_morphotype('leaf')
+        self.morphotype_sprout = self.get_morphotype('sprout')
+        
+    def get_morphotype(self, name):
+        return ObjectClass.objects.create(
+            object_classes=self.object_classes,
+            category='morphotype',
+            name=name,
+            scientific_name=name
+        )
         
     def get_zip_importer(self):
         return TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
@@ -647,11 +668,23 @@ class TestObjectClassZipImport(WithMedia, WithObjectClasses, WithTaxonProfiles, 
         # so self.oak_class.scientific_name == 'bark'
         self.oak_class = self.create_object_class('Bark')
         self.create_object_class_taxon(self.oak_class, self.quercus_lazy)
+        
+        self.morphotype_leaf = self.get_morphotype('leaf')
+        self.morphotype_sprout = self.get_morphotype('sprout')
 
     def get_zip_importer(self):
         importer = TaxonProfilesZipImporter(self.superuser, self.taxon_profiles, self.zip_contents_path)
         importer.errors = []
         return importer
+    
+    def get_morphotype(self, name):
+        morphotype, created = ObjectClass.objects.get_or_create(
+            object_classes=self.object_classes,
+            category='morphotype',
+            name=name,
+            scientific_name=name
+        )
+        return morphotype
 
     # ------------------------------------------------------------------ #
     # validate_object_class – unit tests                                   #
@@ -753,6 +786,8 @@ class TestObjectClassZipImport(WithMedia, WithObjectClasses, WithTaxonProfiles, 
         importer.validate()
         self.assertEqual(importer.errors, [])
         importer.import_generic_content()
+        
+        morphotype = self.get_morphotype('sprout')
 
         qr_base = TaxonProfile.objects.filter(
             taxon_profiles=self.taxon_profiles,
@@ -765,7 +800,7 @@ class TestObjectClassZipImport(WithMedia, WithObjectClasses, WithTaxonProfiles, 
         qr_morphotype = TaxonProfile.objects.filter(
             taxon_profiles=self.taxon_profiles,
             taxon_latname='Quercus robur',
-            morphotype='sprout',
+            morphotype=morphotype,
             object_class__isnull=True,
         ).first()
         self.assertIsNotNone(qr_morphotype, 'Quercus robur morphotype=sprout not created')
@@ -781,7 +816,7 @@ class TestObjectClassZipImport(WithMedia, WithObjectClasses, WithTaxonProfiles, 
         qr_both = TaxonProfile.objects.filter(
             taxon_profiles=self.taxon_profiles,
             taxon_latname='Quercus robur',
-            morphotype='sprout',
+            morphotype=morphotype,
             object_class=self.oak_class,
         ).first()
         self.assertIsNotNone(qr_both, 'Quercus robur morphotype=sprout + object_class=Bark not created')

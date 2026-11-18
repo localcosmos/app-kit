@@ -8,6 +8,7 @@ from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile,
         TaxonText, TaxonProfilesNavigation, TaxonProfilesNavigationEntry, TaxonProfilesNavigationEntryTaxa,
         TaxonTextTypeCategory, TaxonTextSet)
 from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
+from app_kit.features.object_classes.tests.test_models import WithObjectClasses
         
 from app_kit.models import MetaAppGenericContent
 
@@ -370,7 +371,7 @@ class TestTaxonProfile(WithTaxonProfiles, WithMetaApp, TenantTestCase):
         self.assertFalse(complete_2)
 
 
-class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithMetaApp, TenantTestCase):
+class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithObjectClasses, WithMetaApp, TenantTestCase):
 
     def get_lazy_taxon(self):
         models = TaxonomyModelRouter('taxonomy.sources.col')
@@ -409,24 +410,28 @@ class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithMetaApp, TenantTe
         taxon_profiles = self.get_taxon_profiles()
         taxon = self.get_lazy_taxon()
         object_classes = self.create_object_classes()
-        object_class = self.create_object_class(object_classes, 'Imago class')
+        object_class = self.create_object_class(object_classes, 'Leaf class')
+        
+        morphotype = self.create_morphotype('Imago')
 
-        self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+        self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=object_class)
 
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+                self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=object_class)
 
     @test_settings
     def test_unique_conflict_when_morphotype_is_set_and_object_class_is_null(self):
         taxon_profiles = self.get_taxon_profiles()
         taxon = self.get_lazy_taxon()
+        
+        morphotype = self.create_morphotype('Imago')
 
-        self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
+        self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=None)
 
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
-                self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
+                self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=None)
 
     @test_settings
     def test_unique_conflict_when_morphotype_is_null_and_object_class_is_set(self):
@@ -460,8 +465,9 @@ class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithMetaApp, TenantTe
         object_class_1 = self.create_object_class(object_classes, 'Class one')
         object_class_2 = self.create_object_class(object_classes, 'Class two')
 
-        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class_1)
-        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class_2)
+        morphotype = self.create_morphotype('Imago')
+        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=object_class_1)
+        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=object_class_2)
 
         self.assertIsNotNone(profile_1.id)
         self.assertIsNotNone(profile_2.id)
@@ -473,8 +479,9 @@ class TestTaxonProfileUniqueConstraints(WithTaxonProfiles, WithMetaApp, TenantTe
         object_classes = self.create_object_classes()
         object_class = self.create_object_class(object_classes, 'Class one')
 
-        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=None)
-        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype='Imago', object_class=object_class)
+        morphotype = self.create_morphotype('Imago')
+        profile_1 = self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=None)
+        profile_2 = self.create_profile(taxon_profiles, taxon, morphotype=morphotype, object_class=object_class)
 
         self.assertIsNotNone(profile_1.id)
         self.assertIsNotNone(profile_2.id)

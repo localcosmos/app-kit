@@ -70,6 +70,38 @@
 		</div>
 	</div>
 	</div>
+	{% if morphotype_migration_needed %}
+	<hr>
+	<div class="card">
+		<div class="card-body">
+			<h5 class="card-title">{% trans 'Morphotype Migration' %}</h5>
+			<p>{% trans 'The following legacy morphotypes were found. Each must exist as a morphotype in the Object Classes feature before migration can proceed.' %}</p>
+			<ul class="list-group mb-3">
+				{% for morphotype in legacy_morphotypes %}
+				<li class="list-group-item d-flex justify-content-between align-items-center">
+					{{ morphotype }}
+					{% if morphotype in missing_morphotypes %}
+					<span class="badge bg-danger">{% trans 'Missing' %}</span>
+					{% else %}
+					<span class="badge bg-success">{% trans 'Ready' %}</span>
+					{% endif %}
+				</li>
+				{% endfor %}
+			</ul>
+			{% if missing_morphotypes %}
+			<p class="text-warning">
+				{% blocktrans with count=missing_morphotypes|length %}{{ count }} morphotype(s) are missing in the Object Classes feature. Create them there first, then return here to migrate.{% endblocktrans %}
+			</p>
+			{% endif %}
+			{% if can_migrate %}
+			<form method="post" action="{% url 'migrate_legacy_morphotypes' meta_app.id %}">
+				{% csrf_token %}
+				<button type="submit" class="btn btn-primary">{% trans 'Migrate now' %}</button>
+			</form>
+			{% endif %}
+		</div>
+	</div>
+	{% endif %}
 {% endblock %}
 
 {% block extra_script %}

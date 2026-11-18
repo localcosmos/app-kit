@@ -29,6 +29,7 @@ from app_kit.features.taxon_profiles.models import (TaxonProfiles, TaxonProfile,
 
 from app_kit.features.taxon_profiles.forms import ManageTaxonTextsForm, ManageTaxonTextTypeForm, TaxonProfileSearchForm
 from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
+from app_kit.features.object_classes.tests.test_models import WithObjectClasses
 
 
 from app_kit.features.nature_guides.models import NatureGuide, NatureGuidesTaxonTree, MetaNode
@@ -61,6 +62,16 @@ class WithTaxonProfiles:
         text_type.save()
 
         return text_type
+    
+    def create_morphotype(self, morphotype_value):
+
+        morphotype, created = ObjectClass.objects.get_or_create(
+                                                        object_classes=self.object_classes,
+                                                        category='morphotype',
+                                                        name=morphotype_value,
+                                                        scientific_name=morphotype_value)
+
+        return morphotype
 
 
 class WithTaxonProfile:
@@ -653,7 +664,7 @@ class TestDeleteTaxonTextType(WithNatureGuideNode, WithTaxonProfile, WithTaxonPr
         return url_kwargs
 
 
-class TestCollectTaxonImages(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestCollectTaxonImages(WithNatureGuideNode, WithTaxonProfile, WithObjectClasses, WithTaxonProfiles, ViewTestMixin,
                 WithImageStore, WithMedia, WithAjaxAdminOnly,
                 WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
@@ -791,7 +802,7 @@ class TestCollectTaxonImages(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
 
 
-class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
+class TestCollectTaxonTraits(WithNatureGuideNode, WithObjectClasses, WithTaxonProfile, WithTaxonProfiles, ViewTestMixin,
                 WithAjaxAdminOnly, WithMatrixFilters,
                 WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
@@ -851,11 +862,13 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
 
     @test_settings
     def test_get_taxon_traits_with_morphotype(self):
+        morphotype = self.create_morphotype('Imago')
+        
         # Create a TaxonProfile for the same taxon but with a morphotype
         morphotype_profile = TaxonProfile(
             taxon_profiles=self.generic_content,
             taxon=self.lazy_taxon,
-            morphotype='Imago',
+            morphotype=morphotype,
         )
         morphotype_profile.save()
 
@@ -865,7 +878,7 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
             nature_guide=self.nature_guide,
             node_type='result',
             taxon=self.lazy_taxon,
-            morphotype='Imago',
+            morphotype=morphotype,
         )
         morphotype_meta_node.save()
 
@@ -895,16 +908,13 @@ class TestCollectTaxonTraits(WithNatureGuideNode, WithTaxonProfile, WithTaxonPro
     @test_settings
     def test_get_taxon_traits_with_object_class(self):
 
-        object_classes_link = self.create_generic_content(ObjectClasses, self.meta_app)
-        object_classes = object_classes_link.generic_content
-
         matching_object_class = ObjectClass.objects.create(
-            object_classes=object_classes,
+            object_classes=self.object_classes,
             name='Lacerta class',
             scientific_name='lacerta_class',
         )
         other_object_class = ObjectClass.objects.create(
-            object_classes=object_classes,
+            object_classes=self.object_classes,
             name='Other class',
             scientific_name='other_class',
         )
@@ -2853,7 +2863,7 @@ class TestDeleteAllManuallyAddedTaxonProfileImages(WithTaxonProfile, WithTaxonPr
         self.assertTrue(meta_app_images_qry.exists())
         
 
-class TestCreateNewTaxonProfile(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminOnly,
+class TestCreateNewTaxonProfile(WithTaxonProfiles, WithObjectClasses, ViewTestMixin, WithAjaxAdminOnly,
                                  WithUser, WithLoggedInUser, WithMetaApp, WithTenantClient, TenantTestCase):
 
     url_name = 'create_new_taxon_profile'
@@ -2942,10 +2952,12 @@ class TestCreateNewTaxonProfile(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminO
     def test_form_valid_with_morphotype(self):
         view = self.get_view()
         view.set_taxon_profiles(**view.kwargs)
+        
+        morphotype = self.create_morphotype('Imago')
 
         post_data = {
             'input_language': self.meta_app.primary_language,
-            'morphotype': 'Imago',
+            'morphotype': morphotype.id,
         }
         post_data.update(self.taxon_to_post_data(self.lazy_taxon))
 
@@ -2960,13 +2972,15 @@ class TestCreateNewTaxonProfile(WithTaxonProfiles, ViewTestMixin, WithAjaxAdminO
 
         taxon_profile = response.context_data['taxon_profile']
         self.assertIsNotNone(taxon_profile)
-        self.assertEqual(taxon_profile.morphotype, 'Imago')
+        self.assertEqual(taxon_profile.morphotype, morphotype)
 
     @test_settings
     def test_form_valid_idempotent(self):
         # posting the same taxon twice should return the existing profile, not create a duplicate
         view = self.get_view()
         view.set_taxon_profiles(**view.kwargs)
+        
+        morphotype = self.create_morphotype('Imago')
 
         post_data = {
             'input_language': self.meta_app.primary_language,

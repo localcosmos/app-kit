@@ -406,10 +406,15 @@ class CreateTaxonProfileForm(LocalizeableForm):
     taxon = TaxonField(label=_('Taxon'), help_text=_('Enter latin or vernacular name, then select.'),
                                       taxon_search_url=get_appkit_taxon_search_url)
     
-    morphotype = forms.CharField(required=False, help_text=_('Optional: specify a morphotype for this taxon profile.'))
+    morphotype = forms.ModelChoiceField(
+        queryset=ObjectClass.objects.filter(category='morphotype'),
+        required=False,
+        label=_('Morphotype'),
+        help_text=_('Optional: select a morphotype for this taxon profile.')
+    )
     
     object_class = forms.ModelChoiceField(
-        queryset=ObjectClass.objects.none(),
+        queryset=ObjectClass.objects.filter(category='object_class'),
         required=False,
         label=_('Object Class'),
         help_text=_('Optional: select an object class for this taxon profile.')
@@ -423,7 +428,13 @@ class CreateTaxonProfileForm(LocalizeableForm):
             object_classes = object_classes_links.first().generic_content
         
             self.fields['object_class'].queryset = ObjectClass.objects.filter(
-                object_classes=object_classes
+                object_classes=object_classes,
+                category='object_class'
+            ).order_by('name')
+            
+            self.fields['morphotype'].queryset = ObjectClass.objects.filter(
+                object_classes=object_classes,
+                category='morphotype'
             ).order_by('name')
             
     def clean(self):
@@ -431,6 +442,7 @@ class CreateTaxonProfileForm(LocalizeableForm):
         cleaned_data = super().clean()
         taxon = cleaned_data.get('taxon')
         object_class = cleaned_data.get('object_class')
+        morphotype = cleaned_data.get('morphotype')
         
         if taxon and object_class:
             # check if the taxon is linked to the object class
@@ -439,6 +451,14 @@ class CreateTaxonProfileForm(LocalizeableForm):
             
             if not is_valid_link:
                 self.add_error('object_class', _('The selected object class is not available for the chosen taxon.'))
+
+        if taxon and morphotype:
+            # check if the taxon is linked to the morphotype
+            # respect nuids
+            is_valid_link = morphotype.is_taxon_compatible(taxon)
+            
+            if not is_valid_link:
+                self.add_error('morphotype', _('The selected morphotype is not available for the chosen taxon.'))
 
         return cleaned_data
     

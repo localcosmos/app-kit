@@ -80,12 +80,11 @@ class TestNatureGuide(WithNatureGuide, TenantTestCase):
 
         nature_guide = self.create_nature_guide()
 
-        # add a node with decision_rule
+        
         parent_node = nature_guide.root_node
         node_name = 'First node'
-        decision_rule = 'first node decision rule'
-        node = self.create_node(parent_node, node_name, **{'decision_rule':decision_rule})
 
+        node = self.create_node(parent_node, node_name)
 
         matrix_filter_name = 'Test Filter'
         matrix_filter_description = 'Test Filter description'
@@ -106,7 +105,6 @@ class TestNatureGuide(WithNatureGuide, TenantTestCase):
         locale = nature_guide.get_primary_localization()
         self.assertEqual(locale[nature_guide.name], nature_guide.name)
         self.assertEqual(locale[node_name], node_name)
-        self.assertEqual(locale[decision_rule], decision_rule)
         self.assertEqual(locale[matrix_filter_name], matrix_filter_name)
         self.assertEqual(locale[matrix_filter_description], matrix_filter_description)
         self.assertEqual(locale[space_name], space_name)
@@ -117,7 +115,6 @@ class TestNatureGuide(WithNatureGuide, TenantTestCase):
 
         nature_guide = self.create_nature_guide()
 
-        # add a node with decision_rule
         parent_node = nature_guide.root_node
         node = self.create_node(parent_node, 'First')
 
@@ -151,7 +148,6 @@ class TestNatureGuide(WithNatureGuide, TenantTestCase):
 
         nature_guide = self.create_nature_guide()
 
-        # add a node with decision_rule
         parent_node = nature_guide.root_node
         node = self.create_node(parent_node, 'First', **{'node_type':'result'})
 
@@ -448,7 +444,6 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
             node_2.save(node)
 
 
-        # check save without decision rule AND node name
         meta_node_4 = MetaNode(
             nature_guide=nature_guide,
             node_type = 'result',
@@ -464,8 +459,7 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
         with self.assertRaises(ValueError):
             node_3.save(root_node)
 
-        # saving with decision rule and without name should work
-        node_3.decision_rule = 'test rule'
+        node_3.meta_node.name = 'Test node 3'
         node_3.save(root_node)
 
         
@@ -552,11 +546,10 @@ class TestNatureGuidesTaxonTree(WithMetaApp, WithNatureGuide, TenantTestCase):
 
         parent_node = nature_guide.root_node
         node_name = 'First'
-        decision_rule = 'decision_rule'
-        node = self.create_node(parent_node, node_name, **{'decision_rule':decision_rule})
+        node = self.create_node(parent_node, node_name)
         node_name_uuid = str(node.name_uuid)
 
-        node_qry = NatureGuidesTaxonTree.objects.filter(decision_rule=decision_rule)
+        node_qry = NatureGuidesTaxonTree.objects.filter(pk=node.pk)
         meta_node_qry = MetaNode.objects.filter(pk=node.pk)
 
         with self.assertRaises(PermissionError):
@@ -1352,6 +1345,15 @@ class TestMatrixFilter(WithNatureGuide, TenantTestCase):
 
 class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
 
+    def get_expected_cache_space(self, matrix_filter, matrix_filter_space):
+        if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
+            return [{
+                'spaceIdentifier': matrix_filter.matrix_filter_type.get_space_identifier(matrix_filter_space),
+                'encodedSpace': matrix_filter_space.encoded_space,
+            }]
+
+        return [matrix_filter_space.encoded_space]
+
 
     def perform_save_test(self, filter_type, working_space, breaking_space):
 
@@ -1407,7 +1409,8 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
         meta_node = space.matrix_filter.meta_node
         meta_node.refresh_from_db()
         item = meta_node.children_cache['items'][0]
-        self.assertEqual(item['space'][str(matrix_filter_uuid)], [space.encoded_space])
+        self.assertEqual(item['space'][str(matrix_filter_uuid)],
+                         self.get_expected_cache_space(space.matrix_filter, space))
 
         # test update
         old_value = space.encoded_space
@@ -1417,7 +1420,8 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
 
         meta_node.refresh_from_db()
         item = meta_node.children_cache['items'][0]
-        self.assertEqual(item['space'][str(matrix_filter_uuid)], [new_value])
+        self.assertEqual(item['space'][str(matrix_filter_uuid)],
+                         self.get_expected_cache_space(space.matrix_filter, space))
 
 
     def perform_deletion_test(self, parent_node, space):
@@ -1427,7 +1431,8 @@ class TestMatrixFilterSpace(WithNatureGuide, TenantTestCase):
         cache = parent_node.meta_node.children_cache
         item = cache['items'][0]
 
-        self.assertEqual(item['space'][str(matrix_filter_uuid)], [space.encoded_space])
+        self.assertEqual(item['space'][str(matrix_filter_uuid)],
+                         self.get_expected_cache_space(space.matrix_filter, space))
 
         encoded_space = space.encoded_space
         space.delete()
@@ -1810,7 +1815,10 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         self.assertEqual(data['items'][0]['id'], node.id)
 
         # restriction
-        space = restrictive_filter.matrix_filter_type.get_filter_space_as_list(restriction)
+        if restrictive_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
+            space = restrictive_filter.matrix_filter_type.get_filter_space_as_list_with_identifiers(restriction)
+        else:
+            space = restrictive_filter.matrix_filter_type.get_filter_space_as_list(restriction)
         expected_space = {}
         expected_space[str(restrictive_filter.uuid)] = space
         self.assertEqual(data['matrix_filters'][str(restricted_filter.uuid)]['restrictions'], expected_space)
@@ -1846,7 +1854,6 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         expected_data = {
             'items': [
                 {
-                    'decision_rule': None,
                     'id': node.id,
                     'image_url': '/static/noimage.png',
                     'is_visible': True,
@@ -1891,7 +1898,6 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             'space' : {},
             'is_visible' : True,
             'name' : node.meta_node.name,
-            'decision_rule' : node.decision_rule,
             'taxon' : None,
             'max_points' : 0,
             'morphotype' : None,
@@ -1944,6 +1950,11 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
             # add a nodefilterspace
             if filter_type == 'TaxonFilter':
                 expected_space[str(matrix_filter.uuid)] = matrix_filter.matrix_filter_type.get_space_for_node(node)
+            elif filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
+                matrix_filter_uuid = str(matrix_filter.uuid)
+                matrix_filter_type = matrix_filter.matrix_filter_type
+                expected_space[matrix_filter_uuid] = matrix_filter_type.get_filter_space_as_list_with_identifiers(
+                    node_space)
             else:
                 matrix_filter_uuid = str(matrix_filter.uuid)
                 matrix_filter_type = matrix_filter.matrix_filter_type
@@ -1979,12 +1990,9 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         node_child_1 = self.create_node(node, 'First Child 1')
         node_child_2 = self.create_node(node, 'First Child 2')
 
-        decision_rule = 'crosslink decision rule'
-
         crosslink = NatureGuideCrosslinks(
             parent=node_child_1,
             child=node_sibling,
-            decision_rule = decision_rule,
             position = 0,
         )
         crosslink.save()
@@ -1994,12 +2002,10 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
         children_cache_manager = ChildrenCacheManager(node_child_1.meta_node)
 
         child_json = children_cache_manager.child_as_json(node_sibling, crosslink=crosslink)
-        self.assertEqual(child_json['decision_rule'], decision_rule)
 
         item = node_child_1.meta_node.children_cache['items'][0]
 
         self.assertEqual(item['id'], crosslink.child.id)
-        self.assertEqual(item['decision_rule'], decision_rule)
         
 
     @test_settings
@@ -2337,8 +2343,13 @@ class TestChildrenCacheManager(WithNatureGuide, WithMatrixFilters, TenantTestCas
                         new_cache = children_cache_manager.add_matrix_filter_restriction_to_cache(cache,
                                                                                                   restriction)
 
-                        space_as_list = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
-                            restriction)
+                        if restrictive_matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter',
+                                                                     'TextOnlyFilter']:
+                            space_as_list = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list_with_identifiers(
+                                restriction)
+                        else:
+                            space_as_list = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
+                                restriction)
                         
                         self.assertEqual(space_as_list,
                             new_cache['matrix_filters'][restricted_matrix_filter_uuid]['restrictions'][restrictive_matrix_filter_uuid])

@@ -33,7 +33,7 @@ from app_kit.utils import copy_model_instance
 from localcosmos_server.decorators import ajax_required
 from django.utils.decorators import method_decorator
 
-from .matrix_filters import MATRIX_FILTER_TYPES
+from .matrix_filters import MATRIX_FILTER_TYPES, POLYTOMOUS_MATRIX_FILTER_TYPES
 
 from localcosmos_server.generic_views import AjaxDeleteView
 
@@ -104,7 +104,8 @@ class ManageNatureGuide(ManageGenericContent):
         context['parent_crosslinks'] = NatureGuideCrosslinks.objects.filter(child=self.parent_node)
 
         # add filters button
-        context['matrix_filter_types'] = MATRIX_FILTER_TYPES
+        is_polytomous = self.parent_node.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS
+        context['matrix_filter_types'] = POLYTOMOUS_MATRIX_FILTER_TYPES if is_polytomous else MATRIX_FILTER_TYPES
 
         context['tree_path'] = self.get_tree_path()
 
@@ -253,7 +254,6 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Meta
             initial['name'] = self.node.meta_node.name
             initial['morphotype'] = self.node.meta_node.morphotype
             initial['object_class'] = self.node.meta_node.object_class
-            initial['decision_rule'] = self.node.decision_rule
             initial['node_id'] = self.node.id
             initial['taxon'] = self.node.meta_node.taxon
             initial['is_active'] = self.node.is_active
@@ -359,7 +359,6 @@ class ManageNodelink(MultipleTraitValuesIterator, MetaAppFormLanguageMixin, Meta
         self.node.meta_node.description = form.cleaned_data['description']  
         self.node.meta_node.save()
 
-        self.node.decision_rule = form.cleaned_data['decision_rule']
         self.node.save(self.tree_parent_node)
 
         self.node.is_crosslink = self.is_crosslink
@@ -745,7 +744,8 @@ class LoadMatrixFilters(MetaAppMixin, TemplateView):
         context['meta_node_has_matrix_filters'] = MatrixFilter.objects.filter(
             meta_node=self.meta_node).exists()
         context['matrix_filter_ctype'] = ContentType.objects.get_for_model(MatrixFilter)
-        context['matrix_filter_types'] = MATRIX_FILTER_TYPES
+        is_polytomous = self.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS
+        context['matrix_filter_types'] = POLYTOMOUS_MATRIX_FILTER_TYPES if is_polytomous else MATRIX_FILTER_TYPES
         return context
 
 
@@ -1022,8 +1022,11 @@ class ManageMatrixFilterSpace(FormLanguageMixin, ManageContentImageMixin, FormVi
 
 
     def form_valid(self, form):
-
-        self.matrix_filter_space = self.matrix_filter.matrix_filter_type.save_single_space(form)
+        try:
+            self.matrix_filter_space = self.matrix_filter.matrix_filter_type.save_single_space(form)
+        except ValueError as error:
+            form.add_error(None, str(error))
+            return self.form_invalid(form)
 
         self.content_instance = self.matrix_filter_space
 

@@ -5,9 +5,6 @@ TEXT_LENGTH_RESTRICTIONS = {
         'name' : 40,
         'morphotype' : 40,
     },
-    'NatureGuidesTaxonTree' : {
-        'decision_rule' : 40,
-    },
     'MatrixFilter' : {
         'name' : 150,
     },

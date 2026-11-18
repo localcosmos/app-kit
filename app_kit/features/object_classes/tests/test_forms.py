@@ -189,3 +189,35 @@ class TestAddObjectClassLinkForm(WithObjectClasses, TenantTestCase):
 		self.assertIn(matching_object_class, queryset)
 		self.assertNotIn(non_matching_object_class, queryset)
 		self.assertTrue(form.is_valid(), form.errors)
+
+	@test_settings
+	def test_queryset_filters_morphotypes_by_matching_taxon(self):
+		target_taxon = self.get_lazy_taxon('Quercus')
+		non_matching_taxon = self.get_lazy_taxon('Lacerta agilis')
+
+		matching_morphotype = self.create_morphotype('Leaf morphotype')
+		non_matching_morphotype = self.create_morphotype('Lizard morphotype')
+		# object_class with same taxon must NOT appear when category='morphotype'
+		object_class_same_taxon = self.create_object_class('Tree class')
+
+		for obj in (matching_morphotype, object_class_same_taxon):
+			mapping = ObjectClassTaxon(object_class=obj)
+			mapping.set_taxon(target_taxon)
+			mapping.save()
+
+		non_matching_mapping = ObjectClassTaxon(object_class=non_matching_morphotype)
+		non_matching_mapping.set_taxon(non_matching_taxon)
+		non_matching_mapping.save()
+
+		form = AddObjectClassLinkForm(
+			data={'object_class': matching_morphotype.pk},
+			object_classes=self.object_classes,
+			taxon=target_taxon,
+			category='morphotype',
+		)
+
+		queryset = form.fields['object_class'].queryset
+		self.assertIn(matching_morphotype, queryset)
+		self.assertNotIn(non_matching_morphotype, queryset)
+		self.assertNotIn(object_class_same_taxon, queryset)
+		self.assertTrue(form.is_valid(), form.errors)

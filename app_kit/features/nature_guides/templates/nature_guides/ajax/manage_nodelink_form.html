@@ -21,15 +21,6 @@
 				
 				{% for field in form %}
 					{% include 'localcosmos_server/bootstrap_field.html' %}
-					{% if field.name == 'decision_rule' and parent_node.has_matrix_filters %}
-						<div class="mt-5">
-							{% if nodelink.child %}
-								<h4>{% blocktrans with name=nodelink.child.name %}Traits of {{ name }}{% endblocktrans %}</h4>
-							{% else %}
-								<h4>{% blocktrans %}Traits of this entry{% endblocktrans %}</h4>
-							{% endif %}
-						</div>
-					{% endif %}
 				{% endfor %}
 
 				{% if success is True %}

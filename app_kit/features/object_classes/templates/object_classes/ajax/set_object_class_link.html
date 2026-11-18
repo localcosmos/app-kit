@@ -2,7 +2,7 @@
 {% load i18n localcosmos_tags %}
 
 {% block action %}
-    {% url 'set_object_class_link' meta_app.id linked_instance|ctype_id linked_instance.pk %}
+    {% url 'set_object_class_link' meta_app.id category linked_instance|ctype_id linked_instance.pk %}
 {% endblock %}
 
 {% block title %}

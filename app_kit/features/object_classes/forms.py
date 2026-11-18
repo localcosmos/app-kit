@@ -93,15 +93,21 @@ class AddObjectClassLinkForm(forms.Form):
 	def __init__(self, *args, **kwargs):
 		self.object_classes = kwargs.pop('object_classes')
 		self.taxon = kwargs.pop('taxon')
+		self.category = kwargs.pop('category', 'object_class')
 		super().__init__(*args, **kwargs)
   
+		if self.object_classes is None:
+			return
+
 		valid_nuids = self.taxon.ancestor_nuids + [self.taxon.taxon_nuid]
 
-  
 		matching_pks = ObjectClassTaxon.objects.filter(
 			object_class__object_classes=self.object_classes,
+			object_class__category=self.category,
 			taxon_source=self.taxon.taxon_source,
 			taxon_nuid__in=valid_nuids,
 		).values_list('object_class', flat=True)
-  
-		self.fields['object_class'].queryset = ObjectClass.objects.filter(pk__in=matching_pks)
+
+		self.fields['object_class'].queryset = ObjectClass.objects.filter(
+			pk__in=matching_pks, category=self.category
+		)

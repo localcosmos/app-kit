@@ -148,20 +148,6 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                         'max_length' : TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'],
                     })
                     self.add_row_error(self.workbook_filename, self.tree_sheet_name, row_number, message)
-
-
-                decision_rule = None
-                if len(row) >= 4:
-                    decision_rule = row[4].value
-
-                if decision_rule and len(decision_rule) > TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule']:
-                    
-                    message = _('Length of %(decision_rule)s is too long: %(inserted_decision_rule)s. Maximum length is %(max_length)s' % {
-                        'decision_rule' : TREE_SHEET_DEFINITION[0][4],
-                        'inserted_decision_rule' : decision_rule,
-                        'max_length' : TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'],
-                    })
-                    self.add_row_error(self.workbook_filename, self.tree_sheet_name, row_number, message)
                     
 
                 # if a taxon is specified, check if it is availbale in the given source
@@ -751,7 +737,6 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                 parent_node_name = child[1].value
 
                 child_name = child[0].value
-                decision_rule = child[4].value
 
                 taxon_source = child[2].value
                 taxon_latname = child[3].value                  
@@ -781,9 +766,6 @@ class NatureGuideZipImporter(GenericContentZipImporter):
                     nature_guide = self.generic_content,
                     meta_node = meta_node,
                 )
-
-                if decision_rule:
-                    child_db.decision_rule = decision_rule
 
                 # save child in db
                 child_db.save(parent_node_db)

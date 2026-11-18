@@ -1,5 +1,8 @@
+from collections import defaultdict
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.db.models.deletion import ProtectedError
 from django.http import Http404, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.generic import FormView, TemplateView, View
@@ -22,34 +25,45 @@ class ObjectClassesCommon:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         object_classes = self.generic_content
-        object_class_list = ObjectClass.objects.filter(
-            object_classes=object_classes,
-        )
         context['object_classes'] = object_classes
         context['generic_content'] = object_classes
-        context['object_class_list'] = object_class_list
+        context['morphotype_list'] = ObjectClass.objects.filter(
+            object_classes=object_classes, category='morphotype'
+        )
+        context['object_class_list'] = ObjectClass.objects.filter(
+            object_classes=object_classes, category='object_class'
+        )
         return context
-    
+
 
 class ManageObjectClasses(ObjectClassesCommon, ManageGenericContent):
 
     template_name = 'object_classes/manage_object_classes.html'
-    
-    
+
+
 class GetObjectClasses(ObjectClassesCommon, MetaAppMixin, TemplateView):
-    
+
     template_name = 'object_classes/ajax/object_classes_list.html'
-    
+
     @method_decorator(ajax_required)
     def dispatch(self, request, *args, **kwargs):
         self.set_object_classes(**kwargs)
         return super().dispatch(request, *args, **kwargs)
-    
+
     def set_object_classes(self, **kwargs):
         self.object_classes = ObjectClasses.objects.get(
             pk=kwargs.get('object_classes_id'),
         )
         self.generic_content = self.object_classes
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category = self.request.GET.get('category')
+        if category:
+            context['object_class_list'] = ObjectClass.objects.filter(
+                object_classes=self.object_classes, category=category
+            )
+        return context
     
     
 class ManageObjectClass(ObjectClassesCommon, MetaAppMixin, FormView):
@@ -71,11 +85,15 @@ class ManageObjectClass(ObjectClassesCommon, MetaAppMixin, FormView):
             self.object_class = ObjectClass.objects.get(
                 pk=kwargs.get('object_class_id'),
             )
+            self.category = self.object_class.category
+        else:
+            self.category = kwargs.get('category', 'object_class')
         self.generic_content = self.object_classes
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['object_class'] = self.object_class
+        context['category'] = self.category
         context['success'] = False
         return context
     
@@ -96,8 +114,10 @@ class ManageObjectClass(ObjectClassesCommon, MetaAppMixin, FormView):
         return kwargs
     
     def form_valid(self, form):
-        form.save()
-        
+        instance = form.save(commit=False)
+        instance.category = self.category
+        instance.save()
+
         context = self.get_context_data()
         context['success'] = True
         context['form'] = form
@@ -106,6 +126,19 @@ class ManageObjectClass(ObjectClassesCommon, MetaAppMixin, FormView):
     
 class DeleteObjectClass(AjaxDeleteView):
     model = ObjectClass
+    template_name = 'object_classes/ajax/delete_object_class.html'
+
+    def form_valid(self, form):
+        try:
+            return super().form_valid(form)
+        except ProtectedError as e:
+            context = self.get_context_data(**self.kwargs)
+            context['protected_error'] = True
+            groups = defaultdict(list)
+            for obj in e.protected_objects:
+                groups[obj._meta.verbose_name].append(str(obj))
+            context['protected_groups'] = dict(groups)
+            return self.render_to_response(context)
 
 
 class DeleteObjectClassTaxon(AjaxDeleteView):
@@ -182,7 +215,8 @@ class SetObjectClassLink(MetaAppMixin, FormView):
         meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
         generic_content_links = meta_app.get_generic_content_links(ObjectClasses)
         self.object_classes = generic_content_links.first().generic_content
-        
+        self.category = kwargs.get('category', 'object_class')
+
         content_type = ContentType.objects.get_for_id(kwargs['content_type_id'])
         self.linked_instance = content_type.get_object_for_this_type(
             pk=kwargs['object_id'],
@@ -196,19 +230,21 @@ class SetObjectClassLink(MetaAppMixin, FormView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['object_classes'] = self.object_classes
-        lazy_taxon = self.linked_instance.taxon
-        kwargs['taxon'] = lazy_taxon
+        kwargs['taxon'] = self.linked_instance.taxon
+        kwargs['category'] = self.category
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['linked_instance'] = self.linked_instance
         context['object_classes'] = self.object_classes
+        context['category'] = self.category
         context['success'] = False
         return context
 
     def form_valid(self, form):
-        self.linked_instance.object_class = form.cleaned_data['object_class']
+        field_name = 'morphotype' if self.category == 'morphotype' else 'object_class'
+        setattr(self.linked_instance, field_name, form.cleaned_data['object_class'])
         self.linked_instance.save()
 
         context = self.get_context_data()
@@ -234,6 +270,7 @@ class GetObjectClassesForTaxon(MetaAppMixin, View):
     def get(self, request, *args, **kwargs):
         taxon_source = request.GET.get('taxon_source', '')
         taxon_nuid = request.GET.get('taxon_nuid', '')
+        category = request.GET.get('category', 'object_class')
 
         object_classes_link = self.meta_app.get_generic_content_links(ObjectClasses).first()
 
@@ -244,6 +281,7 @@ class GetObjectClassesForTaxon(MetaAppMixin, View):
 
         universal_pks = ObjectClass.objects.filter(
             object_classes=object_classes,
+            category=category,
             taxon_mappings__isnull=True,
         ).values_list('pk', flat=True)
 
@@ -252,6 +290,7 @@ class GetObjectClassesForTaxon(MetaAppMixin, View):
             valid_nuids = [taxon_nuid[:i] for i in range(3, len(taxon_nuid) + 1, 3)]
             compatible_pks = ObjectClassTaxon.objects.filter(
                 object_class__object_classes=object_classes,
+                object_class__category=category,
                 taxon_source=taxon_source,
                 taxon_nuid__in=valid_nuids,
             ).values_list('object_class_id', flat=True)

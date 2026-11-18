@@ -100,6 +100,38 @@
 			</p>
 
 			<div class="mt-3">
+				<h5>{% trans 'Taxon extension fields' %} <img src="{% static 'phosphor-icons/question.svg' %}" alt="question" class="phicon" data-bs-toggle="popover" data-bs-placement="top" title="{% trans 'Taxon extension fields' %}" data-bs-content="{% trans 'Optional fields that extend the taxon identification. Only one morphotype field and one object class field can be added per form.' %}" /></h5>
+
+				<ul id="generic-form-morphotype-fields" class="simpleul">
+					{% if morphotype_field %}
+						{% with generic_field_link=morphotype_field %}
+							{% include 'generic_forms/generic_field_modify.html' %}
+						{% endwith %}
+					{% else %}
+						<li>
+							<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'MorphotypeField' 'morphotype' %}" class="btn btn-outline-secondary btn-sm xhr" ajax-target="ModalContent">{% trans 'Add morphotype field' %}</a>
+						</li>
+					{% endif %}
+				</ul>
+
+				<ul id="generic-form-object_class-fields" class="simpleul mt-2">
+					{% if object_class_field %}
+						{% with generic_field_link=object_class_field %}
+							{% include 'generic_forms/generic_field_modify.html' %}
+						{% endwith %}
+					{% elif has_object_classes %}
+						<li>
+							<a data-url="{% url 'manage_generic_field' meta_app.id generic_content.id 'ObjectClassField' 'object_class' %}" class="btn btn-outline-secondary btn-sm xhr" ajax-target="ModalContent">{% trans 'Add object class field' %}</a>
+						</li>
+					{% else %}
+						<li>
+							<span class="text-muted small">{% trans 'Add an Object Classes feature to your app to enable the object class field.' %}</span>
+						</li>
+					{% endif %}
+				</ul>
+			</div>
+
+			<div class="mt-3">
 				<h5>{% trans 'Additional fields' %}</h5>
 	
 				<ul id="generic-form-regular-fields" data-store-positions-url="{% url 'store_app_kit_object_order' generic_field_link_content_type.id %}" class="simpleul clearfix">

@@ -7,6 +7,8 @@ from app_kit.tests.mixins import WithMetaApp
 
 from app_kit.features.nature_guides.tests.common import WithMatrixFilters, WithNatureGuide
 
+from app_kit.features.object_classes.tests.test_models import WithObjectClasses
+
 from app_kit.features.nature_guides.forms import (IdentificationMatrixForm, SearchForNodeForm,
         NatureGuideOptionsForm, ManageNodelinkForm, MoveNodeForm, MatrixFilterValueChoicesMixin,
         ManageMatrixFilterRestrictionsForm)
@@ -79,7 +81,7 @@ class TestNatureGuideOptionsForm(WithNatureGuide, WithMetaApp, TenantTestCase):
         expected_choices = set([str(observation_form.uuid), str(taxon_profiles.uuid), BLANK_CHOICE_DASH[0]])
 
 
-class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, TenantTestCase):
+class TestManageNodelinkForm(WithNatureGuide, WithObjectClasses, WithMatrixFilters, WithMetaApp, TenantTestCase):
 
     def get_lazy_taxon(self, taxon_latname):
         models = TaxonomyModelRouter('taxonomy.sources.col')
@@ -107,7 +109,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         # form without node (-> create new link) and without matrix filters
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
 
-        self.assertEqual(len(form.fields), 10)
+        self.assertEqual(len(form.fields), 9)
         self.assertEqual(form.from_url, from_url)
         self.assertEqual(form.node, None)
 
@@ -116,7 +118,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
 
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 15)
+        self.assertEqual(len(form.fields), 14)
         self.assertEqual(form.from_url, from_url)
         self.assertEqual(form.node, None)
 
@@ -140,7 +142,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         node = self.create_node(parent_node, 'First')
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, node=node)
         # taxon filter does not return a form field
-        self.assertEqual(len(form.fields), 15)
+        self.assertEqual(len(form.fields), 14)
         self.assertEqual(form.node, node)
         self.assertEqual(form.from_url, from_url)
 
@@ -272,13 +274,24 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         self.assertTrue(form.is_bound)
 
         self.assertFalse(form.is_valid())
+        
+        morphotype = ObjectClass.objects.create(
+            object_classes=self.object_classes,
+            category='morphotype',
+            name='morphotype',
+            scientific_name='morphotype'
+        )
 
         data = {
             'input_language' : 'en',
             'node_type' : 'node',
             'name' : 'name',
-            'morphotype' : 'morphotype',
+            'morphotype' : morphotype.pk,
         }
+        
+        quercus = self.get_lazy_taxon('Quercus')
+        data.update(self.get_taxon_post_data(quercus))
+        
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
 
@@ -289,7 +302,6 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         data = {
             'input_language' : 'en',
             'node_type' : 'node',
-            'decision_rule' : 'name',
         }
         form = ManageNodelinkForm(self.meta_app, parent_node, parent_node, from_url=from_url, data=data)
         self.assertTrue(form.is_bound)
@@ -298,8 +310,7 @@ class TestManageNodelinkForm(WithNatureGuide, WithMatrixFilters, WithMetaApp, Te
         #self.assertEqual(form.errors, {})
         self.assertIn('name', form.errors)
 
-        object_classes_link = self.create_generic_content(ObjectClasses, self.meta_app)
-        object_classes = object_classes_link.generic_content
+        object_classes = self.object_classes
 
         object_class = ObjectClass.objects.create(
             object_classes=object_classes,

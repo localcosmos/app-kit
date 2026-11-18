@@ -150,11 +150,15 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
     name = forms.CharField(help_text=_('Name of the taxon or group.'),
                            max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'])
 
-    morphotype = forms.CharField(help_text=_('Morphotype, like sex or development stage'), required=False,
-                           max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['morphotype'])
+    morphotype = forms.ModelChoiceField(
+        queryset=ObjectClass.objects.filter(category='morphotype'),
+        required=False,
+        label=_('Morphotype'),
+        help_text=_('Optional: select a morphotype for this taxon profile.')
+    )
     
     object_class = forms.ModelChoiceField(
-        queryset=ObjectClass.objects.none(),
+        queryset=ObjectClass.objects.filter(category='object_class'),
         required=False,
         label=_('Object Class'),
         help_text=_('Optional: select an object class for this taxon profile.')
@@ -165,19 +169,13 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
     is_active = is_active_field
 
-    # decision rule is currently hidden, might be deprecated in the future
-    decision_rule = forms.CharField(required=False, label=_('Decision rule'),
-        widget=forms.HiddenInput,
-        max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'],
-        help_text=_("Will be shown below the image. Text that describes how to identify this entry or group, e.g. 'red feet, white body'."))
-
     description = forms.CharField(widget=META_NODE_DESCRIPTION_WIDGET, required=False, validators=[json_compatible])
     
     node_id = forms.IntegerField(widget=forms.HiddenInput, required=False) # create the node if empty
 
 
-    localizeable_fields = ['name', 'decision_rule', 'description']
-    field_order = ['node_type', 'name', 'taxon', 'image', 'decision_rule', 'node_id']
+    localizeable_fields = ['name', 'description']
+    field_order = ['node_type', 'name', 'taxon', 'image', 'morphotype', 'object_class', 'node_id']
 
     layoutable_simple_fields = ['description']
 
@@ -206,6 +204,7 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
         self.add_matrix_filter_value_choices()
         self.add_object_class_choices()
+        self.add_morphotype_choices()
         
         
     def add_object_class_choices(self):
@@ -214,9 +213,19 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
             object_classes = object_classes_links.first().generic_content
         
             self.fields['object_class'].queryset = ObjectClass.objects.filter(
-                object_classes=object_classes
+                object_classes=object_classes,
+                category='object_class'
             ).order_by('name')
     
+    def add_morphotype_choices(self):
+        object_classes_links = self.meta_app.get_generic_content_links(ObjectClasses)
+        if object_classes_links.exists():
+            object_classes = object_classes_links.first().generic_content
+        
+            self.fields['morphotype'].queryset = ObjectClass.objects.filter(
+                object_classes=object_classes,
+                category='morphotype'
+            ).order_by('name')
         
     # only called if field has a matrix filter assigned to field.matrix_filter
     def get_matrix_filter_field_initial(self, field):
@@ -247,6 +256,7 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
         node_type = cleaned_data.get('node_type', None)
         
         object_class = cleaned_data.get('object_class', None)
+        morphotype = cleaned_data.get('morphotype', None)
         
         taxon = cleaned_data.get('taxon', None)
 
@@ -270,20 +280,6 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
 
                 exists = sibling_exists_qry.first()
 
-            ''' currently, duplicates are allowed
-            if exists:
-                self.add_error('name',_('A node with the name {0} already exists'.format(
-                    exists.meta_node.name)))
-            '''
-        ''' currently, 'name' is required
-        decision_rule = cleaned_data.get('decision_rule', None)
-
-        if not name and not decision_rule:
-            if 'name' in cleaned_data:
-                del cleaned_data['name']
-                
-            self.add_error('name', _('You have to enter at least a name or a decision rule.'))
-        '''
         
         if self.submitted_parent_node.meta_node.identification_mode == IDENTIFICATION_MODE_POLYTOMOUS:
             meta_node = self.submitted_parent_node.meta_node
@@ -319,6 +315,13 @@ class ManageNodelinkForm(MatrixFilterValueChoicesMixin, LocalizeableForm):
                 if not is_compatible:
                     self.add_error('object_class', _('The selected object class is not compatible with the selected taxon. Please select a compatible taxon or choose a different object class.'))
         
+        if morphotype:
+            if not taxon:
+                self.add_error('taxon', _('You must select a taxon when selecting a morphotype.'))
+            else:
+                is_compatible = morphotype.is_taxon_compatible(taxon)
+                if not is_compatible:
+                    self.add_error('morphotype', _('The selected morphotype is not compatible with the selected taxon. Please select a compatible taxon or choose a different morphotype.'))
         return cleaned_data
 
 

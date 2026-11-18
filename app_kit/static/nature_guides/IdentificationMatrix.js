@@ -74,7 +74,6 @@
       "is_visible": true,
       "max_points": 150,
       "meta_node_id": 7,
-      "decision_rule": "mit Blättern, im Winter kahl"
     },
     {
       "id": 8,
@@ -109,7 +108,6 @@
       "is_visible": true,
       "max_points": 200,
       "meta_node_id": 8,
-      "decision_rule": "mit Nadeln"
     },
     {
       "id": 157,
@@ -133,7 +131,6 @@
       "is_visible": true,
       "max_points": 150,
       "meta_node_id": 157,
-      "decision_rule": ""
     },
     {
       "id": 59,
@@ -151,7 +148,6 @@
       "is_visible": true,
       "max_points": 50,
       "meta_node_id": 59,
-      "decision_rule": ""
     },
     {
       "id": 162,
@@ -193,7 +189,6 @@
       "is_visible": true,
       "max_points": 0,
       "meta_node_id": 162,
-      "decision_rule": ""
     }
   ],
   "matrix_filters": {
@@ -986,6 +981,16 @@ class StringBasedMatrixFilter extends MatrixFilter {
 
   // space is the parsed space from JSON.parse
   get_space_identifier_from_parsed(space) {
+    if (typeof space === "object" && space !== null) {
+      if (space.hasOwnProperty("spaceIdentifier")) {
+        return space.spaceIdentifier;
+      }
+
+      if (space.hasOwnProperty("encodedSpace")) {
+        space = space.encodedSpace;
+      }
+    }
+
     if (this.DEBUG == true) {
       console.log("[StringBasedMatrixFilter] " + this.matrix_filter_type + "] stringifying parsed space: " + space);
     }
@@ -1001,6 +1006,10 @@ class StringBasedMatrixFilter extends MatrixFilter {
   }
 
   get_space_identifier_from_str(space_str) {
+    if (typeof space_str === "string" && space_str.startsWith(this.uuid + ":")) {
+      return space_str;
+    }
+
     return btoa(space_str);
   }
 
@@ -1009,10 +1018,18 @@ class StringBasedMatrixFilter extends MatrixFilter {
   }
 
   get_space_from_space_identifier(space_identifier) {
+    if (space_identifier.startsWith(this.uuid + ":")) {
+      return space_identifier;
+    }
+
     return atob(space_identifier);
   }
 
   get_space_str_from_space_identifier(space_identifier) {
+    if (space_identifier.startsWith(this.uuid + ":")) {
+      return space_identifier;
+    }
+
     return atob(space_identifier);
   }
 

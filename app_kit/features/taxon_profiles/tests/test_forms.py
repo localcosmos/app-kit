@@ -537,9 +537,18 @@ class TestCreateTaxonProfileForm(WithMetaApp, TenantTestCase):
 
     @test_settings
     def test_form_valid_with_morphotype(self):
+        
+        object_classes = self.create_object_classes_with_link()
+        morphotype = ObjectClass.objects.create(
+            object_classes=object_classes,
+            category='morphotype',
+            name='Imago',
+            scientific_name='Imago',
+        )
+        
         post_data = {
             'input_language': self.meta_app.primary_language,
-            'morphotype': 'Imago',
+            'morphotype': morphotype.id,
         }
         post_data.update(self.taxon_to_post_data(self.lazy_taxon))
 
@@ -547,7 +556,7 @@ class TestCreateTaxonProfileForm(WithMetaApp, TenantTestCase):
         is_valid = form.is_valid()
         self.assertEqual(form.errors, {})
         self.assertTrue(is_valid)
-        self.assertEqual(form.cleaned_data['morphotype'], 'Imago')
+        self.assertEqual(form.cleaned_data['morphotype'], morphotype)
 
     @test_settings
     def test_form_valid_with_valid_object_class(self):

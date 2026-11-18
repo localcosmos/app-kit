@@ -32,6 +32,7 @@ DJANGO_FIELD_WIDGETS = (
     ('FixedTaxonWidget', _('Fixed taxon')),
     ('SelectTaxonWidget', _('Select taxon widget')),
     ('ObjectClassWidget', _('Object class dropdown')),
+    ('MorphotypeWidget', _('Morphotype dropdown')),
 )
 
 DJANGO_FIELD_CLASSES = (
@@ -45,6 +46,7 @@ DJANGO_FIELD_CLASSES = (
     ('DateTimeJSONField', _('Datetime field')),
     ('TaxonField', _('Taxon field')),
     ('SelectTaxonField', _('Select taxon field')),
+    ('MorphotypeField', _('Morphotype field')),
     ('PointJSONField', _('Point field')),
     #('GeoJSONField', _('Geometry field')),
     ('PictureField', _('Image field')),
@@ -65,6 +67,7 @@ DEFAULT_WIDGETS = {
     'PointJSONField' : 'MobilePositionInput', # JSONField
     'TaxonField' : 'BackboneTaxonAutocompleteWidget',
     'SelectTaxonField': 'SelectTaxonWidget',
+    'MorphotypeField' : 'MorphotypeWidget',
     'PictureField' : 'CameraAndAlbumWidget',
     'ObjectClassField' : 'ObjectClassWidget',
     #'GeoJSONField' : 'PointOrAreaInput',
@@ -83,6 +86,7 @@ ALLOWED_WIDGETS = {
     #'GeoJSONField' : ['PointOrAreaInput'], # JSONField + JSONWidget
     'TaxonField' : ['BackboneTaxonAutocompleteWidget', 'FixedTaxonWidget'],
     'SelectTaxonField' : ['SelectTaxonWidget'],
+    'MorphotypeField' : ['MorphotypeWidget'],
     'PictureField' : ['CameraAndAlbumWidget'],
     'ObjectClassField' : ['ObjectClassWidget']
 }
@@ -101,6 +105,7 @@ FIELDCLASS_DATATYPE = {
     #'GeoJSONField' : 'json',
     'PictureField' : 'json',
     'SelectTaxonField' : 'json',
+    'MorphotypeField' : 'text',
     'ObjectClassField' : 'text',
 }
 
@@ -200,6 +205,12 @@ class GenericForm(GenericContent):
     def temporal_reference_field(self):
         return self.get_field_by_role('temporal_reference')
 
+    def morphotype_field(self):
+        return self.get_field_by_role('morphotype')
+
+    def object_class_field(self):
+        return self.get_field_by_role('object_class')
+
 
     class Meta:
         verbose_name = _('Observation form')
@@ -214,10 +225,17 @@ REFERENCE_FIELD_TYPES = (
     'geographic_reference',
 )
 
+TAXON_EXTENSION_FIELD_ROLES = (
+    'morphotype',
+    'object_class',
+)
+
 FIELD_ROLES = (
     ('temporal_reference', _('Temporal Reference')),
     ('taxonomic_reference', _('Taxon')),
     ('geographic_reference', _('Geographic Reference')),
+    ('morphotype', _('Morphotype')),
+    ('object_class', _('Object class')),
     ('regular', _('Regular')),
 )
 
@@ -269,7 +287,7 @@ class GenericField(GenericFormVersionBumpMixin, models.Model):
 
     def choices(self):
         
-        if self.field_class != 'ChoiceField' and self.field_class != 'MultipleChoiceField':
+        if self.field_class not in ('ChoiceField', 'MultipleChoiceField'):
             return []
 
         choices = GenericValues.objects.filter(generic_field=self, value_type='choice').order_by('position')
@@ -317,7 +335,7 @@ class GenericFieldToGenericForm(models.Model):
 
 
     def save(self, *args, **kwargs):
-        # if it is a new field, check the roles
+        # reference fields get fixed positions; taxon extension and regular fields are user-positioned
         if self.generic_field.role == 'taxonomic_reference':
             self.position = -3
         elif self.generic_field.role == 'geographic_reference':

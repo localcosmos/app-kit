@@ -52,7 +52,13 @@
         </div>
     </div>
 {% empty %}
-    <div class="alert alert-info">
-        {% trans "You have not created any object classes yet." %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            {% if category == 'morphotype' %}
+                {% trans "You have not created any morphotypes yet." %}
+            {% else %}
+                {% trans "You have not created any object classes yet." %}
+            {% endif %}
+        </div>
     </div>
 {% endfor %}

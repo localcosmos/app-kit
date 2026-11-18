@@ -298,6 +298,7 @@ class TaxonReferencesUpdater:
         self.meta_app = meta_app
         self.taxon_manager = TaxonManager(meta_app)
         self.custom_taxonomy_only = custom_taxonomy_only
+        
     def update_all_taxon_nuid_and_name_uuid_only(self):
         self.check_taxa(update=True)
 

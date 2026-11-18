@@ -116,6 +116,19 @@ class WithGenericForm:
 
                         value.save()
 
+                elif field_class == 'MorphotypeField':
+
+                    for choice in ['morphotype 1', 'morphotype 2']:
+
+                        value = GenericValues(
+                            generic_field=generic_field,
+                            text_value=choice,
+                            value_type='choice',
+                            name=choice,
+                        )
+
+                        value.save()
+
 
                 created_fields.append(generic_field)
 
@@ -388,7 +401,7 @@ class TestGenericField(WithGenericForm, TenantTestCase):
 
             choices = field.choices()
 
-            if field.field_class != 'ChoiceField' and field.field_class != 'MultipleChoiceField':
+            if field.field_class not in ('ChoiceField', 'MultipleChoiceField', 'MorphotypeField'):
                 self.assertEqual(choices, [])
 
                 choices = ['choice 1', 'choice 2', 'choice 3']

@@ -113,11 +113,15 @@ class NatureGuideJSONBuilder(JSONBuilder):
             object_class_json = None
             if parent_node.meta_node.object_class:
                 object_class_json = self.build_object_class_json(parent_node.meta_node.object_class)
+                
+            morphotype_scientific_name = None
+            if parent_node.meta_node.morphotype:
+                morphotype_scientific_name = parent_node.meta_node.morphotype.scientific_name
 
             parent_node_json = {
                 'uuid' : str(parent_node.name_uuid),
                 'name' : parent_node_name,
-                'morphotype': parent_node.meta_node.morphotype,
+                'morphotype': morphotype_scientific_name, # use just the scientific name for backwards compatibility
                 'objectClass': object_class_json,
                 'taxon' : None,
                 'children' : [],
@@ -217,6 +221,15 @@ class NatureGuideJSONBuilder(JSONBuilder):
                 if image_urls:
                     content_image = child.meta_node.image()
                     licence = self.app_release_builder.content_image_builder.build_licence(content_image)
+                    
+                morphotype_scientific_name = None
+                object_class_scientific_name = None
+                
+                if child.meta_node.morphotype:
+                    morphotype_scientific_name = child.meta_node.morphotype.scientific_name
+                    
+                if child.meta_node.object_class:
+                    object_class_scientific_name = child.meta_node.object_class.scientific_name
 
                 child_json = {
                     'uuid' : str(child.name_uuid),
@@ -227,9 +240,8 @@ class NatureGuideJSONBuilder(JSONBuilder):
                     'maxPoints' : child_max_points,
                     'isPossible' : True,
                     'name' : child.meta_node.name,
-                    'morphotype': child.meta_node.morphotype,
-                    'objectClass': child.meta_node.object_class,
-                    'decisionRule' : child.decision_rule,
+                    'morphotype': morphotype_scientific_name, # use just the scientific name for backwards compatibility
+                    'objectClass': object_class_scientific_name, # use the scientific name to match morphotype handling
                     'taxon' : None,
                     'slug' : child_primary_locale_slug,
                     'description' : child.meta_node.description,

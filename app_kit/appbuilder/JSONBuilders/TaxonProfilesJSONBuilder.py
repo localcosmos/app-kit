@@ -148,6 +148,9 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         
         if morphotype:
             db_profile_qry = db_profile_qry.filter(morphotype=morphotype)
+            
+        if object_class:
+            db_profile_qry = db_profile_qry.filter(object_class=object_class)
         
         db_profile = db_profile_qry.first()
         
@@ -183,7 +186,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             'vernacular' : {},
             'allVernacularNames' : {},
             'nodeNames' : [], # if the taxon occurs in a nature guide, primary_language only
-            'nodeDecisionRules' : [],
             'traits' : [], # a collection of traits (matrix filters)
             'shortProfile' : None,
             'texts': [],
@@ -303,9 +305,6 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
             if is_active == True:
                 if node.meta_node.name not in taxon_profile_json['nodeNames']:
                     taxon_profile_json['nodeNames'].append(node.meta_node.name)
-
-                #if node.decision_rule and node.decision_rule not in taxon_profile_json['nodeDecisionRules']:
-                #    taxon_profile_json['nodeDecisionRules'].append(node.decision_rule)
 
                 #node_traits = self.collect_node_traits(node)
                 #taxon_profile_json['traits'] += node_traits
@@ -524,20 +523,20 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
                                             taxon_source=taxon_profile.taxon_source,
                                             name_uuid=taxon_profile.name_uuid).exclude(morphotype__isnull=True)
 
-        for morphotype in morphotype_profiles_db:
+        for morphotype_profile in morphotype_profiles_db:
             
-            primary_image = morphotype.primary_image()
+            primary_image = morphotype_profile.primary_image()
             if primary_image:
                 image_entry = self.get_image_json(primary_image)
             else:
                 image_entry = None
 
-            lazy_taxon = LazyTaxon(instance=morphotype)
+            lazy_taxon = LazyTaxon(instance=morphotype_profile)
             
             morphotype_json = {
-                'taxonProfileId': morphotype.id,
+                'taxonProfileId': morphotype_profile.id,
                 'parentTaxonProfileId': taxon_profile.id,
-                'morphotype': morphotype.morphotype,
+                'morphotype': morphotype_profile.morphotype,
                 'taxon': self.app_release_builder.taxa_builder.serialize_taxon_extended(lazy_taxon),
                 'vernacular' : {},
                 'image': image_entry,
@@ -569,8 +568,7 @@ class TaxonProfilesJSONBuilder(JSONBuilder):
         if morphotype:
             object_class_profiles_db = object_class_profiles_db.filter(morphotype=morphotype)
         else:
-            object_class_profiles_db = object_class_profiles_db.filter(
-                Q(morphotype__isnull=True) | Q(morphotype=''))
+            object_class_profiles_db = object_class_profiles_db.filter(morphotype__isnull=True)
 
         for oc_profile in object_class_profiles_db:
 

@@ -7,6 +7,11 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+OBJECT_CLASS_CATEGORIES = (
+    ('object_class', _('Object class')),
+    ('morphotype', _('Morphotype')),
+)
+
 from app_kit.generic import GenericContent
 
 from localcosmos_server.taxonomy.generic import ModelWithRequiredTaxon
@@ -50,19 +55,21 @@ class ObjectClasses(GenericContent):
         all_object_classes = ObjectClass.objects.filter(object_classes=self)
         
         for obj_class in all_object_classes:
+            
             name = obj_class.name
             description = obj_class.description
             
-            if name:
-                locale['name'] = name
+            locale[obj_class.scientific_name] = obj_class.name
+            locale[name] = name
+            
             if description:
-                locale['description'] = description
+                locale[description] = description
         return locale
         
 
     class Meta:
-        verbose_name = _('Object classes')
-        verbose_name_plural = _('Object classes')
+        verbose_name = _('Morphotypes and Object classes')
+        verbose_name_plural = _('Morphotypes and Object classes')
 
 
 FeatureModel = ObjectClasses
@@ -76,6 +83,7 @@ class ObjectClass(models.Model):
     name = models.CharField(max_length=255)
     scientific_name = models.CharField(max_length=100) # language independent identifier for the object class
     description = models.TextField(null=True, blank=True)
+    category = models.CharField(max_length=50, choices=OBJECT_CLASS_CATEGORIES, default='object_class')
     
     @property
     def taxa(self):
@@ -84,6 +92,10 @@ class ObjectClass(models.Model):
     
     def is_taxon_compatible(self, taxon):
         valid_nuids = taxon.ancestor_nuids + [taxon.taxon_nuid]
+        
+        # no restriction means: compatible with all taxa
+        if self.taxa.exists() is False:
+            return True
                     
             
         is_compatible_taxon = self.taxa.filter(

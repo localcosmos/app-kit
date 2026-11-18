@@ -46,7 +46,6 @@
       "is_visible": true,
       "max_points": 150,
       "meta_node_id": 7,
-      "decision_rule": "mit Blättern, im Winter kahl"
     },
     {
       "id": 157,
@@ -59,7 +58,6 @@
       "is_visible": true,
       "max_points": 0,
       "meta_node_id": 157,
-      "decision_rule": ""
     },
     {
       "id": 8,
@@ -93,7 +91,6 @@
       "is_visible": true,
       "max_points": 200,
       "meta_node_id": 8,
-      "decision_rule": "mit Nadeln"
     },
     {
       "id": 59,
@@ -106,7 +103,6 @@
       "is_visible": true,
       "max_points": 0,
       "meta_node_id": 59,
-      "decision_rule": ""
     },
     {
       "id": 162,
@@ -125,7 +121,6 @@
       "is_visible": true,
       "max_points": 0,
       "meta_node_id": 162,
-      "decision_rule": ""
     }
   ],
   "matrix_filters": {

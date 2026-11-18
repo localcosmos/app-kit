@@ -118,7 +118,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
         non_nature_guide_taxon_profiles = TaxonProfile.objects.filter(
             taxon_profiles=self.generic_content,
             object_class__isnull=True,
-        ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).exclude(
+        ).filter(morphotype__isnull=True).exclude(
                 name_uuid__in=nature_guide_taxa_name_uuids).order_by('taxon_latname')
         
         backbonetaxonomy_link = self.meta_app.get_generic_content_links(BackboneTaxonomy)[0]
@@ -129,7 +129,7 @@ class ManageTaxonProfiles(GetNatureGuideTaxaMixin, ManageGenericContent):
             taxon_profiles=self.generic_content,
             name_uuid__in=backbone_taxa_name_uuids,
             object_class__isnull=True,
-        ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).values_list('name_uuid', flat=True)
+        ).filter(morphotype__isnull=True).values_list('name_uuid', flat=True)
         backbone_taxa_noprofile = BackboneTaxa.objects.filter(backbonetaxonomy=backbonetaxonomy).exclude(
             name_uuid__in=backbone_taxa_profiles_name_uuids).order_by('-pk')
         
@@ -642,7 +642,7 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                     taxon_profiles=self.taxon_profiles,
                     taxon_source=taxon_source,
                     name_uuid=name_uuid,
-                ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).first()
+                ).filter(morphotype__isnull=True).first()
                 
                 if taxon_profile:
                     self.change_taxon_profile_publication_status(taxon_profile, publication_status)
@@ -654,7 +654,7 @@ class BatchChangeNatureGuideTaxonProfilesPublicationStatus(MetaAppMixin, FormVie
                         taxon_profiles=self.taxon_profiles,
                         taxon_source='app_kit.features.nature_guides',
                         name_uuid=fallback_taxon.name_uuid,
-                    ).filter(Q(morphotype__isnull=True) | Q(morphotype='')).first()
+                    ).filter(morphotype__isnull=True).first()
                     if fallback_taxon_profile:
                         self.change_taxon_profile_publication_status(fallback_taxon_profile, publication_status)
 
@@ -1785,7 +1785,7 @@ class TaxonProfileSearch(MetaAppMixin, View):
         ).filter(
             Q(taxon_latname__icontains=search_query) |
             Q(taxon_author__icontains=search_query) |
-            Q(morphotype__icontains=search_query) |
+            Q(morphotype__name__icontains=search_query) |
             Q(object_class__name__icontains=search_query) |
             Q(name_uuid__in=vernacular_uuids)
         ).select_related('object_class').order_by('taxon_latname')[:20]

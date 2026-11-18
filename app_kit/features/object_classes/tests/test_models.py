@@ -32,6 +32,19 @@ class WithObjectClasses(WithMetaApp):
 
 		return object_class
 
+	def create_morphotype(self, name):
+
+		scientific_name = name
+
+		morphotype = ObjectClass.objects.create(
+			object_classes=self.object_classes,
+			name=name,
+			scientific_name=scientific_name,
+			category='morphotype',
+		)
+
+		return morphotype
+
 	def create_object_class_taxon(self, object_class, taxon):
 
 		object_class_taxon = ObjectClassTaxon(

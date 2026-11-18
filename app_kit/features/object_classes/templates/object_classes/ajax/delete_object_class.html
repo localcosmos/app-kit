@@ -1,0 +1,70 @@
+{% load i18n localcosmos_tags %}
+{% if deleted %}
+
+	{% block success_js %}
+		<script>
+			var object = $("#ctype-{{ content_type.id }}-{{ deleted_object_id }}");
+			if (object.length){
+				object.remove();
+			}
+			hideModal();
+		</script>
+	{% endblock %}
+
+{% elif protected_error %}
+
+	<div class="modal-header">
+		<h5 class="modal-title">{% blocktrans %}Cannot delete {{ verbose_name }}{% endblocktrans %}</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+	</div>
+	<div class="modal-body">
+		<div class="alert alert-warning mb-3">
+			{% blocktrans %}
+				<strong>{{ verbose_name }}</strong> cannot be deleted because it is still referenced by other items.
+				Remove all references first, then try again.
+			{% endblocktrans %}
+		</div>
+		{% for model_name, items in protected_groups.items %}
+			<p class="mb-1"><strong>{{ model_name|capfirst }}</strong> ({{ items|length }}):</p>
+			<ul class="mb-3">
+				{% for item in items %}
+					<li>{{ item }}</li>
+				{% endfor %}
+			</ul>
+		{% endfor %}
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
+	</div>
+	<script>
+		hideLargeModal();
+		showModal();
+	</script>
+
+{% else %}
+
+	<form method="POST" action="{{ url }}" class="xhr">{% csrf_token %}
+		<div class="modal-header">
+			<h5 class="modal-title">{% blocktrans %}Delete {{ verbose_name }}{% endblocktrans %}</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+			<p>
+				{% if deletion_message %}
+					{{ deletion_message }}
+				{% else %}
+					{% blocktrans %}Do you really want to delete {{ verbose_name }}?{% endblocktrans %}
+				{% endif %}
+			</p>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans 'Close' %}</button>
+			<button type="submit" class="btn btn-danger">{% trans 'Delete' %}</button>
+		</div>
+	</form>
+	<script>
+		hideLargeModal();
+		showModal();
+	</script>
+
+{% endif %}

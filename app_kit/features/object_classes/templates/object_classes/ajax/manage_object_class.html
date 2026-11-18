@@ -2,14 +2,14 @@
 {% load i18n localcosmos_tags %}
 
 {% block action %}
-	{% if object_class %}{% url 'edit_object_class' meta_app.id object_classes.id object_class.id %}{% else %}{% url 'create_object_class' meta_app.id object_classes.id %}{% endif %}
+	{% if object_class %}{% url 'edit_object_class' meta_app.id object_classes.id object_class.id %}{% else %}{% url 'create_object_class' category meta_app.id object_classes.id %}{% endif %}
 {% endblock %}
 
 {% block title %}
 	{% if object_class %}
         {% blocktrans %}Edit {{ object_class }}{% endblocktrans %}
     {% else %}
-        {% trans 'Create new object class' %}
+        {% if category == 'morphotype' %}{% trans 'Add morphotype' %}{% else %}{% trans 'Add object class' %}{% endif %}
     {% endif %}
 {% endblock %}
 
@@ -21,16 +21,20 @@
 {% block script %}
 	{% if success is True %}
         <script>
-            fetch("{% url 'get_object_classes' meta_app.id object_classes.id %}",{
+            {% if category == 'morphotype' %}
+                var containerId = 'object-classes-morphotypes-container';
+            {% else %}
+                var containerId = 'object-classes-container';
+            {% endif %}
+            fetch("{% url 'get_object_classes' meta_app.id object_classes.id %}?category={{ category }}",{
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
                 .then(response => response.text())
                 .then(html => {
-                    document.getElementById("object-classes-container").innerHTML = html;
-                    ajaxify('object-classes-container');
-                    // close the modal
+                    document.getElementById(containerId).innerHTML = html;
+                    ajaxify(containerId);
                     hideModal();
                 });
         </script>

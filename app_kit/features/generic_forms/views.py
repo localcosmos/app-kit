@@ -34,10 +34,17 @@ class ManageGenericForm(ManageGenericContent):
             generic_field__role='temporal_reference').first()
         context['geographic_reference_field'] = all_generic_field_links.filter(
             generic_field__role='geographic_reference').first()
+        context['morphotype_field'] = all_generic_field_links.filter(
+            generic_field__role='morphotype').first()
+        context['object_class_field'] = all_generic_field_links.filter(
+            generic_field__role='object_class').first()
+
+        from app_kit.features.object_classes.models import ObjectClasses
+        context['has_object_classes'] = self.meta_app.get_generic_content_links(ObjectClasses).exists()
         
         context['generic_fields'] = generic_fields
-        context['fieldclasses'] = DJANGO_FIELD_CLASSES # needed for add field button
-        #context['search_taxon_form'] = SearchTaxonForm()
+        # MorphotypeField and ObjectClassField are only addable via the taxon extension section
+        context['fieldclasses'] = [fc for fc in DJANGO_FIELD_CLASSES if fc[0] not in ('MorphotypeField', 'ObjectClassField')]
         context['generic_field_link_content_type'] = ContentType.objects.get_for_model(
             GenericFieldToGenericForm)
         context['generic_form'] = self.generic_content
@@ -138,12 +145,19 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
         increment_field_version = False
 
         self.generic_field_class = form.cleaned_data['generic_field_class']
+        generic_field_role = form.cleaned_data['generic_field_role']
 
         if not self.generic_field:
+
+            if generic_field_role == 'object_class':
+                from app_kit.features.object_classes.models import ObjectClasses
+                if not self.meta_app.get_generic_content_links(ObjectClasses).exists():
+                    form.add_error(None, _('An Object Classes feature is required to add an Object Class field.'))
+                    return self.form_invalid(form)
             
             self.generic_field = GenericField(
                 field_class = self.generic_field_class,
-                role = form.cleaned_data['generic_field_role'],
+                role = generic_field_role,
             )
 
             created = True
@@ -191,7 +205,7 @@ class ManageGenericFormField(MetaAppMixin, FormLanguageMixin, FormView):
         self.generic_field.save(self.generic_form)
 
         ##### VALUES #####
-        if self.generic_field_class == 'ChoiceField':
+        if self.generic_field_class in ('ChoiceField',):
             default_value = self.request.POST.get('default_value', None)
 
             if default_value:

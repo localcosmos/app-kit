@@ -416,10 +416,6 @@ class AppReleaseBuilder(AppBuilderBase):
                 result['errors'] += template_content_result['errors']
                 result['warnings'] += template_content_result['warnings']
 
-                morphotype_result = self.validate_Morphotypes()
-                result['errors'] += morphotype_result['errors']
-                result['warnings'] += morphotype_result['warnings']
-
                 # store last validation result in db
                 validation_result = 'valid'
                 
@@ -969,7 +965,15 @@ class AppReleaseBuilder(AppBuilderBase):
         for taxon_profile in all_taxon_profiles:            
             duplicates = TaxonProfile.objects.filter(taxon_profiles=taxon_profiles,
                 taxon_source=taxon_profile.taxon_source, taxon_latname=taxon_profile.taxon_latname,
-                taxon_author=taxon_profile.taxon_author, morphotype=taxon_profile.morphotype).exclude(pk=taxon_profile.pk)
+                taxon_author=taxon_profile.taxon_author)
+            
+            if taxon_profile.object_class:
+                duplicates.filter(object_class=taxon_profile.object_class)
+                
+            if taxon_profile.morphotype:
+                duplicates.filter(morphotype=taxon_profile.morphotype)
+            
+            duplicates = duplicates.exclude(pk=taxon_profile.pk)
             if duplicates.exists():
                 warning_message = _('The taxon profile of %(taxon_latname)s has duplicates.') % {
                     'taxon_latname':taxon_profile.taxon_latname}
@@ -1017,6 +1021,7 @@ class AppReleaseBuilder(AppBuilderBase):
            - multiplechoicefields need at least 2 choices
            - FixedTaxon Widgets require exactly one taxonomic restriction
            - SelectTaxon Fields require at least one taxon
+           - ObjectClass fields require the ObjectClasses feature to be in the app
            WARNINGS:
            None
         '''
@@ -1034,9 +1039,8 @@ class AppReleaseBuilder(AppBuilderBase):
 
             taxonomic_restrictions = generic_field.taxonomic_restrictions.all()
     
-            # check specific field requirements
-            # choicefield, multiplechoicefield
-            if generic_field.field_class == 'MultipleChoiceField' or generic_field.field_class == 'ChoiceField':
+            # choicefield and multiplechoicefield require at least 2 choices
+            if generic_field.field_class in ('MultipleChoiceField', 'ChoiceField'):
                 choices = GenericValues.objects.filter(generic_field=generic_field)
 
                 if len(choices) < 2:
@@ -1067,7 +1071,13 @@ class AppReleaseBuilder(AppBuilderBase):
                         'field_class':generic_field.field_class }
                     error = ValidationError(generic_form, generic_field, [error_message])
                     result['errors'].append(error)
-                
+
+            if generic_field.role == 'object_class':
+                from app_kit.features.object_classes.models import ObjectClasses
+                if not self.meta_app.get_generic_content_links(ObjectClasses).exists():
+                    error_message = _('Object Class field requires an Object Classes feature in the app')
+                    error = ValidationError(generic_form, generic_field, [error_message])
+                    result['errors'].append(error)
 
 
 
@@ -1183,10 +1193,6 @@ class AppReleaseBuilder(AppBuilderBase):
             return model.objects.filter(taxon_profiles=taxon_profiles_link.generic_content)
         raise NotImplementedError('No scoped queryset defined for model {0}'.format(model.__name__))
 
-    # Returns a queryset of instances with a non-null morphotype, scoped to this meta_app.
-    def _get_morphotype_queryset(self, model):
-        return self._get_scoped_queryset(model).exclude(morphotype__isnull=True).exclude(morphotype='')
-
     # Returns the set of name_uuids for which the model has any entry (regardless of morphotype).
     # Works generically because all MORPHOTYPE_MODELS are ModelWithTaxon/ModelWithRequiredTaxon.
     def _get_taxon_uuid_set(self, model):
@@ -1201,72 +1207,6 @@ class AppReleaseBuilder(AppBuilderBase):
         elif isinstance(instance, TaxonProfile):
             return instance.taxon_profiles
         raise NotImplementedError('No generic_content mapping defined for {0}'.format(type(instance).__name__))
-
-
-    def validate_Morphotypes(self):
-
-        result = {
-            'warnings': [],
-            'errors': [],
-        }
-
-        # Meta-node checks are only meaningful when a nature guide is linked
-        nature_guide_links = self.meta_app.get_generic_content_links(NatureGuide)
-        if not nature_guide_links.exists():
-            return result
-
-        # Build {name_uuid: set(morphotypes)} for every model in MORPHOTYPE_MODELS
-        morphotype_sets = {}
-        for model in MORPHOTYPE_MODELS:
-            qs = self._get_morphotype_queryset(model)
-            per_taxon = {}
-            for row in qs.values('name_uuid', 'morphotype'):
-                per_taxon.setdefault(row['name_uuid'], set()).add(row['morphotype'])
-            morphotype_sets[model] = per_taxon
-
-        # Precompute all name_uuids per model (regardless of morphotype) so that warnings
-        # are only raised when a counterpart node actually exists for the taxon.
-        taxon_uuid_sets = {model: self._get_taxon_uuid_set(model) for model in MORPHOTYPE_MODELS}
-
-        # Compare every ordered pair; warn on morphotypes present in one model but absent in the other
-        for i, model_a in enumerate(MORPHOTYPE_MODELS):
-            for model_b in MORPHOTYPE_MODELS[i + 1:]:
-                sets_a = morphotype_sets[model_a]
-                sets_b = morphotype_sets[model_b]
-
-                for name_uuid in set(sets_a) | set(sets_b):
-                    morphotypes_a = sets_a.get(name_uuid, set())
-                    morphotypes_b = sets_b.get(name_uuid, set())
-
-                    for morphotype in morphotypes_a - morphotypes_b:
-                        if name_uuid not in taxon_uuid_sets[model_b]:
-                            continue
-                        instance = self._get_morphotype_queryset(model_a).filter(
-                            name_uuid=name_uuid, morphotype=morphotype).first()
-                        generic_content = self._get_generic_content_from_morphotype_instance(instance)
-                        warning_message = _('Morphotype "%(morphotype)s" of "%(instance)s" exists in %(model_a)s but not in %(model_b)s.') % {
-                            'morphotype': morphotype,
-                            'instance': str(instance),
-                            'model_a': model_a._meta.verbose_name,
-                            'model_b': model_b._meta.verbose_name,
-                        }
-                        result['warnings'].append(ValidationWarning(generic_content, instance, [warning_message]))
-
-                    for morphotype in morphotypes_b - morphotypes_a:
-                        if name_uuid not in taxon_uuid_sets[model_a]:
-                            continue
-                        instance = self._get_morphotype_queryset(model_b).filter(
-                            name_uuid=name_uuid, morphotype=morphotype).first()
-                        generic_content = self._get_generic_content_from_morphotype_instance(instance)
-                        warning_message = _('Morphotype "%(morphotype)s" of "%(instance)s" exists in %(model_b)s but not in %(model_a)s.') % {
-                            'morphotype': morphotype,
-                            'instance': str(instance),
-                            'model_b': model_b._meta.verbose_name,
-                            'model_a': model_a._meta.verbose_name,
-                        }
-                        result['warnings'].append(ValidationWarning(generic_content, instance, [warning_message]))
-
-        return result
 
 
     ###############################################################################################################
@@ -1480,7 +1420,9 @@ class AppReleaseBuilder(AppBuilderBase):
                                                                   content_type=backbone_taxonomy_content_type)
         backbone_taxonomy = backbone_taxonomy_link.generic_content
         
+        self.logger.info('Building Backbone Taxonomy')
         self._build_BackboneTaxonomy(backbone_taxonomy_link)
+        self.logger.info('Done.')
         
         # iterate over all features (except glossary) and create the necessary json files
         exclude_content_types = [taxon_profiles_content_type, glossary_content_type, frontend_content_type, backbone_taxonomy_content_type]
@@ -2534,7 +2476,7 @@ class AppReleaseBuilder(AppBuilderBase):
                             os.makedirs(localized_source_folder)
                             
                         localized_morphotype_profile_filepath = os.path.join(localized_source_folder,
-                                                              '{0}_{1}.json'.format(profile_taxon.name_uuid, morphotype))
+                                                              '{0}_{1}.json'.format(profile_taxon.name_uuid, morphotype.scientific_name))
                         
                         with open(localized_morphotype_profile_filepath, 'w', encoding='utf-8') as f:
                             json.dump(morphotype_profile_json, f, indent=4, ensure_ascii=False)

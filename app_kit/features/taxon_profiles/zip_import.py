@@ -66,6 +66,7 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             self.validate_definition_rows()
             self.validate_taxa(taxon_profiles_sheet, start_row=3)
             self.validate_object_classes(taxon_profiles_sheet)
+            self.validate_morphotypes(taxon_profiles_sheet)
             self.validate_content()
             self.validate_taxon_profile_images_sheet()
         
@@ -83,32 +84,59 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 column_type = ColumnType.TEXT.value
                 
         return column_type
-        
+    
 
-    def validate_object_class(self, object_class_value, lazy_taxon, workbook_filename, sheet_title, row_index):
-        object_class = ObjectClass.objects.filter(scientific_name=object_class_value).first()
+    def _validate_object_class_by_category(self, value, category, lazy_taxon, workbook_filename, sheet_title, row_index):
+        object_class = ObjectClass.objects.filter(category=category, scientific_name=value).first()
         if not object_class:
-            # fall back to name lookup; name must be unambiguous for import
-            by_name = ObjectClass.objects.filter(name=object_class_value)
+            by_name = ObjectClass.objects.filter(category=category, name=value)
             if by_name.count() > 1:
-                message = _('Object class name "%(name)s" is not unique. Use the scientific name to identify the object class.') % {
-                    'name': object_class_value,
-                }
+                if category == 'object_class':
+                    message = _('Object class name "%(name)s" is not unique. Use the scientific name to identify the object class.') % {
+                        'name': value,
+                    }
+                else:
+                    message = _('Morphotype name "%(name)s" is not unique. Use the scientific name to identify the morphotype.') % {
+                        'name': value,
+                    }
                 self.add_row_error(workbook_filename, sheet_title, row_index, message)
                 return
             object_class = by_name.first()
+
         if not object_class:
-            message = _('Object class "%(value)s" not found (checked scientific name and name).') % {
-                'value': object_class_value,
-            }
+            if category == 'object_class':
+                message = _('Object class "%(value)s" not found (checked scientific name and name).') % {
+                    'value': value,
+                }
+            else:
+                message = _('Morphotype "%(value)s" not found (checked scientific name and name).') % {
+                    'value': value,
+                }
             self.add_row_error(workbook_filename, sheet_title, row_index, message)
             return
+
         if not object_class.is_taxon_compatible(lazy_taxon):
-            message = _('Taxon %(taxon_latname)s is not compatible with object class "%(scientific_name)s".') % {
-                'taxon_latname': lazy_taxon.taxon_latname,
-                'scientific_name': object_class_value,
-            }
+            if category == 'object_class':
+                message = _('Taxon %(taxon_latname)s is not compatible with object class "%(scientific_name)s".') % {
+                    'taxon_latname': lazy_taxon.taxon_latname,
+                    'scientific_name': value,
+                }
+            else:
+                message = _('Taxon %(taxon_latname)s is not compatible with morphotype "%(scientific_name)s".') % {
+                    'taxon_latname': lazy_taxon.taxon_latname,
+                    'scientific_name': value,
+                }
             self.add_row_error(workbook_filename, sheet_title, row_index, message)
+
+    def validate_object_class(self, object_class_value, lazy_taxon, workbook_filename, sheet_title, row_index):
+        self._validate_object_class_by_category(
+            object_class_value, 'object_class', lazy_taxon, workbook_filename, sheet_title, row_index
+        )
+
+    def validate_morphotype(self, morphotype_value, lazy_taxon, workbook_filename, sheet_title, row_index):
+        self._validate_object_class_by_category(
+            morphotype_value, 'morphotype', lazy_taxon, workbook_filename, sheet_title, row_index
+        )
 
     def validate_object_classes(self, sheet):
         for row_index, row in enumerate(sheet.iter_rows(min_row=4), 1):
@@ -127,6 +155,24 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             except ValueError:
                 continue  # taxon error already reported by validate_taxa
             self.validate_object_class(object_class_value, lazy_taxon, self.workbook_filename, sheet.title, row_index)
+            
+    def validate_morphotypes(self, sheet):
+        for row_index, row in enumerate(sheet.iter_rows(min_row=4), 1):
+            if not row[0].value:
+                continue
+            morphotype_value = self.get_stripped_cell_value(row[3].value)
+            if not morphotype_value:
+                continue
+            taxon_latname = self.get_stripped_cell_value(row[0].value)
+            taxon_author = self.get_stripped_cell_value(row[1].value) or None
+            taxon_source = self.get_stripped_cell_value(row[2].value)
+            if not taxon_source or taxon_source not in TAXON_SOURCES:
+                continue
+            try:
+                lazy_taxon = self.get_lazy_taxon(taxon_latname, taxon_source, taxon_author=taxon_author)
+            except ValueError:
+                continue  # taxon error already reported by validate_taxa
+            self.validate_morphotype(morphotype_value, lazy_taxon, self.workbook_filename, sheet.title, row_index)
 
     def validate_definition_rows(self):
         
@@ -518,13 +564,21 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
             if taxon_latname:
                 taxon_author = self.get_stripped_cell_value(row[1].value)
                 taxon_source = self.get_stripped_cell_value(row[2].value)
-                morphotype = self.get_stripped_cell_value(row[3].value)
-                if not morphotype:
-                    morphotype = None
+                morphotype_value = self.get_stripped_cell_value(row[3].value)
+                morphotype = None
+                if morphotype_value:
+                    morphotype = ObjectClass.objects.filter(category='morphotype',
+                                                            scientific_name=morphotype_value).first()
+                    
+                    if not morphotype:
+                        morphotype = ObjectClass.objects.filter(category='morphotype',
+                                                                name=morphotype_value).first()
+                    
                 object_class_value = self.get_stripped_cell_value(row[4].value) or None
                 object_class = None
                 if object_class_value:
-                    object_class = ObjectClass.objects.filter(scientific_name=object_class_value).first()
+                    object_class = ObjectClass.objects.filter(category='object_class',
+                                                              scientific_name=object_class_value).first()
                     if not object_class:
                         object_class = ObjectClass.objects.filter(name=object_class_value).first()
 
@@ -533,12 +587,16 @@ class TaxonProfilesZipImporter(GenericContentZipImporter):
                 # taxa might be renamed. The reference is always the source tree, the name_uuid is constant across renames
                 taxon_profile_qry = TaxonProfile.objects.filter(taxon_profiles=self.generic_content,
                                                             taxon_source=lazy_taxon.taxon_source,
-                                                            name_uuid=lazy_taxon.name_uuid,
-                                                            morphotype=morphotype)
+                                                            name_uuid=lazy_taxon.name_uuid)
                 if object_class:
                     taxon_profile_qry = taxon_profile_qry.filter(object_class=object_class)
                 else:
                     taxon_profile_qry = taxon_profile_qry.filter(object_class__isnull=True)
+                    
+                if morphotype:
+                    taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+                else:
+                    taxon_profile_qry = taxon_profile_qry.filter(morphotype__isnull=True)
                 
                 taxon_profile=taxon_profile_qry.first()
 

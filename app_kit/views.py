@@ -503,8 +503,119 @@ class ManageApp(ManageGenericContent):
         context['form'] = AddLanguageForm()
         context['generic_content_links'] = MetaAppGenericContent.objects.filter(meta_app=self.generic_content)
         context['app_generic_content_type'] = ContentType.objects.get_for_model(MetaAppGenericContent)
+        context.update(self._get_morphotype_migration_context())
         return context
 
+    def _get_morphotype_migration_context(self):
+        from app_kit.features.nature_guides.models import NatureGuide, MetaNode
+        from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+        from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
+
+        ng_ctype = ContentType.objects.get_for_model(NatureGuide)
+        ng_ids = MetaAppGenericContent.objects.filter(
+            meta_app=self.meta_app, content_type=ng_ctype
+        ).values_list('object_id', flat=True)
+
+        tp_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+        tp_ids = MetaAppGenericContent.objects.filter(
+            meta_app=self.meta_app, content_type=tp_ctype
+        ).values_list('object_id', flat=True)
+
+        ng_legacy = set(MetaNode.objects.filter(
+            nature_guide_id__in=ng_ids,
+            legacy_morphotype__isnull=False,
+            morphotype__isnull=True,
+        ).exclude(legacy_morphotype='').values_list('legacy_morphotype', flat=True))
+
+        tp_legacy = set(TaxonProfile.objects.filter(
+            taxon_profiles_id__in=tp_ids,
+            legacy_morphotype__isnull=False,
+            morphotype__isnull=True,
+        ).exclude(legacy_morphotype='').values_list('legacy_morphotype', flat=True))
+
+        all_legacy_morphotypes = sorted(ng_legacy | tp_legacy)
+
+        oc_ctype = ContentType.objects.get_for_model(ObjectClasses)
+        oc_link = MetaAppGenericContent.objects.filter(
+            meta_app=self.meta_app, content_type=oc_ctype
+        ).first()
+        object_classes_instance = oc_link.generic_content if oc_link else None
+
+        missing_morphotypes = []
+        if all_legacy_morphotypes:
+            if object_classes_instance:
+                existing_names = set(ObjectClass.objects.filter(
+                    object_classes=object_classes_instance, category='morphotype'
+                ).values_list('name', flat=True))
+                missing_morphotypes = [m for m in all_legacy_morphotypes if m not in existing_names]
+            else:
+                missing_morphotypes = list(all_legacy_morphotypes)
+
+        return {
+            'legacy_morphotypes': all_legacy_morphotypes,
+            'missing_morphotypes': missing_morphotypes,
+            'object_classes_instance': object_classes_instance,
+            'morphotype_migration_needed': bool(all_legacy_morphotypes),
+            'can_migrate': bool(all_legacy_morphotypes) and not missing_morphotypes,
+        }
+
+
+class MigrateLegacyMorphotypes(TemplateView):
+
+    def dispatch(self, request, *args, **kwargs):
+        self.meta_app = MetaApp.objects.get(pk=kwargs['meta_app_id'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        from app_kit.features.nature_guides.models import NatureGuide, MetaNode
+        from app_kit.features.taxon_profiles.models import TaxonProfiles, TaxonProfile
+        from app_kit.features.object_classes.models import ObjectClasses, ObjectClass
+
+        oc_ctype = ContentType.objects.get_for_model(ObjectClasses)
+        oc_link = MetaAppGenericContent.objects.filter(
+            meta_app=self.meta_app, content_type=oc_ctype
+        ).first()
+
+        if oc_link:
+            object_classes_instance = oc_link.generic_content
+            morphotype_map = {
+                oc.name: oc
+                for oc in ObjectClass.objects.filter(
+                    object_classes=object_classes_instance, category='morphotype'
+                )
+            }
+
+            ng_ctype = ContentType.objects.get_for_model(NatureGuide)
+            ng_ids = MetaAppGenericContent.objects.filter(
+                meta_app=self.meta_app, content_type=ng_ctype
+            ).values_list('object_id', flat=True)
+
+            for name, morphotype in morphotype_map.items():
+                MetaNode.objects.filter(
+                    nature_guide_id__in=ng_ids,
+                    legacy_morphotype=name,
+                    morphotype__isnull=True,
+                ).update(morphotype=morphotype)
+
+            tp_ctype = ContentType.objects.get_for_model(TaxonProfiles)
+            tp_ids = MetaAppGenericContent.objects.filter(
+                meta_app=self.meta_app, content_type=tp_ctype
+            ).values_list('object_id', flat=True)
+
+            for name, morphotype in morphotype_map.items():
+                TaxonProfile.objects.filter(
+                    taxon_profiles_id__in=tp_ids,
+                    legacy_morphotype=name,
+                    morphotype__isnull=True,
+                ).update(morphotype=morphotype)
+
+        content_type = ContentType.objects.get_for_model(self.meta_app)
+        url_kwargs = {
+            'meta_app_id': self.meta_app.id,
+            'content_type_id': content_type.id,
+            'object_id': self.meta_app.id,
+        }
+        return redirect(reverse('manage_metaapp', kwargs=url_kwargs))
 
 
 class EditGenericContentName(FormView):

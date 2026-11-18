@@ -95,22 +95,6 @@ class NatureGuide(ContentImageMixin, GenericContent):
             if meta_node.name:
                 locale[meta_node.name] = meta_node.name
 
-            # fetch all decision rules
-            tree_entries = NatureGuidesTaxonTree.objects.filter(nature_guide=self, meta_node=meta_node)
-
-            for tree_entry in tree_entries:
-
-                if tree_entry.decision_rule:
-                    locale[tree_entry.decision_rule] = tree_entry.decision_rule
-
-                # get all crosslinks
-                crosslinks = NatureGuideCrosslinks.objects.filter(child=tree_entry,
-                                                                   decision_rule__isnull=False)
-
-                for crosslink in crosslinks:
-                    locale[crosslink.decision_rule] = crosslink.decision_rule
-
-
             # fetch all matrix filters
             matrix_filters = MatrixFilter.objects.filter(meta_node=meta_node)
 
@@ -227,6 +211,12 @@ class ChildrenCacheManager:
     def __init__(self, meta_node):
         self.meta_node = meta_node
 
+    def _get_filter_space_for_cache(self, matrix_filter, filter_space):
+        if matrix_filter.filter_type in ['DescriptiveTextAndImagesFilter', 'TextOnlyFilter']:
+            return matrix_filter.matrix_filter_type.get_filter_space_as_list_with_identifiers(filter_space)
+
+        return matrix_filter.matrix_filter_type.get_filter_space_as_list(filter_space)
+
     # rebuild the whole cache for this node from scratch
     def rebuild_cache(self):
 
@@ -302,8 +292,7 @@ class ChildrenCacheManager:
 
             # a list of spaces applicable for this entry/matrix_filter combination
             # is added to the cache
-            space[matrix_filter_uuid] = matrix_filter.matrix_filter_type.get_filter_space_as_list(
-                node_filter_space)
+            space[matrix_filter_uuid] = self._get_filter_space_for_cache(matrix_filter, node_filter_space)
 
             weight = matrix_filter.weight
             max_points = max_points + weight
@@ -322,11 +311,14 @@ class ChildrenCacheManager:
             weight = matrix_filter.weight
             max_points = max_points + weight
             
-
-        decision_rule = child.decision_rule
-
-        if crosslink:
-            decision_rule = crosslink.decision_rule
+        morphotype = None
+        object_class = None
+        
+        if child.meta_node.morphotype:
+            morphotype = child.meta_node.morphotype.scientific_name
+        if child.meta_node.object_class:
+            object_class = child.meta_node.object_class.scientific_name
+            
             
         child_json = {
             'id' : child.id,
@@ -338,8 +330,8 @@ class ChildrenCacheManager:
             'max_points' : max_points,
             'is_visible' : True,
             'name' : child.meta_node.name,
-            'morphotype': child.meta_node.morphotype,
-            'decision_rule' : decision_rule,
+            'morphotype': morphotype,
+            'object_class': object_class,
             'taxon' : None,
         }
 
@@ -448,8 +440,7 @@ class ChildrenCacheManager:
         restrictive_matrix_filter_uuid = str(restrictive_matrix_filter.uuid)
         restricted_matrix_filter_uuid = str(restricted_matrix_filter.uuid)
 
-        space = restrictive_matrix_filter.matrix_filter_type.get_filter_space_as_list(
-            matrix_filter_restriction)
+        space = self._get_filter_space_for_cache(restrictive_matrix_filter, matrix_filter_restriction)
         
         if restricted_matrix_filter_uuid not in data['matrix_filters']:
             data = self.add_matrix_filter_to_cache(data, restricted_matrix_filter)
@@ -505,7 +496,8 @@ class ChildrenCacheManager:
     # update a single value
     # - this is triggered if a user changes ColorFilter or DescriptiveTextAndImagesFilter
     # - if a user changes a color/dtai, the children's space (NodeFilterSpace) has to be adjusted accordingly
-    def update_matrix_filter_space(self, matrix_filter_uuid, old_value, new_value):
+    def update_matrix_filter_space(self, matrix_filter_uuid, old_value, new_value, old_space_identifier=None,
+                                   new_space_identifier=None):
 
         data = self.get_data()
 
@@ -514,9 +506,28 @@ class ChildrenCacheManager:
         # this will update the items space
         for item in items:
 
-            if matrix_filter_uuid in item['space'] and old_value in item['space'][matrix_filter_uuid]:
-                index = item['space'][matrix_filter_uuid].index(old_value)
-                item['space'][matrix_filter_uuid][index] = new_value
+            if matrix_filter_uuid not in item['space']:
+                continue
+
+            for index, space in enumerate(item['space'][matrix_filter_uuid]):
+
+                if isinstance(space, dict):
+                    identifier = space.get('spaceIdentifier', None)
+                    encoded_space = space.get('encodedSpace', None)
+
+                    matches_identifier = old_space_identifier and identifier == old_space_identifier
+                    matches_encoded_space = old_space_identifier is None and encoded_space == old_value
+
+                    if matches_identifier or matches_encoded_space:
+                        item['space'][matrix_filter_uuid][index] = {
+                            'spaceIdentifier': new_space_identifier or identifier,
+                            'encodedSpace': new_value,
+                        }
+                        break
+
+                elif space == old_value:
+                    item['space'][matrix_filter_uuid][index] = new_value
+                    break
 
         self.meta_node.children_cache = data
         self.meta_node.save()
@@ -535,13 +546,25 @@ class ChildrenCacheManager:
 
             matrix_filter_uuid = str(matrix_filter.uuid)
             value = matrix_filter_space.encoded_space
+            space_identifier = matrix_filter.matrix_filter_type.get_space_identifier(matrix_filter_space)
 
             # this will update the items space
             for item in items:
+                if matrix_filter_uuid not in item['space']:
+                    continue
 
-                if matrix_filter_uuid in item['space'] and value in item['space'][matrix_filter_uuid]:
-                    index = item['space'][matrix_filter_uuid].index(value)
-                    del item['space'][matrix_filter_uuid][index]
+                for index, item_space in enumerate(item['space'][matrix_filter_uuid]):
+
+                    if isinstance(item_space, dict):
+                        identifier = item_space.get('spaceIdentifier', None)
+                        encoded_space = item_space.get('encodedSpace', None)
+                        if identifier == space_identifier or (identifier is None and encoded_space == value):
+                            del item['space'][matrix_filter_uuid][index]
+                            break
+
+                    elif item_space == value:
+                        del item['space'][matrix_filter_uuid][index]
+                        break
 
 
             self.meta_node.children_cache = data
@@ -574,9 +597,10 @@ class MetaNode(UpdateContentImageTaxonMixin, ContentImageMixin, ModelWithTaxon):
     nature_guide = models.ForeignKey(NatureGuide, on_delete=models.CASCADE)
     name = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['MetaNode']['name'], null=True)
 
-    morphotype = models.CharField(max_length=355, null=True)
-    
-    object_class = models.ForeignKey(ObjectClass, on_delete=models.SET_NULL, null=True)
+    legacy_morphotype = models.CharField(max_length=355, null=True, blank=True)
+    morphotype = models.ForeignKey('object_classes.ObjectClass', null=True, blank=True, on_delete=models.PROTECT, related_name='meta_nodes', limit_choices_to={'category': 'morphotype'})
+
+    object_class = models.ForeignKey(ObjectClass, on_delete=models.PROTECT, null=True, limit_choices_to={'category': 'object_class'})
 
     node_type = models.CharField(max_length=30, choices=NODE_TYPES)
 
@@ -689,9 +713,6 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
     
     # see MetaNode for explanation
     meta_node = models.OneToOneField(MetaNode, on_delete=models.CASCADE)
-
-    # child specific, can be overridden by NatureGuideCrosslinks.decision_rule
-    decision_rule = models.CharField(max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'], null=True)
 
     position = models.IntegerField(default=1)
 
@@ -838,7 +859,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if self.meta_node.name:
             taxon_latname = self.meta_node.name
         else:
-            taxon_latname = self.decision_rule
+            taxon_latname = f'{self.nature_guide.id}_{self.meta_node.id}'
             
         slug = create_unique_slug(taxon_latname, 'slug', NatureGuidesTaxonTree)            
 
@@ -863,8 +884,8 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if parent and parent.meta_node.node_type == 'result':
             raise ValueError('Result nodes cannt have children')
 
-        if not self.meta_node.name and not self.decision_rule:
-            raise ValueError('A tree node either needs a name or a decision rule')
+        if not self.meta_node.name:
+            raise ValueError('A tree node needs a name')
 
         if taxon_tree_fields:
             required_keys = set(['taxon_nuid', 'taxon_latname', 'is_root_taxon', 'rank', 'slug', 'author',
@@ -1113,7 +1134,7 @@ class NatureGuidesTaxonTree(ContentImageMixin, TaxonTree):
         if self.name:
             return '{0}'.format(self.name)
         
-        return '{0}'.format(self.decision_rule)
+        return 'MetaNode {0}'.format(self.pk)
     
 
     class Meta:
@@ -1193,9 +1214,6 @@ class NatureGuideCrosslinks(models.Model):
 
     parent = models.ForeignKey(NatureGuidesTaxonTree, related_name='parent_node', on_delete=models.CASCADE)
     child = models.ForeignKey(NatureGuidesTaxonTree, related_name='child_node', on_delete=models.CASCADE)
-
-    decision_rule = models.CharField(
-        max_length=TEXT_LENGTH_RESTRICTIONS['NatureGuidesTaxonTree']['decision_rule'], null=True)
 
     position = models.IntegerField(default=0)
 
@@ -1459,8 +1477,11 @@ class MatrixFilterSpace(ContentImageMixin, models.Model):
         # update cache if old_encoded_space is passed (ColorFilter, DescriptiveTextAndImagesFilter)
         if old_encoded_space:
             cache = ChildrenCacheManager(self.matrix_filter.meta_node)
+            space_identifier = self.matrix_filter.matrix_filter_type.get_space_identifier(self)
             cache.update_matrix_filter_space(str(self.matrix_filter.uuid), old_encoded_space,
-                                             self.encoded_space)
+                                             self.encoded_space,
+                                             old_space_identifier=space_identifier,
+                                             new_space_identifier=space_identifier)
 
 
         self.matrix_filter._load_filter_type()

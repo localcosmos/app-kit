@@ -1521,8 +1521,8 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         choices = dtai_filter._get_choices()
         expected_choices = [
-            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
-            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
+            (dtai_filter.get_space_identifier(space_1), 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
+            (dtai_filter.get_space_identifier(space_2), 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
         ]
 
         self.assertEqual(choices, expected_choices)
@@ -1564,8 +1564,8 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
         space_2 = self.create_space('pattern 2')
 
         expected_choices = [
-            ('pattern 1', 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
-            ('pattern 2', 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
+            (dtai_filter.get_space_identifier(space_1), 'pattern 1', {'image': None, 'modify':True, 'space_id': space_1.id, 'matrix_filter_space':space_1}),
+            (dtai_filter.get_space_identifier(space_2), 'pattern 2', {'image': None, 'modify':True, 'space_id': space_2.id, 'matrix_filter_space':space_2})
         ]
 
         field = dtai_filter.get_matrix_form_field(self.meta_app)
@@ -1687,6 +1687,21 @@ class TestDescriptiveTextAndImagesFilter(MatrixFilterTestCommon, WithNatureGuide
 
         self.assertEqual(space, space_2)
         self.assertEqual(space_2.encoded_space, text_2)
+
+    @test_settings
+    def test_save_single_space_duplicate_text_raises(self):
+        dtai_filter = DescriptiveTextAndImagesFilter(self.matrix_filter)
+        self.create_space('duplicate text')
+
+        data = {
+            'input_language': 'en',
+            'text': 'duplicate text',
+        }
+        form = DescriptiveTextAndImagesFilterSpaceForm(data=data)
+        self.assertTrue(form.is_valid())
+
+        with self.assertRaises(ValueError):
+            dtai_filter.save_single_space(form)
     
 
     @test_settings
@@ -1896,8 +1911,8 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         choices = text_filter._get_choices()
 
         expected_choices = [
-            (text_1, text_1, {'modify':True,'space_id':space_1.id}),
-            (text_2, text_2, {'modify':True,'space_id':space_2.id}),
+            (text_filter.get_space_identifier(space_1), text_1, {'modify':True,'space_id':space_1.id}),
+            (text_filter.get_space_identifier(space_2), text_2, {'modify':True,'space_id':space_2.id}),
         ]
 
         self.assertEqual(choices, expected_choices)
@@ -1935,8 +1950,8 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
 
 
         expected_choices = [
-            (text_1, text_1, {'modify':True,'space_id':space_1.id}),
-            (text_2, text_2, {'modify':True,'space_id':space_2.id}),
+            (text_filter.get_space_identifier(space_1), text_1, {'modify':True,'space_id':space_1.id}),
+            (text_filter.get_space_identifier(space_2), text_2, {'modify':True,'space_id':space_2.id}),
         ]
 
         text_filter.matrix_filter.definition = {
@@ -2116,6 +2131,21 @@ class TestTextOnlyFilter(MatrixFilterTestCommon, WithNatureGuide, WithMatrixFilt
         self.assertEqual(space_2.encoded_space, text_2)
 
         self.assertEqual(space, space_2)
+
+    @test_settings
+    def test_save_single_space_duplicate_text_raises(self):
+        text_filter = TextOnlyFilter(self.matrix_filter)
+        self.create_space('duplicate text')
+
+        data = {
+            'input_language': 'en',
+            'text': 'duplicate text',
+        }
+        form = TextOnlyFilterSpaceForm(data=data)
+        self.assertTrue(form.is_valid())
+
+        with self.assertRaises(ValueError):
+            text_filter.save_single_space(form)
 
 
 

@@ -2043,13 +2043,6 @@ msgid ""
 "is %(max_length)s"
 msgstr ""
 
-#: features/nature_guides/zip_import.py:160
-#, python-format
-msgid ""
-"Length of %(decision_rule)s is too long: %(inserted_decision_rule)s. Maximum "
-"length is %(max_length)s"
-msgstr ""
-
 #: features/nature_guides/zip_import.py:181
 #, python-format
 msgid "No value found for  %(taxon_source)s"

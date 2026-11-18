@@ -226,8 +226,10 @@ class TaxonSerializer:
             name_uuid=self.lazy_taxon.name_uuid)
         
         if morphotype:
-            taxon_profile_qry = taxon_profile_qry.filter(
-            morphotype=morphotype)
+            taxon_profile_qry = taxon_profile_qry.filter(morphotype=morphotype)
+            
+        if object_class:
+            taxon_profile_qry = taxon_profile_qry.filter(object_class=object_class)
             
         taxon_profile_qry = taxon_profile_qry.first()
         
@@ -244,6 +246,9 @@ class TaxonSerializer:
         
         if morphotype:
             cache_key = name_uuid_str + '_' + morphotype
+        
+        if object_class:
+            cache_key = cache_key + '_' + object_class
         
         if cache_key in self.taxa_builder.cache['images']:
             taxon_images = self.taxa_builder.cache['images'][cache_key]

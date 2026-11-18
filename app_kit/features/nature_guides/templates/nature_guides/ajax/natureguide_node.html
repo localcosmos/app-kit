@@ -3,10 +3,13 @@
 <div id="{{ node.name_uuid }}" data-object-id="{{ node.id }}" class="nature-guide-node col-12 mb-2">
 
 	<div class="row">
+		{% if node.parent.meta_node.identification_mode == 'polytomous' %}
+		{% else %}
 		<div class="col-3">
 			<a {% if node.meta_node.node_type == "result" %}data-url="{% url 'mockbutton' %}?message={% trans 'Tapping on an entry in your app will result a taxon profile or observation form being opened - according to your settings.' %}" class="xhr" ajax-target="ModalContent"{% else %}href="{% url 'manage_natureguide' meta_app.id content_type.id parent_node.nature_guide.id node.id %}"{% endif %}><div id="content_image_{{ node.meta_node|ctype_id }}_{{ node.meta_node.id }}" class="squareimage" style="background-image:url('{{ node.meta_node.image_url }}');"></div></a>
 		</div>
-		<div class="col-7 ps-0">
+		{% endif %}
+		<div class="{% if node.parent.meta_node.identification_mode == 'polytomous' %}col-10 ps-3{% else %}col-7 ps-0{% endif %}">
 			<div class="row align-items-center node-content">
 				<div class="col-12">
 					<div class="node-name">

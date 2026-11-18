@@ -11,6 +11,7 @@ from app_kit.utils import underscore_to_camelCase
     - do not store label etc texts directly in the form, use i18next to look up the localized texts
 '''
 REFERENCE_FIELD_ROLES = ['taxonomic_reference', 'geographic_reference', 'temporal_reference']
+TAXON_EXTENSION_FIELD_ROLES = ['morphotype', 'object_class']
 
 class GenericFormJSONBuilder(JSONBuilder):
 
@@ -54,6 +55,10 @@ class GenericFormJSONBuilder(JSONBuilder):
 
             if generic_field.role in REFERENCE_FIELD_ROLES:
                 key = self.to_camel_case(generic_field_dic['role'])
+                generic_form_json[key] = generic_field_dic['uuid']
+
+            if generic_field.role in TAXON_EXTENSION_FIELD_ROLES:
+                key = self.to_camel_case(generic_field_dic['role']) + 'Field'
                 generic_form_json[key] = generic_field_dic['uuid']
 
         return generic_form_json

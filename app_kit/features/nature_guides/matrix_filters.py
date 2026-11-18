@@ -49,6 +49,11 @@ MATRIX_FILTER_TYPES = (
     ('TextOnlyFilter', _('Text only')),
 )
 
+POLYTOMOUS_MATRIX_FILTER_TYPES = (
+    ('DescriptiveTextAndImagesFilter', _('Text and images')),
+    ('TextOnlyFilter', _('Text only')),
+)
+
 
 
 # MetaClass, extends a MatrixFilter class with FilterType-specific methods
@@ -57,7 +62,7 @@ class MatrixFilterType:
     # in the interface for creating matrix filters, an add space button is shown for multispace
     is_multispace = False
     
-    supports_polytomous_mode = True
+    supports_polytomous_mode = False
 
     # the form field class rendered for the end-user input
     MatrixSingleChoiceFormFieldClass = None
@@ -339,8 +344,6 @@ class MultiSpaceFilterMixin:
     - encoded: [0,10]
 '''
 class RangeFilter(SingleSpaceFilterMixin, MatrixFilterType):
-    
-    supports_polytomous_mode = False
 
     verbose_name = _('Range filter')
     definition_parameters = ['identification_means', 'step', 'unit', 'unit_verbose', 'tolerance']
@@ -943,6 +946,7 @@ class ColorFilter(MultiSpaceFilterMixin, MatrixFilterType):
 class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
+    supports_polytomous_mode = True
 
     definition_parameters = ['identification_means', 'allow_multiple_values']
 
@@ -968,6 +972,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
         choices = []
 
         for space in self.matrix_filter.get_space():
+            space_identifier = self.get_space_identifier(space)
 
             image = None
 
@@ -982,7 +987,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
             if image and image.image_store.source_image:
                 extra_kwargs['image'] = image
             
-            choices.append((space.encoded_space, space.encoded_space, extra_kwargs))
+            choices.append((space_identifier, space.encoded_space, extra_kwargs))
 
         return choices
 
@@ -1031,6 +1036,17 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
         MatrixFilterSpace = self.matrix_filter.space_model
 
         matrix_filter_space_id = form.cleaned_data.get('matrix_filter_space_id', None)
+        encoded_space = form.cleaned_data['text']
+
+        existing_spaces = MatrixFilterSpace.objects.filter(matrix_filter=self.matrix_filter,
+                                                           encoded_space=encoded_space)
+
+        if matrix_filter_space_id:
+            existing_spaces = existing_spaces.exclude(pk=matrix_filter_space_id)
+
+        if existing_spaces.exists():
+            raise ValueError(_('This text already exists for this filter.'))
+
         if matrix_filter_space_id:
             space = MatrixFilterSpace.objects.get(pk=form.cleaned_data['matrix_filter_space_id'])
             old_encoded_space = space.encoded_space
@@ -1041,7 +1057,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
             old_encoded_space = None
 
         # the text is the encoded space
-        space.encoded_space = form.cleaned_data['text']
+        space.encoded_space = encoded_space
         space.save(old_encoded_space=old_encoded_space)
 
         return space
@@ -1070,6 +1086,7 @@ class DescriptiveTextAndImagesFilter(MultiSpaceFilterMixin, MatrixFilterType):
 class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = True
+    supports_polytomous_mode = True
 
     definition_parameters = ['identification_means', 'allow_multiple_values']
 
@@ -1095,13 +1112,14 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
         choices = []
 
         for space in self.matrix_filter.get_space():
+            space_identifier = self.get_space_identifier(space)
 
             extra_kwargs = {
                 'modify' : True,
                 'space_id' : space.id,
             }
             
-            choices.append((space.encoded_space, space.encoded_space, extra_kwargs))
+            choices.append((space_identifier, space.encoded_space, extra_kwargs))
 
         return choices
 
@@ -1145,6 +1163,17 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
         MatrixFilterSpace = self.matrix_filter.space_model
 
         matrix_filter_space_id = form.cleaned_data.get('matrix_filter_space_id', None)
+        encoded_space = form.cleaned_data['text']
+
+        existing_spaces = MatrixFilterSpace.objects.filter(matrix_filter=self.matrix_filter,
+                                                           encoded_space=encoded_space)
+
+        if matrix_filter_space_id:
+            existing_spaces = existing_spaces.exclude(pk=matrix_filter_space_id)
+
+        if existing_spaces.exists():
+            raise ValueError(_('This text already exists for this filter.'))
+
         if matrix_filter_space_id:
             space = MatrixFilterSpace.objects.get(pk=form.cleaned_data['matrix_filter_space_id'])
             old_encoded_space = space.encoded_space
@@ -1155,7 +1184,7 @@ class TextOnlyFilter(MultiSpaceFilterMixin, MatrixFilterType):
             old_encoded_space = None
 
         # the text is the encoded space
-        space.encoded_space = form.cleaned_data['text']
+        space.encoded_space = encoded_space
         space.save(old_encoded_space=old_encoded_space)
 
         return space
@@ -1221,8 +1250,6 @@ PREDEFINED_FILTER_LATNAMES = [predefined[0] for predefined in PREDEFINED_TAXONOM
 class TaxonFilter(SingleSpaceFilterMixin, MatrixFilterType):
 
     is_multispace = False
-    
-    supports_polytomous_mode = False
 
     definition_parameters = ['identification_means']
 

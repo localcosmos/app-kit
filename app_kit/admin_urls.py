@@ -40,6 +40,9 @@ urlpatterns = [
     # NEW APP VERSION
     path('start-new-app-version/<int:meta_app_id>/', views.StartNewAppVersion.as_view(),
          name='start_new_app_version'),
+    # migrate legacy morphotypes
+    path('migrate-legacy-morphotypes/<int:meta_app_id>/', views.MigrateLegacyMorphotypes.as_view(),
+         name='migrate_legacy_morphotypes'),
     # create generic app content
     path('create-appcontent/<int:meta_app_id>/<int:content_type_id>/',
         views.CreateGenericAppContent.as_view(), name='create_generic_appcontent'), # generic forms etc need app_to_feature

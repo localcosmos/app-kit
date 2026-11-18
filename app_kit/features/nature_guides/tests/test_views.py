@@ -84,11 +84,7 @@ class WithNatureGuideLink(WithNatureGuide):
 
             node_name = 'node {}'.format(c)
 
-            extra = {
-                'decision_rule' : '{0} decision rule'.format(node_name)
-            }
-
-            node = self.create_node(self.start_node, node_name, **extra)
+            node = self.create_node(self.start_node, node_name)
 
             self.nodes.append(node)
 
@@ -109,7 +105,6 @@ class WithNatureGuideLink(WithNatureGuide):
             'input_language' : self.meta_app.primary_language,
             'node_type' : 'node',
             'name' : 'formtest node',
-            'decision_rule' : 'test rule',
         }
 
         data.update(extra_data)
@@ -282,7 +277,6 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
         initial = view.get_initial()
         self.assertEqual(initial['node_type'], 'node')
         self.assertFalse('name' in initial)
-        self.assertFalse('decision_rule' in initial)
         self.assertFalse('node_id' in initial)
         self.assertFalse('taxon' in initial)
 
@@ -339,7 +333,6 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
         view.save_nodelink(form)
 
         node = self.start_node.children[0]
-        self.assertEqual(node.decision_rule, data['decision_rule'])
         self.assertEqual(node.parent, self.start_node)
         self.assertEqual(node.meta_node.node_type, 'node')
         self.assertEqual(node.meta_node.name, data['name'])
@@ -353,7 +346,7 @@ class TestManageNodelinkAsCreate(WithNatureGuideLink, ViewTestMixin, WithAjaxAdm
         view = self.get_view()
         view.set_node(**view.kwargs)
 
-        data = self.get_nodelink_form_data(morphotype='')
+        data = self.get_nodelink_form_data(morphotype=None)
 
         form = ManageNodelinkForm(self.meta_app, view.submitted_parent_node, view.submitted_parent_node, data=data,
                                   from_url=view.request.path)
@@ -509,7 +502,6 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
         initial = view.get_initial()
         self.assertEqual(initial['node_type'], 'node')
         self.assertEqual(initial['name'], 'node 1')
-        self.assertEqual(initial['decision_rule'], 'node 1 decision rule')
         self.assertEqual(initial['node_id'], self.view_node.id)
         self.assertEqual(initial['taxon'], lazy_taxon)
         
@@ -570,7 +562,6 @@ class TestManageNodelinkAsManage(WithNatureGuideLink, WithMatrixFilters, ViewTes
 
         node = self.view_node
         node.refresh_from_db()
-        self.assertEqual(node.decision_rule, data['decision_rule'])
         self.assertEqual(node.parent, self.start_node)
         self.assertEqual(node.meta_node.node_type, 'node')
         self.assertEqual(node.meta_node.name, data['name'])
@@ -749,7 +740,6 @@ class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMat
 
         self.assertEqual(initial['node_type'], 'node')
         self.assertEqual(initial['name'], 'node 2')
-        self.assertEqual(initial['decision_rule'], 'node 2 decision rule')
         self.assertEqual(initial['node_id'], self.view_node.id)
         self.assertEqual(initial['taxon'], None)
         self.assertEqual(initial['is_active'], True)
@@ -820,7 +810,6 @@ class TestManageNodelinkAsManageWithCrosslinkParent(WithNatureGuideLink, WithMat
 
         node = self.view_node
         node.refresh_from_db()
-        self.assertEqual(node.decision_rule, data['decision_rule'])
         self.assertEqual(node.parent, self.start_node)
         self.assertEqual(node.meta_node.node_type, 'node')
         self.assertEqual(node.meta_node.name, data['name'])
